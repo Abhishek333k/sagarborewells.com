@@ -3,92 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sagar Borewells | Site Locator</title>
+    <title>Site Locator | Sagar Ops</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #0f172a; font-family: 'Inter', sans-serif; overflow: hidden; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; overflow: hidden; }
         #map { height: 100vh; width: 100vw; }
-        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; }
-        .reticle-ring { width: 60px; height: 60px; border: 2px solid white; border-radius: 50%; animation: spin 10s linear infinite; }
-        .reticle-dot { width: 6px; height: 6px; background: red; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px red; }
+        
+        /* Reticle Animation */
+        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 40; pointer-events: none; }
+        .reticle-ring { width: 80px; height: 80px; border: 2px solid rgba(255,255,255,0.8); border-radius: 50%; animation: spin 8s linear infinite; }
+        .reticle-cross { position: absolute; top: 50%; left: 50%; width: 100%; height: 2px; background: rgba(255,255,255,0.3); transform: translate(-50%, -50%); }
+        .reticle-cross.v { width: 2px; height: 100%; }
+        .reticle-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 15px #ef4444; }
         @keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
-        /* Map Controls */
-        .glass-panel { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+
+        .glass-panel { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
-    
-    <div class="absolute top-20 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20">
-        <input id="pac-input" type="text" placeholder="Search village or landmark..." 
-            class="w-full p-4 rounded-xl bg-[#1e293b] text-white border border-slate-600 focus:border-blue-500 outline-none shadow-2xl placeholder-slate-400">
+
+    <a href="index.html" class="absolute top-6 left-6 z-50 bg-slate-900 text-white p-3 rounded-full hover:bg-slate-700 transition border border-slate-700 shadow-xl">
+        <i class="fa-solid fa-arrow-left"></i>
+    </a>
+
+    <div class="absolute top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-40">
+        <div class="glass-panel rounded-xl flex items-center px-4 py-3 shadow-2xl">
+            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+            <input id="pac-input" type="text" placeholder="Search village, street, or landmark..." 
+                class="bg-transparent border-none outline-none text-white ml-3 w-full placeholder-slate-500">
+        </div>
     </div>
 
     <div class="target-reticle">
         <div class="reticle-ring"></div>
+        <div class="reticle-cross"></div>
+        <div class="reticle-cross v"></div>
         <div class="reticle-dot"></div>
     </div>
 
     <div id="map"></div>
 
-    <div class="absolute bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-20">
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-40">
         <div class="glass-panel p-5 rounded-2xl shadow-2xl">
-            <h3 class="text-xs font-bold text-slate-400 uppercase">Selected Coordinates</h3>
-            <div class="flex gap-2 font-mono text-blue-400 font-bold text-lg my-1">
-                <span id="lat">--</span>, <span id="lng">--</span>
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Target Locked</span>
+                <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded">LIVE</span>
             </div>
-            <p id="address" class="text-xs text-slate-500 truncate mb-4">Move map to refine...</p>
-            <button onclick="confirmSite()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition">
-                Confirm & Calculate Price
+            <p id="address" class="text-white text-sm font-medium truncate mb-1">Scanning location...</p>
+            <p class="text-xs text-blue-400 font-mono mb-4"><span id="lat">0.0000</span>, <span id="lng">0.0000</span></p>
+            
+            <button onclick="confirmSite()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-500/20">
+                Confirm & Analyze Price
             </button>
         </div>
     </div>
-
-    <script src="assets/js/components.js"></script>
 
     <script>
         let map, geocoder, sessionToken;
 
         function initMap() {
-            // Generates a token to group billing (SAVES MONEY)
             sessionToken = new google.maps.places.AutocompleteSessionToken();
+            // Default: Mangalagiri
+            const defaultLoc = { lat: 16.4428, lng: 80.5645 };
 
-            const defaultLoc = { lat: 16.4428, lng: 80.5645 }; // Mangalagiri
-            
+            // Dark Mode Styles
+            const darkMapStyle = [
+                { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+                { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+                { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+                { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
+                { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }
+            ];
+
             map = new google.maps.Map(document.getElementById("map"), {
                 center: defaultLoc,
-                zoom: 15,
+                zoom: 16,
                 disableDefaultUI: true,
-                styles: [ { elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] } ]
+                styles: darkMapStyle,
+                zoomControl: true,
+                zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM }
             });
 
             geocoder = new google.maps.Geocoder();
-            
-            // Search Setup with Session Token
+
+            // Search Logic
             const input = document.getElementById("pac-input");
-            const autocomplete = new google.maps.places.Autocomplete(input, {
-                sessionToken: sessionToken
-            });
+            const autocomplete = new google.maps.places.Autocomplete(input, { sessionToken: sessionToken });
             autocomplete.bindTo("bounds", map);
 
             autocomplete.addListener("place_changed", () => {
                 const place = autocomplete.getPlace();
                 if (!place.geometry) return;
                 map.setCenter(place.geometry.location);
-                map.setZoom(17);
-                // Refresh token after use (Google Requirement)
+                map.setZoom(18);
                 sessionToken = new google.maps.places.AutocompleteSessionToken();
             });
 
+            // Live Update on Drag
             map.addListener("idle", () => {
                 const center = map.getCenter();
-                document.getElementById("lat").innerText = center.lat().toFixed(5);
-                document.getElementById("lng").innerText = center.lng().toFixed(5);
+                const lat = center.lat();
+                const lng = center.lng();
                 
+                document.getElementById("lat").innerText = lat.toFixed(5);
+                document.getElementById("lng").innerText = lng.toFixed(5);
+
                 geocoder.geocode({ location: center }, (results, status) => {
                     if (status === "OK" && results[0]) {
                         document.getElementById("address").innerText = results[0].formatted_address;
+                    } else {
+                        document.getElementById("address").innerText = "Unknown Terrain";
                     }
                 });
             });
@@ -97,11 +123,13 @@
         function confirmSite() {
             const lat = document.getElementById("lat").innerText;
             const lng = document.getElementById("lng").innerText;
-            // PASS DATA TO QUOTE PAGE via URL
-            window.location.href = `quote.html?lat=${lat}&lng=${lng}`;
+            const address = encodeURIComponent(document.getElementById("address").innerText);
+            
+            // Redirect to Quote Page with Data
+            window.location.href = `quote.html?lat=${lat}&lng=${lng}&loc=${address}`;
         }
     </script>
-    
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSy...INSERT_NEW_KEY_HERE...&libraries=places&callback=initMap" async defer></script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus&libraries=places&callback=initMap" async defer></script>
 </body>
 </html>
