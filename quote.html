@@ -103,7 +103,7 @@
     <script src="assets/js/components.js"></script>
     <script>
         // --- 1. CONFIGURATION ---
-        // PASTE YOUR GOOGLE PUBLISHED CSV LINK HERE
+        // Your Google Sheet CSV Link
         const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSYAWCpz9B4DFG8DUqNg7SukCKOiALEQnvzgYs95GmHMkmJKxjupfat0j-8rx5xxY2FTpEkuFm6AVAp/pub?output=csv";
 
         let ZONES = [];
@@ -111,30 +111,33 @@
 
         // --- 2. FETCH DATA ENGINE ---
         document.addEventListener("DOMContentLoaded", () => {
-            // Use PapaParse to fetch and read the CSV
             Papa.parse(SHEET_URL, {
                 download: true,
-                header: true, // Uses the first row as keys (ZoneName, Lat, etc.)
+                header: true, 
                 complete: function(results) {
-                    // This runs when data is fully loaded
-                    ZONES = results.data;
-                    console.log("Pricing Data Loaded:", ZONES);
+                    let rawData = results.data;
+
+                    // --- [CRITICAL CHANGE] SORTING LOGIC ---
+                    // This sorts zones from SMALLEST Radius to LARGEST Radius.
+                    // It forces the code to check specific 1km circles BEFORE checking general 10km circles.
+                    ZONES = rawData.sort((a, b) => {
+                        return parseFloat(a.RadiusKm) - parseFloat(b.RadiusKm);
+                    });
+
+                    console.log("Zones Sorted by Precision:", ZONES);
                     
-                    // Hide loader and start app
                     document.getElementById('loader').classList.add('hidden');
                     initApp();
                 },
                 error: function(err) {
                     alert("Error loading pricing data. Using offline defaults.");
                     document.getElementById('loader').classList.add('hidden');
-                    // Fallback data could go here
                 }
             });
         });
 
         // --- 3. LOGIC ENGINE ---
         function initApp() {
-            // Get User Location from URL
             const params = new URLSearchParams(window.location.search);
             const userLat = parseFloat(params.get('lat'));
             const userLng = parseFloat(params.get('lng'));
@@ -145,10 +148,8 @@
                 return;
             }
 
-            // Find the Zone
             let found = false;
             for(let zone of ZONES) {
-                // Ensure numbers are numbers (CSV reads as strings sometimes)
                 const zLat = parseFloat(zone.Lat);
                 const zLng = parseFloat(zone.Lng);
                 const zRad = parseFloat(zone.RadiusKm);
@@ -158,13 +159,12 @@
                 if(dist <= zRad) {
                     currentZone = zone;
                     found = true;
-                    break;
+                    break; // Stops at the first match (which is now the most precise one)
                 }
             }
 
             if(!found) {
-                // Default "Out of Zone" Pricing
-                currentZone = { ZoneName: "Unmapped Region", BaseRate: 95, RiskLabel: "STD RATE", Hardness: "Unknown" };
+                currentZone = { ZoneName: "Unmapped Region", BaseRate: 95, RiskLabel: "STD RATE", Hardness: "Unknown", RadiusKm: 999 };
             }
 
             updateUI();
@@ -178,10 +178,18 @@
             badge.innerText = currentZone.RiskLabel;
             badge.classList.remove('hidden');
 
+            // Fallback Warning Logic
+            if (parseFloat(currentZone.RadiusKm) > 5) {
+                document.getElementById('riskBadge').className = "px-3 py-1 bg-yellow-900/30 text-yellow-400 border border-yellow-800 rounded-full text-xs font-bold";
+                document.getElementById('riskBadge').innerText = "GENERAL ESTIMATE";
+                document.getElementById('zoneNameDisplay').innerHTML = `${currentZone.ZoneName} <br><span class="text-[10px] text-slate-400 font-normal">*Exact street conditions may vary price.</span>`;
+            } else {
+                document.getElementById('riskBadge').className = "px-3 py-1 bg-slate-800 rounded-full border border-slate-700 text-xs font-bold text-slate-400"; // Reset style
+                document.getElementById('riskBadge').innerText = "PRECISE MATCH";
+            }
             calculate();
         }
 
-        // Distance Calc
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371; 
             const dLat = (lat2-lat1) * (Math.PI/180);
