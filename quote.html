@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Instant Quote | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="assets/js/config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     
@@ -323,7 +324,9 @@
         // --- 6. SUBMIT TO WHATSAPP ---
         function submitLead() {
             const msg = `*New Quote Request*%0A%0A👤 Name: ${leadData.name}%0A📱 Mobile: ${leadData.mobile}%0A📍 Loc: ${leadData.location}%0A%0A⚙️ *Job Details:*%0A- Purpose: ${leadData.purpose.toUpperCase()}%0A- Depth: ${leadData.depth} ft%0A- Est. Cost: ₹${leadData.price.toLocaleString()}%0A%0APlease contact me.`;
-            window.open(`https://wa.me/919876543210?text=${msg}`, '_blank');
+            
+            // Uses the number from config.js
+            window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
         }
     </script>
 </body>
