@@ -321,12 +321,51 @@
             leadData.depth = depth;
         }
 
-        // --- 6. SUBMIT TO WHATSAPP ---
-        function submitLead() {
-            const msg = `*New Quote Request*%0A%0A👤 Name: ${leadData.name}%0A📱 Mobile: ${leadData.mobile}%0A📍 Loc: ${leadData.location}%0A%0A⚙️ *Job Details:*%0A- Purpose: ${leadData.purpose.toUpperCase()}%0A- Depth: ${leadData.depth} ft%0A- Est. Cost: ₹${leadData.price.toLocaleString()}%0A%0APlease contact me.`;
+       function submitLead() {
+            const btn = document.querySelector('button[onclick="submitLead()"]');
+            const originalText = btn.innerHTML;
             
-            // Uses the number from config.js
-            window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
+            // 1. Show Loading State
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
+            btn.disabled = true;
+        
+            // 2. Prepare Data for Google Sheet
+            const formData = new FormData();
+            formData.append("name", leadData.name);
+            formData.append("mobile", leadData.mobile);
+            formData.append("location", leadData.location);
+            formData.append("purpose", leadData.purpose);
+            formData.append("depth", leadData.depth);
+            formData.append("price", leadData.price);
+        
+            // 3. Send to Backend (Google Script)
+            fetch(CONTACT_INFO.database_url, {
+                method: "POST",
+                body: formData,
+                mode: "no-cors" // Important for Google Script
+            })
+            .then(() => {
+                // 4. Success! Now open WhatsApp
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved!';
+                
+                // Generate WhatsApp Message
+                const msg = `*New Quote Request*%0A%0A👤 Name: ${leadData.name}%0A📱 Mobile: ${leadData.mobile}%0A📍 Loc: ${leadData.location}%0A%0A⚙️ *Job Details:*%0A- Purpose: ${leadData.purpose.toUpperCase()}%0A- Depth: ${leadData.depth} ft%0A- Est. Cost: ₹${leadData.price.toLocaleString()}%0A%0APlease contact me.`;
+                
+                setTimeout(() => {
+                    window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 1000);
+            })
+            .catch(err => {
+                console.error("Error saving lead", err);
+                alert("Connection error, opening WhatsApp directly.");
+                // Fallback: Open WhatsApp anyway
+                const msg = `*New Quote Request (Offline)*%0A%0A👤 Name: ${leadData.name}%0A📱 Mobile: ${leadData.mobile}%0A...`;
+                window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
         }
     </script>
 </body>
