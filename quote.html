@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estimate | Sagar Ops</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; }
+        .glass-panel { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <div id="header-mount"></div>
+
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-3xl font-bold mb-2">Project Estimation</h1>
+        <p class="text-slate-400 mb-8">Generated based on site coordinates.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <div class="md:col-span-2 space-y-6">
+                <div class="glass-panel p-6">
+                    <h3 class="text-xs font-bold text-blue-400 uppercase mb-4">1. Selected Site</h3>
+                    <div class="flex gap-4 items-start">
+                        <div class="p-3 bg-blue-900/50 rounded-lg text-blue-400"><i class="fa-solid fa-map-location-dot"></i></div>
+                        <div>
+                            <p id="displayAddress" class="font-medium text-sm">Loading location...</p>
+                            <p id="displayCoords" class="text-xs text-slate-500 font-mono mt-1">--</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6">
+                    <h3 class="text-xs font-bold text-blue-400 uppercase mb-4">2. Specifications</h3>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Target Depth (Feet)</label>
+                        <input type="range" id="depth" min="100" max="1500" value="500" step="50" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                        <div class="flex justify-between mt-2">
+                            <span class="text-xs text-slate-500">100ft</span>
+                            <span class="text-xl font-bold text-blue-400" id="depthValue">500 ft</span>
+                            <span class="text-xs text-slate-500">1500ft</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Bore Diameter</label>
+                            <select class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm">
+                                <option>6.5" (Standard)</option>
+                                <option>4.5" (Domestic)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Casing Type</label>
+                            <select id="casing" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm">
+                                <option value="350">PVC - Blue (Standard)</option>
+                                <option value="450">PVC - Heavy</option>
+                                <option value="600">Iron (Rocky)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 h-fit sticky top-24 border-t-4 border-blue-500">
+                <h3 class="text-lg font-bold mb-4">Estimated Total</h3>
+                <div class="text-4xl font-extrabold text-white mb-1" id="totalPrice">₹0</div>
+                <p class="text-xs text-slate-500 mb-6">+ GST as applicable</p>
+
+                <div class="space-y-3 text-sm border-t border-slate-700 pt-4 mb-6">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Drilling</span>
+                        <span id="drillCost" class="font-medium">₹0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Casing (Est 80ft)</span>
+                        <span id="casingCost" class="font-medium">₹0</span>
+                    </div>
+                    <div class="flex justify-between text-emerald-400">
+                        <span>Transport</span>
+                        <span>Free</span>
+                    </div>
+                </div>
+
+                <button onclick="sendToWhatsapp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-whatsapp"></i> Book Site Visit
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="assets/js/components.js"></script>
+    <script>
+        // Parse URL Parameters
+        const params = new URLSearchParams(window.location.search);
+        const lat = params.get('lat');
+        const lng = params.get('lng');
+        const loc = params.get('loc');
+
+        // Display Data
+        if(lat && lng) {
+            document.getElementById('displayCoords').innerText = `${lat}, ${lng}`;
+            document.getElementById('displayAddress').innerText = decodeURIComponent(loc || "Unknown Location");
+        }
+
+        // Calculation Logic
+        const depthSlider = document.getElementById('depth');
+        const casingSelect = document.getElementById('casing');
+
+        function calculate() {
+            const depth = parseInt(depthSlider.value);
+            const casingPrice = parseInt(casingSelect.value);
+            
+            // Base Rate logic (Simple Version)
+            let drillTotal = 0;
+            if (depth <= 300) {
+                drillTotal = depth * 85; // Base Rate
+            } else {
+                drillTotal = (300 * 85) + ((depth - 300) * 110); // Jumping Rate
+            }
+
+            const casingTotal = 80 * casingPrice; // Assume 80ft casing average
+            const grandTotal = drillTotal + casingTotal;
+
+            // Update UI
+            document.getElementById('depthValue').innerText = depth + " ft";
+            document.getElementById('drillCost').innerText = "₹" + drillTotal.toLocaleString();
+            document.getElementById('casingCost').innerText = "₹" + casingTotal.toLocaleString();
+            document.getElementById('totalPrice').innerText = "₹" + grandTotal.toLocaleString();
+        }
+
+        depthSlider.addEventListener('input', calculate);
+        casingSelect.addEventListener('change', calculate);
+        
+        // Initial Run
+        calculate();
+
+        function sendToWhatsapp() {
+            const total = document.getElementById('totalPrice').innerText;
+            const msg = `*New Lead from App*%0A%0A📍 Location: ${loc}%0A📏 Depth: ${depthSlider.value}ft%0A💰 Est. Quote: ${total}%0A%0AI want to confirm this booking.`;
+            window.open(`https://wa.me/919876543210?text=${msg}`, '_blank');
+        }
+    </script>
+</body>
+</html>
