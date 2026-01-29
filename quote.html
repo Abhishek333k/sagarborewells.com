@@ -3,33 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estimate | Sagar Ops</title>
+    <title>Smart Estimate | Sagar Ops</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; }
         .glass-panel { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; }
+        .badge-pulse { animation: pulse-green 2s infinite; }
+        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
     <div id="header-mount"></div>
 
-    <main class="flex-grow container mx-auto px-4 py-8 max-w-4xl">
-        <h1 class="text-3xl font-bold mb-2">Project Estimation</h1>
-        <p class="text-slate-400 mb-8">Generated based on site coordinates.</p>
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
+        <div class="flex justify-between items-end mb-8">
+            <div>
+                <h1 class="text-3xl font-bold">Project Estimator</h1>
+                <p class="text-slate-400 text-sm mt-1">Pricing adjusted for <span id="zoneNameHeader" class="text-blue-400 font-bold">Detecting Zone...</span></p>
+            </div>
+            <div id="riskBadge" class="hidden px-3 py-1 bg-slate-800 rounded-full border border-slate-700 text-xs font-bold text-slate-400">
+                ANALYZING SOIL...
+            </div>
+        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <div class="md:col-span-2 space-y-6">
-                <div class="glass-panel p-6">
-                    <h3 class="text-xs font-bold text-blue-400 uppercase mb-4">1. Selected Site</h3>
-                    <div class="flex gap-4 items-start">
-                        <div class="p-3 bg-blue-900/50 rounded-lg text-blue-400"><i class="fa-solid fa-map-location-dot"></i></div>
+            <div class="lg:col-span-2 space-y-6">
+                
+                <div class="glass-panel p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fa-solid fa-earth-asia text-6xl"></i></div>
+                    <h3 class="text-xs font-bold text-blue-400 uppercase mb-4">1. Geological Assessment</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <p id="displayAddress" class="font-medium text-sm">Loading location...</p>
-                            <p id="displayCoords" class="text-xs text-slate-500 font-mono mt-1">--</p>
+                            <p class="text-xs text-slate-500 uppercase">Site Location</p>
+                            <p id="displayAddress" class="font-medium text-sm text-white mt-1 truncate">Loading...</p>
+                            <p id="displayCoords" class="text-[10px] text-slate-500 font-mono mt-1">--</p>
+                        </div>
+                        <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-slate-400">Soil Hardness</span>
+                                <span id="hardnessValue" class="text-xs font-bold text-white">--</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-slate-400">Base Rate</span>
+                                <span id="rateValue" class="text-xs font-bold text-emerald-400">--</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -37,59 +59,78 @@
                 <div class="glass-panel p-6">
                     <h3 class="text-xs font-bold text-blue-400 uppercase mb-4">2. Specifications</h3>
                     
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium mb-2">Target Depth (Feet)</label>
-                        <input type="range" id="depth" min="100" max="1500" value="500" step="50" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
-                        <div class="flex justify-between mt-2">
-                            <span class="text-xs text-slate-500">100ft</span>
+                    <div class="mb-8">
+                        <div class="flex justify-between mb-2">
+                            <label class="text-sm font-medium">Target Depth</label>
                             <span class="text-xl font-bold text-blue-400" id="depthValue">500 ft</span>
-                            <span class="text-xs text-slate-500">1500ft</span>
+                        </div>
+                        <input type="range" id="depth" min="100" max="1500" value="500" step="50" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                        <div class="flex justify-between mt-2 text-xs text-slate-500">
+                            <span>100ft</span>
+                            <span>Standard Range</span>
+                            <span>1500ft</span>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs text-slate-400 mb-1">Bore Diameter</label>
-                            <select class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm">
-                                <option>6.5" (Standard)</option>
-                                <option>4.5" (Domestic)</option>
+                            <label class="block text-xs text-slate-400 mb-2">Bore Diameter</label>
+                            <select id="diameter" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm focus:border-blue-500 outline-none">
+                                <option value="0">6.5" (Standard)</option>
+                                <option value="-10">4.5" (Slim/Domestic)</option>
+                                <option value="25">7.0" (Industrial)</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs text-slate-400 mb-1">Casing Type</label>
-                            <select id="casing" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm">
+                            <label class="block text-xs text-slate-400 mb-2">Casing Pipe</label>
+                            <select id="casing" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm focus:border-blue-500 outline-none">
                                 <option value="350">PVC - Blue (Standard)</option>
-                                <option value="450">PVC - Heavy</option>
-                                <option value="600">Iron (Rocky)</option>
+                                <option value="450">PVC - Heavy Duty</option>
+                                <option value="600">MS Iron (Rocky Areas)</option>
                             </select>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="glass-panel p-6 h-fit sticky top-24 border-t-4 border-blue-500">
-                <h3 class="text-lg font-bold mb-4">Estimated Total</h3>
-                <div class="text-4xl font-extrabold text-white mb-1" id="totalPrice">₹0</div>
-                <p class="text-xs text-slate-500 mb-6">+ GST as applicable</p>
+            <div class="glass-panel p-6 h-fit sticky top-24 border-t-4 border-blue-500 shadow-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-white">Estimated Cost</h3>
+                    <div id="zoneTag" class="text-[10px] font-bold bg-blue-900 text-blue-300 px-2 py-1 rounded border border-blue-700">
+                        STANDARD ZONE
+                    </div>
+                </div>
+
+                <div class="text-5xl font-extrabold text-white mb-2 tracking-tight" id="totalPrice">₹0</div>
+                <p class="text-xs text-slate-400 mb-6">+ 18% GST Applicable</p>
 
                 <div class="space-y-3 text-sm border-t border-slate-700 pt-4 mb-6">
-                    <div class="flex justify-between">
-                        <span class="text-slate-400">Drilling</span>
-                        <span id="drillCost" class="font-medium">₹0</span>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400">Drilling Cost</span>
+                        <span id="drillCost" class="font-bold text-white">₹0</span>
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-slate-400">Casing (Est 80ft)</span>
-                        <span id="casingCost" class="font-medium">₹0</span>
+                    <div id="jumpRateRow" class="hidden flex justify-between items-center text-xs text-orange-400">
+                        <span class="pl-2 border-l border-slate-700">↳ Deep Drilling Premium</span>
+                        <span id="jumpCost">₹0</span>
                     </div>
-                    <div class="flex justify-between text-emerald-400">
-                        <span>Transport</span>
+
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400">Casing (Est. 80ft)</span>
+                        <span id="casingCost" class="font-bold text-white">₹0</span>
+                    </div>
+                    <div class="flex justify-between items-center text-emerald-400">
+                        <span>Transport & Setup</span>
                         <span>Free</span>
                     </div>
                 </div>
 
-                <button onclick="sendToWhatsapp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-2">
-                    <i class="fa-brands fa-whatsapp"></i> Book Site Visit
+                <button onclick="sendToWhatsapp()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-500/20 group">
+                    <i class="fa-brands fa-whatsapp text-xl group-hover:scale-110 transition"></i> 
+                    <span>Confirm Booking</span>
                 </button>
+                <p class="text-[10px] text-center text-slate-600 mt-4 leading-relaxed">
+                    *Final price subject to physical site survey.
+                </p>
             </div>
 
         </div>
@@ -97,55 +138,93 @@
 
     <script src="assets/js/components.js"></script>
     <script>
-        // Parse URL Parameters
-        const params = new URLSearchParams(window.location.search);
-        const lat = params.get('lat');
-        const lng = params.get('lng');
-        const loc = params.get('loc');
-
-        // Display Data
-        if(lat && lng) {
-            document.getElementById('displayCoords').innerText = `${lat}, ${lng}`;
-            document.getElementById('displayAddress').innerText = decodeURIComponent(loc || "Unknown Location");
-        }
-
-        // Calculation Logic
-        const depthSlider = document.getElementById('depth');
-        const casingSelect = document.getElementById('casing');
-
-        function calculate() {
-            const depth = parseInt(depthSlider.value);
-            const casingPrice = parseInt(casingSelect.value);
-            
-            // Base Rate logic (Simple Version)
-            let drillTotal = 0;
-            if (depth <= 300) {
-                drillTotal = depth * 85; // Base Rate
-            } else {
-                drillTotal = (300 * 85) + ((depth - 300) * 110); // Jumping Rate
+        // --- 1. THE ZONE DATABASE (Edit this list!) ---
+        const ZONES = [
+            {
+                name: "Mangalagiri (Town)",
+                lat: 16.4428, lng: 80.5645,
+                radiusKm: 5,
+                baseRate: 85, // Standard Soil
+                hardness: "Moderate / Clay",
+                riskLabel: "LOW RISK"
+            },
+            {
+                name: "Vijayawada (Rocky)",
+                lat: 16.5062, lng: 80.6480,
+                radiusKm: 8,
+                baseRate: 110, // Granite starts early
+                hardness: "Hard Rock (Granite)",
+                riskLabel: "HIGH COST ZONE"
+            },
+            {
+                name: "Guntur (Outskirts)",
+                lat: 16.3067, lng: 80.4365,
+                radiusKm: 10,
+                baseRate: 95, 
+                hardness: "Mixed Soil",
+                riskLabel: "MEDIUM RISK"
             }
+        ];
 
-            const casingTotal = 80 * casingPrice; // Assume 80ft casing average
-            const grandTotal = drillTotal + casingTotal;
+        // Default settings if user is far away
+        let currentZone = {
+            name: "Unmapped Region",
+            baseRate: 90, // Safe default
+            hardness: "Unknown (Survey Req)",
+            riskLabel: "STD RATES"
+        };
 
-            // Update UI
-            document.getElementById('depthValue').innerText = depth + " ft";
-            document.getElementById('drillCost').innerText = "₹" + drillTotal.toLocaleString();
-            document.getElementById('casingCost').innerText = "₹" + casingTotal.toLocaleString();
-            document.getElementById('totalPrice').innerText = "₹" + grandTotal.toLocaleString();
+        // --- 2. LOCATION LOGIC ---
+        const params = new URLSearchParams(window.location.search);
+        const userLat = parseFloat(params.get('lat'));
+        const userLng = parseFloat(params.get('lng'));
+        const userLoc = decodeURIComponent(params.get('loc') || "Unknown Location");
+
+        // Distance Formula (Haversine)
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            var R = 6371; 
+            var dLat = deg2rad(lat2-lat1);  
+            var dLon = deg2rad(lon2-lon1); 
+            var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            return R * c;
+        }
+        function deg2rad(deg) { return deg * (Math.PI/180) }
+
+        // Find Active Zone
+        if(userLat && userLng) {
+            document.getElementById('displayCoords').innerText = `${userLat.toFixed(5)}, ${userLng.toFixed(5)}`;
+            document.getElementById('displayAddress').innerText = userLoc;
+
+            // Check distance to all known zones
+            for(let zone of ZONES) {
+                const dist = getDistanceFromLatLonInKm(userLat, userLng, zone.lat, zone.lng);
+                if(dist <= zone.radiusKm) {
+                    currentZone = zone;
+                    break; // Stop at first match
+                }
+            }
+            updateZoneUI();
         }
 
-        depthSlider.addEventListener('input', calculate);
-        casingSelect.addEventListener('change', calculate);
-        
-        // Initial Run
-        calculate();
-
-        function sendToWhatsapp() {
-            const total = document.getElementById('totalPrice').innerText;
-            const msg = `*New Lead from App*%0A%0A📍 Location: ${loc}%0A📏 Depth: ${depthSlider.value}ft%0A💰 Est. Quote: ${total}%0A%0AI want to confirm this booking.`;
-            window.open(`https://wa.me/916304094177?text=${msg}`, '_blank');
-        }
-    </script>
-</body>
-</html>
+        function updateZoneUI() {
+            document.getElementById('zoneNameHeader').innerText = currentZone.name;
+            document.getElementById('hardnessValue').innerText = currentZone.hardness;
+            document.getElementById('rateValue').innerText = `₹${currentZone.baseRate}/ft`;
+            
+            // Update Badge
+            const badge = document.getElementById('riskBadge');
+            badge.innerText = currentZone.riskLabel;
+            badge.classList.remove('hidden');
+            
+            if(currentZone.baseRate > 100) {
+                // High Cost Styling
+                badge.className = "px-3 py-1 bg-red-900/30 text-red-400 border border-red-800 rounded-full text-xs font-bold";
+                document.getElementById('zoneTag').innerText = "PREMIUM ZONE";
+                document.getElementById('zoneTag').className = "text-[10px] font-bold bg-red-900 text-red-300 px-2 py-1 rounded border border-red-700";
+            } else {
+                // Low Cost Styling
+                badge.className = "px-3 py-1 bg-emerald-900/30 text-emerald-400 border border-emerald-800 rounded-full text-xs font-bold";
+                document.getElementById('zoneTag').innerText = "STANDARD ZONE";
+                document.getElementById('zoneTag').className = "text-[10px] font-bold bg-blue-900 text-blue-300 px-2 py-1 rounded border border-blue-700";
