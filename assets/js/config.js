@@ -16,7 +16,7 @@ const CONTACT_INFO = {
     // Google Maps API Key (Optional: Centralize your key here if you want)
     google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus" 
 
-    database_url: "https://script.google.com/macros/s/AKfycbx.../exec"
+    database_url: "https://script.google.com/macros/s/AKfycbwJaDHTV-o_dNXZHAz9nvN9NcdkAOwfdtDzokPm6XaVQ3SrzAPvrllxIfs0axbnfN1E6w/exec"
 };
 
 // This function finds elements with specific IDs and fills them text
