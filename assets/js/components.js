@@ -9,7 +9,7 @@ function loadHeader() {
                 <a href="quote.html" class="hover:text-blue-400 transition">Price Calculator</a>
                 <a href="terms.html" class="hover:text-blue-400 transition">Legal</a>
             </div>
-            <a href="tel:+919876543210" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold">
+            <a href="tel:+916304094177" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold">
                 <i class="fa-solid fa-phone"></i> Call Ops
             </a>
         </div>
