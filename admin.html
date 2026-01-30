@@ -18,39 +18,21 @@
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
-        /* THEME & UTILS */
+        /* THEME */
         body { background-color: #0f172a; font-family: 'Inter', sans-serif; color: #cbd5e1; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
-        
-        /* GLASS UI */
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); transition: transform 0.2s; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); }
         .glass-modal { background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(20px); border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
-
-        /* NAVIGATION */
         .nav-item { display: flex; items-center; gap: 12px; padding: 10px 14px; color: #94a3b8; border-radius: 8px; transition: 0.2s; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
         .nav-item:hover, .nav-item.active { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-left: 3px solid #3b82f6; }
-
-        /* PRO INPUTS */
-        .cyber-input { 
-            background: #1e293b; border: 1px solid #334155; color: white; 
-            padding: 8px 12px; border-radius: 6px; width: 100%; outline: none; 
-            font-size: 0.9rem; transition: 0.3s; 
-        }
+        .cyber-input { background: #1e293b; border: 1px solid #334155; color: white; padding: 8px 12px; border-radius: 6px; width: 100%; outline: none; font-size: 0.9rem; transition: 0.3s; }
         .cyber-input:focus { border-color: #3b82f6; background: #0f172a; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
         .cyber-select { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%233b82f6%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right .7rem top 50%; background-size: .65rem auto; }
-
-        /* PRO BUTTONS */
-        .btn-pro { padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-primary { background: #2563eb; color: white; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); }
-        .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); }
-        .btn-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; }
-        .btn-danger:hover { background: #ef4444; color: white; }
-
-        /* MODAL & OVERLAY */
+        .btn-pro { padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background: #2563eb; color: white; } .btn-primary:hover { background: #1d4ed8; }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; } .btn-danger:hover { background: #ef4444; color: white; }
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
         .modal-overlay.open { display: flex; opacity: 1; }
-        
-        /* MAP TARGET */
         .map-wrapper { position: relative; width: 100%; height: 350px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
         .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none; display: flex; align-items: center; justify-content: center; }
         .reticle-dot { width: 6px; height: 6px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 10px 2px #ef4444; z-index: 2; }
@@ -63,32 +45,24 @@
     <aside class="w-64 bg-[#0B1120] border-r border-slate-800 flex flex-col flex-shrink-0 z-20">
         <div class="p-6 border-b border-slate-800">
             <h1 class="text-xl font-black tracking-tight text-white">SAGAR<span class="text-blue-500">OS</span></h1>
-            <div class="flex items-center gap-2 mt-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <p class="text-[10px] text-emerald-500 font-mono uppercase tracking-widest">v2.4 ONLINE</p>
-            </div>
+            <div class="flex items-center gap-2 mt-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><p class="text-[10px] text-emerald-500 font-mono uppercase tracking-widest">v2.5 ONLINE</p></div>
         </div>
         <nav class="flex-grow p-4 space-y-1">
             <div onclick="showSection('leads')" id="nav-leads" class="nav-item active"><i class="ri-radar-line"></i> <span>Live Leads</span></div>
             <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>BWBC Archives</span></div>
             <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
         </nav>
-        <div class="p-4 border-t border-slate-800">
-            <button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button>
-        </div>
+        <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button></div>
     </aside>
 
     <main class="flex-grow overflow-y-auto p-8 relative bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
         
         <div id="login-overlay" class="modal-overlay open" style="z-index: 999;">
             <div class="glass-card p-8 w-80 text-center border-t-4 border-blue-600">
-                <h2 class="text-xl font-bold text-white mb-6 tracking-wide">SECURE ACCESS</h2>
+                <h2 class="text-xl font-bold text-white mb-6">SECURE ACCESS</h2>
                 <div class="text-left mb-4">
                     <label class="text-[10px] text-blue-400 font-bold uppercase block mb-1">ID Verification</label>
-                    <div class="flex bg-slate-900 border border-slate-700 rounded overflow-hidden">
-                        <span class="px-3 py-2 text-slate-500 border-r border-slate-700 font-mono text-xs">+91</span>
-                        <input type="tel" id="adminPhone" class="w-full bg-transparent px-3 py-2 text-white outline-none font-mono font-bold text-sm" placeholder="ACCESS ID" maxlength="10">
-                    </div>
+                    <div class="flex bg-slate-900 border border-slate-700 rounded overflow-hidden"><span class="px-3 py-2 text-slate-500 border-r border-slate-700 font-mono text-xs">+91</span><input type="tel" id="adminPhone" class="w-full bg-transparent px-3 py-2 text-white outline-none font-mono font-bold text-sm" placeholder="ACCESS ID" maxlength="10"></div>
                 </div>
                 <div id="otp-group" class="hidden text-left mb-6">
                     <label class="text-[10px] text-emerald-400 font-bold uppercase block mb-1">Security Code</label>
@@ -108,10 +82,7 @@
         <div id="filter-bar" class="mb-6 flex flex-wrap gap-3 hidden items-end bg-slate-900/50 p-3 rounded-xl border border-slate-800">
             <div class="flex-grow">
                 <label class="text-[10px] text-slate-500 uppercase font-bold ml-1 mb-1 block">Global Search</label>
-                <div class="relative">
-                    <i class="ri-search-line absolute left-3 top-2.5 text-slate-500"></i>
-                    <input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input pl-9" placeholder="Search ID, Name, Mobile, Location...">
-                </div>
+                <div class="relative"><i class="ri-search-line absolute left-3 top-2.5 text-slate-500"></i><input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input pl-9" placeholder="Search ID, Name, Mobile..."></div>
             </div>
             <div>
                 <label class="text-[10px] text-slate-500 uppercase font-bold ml-1 mb-1 block">Date Range</label>
@@ -121,7 +92,7 @@
                     <input type="date" id="dateEnd" onchange="filterData()" class="bg-transparent text-white text-xs outline-none px-2 py-1 w-28">
                 </div>
             </div>
-            <button onclick="clearFilters()" class="h-[38px] px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700 transition" title="Clear Filters"><i class="ri-filter-off-line"></i></button>
+            <button onclick="clearFilters()" class="h-[38px] px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700"><i class="ri-filter-off-line"></i></button>
         </div>
 
         <div id="section-leads" class="content-section"><div id="leads-list" class="space-y-3"></div></div>
@@ -134,19 +105,17 @@
                     <div class="flex items-center gap-2"><span class="text-[10px] text-slate-500 font-bold uppercase">ID:</span><input type="text" id="p_id" class="bg-slate-900 border border-slate-700 text-emerald-400 font-mono font-bold px-2 py-1 rounded w-40 text-center text-xs" readonly></div>
                 </div>
                 <form id="projectForm" onsubmit="saveProject(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="col-span-full"><h4 class="text-[10px] text-blue-400 font-bold uppercase mb-2">Identity</h4><div class="grid md:grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-400 block mb-1">Mobile</label><div class="flex bg-slate-800 border border-slate-600 rounded"><span class="px-3 py-2 text-slate-400 border-r border-slate-600">+91</span><input type="tel" id="p_mobile" class="w-full bg-transparent px-3 text-white outline-none text-sm" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"></div></div><div><label class="text-[10px] text-slate-400 block mb-1">Name</label><input type="text" id="p_name" class="cyber-input" required></div></div></div>
+                    <div class="col-span-full"><h4 class="text-[10px] text-blue-400 font-bold uppercase mb-2">Identity</h4><div class="grid md:grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-400 block mb-1">Mobile</label><div class="flex bg-slate-800 border border-slate-600 rounded"><span class="px-3 py-2 text-slate-400 border-r border-slate-600 font-mono text-xs">+91</span><input type="tel" id="p_mobile" class="w-full bg-transparent px-3 text-white outline-none text-sm" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"></div></div><div><label class="text-[10px] text-slate-400 block mb-1">Name</label><input type="text" id="p_name" class="cyber-input" required></div></div></div>
                     <div class="col-span-full border-t border-slate-700 pt-4"><h4 class="text-[10px] text-purple-400 font-bold uppercase mb-2">Location</h4><div class="grid md:grid-cols-2 gap-4"><div class="col-span-full"><input type="text" id="p_loc" class="cyber-input" placeholder="Address..." required></div><div class="col-span-full flex gap-2"><input type="text" id="p_gps" class="cyber-input bg-slate-800 font-mono text-xs" readonly><button type="button" onclick="openMapPicker('p')" class="bg-purple-600 hover:bg-purple-500 text-white px-4 rounded font-bold text-xs flex items-center gap-1"><i class="ri-map-pin-line"></i> MAP</button></div></div></div>
                     <div class="col-span-full border-t border-slate-700 pt-4"><h4 class="text-[10px] text-orange-400 font-bold uppercase mb-2">Technical</h4><div class="grid grid-cols-2 md:grid-cols-4 gap-3"><div><label class="text-[9px] text-slate-500 uppercase">Depth</label><input type="number" id="p_depth" class="cyber-input" required></div><div><label class="text-[9px] text-slate-500 uppercase">Yield</label><input type="text" id="p_yield" class="cyber-input" required></div><div><label class="text-[9px] text-slate-500 uppercase">Casing</label><input type="number" id="p_casing" class="cyber-input" required></div><div><label class="text-[9px] text-slate-500 uppercase">Type</label><select id="p_casingType" class="cyber-input"><option>PVC 6Kg</option><option>PVC 10Kg</option><option>MS Iron</option></select></div><div class="col-span-2"><label class="text-[9px] text-slate-500 uppercase">Rig</label><select id="p_rig" class="cyber-input"><option value="">-- None --</option><option>Sensor Robotic</option><option>Hydraulic</option></select></div><div class="col-span-2"><label class="text-[9px] text-slate-500 uppercase">Date</label><input type="date" id="p_date" class="cyber-input" required></div><div class="col-span-full"><label class="text-[9px] text-slate-500 uppercase">Motor</label><input type="text" id="p_motor" class="cyber-input"></div></div></div>
-                    <div class="col-span-full pt-6 flex justify-end gap-3"><button type="button" onclick="showSection('projects')" class="px-4 py-2 text-slate-500 font-bold text-xs hover:text-white transition">CANCEL</button><button type="submit" class="btn-pro btn-primary"><i class="ri-save-3-line"></i> <span id="save-btn-text">SAVE RECORD</span></button></div>
+                    <div class="col-span-full pt-6 flex justify-end gap-3"><button type="button" onclick="showSection('projects')" class="px-4 py-2 text-slate-500 font-bold text-xs hover:text-white">CANCEL</button><button type="submit" class="btn-pro btn-primary"><i class="ri-save-3-line"></i> <span id="save-btn-text">SAVE RECORD</span></button></div>
                 </form>
             </div>
         </div>
     </main>
 
     <div id="detailModal" class="modal-overlay" style="z-index: 100;"><div class="glass-modal p-6 w-full max-w-xl rounded-xl relative shadow-2xl overflow-y-auto max-h-[90vh]"><button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="ri-close-line text-xl"></i></button><div id="modalContent"></div></div></div>
-    
-    <div id="previewModal" class="modal-overlay" style="z-index: 150;"><div class="glass-modal p-4 w-full max-w-2xl rounded-xl h-[85vh] flex flex-col"><div class="flex justify-between items-center mb-3 px-2"><h3 class="text-white font-bold text-sm">Document Preview</h3><div class="flex gap-2"><button onclick="confirmDownloadPDF()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-xs font-bold transition">Download PDF</button><button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-400 hover:text-white px-3 py-1.5 text-xs font-bold">Close</button></div></div><div id="previewContent" class="flex-grow bg-white overflow-y-auto rounded shadow-inner p-4 text-black"></div></div></div>
-    
+    <div id="previewModal" class="modal-overlay" style="z-index: 150;"><div class="glass-modal p-4 w-full max-w-2xl rounded-xl h-[85vh] flex flex-col"><div class="flex justify-between items-center mb-3 px-2"><h3 class="text-white font-bold text-sm">Preview</h3><div class="flex gap-2"><button onclick="confirmDownloadPDF()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-xs font-bold">Download PDF</button><button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-400 hover:text-white px-3 py-1.5 text-xs font-bold">Close</button></div></div><div id="previewContent" class="flex-grow bg-white overflow-y-auto rounded shadow-inner p-4 text-black"></div></div></div>
     <div id="mapModal" class="modal-overlay" style="z-index: 200;"><div class="glass-card p-6 w-full max-w-2xl border border-slate-600 shadow-2xl"><h3 class="text-lg font-bold text-white mb-4 text-center">Satellite Targeting</h3><div class="map-wrapper"><div id="mapContainer" class="w-full h-full"></div><div class="target-reticle"><div class="reticle-dot"></div><div class="reticle-ring"></div><div class="absolute top-[30px] w-[1px] h-[20px] bg-gradient-to-b from-blue-400 to-transparent opacity-50"></div><div class="absolute w-[80px] h-[1px] bg-blue-500/30"></div><div class="absolute h-[80px] w-[1px] bg-blue-500/30"></div></div></div><div class="flex justify-center gap-4 mt-6"><button onclick="document.getElementById('mapModal').classList.remove('open')" class="text-slate-400 hover:text-white font-bold px-6 text-xs">ABORT</button><button onclick="confirmLocation()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded font-bold text-xs shadow-lg shadow-blue-900/50">LOCK COORDINATES</button></div></div></div>
 
     <script>
@@ -154,13 +123,13 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // --- AUTH ---
+        // 1. AUTH & INIT FIX: Load leads immediately on login
         auth.onAuthStateChanged(user => {
             if(user) {
                 db.collection('admins').doc(user.phoneNumber).get().then(doc => {
                     if (doc.exists) {
                         document.getElementById('login-overlay').classList.remove('open');
-                        loadLeads();
+                        showSection('leads'); // 🟢 FIX: This initializes the filter bar!
                     } else { alert("UNAUTHORIZED"); auth.signOut(); }
                 }).catch(e => { console.error(e); alert("System Error."); });
             } else {
@@ -182,7 +151,7 @@
         function verifyAdminOTP() { window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => alert("INVALID CODE")); }
         function logout() { auth.signOut(); window.location.reload(); }
 
-        // --- NAV & FILTER UI ---
+        // 2. NAV
         function showSection(id) {
             document.querySelectorAll('.content-section').forEach(e => e.classList.add('hidden'));
             document.getElementById('section-'+id).classList.remove('hidden');
@@ -192,7 +161,7 @@
             const filterBar = document.getElementById('filter-bar');
             if(id === 'leads' || id === 'projects') {
                 filterBar.classList.remove('hidden');
-                filterBar.classList.add('flex'); // Ensure flex is applied
+                filterBar.classList.add('flex');
                 if(id==='leads') loadLeads();
                 if(id==='projects') loadProjects();
             } else {
@@ -200,10 +169,9 @@
                 filterBar.classList.remove('flex');
             }
         }
-
         function startNewCertificate() { showSection('create'); resetForm(); }
 
-        // --- DATA ---
+        // 3. DATA & FILTERS
         let leadsCache = [], projectsCache = [];
         let currentView = 'leads';
 
@@ -213,13 +181,19 @@
             const dateEnd = document.getElementById('dateEnd').value;
             
             const list = currentView === 'leads' ? leadsCache : projectsCache;
+            
             const filtered = list.filter(item => {
+                // Search Text
                 const searchStr = (item.name + item.mobile + item.loc + (item.projectId || '') + (item.docId || '')).toLowerCase();
                 const matchText = searchStr.includes(term);
+                
+                // Search Date Range
                 let matchDate = true;
                 const itemDateStr = item.date || (item.timestamp ? new Date(item.timestamp.toDate()).toISOString().split('T')[0] : '');
+                
                 if (dateStart && itemDateStr < dateStart) matchDate = false;
                 if (dateEnd && itemDateStr > dateEnd) matchDate = false;
+
                 return matchText && matchDate;
             });
 
@@ -277,15 +251,15 @@
             });
         }
 
-        // --- MODALS ---
+        // --- MODALS & DELETE ---
         function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
 
         function deleteRecord(collection, docId) {
             if(confirm("⚠ PERMANENT DELETE: Are you sure?")) {
                 db.collection(collection).doc(docId).delete().then(() => {
-                    alert("Record Deleted."); closeModal();
-                    if(collection === 'leads') loadLeads(); else loadProjects();
-                }).catch(e => alert("Error: " + e.message));
+                    alert("Deleted."); closeModal();
+                    if(collection==='leads') loadLeads(); else loadProjects();
+                });
             }
         }
 
@@ -343,7 +317,6 @@
         }
 
         // --- CORE FUNCTIONS ---
-        // (Reset, Edit, Save logic remains identical to previous correct version)
         function resetForm() {
             document.getElementById('projectForm').reset();
             isEditing = false;
@@ -425,7 +398,6 @@
             });
         }
 
-        // (PDF/Map functions remain same)
         let currentPDFElement;
         function previewQuote(encoded) {
             const data = JSON.parse(decodeURIComponent(encoded));
