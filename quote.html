@@ -3,152 +3,291 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estimate Engine | Sagar Ops</title>
+    <title>Get Quote | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #1e293b; }
-        .modal { opacity: 0; pointer-events: none; transition: all 0.3s ease; }
-        .modal.active { opacity: 1; pointer-events: auto; }
-        .modal-content { transform: translateY(20px); transition: transform 0.3s ease; }
-        .modal.active .modal-content { transform: translateY(0); }
-        #miniMap { height: 250px; width: 100%; border-radius: 8px; }
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --text-main: #1e293b;
+            --bg: #f8fafc;
+        }
+
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text-main); }
+
+        /* --- ANIMATIONS --- */
+        .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- CARD STYLES --- */
+        .quote-card {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 40px;
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #1e293b 0%, #2563eb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            font-size: 2.5rem;
+        }
+
+        /* --- INPUTS & DROPDOWNS --- */
+        .form-label { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: #64748b; margin-bottom: 8px; display: block; }
+        
+        .custom-input, .custom-select {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1e293b;
+            background: #f8fafc;
+            transition: all 0.3s;
+            outline: none;
+        }
+        
+        .custom-input:focus, .custom-select:focus {
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        /* --- BIG SLIDER (The "Scale") --- */
+        .slider-container {
+            background: #f1f5f9;
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .display-value-wrap { margin-bottom: 30px; }
+        #display-val { font-size: 5rem; font-weight: 800; color: var(--primary); line-height: 1; letter-spacing: -2px; }
+        #display-unit { font-size: 1.5rem; font-weight: 700; color: #94a3b8; margin-left: 5px; }
+
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 16px;
+            border-radius: 8px;
+            background: #cbd5e1;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 6px solid #fff;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.5);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .range-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
+
+        .scale-labels { display: flex; justify-content: space-between; margin-top: 15px; font-weight: 700; color: #64748b; font-size: 0.9rem; }
+
+        /* --- BUTTONS --- */
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white; font-weight: 700; padding: 20px; border-radius: 12px; width: 100%;
+            font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4); }
+
+        /* --- PREVIEW TABLE --- */
+        .est-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95rem; }
+        .est-table th { text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 0.8rem; text-transform: uppercase; }
+        .est-table td { padding: 16px 12px; border-bottom: 1px solid #f1f5f9; font-weight: 600; }
+        .row-subtotal td { border-top: 2px solid #e2e8f0; font-weight: 800; color: #1e293b; }
+
+        /* --- SUCCESS --- */
+        .success-icon { font-size: 5rem; color: #10b981; margin-bottom: 20px; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="flex flex-col min-h-screen">
 
     <div id="navbar-mount"></div>
 
-    <main class="flex-grow p-4">
-        <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="bg-slate-50 p-6 border-b border-slate-200">
-                <h1 class="text-xl font-bold text-slate-800">Project Details</h1>
-                <p class="text-sm text-slate-500">Enter details to generate an official borewell estimate.</p>
-            </div>
-            
-            <div class="p-6 md:p-8 space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <main class="flex-grow">
+        
+        <div id="step-1" class="container mx-auto px-4 fade-in-up">
+            <div class="quote-card">
+                <div class="text-center mb-8">
+                    <h1 class="gradient-text">Instant Quotation</h1>
+                    <p class="text-slate-500 font-medium">Smart pricing for precision drilling</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Name</label>
-                        <input type="text" id="custName" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="custName" class="custom-input" placeholder="Your Name">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Mobile</label>
-                        <input type="tel" id="custMobile" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
+                        <label class="form-label">Mobile Number</label>
+                        <input type="tel" id="custMobile" class="custom-input" placeholder="98765 43210">
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Site Location</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="locInput" placeholder="Village / Area Name" class="flex-grow p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
-                        
-                        <button onclick="detectGPS()" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded-lg" title="Use GPS">
-                            <i class="fa-solid fa-location-crosshairs"></i>
-                        </button>
-                        
-                        <button onclick="toggleMap()" class="px-4 bg-blue-100 hover:bg-blue-200 text-blue-600 border border-blue-200 rounded-lg" title="Pin on Map">
-                            <i class="fa-solid fa-map-location-dot"></i>
+                <div class="mb-8">
+                    <label class="form-label">Site Location</label>
+                    <div class="relative">
+                        <input type="text" id="locInput" class="custom-input pr-24" placeholder="Village / Area Name">
+                        <button onclick="detectGPS()" class="absolute right-2 top-2 bottom-2 bg-blue-100 text-blue-600 px-4 rounded-lg font-bold text-xs hover:bg-blue-200 transition">
+                            DETECT
                         </button>
                     </div>
+                </div>
 
-                    <div id="mapContainer" class="hidden mt-3 relative border border-slate-300 rounded-lg overflow-hidden shadow-inner">
-                        <div id="miniMap"></div>
-                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-red-600 text-3xl pointer-events-none drop-shadow-md pb-4">
-                            <i class="fa-solid fa-location-dot"></i>
-                        </div>
-                        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
-                            <button onclick="confirmMapPin()" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg">
-                                Set This Location
-                            </button>
-                        </div>
+                <hr class="border-slate-100 my-8">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label class="form-label">Purpose of Drilling</label>
+                        <select id="purposeInput" class="custom-select cursor-pointer">
+                            <option value="residential">Residential Use</option>
+                            <option value="agriculture">Agriculture / Farm</option>
+                            <option value="commercial">Commercial / Industrial</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Casing Pipe Type</label>
+                        <select id="casingType" class="custom-select cursor-pointer">
+                            <option value="PVC">PVC Standard (Recommended)</option>
+                            <option value="Heavy">PVC Heavy Duty</option>
+                            <option value="Iron">MS Iron (Rocky Areas)</option>
+                        </select>
                     </div>
                 </div>
 
-                <div class="p-5 bg-blue-50/50 rounded-xl border border-blue-100">
-                    <div class="flex justify-between mb-2">
-                        <label class="font-bold text-blue-900 text-sm">Target Depth</label>
-                        <span class="font-bold text-blue-600"><span id="depthDisplay">500</span> ft</span>
-                    </div>
-                    <input type="range" id="depthSlider" min="100" max="1500" value="500" step="10" class="w-full h-2 bg-blue-200 rounded-lg accent-blue-600 cursor-pointer mb-6" oninput="updateUI()">
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Usage Type</label>
-                            <select id="purposeInput" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
-                                <option value="residential">Residential</option>
-                                <option value="agriculture">Agriculture</option>
-                                <option value="commercial">Commercial</option>
-                            </select>
+                <div class="mb-10">
+                    <label class="form-label text-center mb-4">ESTIMATED DEPTH REQUIRED</label>
+                    <div class="slider-container">
+                        <div class="display-value-wrap">
+                            <span id="display-val">300</span><span id="display-unit">FT</span>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Casing Pipe</label>
-                            <select id="casingType" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
-                                <option value="PVC">PVC (Standard)</option>
-                                <option value="Heavy">PVC (Heavy)</option>
-                                <option value="Iron">MS Iron</option>
-                            </select>
+                        <input type="range" id="depthSlider" class="range-slider" min="100" max="500" value="300" step="10">
+                        <div class="scale-labels">
+                            <span>100 FT</span>
+                            <span id="maxLabel">500 FT</span>
                         </div>
                     </div>
+                    <p class="text-xs text-center text-slate-400 mt-3 italic">
+                        *Drag slider to the right edge to increase depth range automatically.
+                    </p>
                 </div>
 
-                <button onclick="generatePreview()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition">
-                    Generate Official Estimate
+                <button onclick="goToStep2()" class="btn-primary">
+                    Generate Official Estimate <i class="ri-arrow-right-line"></i>
                 </button>
             </div>
         </div>
+
+        <div id="step-2" class="container mx-auto px-4 fade-in-up" style="display: none;">
+            <div class="quote-card bg-white" id="invoice-capture">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-6 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-blue-700">SAGAR BOREWELLS</h2>
+                        <p class="text-xs text-slate-400 font-bold tracking-widest uppercase">Official Estimate #WEB</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-500 font-bold uppercase">Estimated Total</p>
+                        <div class="text-3xl font-extrabold text-slate-900" id="invTotal">₹0</div>
+                    </div>
+                </div>
+
+                <div class="flex gap-8 text-sm text-slate-600 mb-8 bg-slate-50 p-4 rounded-xl">
+                    <div><span class="text-slate-400 text-xs block font-bold uppercase">Customer</span> <span id="invName" class="font-bold text-slate-800">--</span></div>
+                    <div><span class="text-slate-400 text-xs block font-bold uppercase">Location</span> <span id="invLoc" class="font-bold text-slate-800">--</span></div>
+                    <div><span class="text-slate-400 text-xs block font-bold uppercase">Zone Type</span> <span id="invRate" class="font-bold text-slate-800">Standard</span></div>
+                </div>
+
+                <table class="est-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th class="text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invBody"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Fixed Operational Costs (Transport/Setup)</td>
+                            <td class="text-right font-bold">₹7,000</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <p class="text-xs text-slate-400 text-right mt-2">*Excludes GST & Casing Pipe Materials</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 no-print">
+                    <button onclick="goToStep1()" class="py-3 text-slate-500 font-bold hover:text-slate-800 border border-slate-200 rounded-xl">
+                        <i class="ri-edit-line"></i> Edit
+                    </button>
+                    <button onclick="downloadPDF()" class="py-3 text-blue-600 font-bold hover:bg-blue-50 border border-blue-200 rounded-xl">
+                        <i class="ri-file-pdf-line"></i> Download PDF
+                    </button>
+                    <button onclick="goToStep3()" class="py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-200">
+                        <i class="ri-whatsapp-line"></i> Confirm & Book
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="step-3" class="container mx-auto px-4 fade-in-up" style="display: none;">
+            <div class="quote-card text-center">
+                <i class="ri-checkbox-circle-fill success-icon"></i>
+                <h1 class="text-4xl font-extrabold text-slate-900 mb-2">Booking Confirmed!</h1>
+                <p class="text-slate-500 mb-8">Thank you. Our senior geologist will call you shortly.</p>
+
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 max-w-md mx-auto mb-8 text-left">
+                    <h3 class="text-sm font-bold text-blue-800 uppercase mb-4">Next Steps</h3>
+                    <ul class="space-y-4 text-sm text-slate-700">
+                        <li class="flex items-start gap-3">
+                            <i class="ri-phone-line text-blue-500 mt-1"></i>
+                            <div><strong>Manager Call:</strong> Expect a call within 10-15 mins to confirm site feasibility.</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i class="ri-truck-line text-blue-500 mt-1"></i>
+                            <div><strong>Deployment:</strong> Rig can be deployed within 48 hours.</div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="flex flex-col md:flex-row justify-center gap-4">
+                    <a href="index.html" class="py-3 px-8 text-slate-600 font-bold border border-slate-200 rounded-xl hover:bg-slate-50">Back to Home</a>
+                    <button onclick="openWhatsAppChat()" class="py-3 px-8 bg-emerald-600 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-700">
+                        <i class="ri-chat-3-line"></i> Chat with Support
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </main>
-
-    <div id="previewModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4">
-        <div class="modal-content bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
-                <span class="font-bold text-slate-700">Estimate Preview</span>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 font-bold text-sm">Edit <i class="fa-solid fa-pen ml-1"></i></button>
-            </div>
-            <div class="p-6 overflow-y-auto bg-slate-100 flex-grow">
-                <div class="bg-white border border-slate-200 p-6 rounded-lg shadow-sm text-sm">
-                    <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
-                        <div>
-                            <h2 class="font-extrabold text-blue-700 text-lg">SAGAR BOREWELLS</h2>
-                            <p class="text-slate-500 text-xs">Official Quote #PREVIEW</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[10px] text-slate-400 font-bold uppercase">Estimated Total</p>
-                            <p class="text-2xl font-bold text-slate-900" id="invTotal">₹0</p>
-                        </div>
-                    </div>
-                    <div class="mb-4 text-xs text-slate-500">
-                        <p><strong>Customer:</strong> <span id="invName">--</span></p>
-                        <p><strong>Location:</strong> <span id="invLoc">--</span></p>
-                    </div>
-                    <table class="w-full mb-4 text-left border-collapse">
-                        <thead>
-                            <tr class="text-[10px] uppercase text-slate-400 border-b border-slate-100">
-                                <th class="py-2">Description</th>
-                                <th class="py-2 text-right">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody id="invBody" class="text-slate-700 font-medium"></tbody>
-                    </table>
-                    <div class="flex justify-between border-t border-slate-100 pt-3 mt-2 font-bold text-slate-700">
-                        <span>Fixed Costs (Transport/Setup)</span>
-                        <span>₹7,000</span>
-                    </div>
-                    <div class="mt-4 p-3 bg-blue-50 text-blue-800 text-[10px] rounded border border-blue-100">
-                        * Quote excludes GST & Casing Pipe costs. Final invoice based on actual depth drilled.
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 bg-white border-t border-slate-200">
-                <button onclick="sendWhatsApp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg flex justify-center items-center gap-2 shadow-lg">
-                    <i class="fa-brands fa-whatsapp text-lg"></i> Confirm & Send Quote
-                </button>
-            </div>
-        </div>
-    </div>
 
     <div id="footer-mount"></div>
 
@@ -161,183 +300,173 @@
             rates: { 'residential': 90, 'agriculture': 85, 'commercial': 110 }
         };
         let leadData = {};
-        
-        // MAP VARIABLES
-        let map, geocoder, marker;
 
-        // FETCH LIVE PRICES
-        document.addEventListener("DOMContentLoaded", () => {
-            fetch(CONTACT_INFO.database_url + "?action=getSettings")
-                .then(r => r.json())
-                .then(data => {
-                    if(data.fixed_cost) pricingConfig.fixed_cost = data.fixed_cost;
-                    if(data.price_residential) pricingConfig.rates['residential'] = data.price_residential;
-                }).catch(e => console.log("Using default prices"));
+        // --- 1. ELASTIC SLIDER LOGIC ---
+        const slider = document.getElementById('depthSlider');
+        const displayVal = document.getElementById('display-val');
+        const maxLabel = document.getElementById('maxLabel');
+
+        slider.addEventListener('input', function() {
+            let val = parseInt(this.value);
+            let currentMax = parseInt(this.max);
+            
+            displayVal.innerText = val;
+
+            // EXPAND: If dragging near max (within 20ft)
+            if (val >= currentMax - 20 && currentMax < 1500) {
+                let newMax = currentMax + 500; // Jump by 500
+                this.max = newMax;
+                maxLabel.innerText = newMax + " FT";
+            }
+            
+            // SHRINK: If dragging back down (Reversible Logic)
+            // If value is < 400, reset max to 500 to keep scale big
+            if (val < 400 && currentMax > 500) {
+                this.max = 500;
+                maxLabel.innerText = "500 FT";
+            }
+            // If value is < 900 but max is 1500, drop to 1000
+            else if (val < 900 && currentMax > 1000) {
+                this.max = 1000;
+                maxLabel.innerText = "1000 FT";
+            }
+
+            // Gradient Fill
+            const percent = ((val - this.min) / (this.max - this.min)) * 100;
+            this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${percent}%, #cbd5e1 ${percent}%, #cbd5e1 100%)`;
         });
 
-        function updateUI() { document.getElementById('depthDisplay').innerText = document.getElementById('depthSlider').value; }
-
-        // --- GPS LOGIC (Debug Version) ---
-        function detectGPS() {
-            const btn = document.querySelector('button[title="Use GPS"]');
-            const originalIcon = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-            
-            if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    
-                    // Safety Check: Is Google Maps loaded?
-                    if(typeof google === 'undefined' || typeof google.maps === 'undefined') {
-                        alert("Maps not loaded yet. Please wait 2 seconds.");
-                        btn.innerHTML = originalIcon;
-                        return;
-                    }
-
-                    // 1. Initialize Geocoder
-                    if(!geocoder) geocoder = new google.maps.Geocoder();
-                    
-                    // 2. Convert to Address
-                    const latlng = { lat: parseFloat(lat), lng: parseFloat(lng) };
-                    
-                    geocoder.geocode({ location: latlng }, (results, status) => {
-                        if (status === "OK" && results[0]) {
-                            // SUCCESS: Show text address
-                            document.getElementById('locInput').value = results[0].formatted_address;
-                            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                        } else {
-                            // FAILURE: Show error details
-                            console.error("Geocode Error:", status);
-                            if(status === 'REQUEST_DENIED') {
-                                alert("Error: You must enable 'Geocoding API' in Google Cloud Console.");
-                            } else {
-                                alert("Address lookup failed: " + status);
-                            }
-                            
-                            // Fallback to numbers
-                            document.getElementById('locInput').value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-                            btn.innerHTML = '<i class="fa-solid fa-location-dot"></i>';
-                        }
-                    });
-
-                }, (err) => { 
-                    console.warn(err);
-                    alert('GPS Permission Denied. Please enable location.'); 
-                    btn.innerHTML = originalIcon;
-                });
-            } else {
-                alert("Browser does not support GPS");
-                btn.innerHTML = originalIcon;
-            }
-        }
-
-        // --- MAP LOGIC ---
-        function toggleMap() {
-            const container = document.getElementById('mapContainer');
-            container.classList.toggle('hidden');
-            
-            if(!container.classList.contains('hidden') && !map) {
-                initMap();
-            }
-        }
-
-        function initMap() {
-            if(window.google) {
-                geocoder = new google.maps.Geocoder();
-                const center = { lat: 16.4428, lng: 80.5645 }; // Default Mangalagiri
-                
-                map = new google.maps.Map(document.getElementById('miniMap'), {
-                    center: center,
-                    zoom: 15,
-                    disableDefaultUI: true,
-                    zoomControl: true
-                });
-
-                // Listen for Drag End to find address
-                map.addListener('idle', () => {
-                    const c = map.getCenter();
-                    geocoder.geocode({ location: c }, (results, status) => {
-                        if (status === "OK" && results[0]) {
-                            document.getElementById('locInput').dataset.mapAddr = results[0].formatted_address;
-                        }
-                    });
-                });
-            }
-        }
-
-        function confirmMapPin() {
-            const addr = document.getElementById('locInput').dataset.mapAddr;
-            const c = map.getCenter();
-            
-            if(addr) {
-                document.getElementById('locInput').value = addr;
-            } else {
-                document.getElementById('locInput').value = `${c.lat().toFixed(5)}, ${c.lng().toFixed(5)}`;
-            }
-            
-            document.getElementById('mapContainer').classList.add('hidden');
-        }
-
-        // --- CALC LOGIC ---
-        function generatePreview() {
+        // --- 2. STEP NAVIGATION ---
+        function goToStep2() {
             const name = document.getElementById('custName').value;
             const loc = document.getElementById('locInput').value;
-            const depth = parseInt(document.getElementById('depthSlider').value);
-            const purpose = document.getElementById('purposeInput').value;
-
             if(!name || !loc) { alert("Please enter Name and Location"); return; }
 
+            // Calculate
+            calculateQuote();
+
+            // Transition
+            document.getElementById('step-1').style.display = 'none';
+            document.getElementById('step-2').style.display = 'block';
+            window.scrollTo(0,0);
+        }
+
+        function goToStep1() {
+            document.getElementById('step-2').style.display = 'none';
+            document.getElementById('step-1').style.display = 'block';
+        }
+
+        function goToStep3() {
+            // Save to DB
+            const formData = new FormData();
+            formData.append("name", leadData.name);
+            formData.append("mobile", leadData.mobile);
+            formData.append("location", leadData.loc);
+            formData.append("price", leadData.total);
+            fetch(CONTACT_INFO.database_url, { method: "POST", body: formData, mode: "no-cors" });
+
+            // Send WhatsApp
+            openWhatsAppChat();
+
+            // Show Success
+            document.getElementById('step-2').style.display = 'none';
+            document.getElementById('step-3').style.display = 'block';
+            window.scrollTo(0,0);
+        }
+
+        // --- 3. CALCULATION ---
+        function calculateQuote() {
+            const depth = parseInt(slider.value);
+            const purpose = document.getElementById('purposeInput').value;
+            
             let remaining = depth;
             let floor = 0;
             let rate = pricingConfig.rates[purpose];
             let drillTotal = 0;
-            let rows = "";
+            let breakdownHTML = "";
 
             while(remaining > 0) {
                 let chunk = (remaining >= pricingConfig.slab_size) ? pricingConfig.slab_size : remaining;
                 let cost = chunk * rate;
                 drillTotal += cost;
-                rows += `<tr class="border-b border-slate-50"><td class="py-2">${floor}-${floor+chunk}ft @ ₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                
+                breakdownHTML += `<tr><td>${floor}-${floor+chunk}ft @ ₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                
                 remaining -= chunk;
                 floor += chunk;
                 rate += pricingConfig.slab_jump;
             }
 
             const total = drillTotal + pricingConfig.fixed_cost;
-            
-            document.getElementById('invName').innerText = name;
-            document.getElementById('invLoc').innerText = loc;
-            document.getElementById('invBody').innerHTML = rows;
+
+            document.getElementById('invName').innerText = document.getElementById('custName').value;
+            document.getElementById('invLoc').innerText = document.getElementById('locInput').value;
+            document.getElementById('invRate').innerText = purpose.toUpperCase();
+            document.getElementById('invBody').innerHTML = breakdownHTML;
             document.getElementById('invTotal').innerText = "₹" + total.toLocaleString();
 
-            leadData = { name, loc, depth, total, mobile: document.getElementById('custMobile').value };
-            document.getElementById('previewModal').classList.add('active');
+            leadData = {
+                name: document.getElementById('custName').value,
+                loc: document.getElementById('locInput').value,
+                mobile: document.getElementById('custMobile').value,
+                depth: depth,
+                total: total
+            };
         }
 
-        function closeModal() { document.getElementById('previewModal').classList.remove('active'); }
+        // --- 4. EXTRAS ---
+        function downloadPDF() {
+            const element = document.getElementById('invoice-capture');
+            const opt = {
+                margin: 10,
+                filename: 'Sagar_Estimate.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            // Hide buttons for PDF
+            const buttons = document.querySelector('.no-print');
+            buttons.style.display = 'none';
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                buttons.style.display = 'grid'; // Show buttons back
+            });
+        }
 
-        function sendWhatsApp() {
-            const formData = new FormData();
-            formData.append("name", leadData.name);
-            formData.append("mobile", leadData.mobile);
-            formData.append("location", leadData.loc);
-            formData.append("depth", leadData.depth);
-            formData.append("price", leadData.total);
-            formData.append("purpose", "Official Quote");
-
-            fetch(CONTACT_INFO.database_url, { method: "POST", body: formData, mode: "no-cors" });
-
+        function openWhatsAppChat() {
             const msg = `*OFFICIAL QUOTE REQUEST*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.loc}%0A📞 ${leadData.mobile}%0A%0A📉 Depth: ${leadData.depth}ft%0A💰 *Est. Total: ₹${leadData.total.toLocaleString()}*%0A%0A(Includes Fixed Costs). Please schedule site visit.`;
             window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
         }
-    </script>
-    
-    <script>
+
+        // --- 5. GPS ---
+        function detectGPS() {
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const lat = pos.coords.latitude; 
+                    const lng = pos.coords.longitude;
+                    // Mock Geo-coding for demo (In real life, Google API fills this)
+                    // document.getElementById('locInput').value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                    // For now, let's assume API is loaded
+                    if(typeof google !== 'undefined') {
+                        const geocoder = new google.maps.Geocoder();
+                        geocoder.geocode({ location: {lat, lng} }, (res, status) => {
+                            if(status === 'OK') document.getElementById('locInput').value = res[0].formatted_address;
+                        });
+                    } else {
+                        document.getElementById('locInput').value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                    }
+                }, () => alert('GPS Denied'));
+            }
+        }
+
+        // Load Google Maps API
         const s = document.createElement('script');
         s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`;
         s.async = true; s.defer = true;
         document.body.appendChild(s);
+        
+        // Init Slider Gradient
+        slider.dispatchEvent(new Event('input'));
     </script>
 </body>
 </html>
