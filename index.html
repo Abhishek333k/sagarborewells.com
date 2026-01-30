@@ -6,6 +6,7 @@
     <title>Sagar Borewells | Intelligent Drilling</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
+    <script src="assets/js/layout.js"></script> 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
@@ -16,23 +17,11 @@
 </head>
 <body class="flex flex-col min-h-screen">
 
-    <nav class="border-b border-slate-800 p-4 sticky top-0 z-50 bg-[#0f172a]/90 backdrop-blur">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <a href="index.html" class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
-                <i class="fa-solid fa-droplet text-blue-500"></i> SAGAR <span class="text-blue-500">BOREWELLS</span>
-            </a>
-            <div class="flex gap-4 items-center">
-                <a id="navCallBtn" href="#" class="bg-white text-blue-900 px-5 py-2 rounded-full text-sm font-bold shadow-lg hover:bg-blue-50 transition flex items-center gap-2">
-                    <i class="fa-solid fa-phone"></i> Call Expert
-                </a>
-            </div>
-        </div>
-    </nav>
+    <div id="navbar-mount"></div>
 
     <main class="flex-grow hero-bg">
         <div class="max-w-6xl mx-auto px-4 py-20">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                
                 <div>
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/30 border border-blue-500/30 text-blue-400 text-[10px] font-bold uppercase mb-6">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Systems Online
@@ -43,7 +32,6 @@
                     <p class="text-slate-400 text-lg mb-8 leading-relaxed">
                         We analyze your soil zone and geological data to provide the most accurate drilling estimate in Andhra Pradesh.
                     </p>
-                    
                     <div class="flex flex-col sm:flex-row gap-4">
                         <a href="quote.html" class="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/25 transition transform hover:scale-105 flex items-center justify-center gap-3">
                             <span>Get Zone Estimate</span> <i class="fa-solid fa-arrow-right"></i>
@@ -61,7 +49,6 @@
                             <i class="fa-solid fa-circle text-[6px] animate-pulse"></i> LIVE
                         </div>
                     </div>
-
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-slate-800/50 p-4 rounded-xl">
                             <div class="text-3xl font-bold text-white" id="statRigs">--</div>
@@ -72,90 +59,26 @@
                             <div class="text-xs text-slate-400 font-bold uppercase mt-1">Success Rate</div>
                         </div>
                     </div>
-                    <div class="mt-6 pt-6 border-t border-slate-700/50 text-sm text-slate-300 flex items-center gap-2">
-                        <i class="fa-solid fa-clock text-blue-500"></i> Guaranteed <strong>48 Hour</strong> Deployment
-                    </div>
                 </div>
-
             </div>
         </div>
     </main>
 
-    <footer class="bg-[#0f172a] pt-16 pb-8 border-t border-slate-800 text-slate-400 font-sans">
-    <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-        
-        <div class="col-span-1 md:col-span-1">
-            <a href="index.html" class="text-xl font-extrabold text-white flex items-center gap-2 mb-4">
-                <i class="fa-solid fa-droplet text-blue-500"></i> SAGAR <span class="text-blue-500">OPS</span>
-            </a>
-            <p class="text-xs leading-relaxed mb-4">
-                Advanced geological sensor drilling. Delivering water solutions with transparency and precision since 2010.
-            </p>
-            <div class="flex gap-4">
-                <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition"><i class="fa-brands fa-whatsapp"></i></a>
-                <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition"><i class="fa-brands fa-instagram"></i></a>
-            </div>
-        </div>
-
-        <div>
-            <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Company</h4>
-            <ul class="space-y-3 text-sm">
-                <li><a href="index.html" class="hover:text-blue-400 transition">Home</a></li>
-                <li><a href="quote.html" class="hover:text-blue-400 transition">Get Estimate</a></li>
-                <li><a href="#services" class="hover:text-blue-400 transition">Services</a></li>
-            </ul>
-        </div>
-
-        <div>
-            <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Legal & Policies</h4>
-            <ul class="space-y-3 text-sm">
-                <li><a href="terms.html" class="hover:text-blue-400 transition">Terms & Conditions</a></li>
-                <li><a href="privacy.html" class="hover:text-blue-400 transition">Privacy Policy</a></li>
-                <li><a href="refund.html" class="hover:text-blue-400 transition">Refund Policy</a></li>
-                <li><a href="disclaimer.html" class="hover:text-blue-400 transition">Legal Disclaimer</a></li>
-            </ul>
-        </div>
-
-        <div>
-            <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Contact</h4>
-            <ul class="space-y-3 text-sm">
-                <li class="flex items-start gap-3">
-                    <i class="fa-solid fa-location-dot mt-1 text-blue-500"></i>
-                    <span>Mangalagiri, Andhra Pradesh<br>India - 522503</span>
-                </li>
-                <li class="flex items-center gap-3">
-                    <i class="fa-solid fa-envelope text-blue-500"></i>
-                    <a href="mailto:support@sagarborewells.com" class="hover:text-white">support@sagarborewells.com</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="border-t border-slate-800 pt-8 text-center text-xs">
-        <p>&copy; 2026 Sagar Borewells. All rights reserved. | Built for Precision.</p>
-    </div>
-</footer>
+    <div id="footer-mount"></div>
 
     <script>
+        // Fetch Live Stats Logic
         document.addEventListener("DOMContentLoaded", () => {
-            // 1. Setup Links
-            if(typeof CONTACT_INFO !== 'undefined') {
-                const btn = document.getElementById('navCallBtn');
-                if(btn) btn.href = `tel:+${CONTACT_INFO.whatsapp_api}`;
-            }
-
-            // 2. Fetch Dynamic Data from Google Sheet
             fetch(CONTACT_INFO.database_url + "?action=getSettings")
                 .then(r => r.json())
                 .then(data => {
-                    // Logic: If active_rigs has a value, Show Card. Else, Hide Card.
                     if (data.active_rigs && data.active_rigs > 0) {
                         document.getElementById('liveStatsCard').classList.remove('hidden');
                         document.getElementById('statRigs').innerText = data.active_rigs;
                         document.getElementById('statSuccess').innerText = data.success_rate || "98";
                     }
                 })
-                .catch(e => console.log("Offline or Config Error"));
+                .catch(e => console.log("Offline"));
         });
     </script>
 </body>
