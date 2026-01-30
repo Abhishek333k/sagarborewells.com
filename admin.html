@@ -23,14 +23,16 @@
         .input-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; }
         
         /* UBER STYLE MAP */
-        #mapModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
-        #mapWrapper { position: relative; width: 100%; height: 400px; border-radius: 8px; overflow: hidden; }
+        #mapModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; }
+        .map-wrapper { position: relative; width: 100%; height: 400px; background: #eee; border-radius: 12px; overflow: hidden; }
         #mapContainer { width: 100%; height: 100%; }
-        #centerPin { 
-            position: absolute; top: 50%; left: 50%; 
-            transform: translate(-50%, -100%); /* Point to center */
-            font-size: 40px; color: #ea4335; z-index: 10; pointer-events: none;
-            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        
+        /* THE FIXED CENTER PIN (UBER STYLE) */
+        .center-pin {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -100%);
+            z-index: 1000; pointer-events: none;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
         }
     </style>
 </head>
@@ -55,13 +57,7 @@
         </nav>
 
         <div class="p-4 border-t border-slate-800">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold">A</div>
-                <div class="text-sm">
-                    <p class="font-bold">Admin</p>
-                    <button onclick="logout()" class="text-xs text-red-400 hover:underline">Sign Out</button>
-                </div>
-            </div>
+            <button onclick="logout()" class="text-xs text-red-400 hover:text-white">Sign Out</button>
         </div>
     </aside>
 
@@ -75,8 +71,10 @@
                 <div class="text-left mb-4">
                     <label class="block text-xs font-bold text-slate-400 uppercase">Mobile Number</label>
                     <div class="flex border rounded-lg overflow-hidden mt-1">
-                        <span class="bg-slate-100 px-3 py-2 border-r">+91</span>
-                        <input type="tel" id="adminPhone" class="w-full px-3 py-2 outline-none font-bold" placeholder="98765 43210">
+                        <span class="bg-slate-100 px-3 py-2 border-r text-slate-600 font-bold">+91</span>
+                        <input type="tel" id="adminPhone" class="w-full px-3 py-2 outline-none font-bold" 
+                               placeholder="98765 43210" maxlength="10" 
+                               oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
                     </div>
                 </div>
 
@@ -98,30 +96,23 @@
         </div>
 
         <div id="section-projects" class="content-section hidden">
-            <h2 class="text-2xl font-bold text-slate-800 mb-6">Completed Projects</h2>
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Completed Projects (Birth Certificates)</h2>
             <div id="projects-list" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
         </div>
 
         <div id="section-create" class="content-section hidden max-w-4xl">
             <h2 class="text-2xl font-bold text-slate-800 mb-2">Issue New Birth Certificate</h2>
-            <p class="text-slate-500 mb-6">Enter details. Map pin is center-fixed (Uber style).</p>
-
             <form id="projectForm" onsubmit="saveProject(event)" class="card p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="col-span-full border-b pb-2 mb-2"><h3 class="font-bold text-slate-900">1. Customer Details</h3></div>
-                
                 <div>
                     <label class="input-label">Customer Mobile</label>
                     <div class="flex border rounded-lg mt-1 overflow-hidden">
                         <span class="bg-slate-100 px-3 py-2 border-r">+91</span>
-                        <input type="tel" id="p_mobile" class="w-full px-3 py-2 outline-none font-bold" placeholder="98765 43210" required>
+                        <input type="tel" id="p_mobile" class="w-full px-3 py-2 outline-none font-bold" placeholder="9876543210" required>
                     </div>
                 </div>
                 <div><label class="input-label">Customer Name</label><input type="text" id="p_name" class="input-field" required></div>
-                
-                <div class="col-span-full">
-                    <label class="input-label">Site Location</label>
-                    <input type="text" id="p_loc" class="input-field" placeholder="Start typing address..." required>
-                </div>
+                <div class="col-span-full"><label class="input-label">Site Location</label><input type="text" id="p_loc" class="input-field" placeholder="Start typing address..." required></div>
                 <div class="col-span-full">
                     <label class="input-label">GPS Coordinates</label>
                     <div class="flex gap-2 mt-1">
@@ -129,21 +120,14 @@
                         <button type="button" onclick="openMapPicker()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm">Open Map</button>
                     </div>
                 </div>
-
                 <div class="col-span-full border-b pb-2 mb-2 mt-4"><h3 class="font-bold text-slate-900">2. Technical Specifications</h3></div>
                 <div><label class="input-label">Total Depth (ft)</label><input type="number" id="p_depth" class="input-field" required></div>
                 <div><label class="input-label">Yield</label><input type="text" id="p_yield" class="input-field" required></div>
                 <div><label class="input-label">Casing Depth (ft)</label><input type="number" id="p_casing" class="input-field" required></div>
-                <div>
-                    <label class="input-label">Casing Type</label>
-                    <select id="p_casingType" class="input-field">
-                        <option>PVC 6Kg/cm²</option><option>PVC 10Kg/cm²</option><option>MS Iron</option>
-                    </select>
-                </div>
+                <div><label class="input-label">Casing Type</label><select id="p_casingType" class="input-field"><option>PVC 6Kg/cm²</option><option>PVC 10Kg/cm²</option><option>MS Iron</option></select></div>
                 <div><label class="input-label">Rig Type</label><select id="p_rig" class="input-field"><option>Sensor Robotic Hydraulic</option><option>Standard Hydraulic</option></select></div>
                 <div><label class="input-label">Motor Details</label><input type="text" id="p_motor" class="input-field"></div>
                 <div><label class="input-label">Drill Date</label><input type="date" id="p_date" class="input-field" required></div>
-
                 <div class="col-span-full pt-6 flex justify-end gap-4 border-t">
                     <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-lg">Save Record</button>
                 </div>
@@ -152,14 +136,15 @@
     </main>
 
     <div id="mapModal">
-        <div class="bg-white p-4 rounded-xl w-full max-w-2xl">
+        <div class="bg-white p-4 rounded-xl w-full max-w-2xl shadow-2xl">
             <h3 class="font-bold text-lg mb-2 text-center">Drag Map to Pin Location</h3>
-            <div id="mapWrapper">
+            <div class="map-wrapper">
                 <div id="mapContainer"></div>
-                <div id="centerPin"><i class="ri-map-pin-fill"></i></div> </div>
-            <div class="flex justify-center gap-2 mt-4">
-                <button onclick="document.getElementById('mapModal').style.display='none'" class="px-4 py-2 text-slate-500 font-bold">Cancel</button>
-                <button onclick="confirmLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-md">Confirm Location</button>
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjMjU2M2ViIiBkPSJNMTIgMEM3LjU4IDAgNCAzLjU4IDQgOGMwIDUuMjUgNyAxMyA4IDEzczgtNy43NSA4LTEzYzAtNC40Mi0zLjU4LTgtOC04em0wIDEyYy0yLjIxIDAtNC0xLjc5LTQtNHMxLjc5LTQgNC00IDQgMS43OSA0IDQgLTEuNzkgNC00IDR6Ii8+PC9zdmc+" class="center-pin">
+            </div>
+            <div class="flex justify-center gap-4 mt-4">
+                <button onclick="document.getElementById('mapModal').style.display='none'" class="text-slate-500 font-bold">Cancel</button>
+                <button onclick="confirmLocation()" class="bg-blue-600 text-white px-8 py-2 rounded font-bold">Set Location</button>
             </div>
         </div>
     </div>
@@ -170,21 +155,26 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // 🟢 SECURITY: ALLOWLIST
-        // REPLACE THESE WITH YOUR ACTUAL NUMBERS!
-        const ALLOWED_ADMINS = ["+919999999999"]; 
-
-        // 1. AUTH STATE
+        // 1. AUTH STATE (CHECK DATABASE)
         auth.onAuthStateChanged(user => {
             if(user) {
-                // SECURITY CHECK
-                if (!ALLOWED_ADMINS.includes(user.phoneNumber)) {
-                    alert("ACCESS DENIED: Your number " + user.phoneNumber + " is not an admin.");
-                    auth.signOut();
-                    return;
-                }
-                document.getElementById('login-overlay').style.display = 'none';
-                loadLeads();
+                // 🟢 QUERY FIRESTORE FOR ADMIN STATUS
+                db.collection('admins').doc(user.phoneNumber).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        // User is Authorized
+                        document.getElementById('login-overlay').style.display = 'none';
+                        loadLeads();
+                    } else {
+                        // User is NOT in 'admins' collection
+                        alert("ACCESS DENIED: " + user.phoneNumber + " is not an authorized administrator.");
+                        auth.signOut();
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Database Error. Check console.");
+                });
             } else {
                 document.getElementById('login-overlay').style.display = 'flex';
             }
@@ -194,6 +184,7 @@
         function sendAdminOTP() {
             const phone = document.getElementById('adminPhone').value;
             if(phone.length !== 10) return alert("Enter 10 digit number");
+            
             const btn = document.getElementById('sendOtpBtn');
             btn.innerText = "Sending...";
             
@@ -212,9 +203,9 @@
             const code = document.getElementById('adminOtp').value;
             window.confirmationResult.confirm(code).catch(() => alert("Invalid OTP"));
         }
-        function logout() { auth.signOut(); }
+        function logout() { auth.signOut(); window.location.reload(); }
 
-        // 3. NAVIGATION & LOADING FUNCTIONS (Same as before)
+        // 3. NAVIGATION
         function showSection(id) {
             document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
             document.getElementById('section-' + id).classList.remove('hidden');
@@ -224,6 +215,7 @@
             if(id === 'projects') loadProjects();
         }
 
+        // 4. LOAD DATA
         function loadLeads() {
             db.collection('leads').orderBy('timestamp', 'desc').limit(50).get().then(snap => {
                 const container = document.getElementById('leads-list');
@@ -253,48 +245,36 @@
             });
         }
 
-        // 4. UBER-STYLE MAP TOOLS
+        // 5. UBER MAPS
         let map, selectedLat, selectedLng;
-
         function initMapTools() {
             const input = document.getElementById('p_loc');
             const autocomplete = new google.maps.places.Autocomplete(input);
             autocomplete.addListener('place_changed', () => {
                 const place = autocomplete.getPlace();
-                if (place.geometry) {
-                    // Just center map, don't set value yet (User must confirm visually)
-                    if(map) map.setCenter(place.geometry.location);
-                }
+                if (place.geometry) { if(map) map.setCenter(place.geometry.location); }
             });
         }
-
         function openMapPicker() {
             document.getElementById('mapModal').style.display = 'flex';
-            const center = {lat: 16.4410, lng: 80.5520}; // Default
             if(!map) {
-                map = new google.maps.Map(document.getElementById('mapContainer'), { center: center, zoom: 16, disableDefaultUI: true });
-            } 
-            // Trigger resize so map renders correctly in modal
+                map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true });
+            }
             setTimeout(() => google.maps.event.trigger(map, 'resize'), 100);
         }
-
         function confirmLocation() {
-            // Get center of the map (where the pin is pointing)
-            const center = map.getCenter();
-            selectedLat = center.lat();
-            selectedLng = center.lng();
+            const c = map.getCenter();
+            selectedLat = c.lat(); selectedLng = c.lng();
             document.getElementById('p_gps').value = `${selectedLat.toFixed(6)}, ${selectedLng.toFixed(6)}`;
             document.getElementById('mapModal').style.display = 'none';
         }
 
-        // 5. SAVE PROJECT
+        // 6. SAVE
         function saveProject(e) {
             e.preventDefault();
             const year = new Date().getFullYear();
-            const randomID = Math.floor(1000 + Math.random() * 9000);
-            
             const data = {
-                projectId: `SBR-${year}-${randomID}`,
+                projectId: `SBR-${year}-${Math.floor(1000+Math.random()*9000)}`,
                 mobile: "+91" + document.getElementById('p_mobile').value,
                 customerName: document.getElementById('p_name').value,
                 location: document.getElementById('p_loc').value,
@@ -305,18 +285,12 @@
                 casing_type: document.getElementById('p_casingType').value,
                 rigType: document.getElementById('p_rig').value,
                 motor: document.getElementById('p_motor').value,
-                date: new Date(document.getElementById('p_date').value).toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'}),
+                date: document.getElementById('p_date').value,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
-
-            db.collection('projects').add(data).then(() => {
-                alert("Certificate Issued! ID: " + data.projectId);
-                e.target.reset();
-                showSection('projects');
-            }).catch(err => alert("Error: " + err.message));
+            db.collection('projects').add(data).then(() => { alert("Saved: "+data.projectId); e.target.reset(); });
         }
 
-        // Load Maps
         const s = document.createElement('script');
         s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`;
         s.async = true; s.defer = true;
