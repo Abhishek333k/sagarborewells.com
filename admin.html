@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Command Center | Sagar Borewells</title>
+    <title>Sagar Admin | Command OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -15,261 +15,352 @@
     <script src="assets/js/config.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        .sidebar-link { display: flex; items-center; gap: 12px; padding: 12px 16px; color: #94a3b8; border-radius: 8px; transition: all 0.2s; font-weight: 500; cursor: pointer; }
-        .sidebar-link:hover, .sidebar-link.active { background: #1e293b; color: #fff; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-        .input-field { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; margin-top: 4px; }
-        .input-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; }
+        /* CYBER DARK THEME */
+        body { background-color: #0f172a; font-family: 'Inter', sans-serif; color: #e2e8f0; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
         
-        /* UBER STYLE MAP */
-        #mapModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; }
-        .map-wrapper { position: relative; width: 100%; height: 400px; background: #eee; border-radius: 12px; overflow: hidden; }
-        #mapContainer { width: 100%; height: 100%; }
-        
-        /* THE FIXED CENTER PIN (UBER STYLE) */
-        .center-pin {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -100%);
-            z-index: 1000; pointer-events: none;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        /* Glassmorphism Cards */
+        .glass-card { 
+            background: rgba(30, 41, 59, 0.7); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            border-radius: 16px; 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
+        
+        /* Neon Glows */
+        .glow-text { text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        .glow-border:focus-within { border-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+
+        /* Sidebar Navigation */
+        .nav-item { 
+            display: flex; items-center; gap: 12px; padding: 12px 16px; 
+            color: #94a3b8; border-radius: 10px; transition: all 0.3s; cursor: pointer;
+        }
+        .nav-item:hover, .nav-item.active { 
+            background: rgba(59, 130, 246, 0.1); color: #60a5fa; 
+            border-left: 3px solid #3b82f6;
+        }
+
+        /* Inputs */
+        .cyber-input { 
+            background: #1e293b; border: 1px solid #334155; color: white; 
+            padding: 12px; border-radius: 8px; width: 100%; outline: none; transition: 0.3s; 
+        }
+        .cyber-input:focus { border-color: #3b82f6; background: #0f172a; }
+        
+        /* Map Modal */
+        #mapModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .map-wrapper { position: relative; width: 100%; height: 400px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
+        .center-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 1000; pointer-events: none; filter: drop-shadow(0 0 8px rgba(0,0,0,0.8)); width: 40px; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 
-    <aside class="w-64 bg-slate-900 text-white flex flex-col flex-shrink-0">
-        <div class="p-6 border-b border-slate-800">
-            <h1 class="text-xl font-bold tracking-tight">Sagar<span class="text-blue-500">Admin</span></h1>
-            <p class="text-xs text-slate-500 mt-1">Command Center</p>
+    <aside class="w-72 bg-slate-900 border-r border-slate-800 flex flex-col flex-shrink-0 z-20">
+        <div class="p-8 border-b border-slate-800">
+            <h1 class="text-2xl font-black tracking-tight text-white">SAGAR<span class="text-blue-500 glow-text">OS</span></h1>
+            <div class="flex items-center gap-2 mt-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <p class="text-xs text-emerald-500 font-mono uppercase tracking-widest">System Online</p>
+            </div>
         </div>
         
-        <nav class="flex-grow p-4 space-y-2">
-            <div onclick="showSection('leads')" id="nav-leads" class="sidebar-link active">
-                <i class="ri-list-check"></i> Incoming Leads
+        <nav class="flex-grow p-6 space-y-2">
+            <div onclick="showSection('leads')" id="nav-leads" class="nav-item active">
+                <i class="ri-radar-line"></i> <span>Live Radar</span>
             </div>
-            <div onclick="showSection('projects')" id="nav-projects" class="sidebar-link">
-                <i class="ri-hammer-line"></i> Manage Projects
+            <div onclick="showSection('projects')" id="nav-projects" class="nav-item">
+                <i class="ri-database-2-line"></i> <span>Archives</span>
             </div>
-            <div onclick="showSection('create')" id="nav-create" class="sidebar-link text-emerald-400">
-                <i class="ri-add-circle-line"></i> + New Certificate
+            <div onclick="showSection('create')" id="nav-create" class="nav-item">
+                <i class="ri-add-box-line"></i> <span>Issue Cert</span>
             </div>
         </nav>
 
-        <div class="p-4 border-t border-slate-800">
-            <button onclick="logout()" class="text-xs text-red-400 hover:text-white">Sign Out</button>
+        <div class="p-6 border-t border-slate-800">
+            <button onclick="logout()" class="flex items-center gap-3 text-sm text-slate-400 hover:text-red-400 transition">
+                <i class="ri-shut-down-line"></i> Terminate Session
+            </button>
         </div>
     </aside>
 
-    <main class="flex-grow overflow-y-auto p-8 relative">
+    <main class="flex-grow overflow-y-auto p-10 relative bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
         
-        <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center">
-            <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
-                <h2 class="text-2xl font-bold mb-2">Admin Login</h2>
-                <p class="text-slate-500 text-sm mb-6">Restricted Access Only</p>
+        <div id="login-overlay" class="fixed inset-0 bg-[#0f172a] z-50 flex items-center justify-center">
+            <div class="glass-card p-10 w-96 text-center border-t-4 border-blue-600">
+                <div class="mb-6"><i class="ri-shield-keyhole-line text-5xl text-blue-500 animate-pulse"></i></div>
+                <h2 class="text-2xl font-bold text-white mb-2 tracking-wide">RESTRICTED ACCESS</h2>
+                <p class="text-slate-400 text-xs font-mono mb-8">AUTHORIZED PERSONNEL ONLY</p>
                 
                 <div class="text-left mb-4">
-                    <label class="block text-xs font-bold text-slate-400 uppercase">Mobile Number</label>
-                    <div class="flex border rounded-lg overflow-hidden mt-1">
-                        <span class="bg-slate-100 px-3 py-2 border-r text-slate-600 font-bold">+91</span>
-                        <input type="tel" id="adminPhone" class="w-full px-3 py-2 outline-none font-bold" 
-                               placeholder="98765 43210" maxlength="10" 
+                    <label class="text-xs text-blue-400 font-bold uppercase tracking-wider mb-2 block">Identity Verification</label>
+                    <div class="flex bg-slate-900 border border-slate-700 rounded-lg overflow-hidden glow-border">
+                        <span class="px-4 py-3 text-slate-500 font-mono border-r border-slate-700">+91</span>
+                        <input type="tel" id="adminPhone" class="w-full bg-transparent px-4 py-3 text-white outline-none font-mono font-bold" 
+                               placeholder="ACCESS ID" maxlength="10" 
                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
                     </div>
                 </div>
 
-                <div id="otp-group" class="hidden text-left mb-4">
-                    <label class="block text-xs font-bold text-slate-400 uppercase">Enter OTP</label>
-                    <input type="text" id="adminOtp" class="w-full border rounded-lg px-3 py-2 mt-1 text-center tracking-widest font-bold">
+                <div id="otp-group" class="hidden text-left mb-6 fade-in-up">
+                    <label class="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-2 block">Security Code</label>
+                    <input type="text" id="adminOtp" class="cyber-input text-center tracking-[0.5em] font-bold text-xl" placeholder="••••••">
                 </div>
 
-                <div id="recaptcha-container" class="mb-4"></div>
+                <div id="recaptcha-container" class="mb-4 flex justify-center"></div>
 
-                <button id="sendOtpBtn" onclick="sendAdminOTP()" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Send OTP</button>
-                <button id="verifyOtpBtn" onclick="verifyAdminOTP()" class="hidden w-full py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700">Verify & Login</button>
+                <button id="sendOtpBtn" onclick="sendAdminOTP()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-[0_0_20px_rgba(37,99,235,0.4)] transition uppercase tracking-widest text-sm">
+                    Authenticate
+                </button>
+                <button id="verifyOtpBtn" onclick="verifyAdminOTP()" class="hidden w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-[0_0_20px_rgba(16,185,129,0.4)] transition uppercase tracking-widest text-sm">
+                    Unlock System
+                </button>
             </div>
         </div>
 
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-3xl font-bold text-white mb-1">Command Center</h2>
+                <p class="text-slate-400 text-sm">Real-time Data Stream</p>
+            </div>
+            <div class="flex gap-4">
+                <div class="glass-card px-4 py-2 flex items-center gap-3">
+                    <i class="ri-server-line text-emerald-400"></i>
+                    <span class="text-xs font-mono text-emerald-400">DB: CONNECTED</span>
+                </div>
+            </div>
+        </header>
+
         <div id="section-leads" class="content-section">
-            <h2 class="text-2xl font-bold text-slate-800 mb-6">Incoming Quotations</h2>
             <div id="leads-list" class="space-y-4"></div>
         </div>
 
         <div id="section-projects" class="content-section hidden">
-            <h2 class="text-2xl font-bold text-slate-800 mb-6">Completed Projects (Birth Certificates)</h2>
-            <div id="projects-list" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
+            <div id="projects-list" class="grid grid-cols-1 xl:grid-cols-2 gap-6"></div>
         </div>
 
-        <div id="section-create" class="content-section hidden max-w-4xl">
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">Issue New Birth Certificate</h2>
-            <form id="projectForm" onsubmit="saveProject(event)" class="card p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="col-span-full border-b pb-2 mb-2"><h3 class="font-bold text-slate-900">1. Customer Details</h3></div>
-                <div>
-                    <label class="input-label">Customer Mobile</label>
-                    <div class="flex border rounded-lg mt-1 overflow-hidden">
-                        <span class="bg-slate-100 px-3 py-2 border-r">+91</span>
-                        <input type="tel" id="p_mobile" class="w-full px-3 py-2 outline-none font-bold" placeholder="9876543210" required>
+        <div id="section-create" class="content-section hidden max-w-5xl mx-auto">
+            <div class="glass-card p-8">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-6 mb-8">
+                    <h3 class="text-xl font-bold text-white">Generate Birth Certificate</h3>
+                    <span class="px-3 py-1 bg-blue-900 text-blue-300 text-xs font-mono rounded border border-blue-700">NEW_RECORD_ENTRY</span>
+                </div>
+
+                <form id="projectForm" onsubmit="saveProject(event)" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <div class="col-span-full">
+                        <h4 class="text-xs text-blue-400 font-bold uppercase tracking-widest mb-4">Client Identity</h4>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-2">Mobile Number (Login ID)</label>
+                                <div class="flex bg-slate-800 border border-slate-600 rounded-lg overflow-hidden">
+                                    <span class="px-4 py-3 text-slate-400 border-r border-slate-600 font-mono">+91</span>
+                                    <input type="tel" id="p_mobile" class="w-full bg-transparent px-4 text-white outline-none font-mono" placeholder="9876543210" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-2">Full Legal Name</label>
+                                <input type="text" id="p_name" class="cyber-input" placeholder="Client Name" required>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div><label class="input-label">Customer Name</label><input type="text" id="p_name" class="input-field" required></div>
-                <div class="col-span-full"><label class="input-label">Site Location</label><input type="text" id="p_loc" class="input-field" placeholder="Start typing address..." required></div>
-                <div class="col-span-full">
-                    <label class="input-label">GPS Coordinates</label>
-                    <div class="flex gap-2 mt-1">
-                        <input type="text" id="p_gps" class="input-field bg-slate-50" readonly placeholder="Lat, Lng">
-                        <button type="button" onclick="openMapPicker()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm">Open Map</button>
+
+                    <div class="col-span-full border-t border-slate-700 pt-6">
+                        <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-4">Geospatial Data</h4>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="col-span-full">
+                                <label class="text-xs text-slate-400 block mb-2">Site Address</label>
+                                <input type="text" id="p_loc" class="cyber-input" placeholder="Search Location..." required>
+                            </div>
+                            <div class="col-span-full">
+                                <label class="text-xs text-slate-400 block mb-2">Exact Coordinates</label>
+                                <div class="flex gap-4">
+                                    <input type="text" id="p_gps" class="cyber-input bg-slate-800 text-slate-400 font-mono" readonly placeholder="LAT, LNG">
+                                    <button type="button" onclick="openMapPicker()" class="bg-purple-600 hover:bg-purple-500 text-white px-6 rounded-lg font-bold transition flex items-center gap-2">
+                                        <i class="ri-map-pin-line"></i> PINPOINT
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="col-span-full border-b pb-2 mb-2 mt-4"><h3 class="font-bold text-slate-900">2. Technical Specifications</h3></div>
-                <div><label class="input-label">Total Depth (ft)</label><input type="number" id="p_depth" class="input-field" required></div>
-                <div><label class="input-label">Yield</label><input type="text" id="p_yield" class="input-field" required></div>
-                <div><label class="input-label">Casing Depth (ft)</label><input type="number" id="p_casing" class="input-field" required></div>
-                <div><label class="input-label">Casing Type</label><select id="p_casingType" class="input-field"><option>PVC 6Kg/cm²</option><option>PVC 10Kg/cm²</option><option>MS Iron</option></select></div>
-                <div><label class="input-label">Rig Type</label><select id="p_rig" class="input-field"><option>Sensor Robotic Hydraulic</option><option>Standard Hydraulic</option></select></div>
-                <div><label class="input-label">Motor Details</label><input type="text" id="p_motor" class="input-field"></div>
-                <div><label class="input-label">Drill Date</label><input type="date" id="p_date" class="input-field" required></div>
-                <div class="col-span-full pt-6 flex justify-end gap-4 border-t">
-                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-lg">Save Record</button>
-                </div>
-            </form>
+
+                    <div class="col-span-full border-t border-slate-700 pt-6">
+                        <h4 class="text-xs text-orange-400 font-bold uppercase tracking-widest mb-4">Technical Telemetry</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Depth (ft)</label><input type="number" id="p_depth" class="cyber-input font-mono text-yellow-400" required></div>
+                            <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Yield</label><input type="text" id="p_yield" class="cyber-input" required></div>
+                            <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Casing (ft)</label><input type="number" id="p_casing" class="cyber-input" required></div>
+                            <div>
+                                <label class="text-[10px] text-slate-500 uppercase block mb-1">Casing Type</label>
+                                <select id="p_casingType" class="cyber-input"><option>PVC 6Kg</option><option>PVC 10Kg</option><option>MS Iron</option></select>
+                            </div>
+                            <div class="col-span-2"><label class="text-[10px] text-slate-500 uppercase block mb-1">Rig Type</label><select id="p_rig" class="cyber-input"><option>Sensor Robotic Hydraulic</option><option>Standard Hydraulic</option></select></div>
+                            <div class="col-span-2"><label class="text-[10px] text-slate-500 uppercase block mb-1">Drill Date</label><input type="date" id="p_date" class="cyber-input" required></div>
+                            <div class="col-span-full"><label class="text-[10px] text-slate-500 uppercase block mb-1">Motor Specs</label><input type="text" id="p_motor" class="cyber-input" placeholder="e.g. 7.5HP Texmo"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-span-full pt-8 flex justify-end">
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-lg font-bold shadow-lg shadow-emerald-900/50 flex items-center gap-3 transition transform hover:scale-105">
+                            <i class="ri-save-3-line"></i> WRITE TO LEDGER
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
+
     </main>
 
     <div id="mapModal">
-        <div class="bg-white p-4 rounded-xl w-full max-w-2xl shadow-2xl">
-            <h3 class="font-bold text-lg mb-2 text-center">Drag Map to Pin Location</h3>
+        <div class="glass-card p-6 w-full max-w-3xl border border-slate-600 shadow-2xl">
+            <h3 class="text-xl font-bold text-white mb-4 text-center">Satellite Targeting</h3>
             <div class="map-wrapper">
                 <div id="mapContainer"></div>
-                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjMjU2M2ViIiBkPSJNMTIgMEM3LjU4IDAgNCAzLjU4IDQgOGMwIDUuMjUgNyAxMyA4IDEzczgtNy43NSA4LTEzYzAtNC40Mi0zLjU4LTgtOC04em0wIDEyYy0yLjIxIDAtNC0xLjc5LTQtNHMxLjc5LTQgNC00IDQgMS43OSA0IDQgLTEuNzkgNC00IDR6Ii8+PC9zdmc+" class="center-pin">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjZWE0MzM1IiBkPSJNMTIgMEM3LjU4IDAgNCAzLjU4IDQgOGMwIDUuMjUgNyAxMyA4IDEzczgtNy43NSA4LTEzYzAtNC40Mi0zLjU4LTgtOC04em0wIDEyYy0yLjIxIDAtNC0xLjc5LTQtNHMxLjc5LTQgNC00IDQgMS43OSA0IDQgLTEuNzkgNC00IDR6Ii8+PC9zdmc+" 
+                     class="center-pin">
             </div>
-            <div class="flex justify-center gap-4 mt-4">
-                <button onclick="document.getElementById('mapModal').style.display='none'" class="text-slate-500 font-bold">Cancel</button>
-                <button onclick="confirmLocation()" class="bg-blue-600 text-white px-8 py-2 rounded font-bold">Set Location</button>
+            <div class="flex justify-center gap-4 mt-6">
+                <button onclick="document.getElementById('mapModal').style.display='none'" class="text-slate-400 hover:text-white font-bold px-6">ABORT</button>
+                <button onclick="confirmLocation()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded font-bold">LOCK COORDINATES</button>
             </div>
         </div>
     </div>
 
     <script>
-        // INIT
         if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // 1. AUTH STATE (CHECK DATABASE)
+        // AUTHENTICATION LOGIC
         auth.onAuthStateChanged(user => {
             if(user) {
-                // 🟢 QUERY FIRESTORE FOR ADMIN STATUS
                 db.collection('admins').doc(user.phoneNumber).get()
                 .then(doc => {
                     if (doc.exists) {
-                        // User is Authorized
                         document.getElementById('login-overlay').style.display = 'none';
                         loadLeads();
                     } else {
-                        // User is NOT in 'admins' collection
-                        alert("ACCESS DENIED: " + user.phoneNumber + " is not an authorized administrator.");
+                        alert("UNAUTHORIZED ACCESS DETECTED.");
                         auth.signOut();
                     }
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert("Database Error. Check console.");
-                });
+                }).catch(e => { console.error(e); alert("System Error."); });
             } else {
                 document.getElementById('login-overlay').style.display = 'flex';
             }
         });
 
-        // 2. PHONE LOGIN
         function sendAdminOTP() {
             const phone = document.getElementById('adminPhone').value;
-            if(phone.length !== 10) return alert("Enter 10 digit number");
+            if(phone.length !== 10) return alert("INVALID ID FORMAT");
             
             const btn = document.getElementById('sendOtpBtn');
-            btn.innerText = "Sending...";
+            btn.innerText = "TRANSMITTING...";
             
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
             
-            auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier)
-                .then(cr => {
-                    window.confirmationResult = cr;
-                    btn.classList.add('hidden');
-                    document.getElementById('otp-group').classList.remove('hidden');
-                    document.getElementById('verifyOtpBtn').classList.remove('hidden');
-                }).catch(e => { console.error(e); alert("SMS Error: " + e.message); btn.innerText="Try Again"; });
+            auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier).then(cr => {
+                window.confirmationResult = cr;
+                btn.classList.add('hidden');
+                document.getElementById('otp-group').classList.remove('hidden');
+                document.getElementById('verifyOtpBtn').classList.remove('hidden');
+            }).catch(e => { console.error(e); alert("TRANSMISSION FAILED"); btn.innerText="RETRY"; });
         }
 
         function verifyAdminOTP() {
-            const code = document.getElementById('adminOtp').value;
-            window.confirmationResult.confirm(code).catch(() => alert("Invalid OTP"));
+            window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => alert("INVALID CODE"));
         }
         function logout() { auth.signOut(); window.location.reload(); }
 
-        // 3. NAVIGATION
+        // NAVIGATION
         function showSection(id) {
-            document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
-            document.getElementById('section-' + id).classList.remove('hidden');
-            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
-            document.getElementById('nav-' + id).classList.add('active');
-            if(id === 'leads') loadLeads();
-            if(id === 'projects') loadProjects();
+            document.querySelectorAll('.content-section').forEach(e => e.classList.add('hidden'));
+            document.getElementById('section-'+id).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+            document.getElementById('nav-'+id).classList.add('active');
+            if(id==='leads') loadLeads();
+            if(id==='projects') loadProjects();
         }
 
-        // 4. LOAD DATA
+        // DATA LOADERS
         function loadLeads() {
-            db.collection('leads').orderBy('timestamp', 'desc').limit(50).get().then(snap => {
-                const container = document.getElementById('leads-list');
-                container.innerHTML = "";
-                snap.forEach(doc => {
-                    const data = doc.data();
+            db.collection('leads').orderBy('timestamp','desc').limit(50).get().then(snap => {
+                const el = document.getElementById('leads-list'); el.innerHTML="";
+                snap.forEach(d => {
+                    const data = d.data();
                     const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                    const div = document.createElement('div');
-                    div.className = "card p-4 flex justify-between items-center";
-                    div.innerHTML = `<div><div class="font-bold text-slate-800">${data.name} <span class="text-slate-400">(${data.mobile})</span></div><div class="text-sm text-slate-500">${data.loc} • ${data.depth}ft</div></div><div class="text-right"><div class="font-bold text-blue-600">₹${parseInt(data.total).toLocaleString()}</div><div class="text-xs text-slate-400">${date}</div></div>`;
-                    container.appendChild(div);
+                    el.innerHTML += `
+                        <div class="glass-card p-5 flex justify-between items-center hover:bg-slate-800/50 transition">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><i class="ri-user-line"></i></div>
+                                <div>
+                                    <div class="font-bold text-white">${data.name}</div>
+                                    <div class="text-xs text-slate-400 font-mono">${data.loc} • ${data.depth}ft</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-bold text-emerald-400 text-lg">₹${parseInt(data.total).toLocaleString()}</div>
+                                <div class="text-[10px] text-slate-500 font-mono">${date}</div>
+                            </div>
+                        </div>`;
                 });
             });
         }
 
         function loadProjects() {
             db.collection('projects').get().then(snap => {
-                const container = document.getElementById('projects-list');
-                container.innerHTML = "";
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const div = document.createElement('div');
-                    div.className = "card p-6 border-l-4 border-emerald-500";
-                    div.innerHTML = `<div class="flex justify-between mb-2"><h3 class="font-bold text-lg">${data.location}</h3><span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded">COMPLETED</span></div><p class="text-sm text-slate-600 mb-4">${data.customerName} • ${data.mobile}</p><div class="text-xs text-slate-400 font-mono">ID: ${data.projectId}</div>`;
-                    container.appendChild(div);
+                const el = document.getElementById('projects-list'); el.innerHTML="";
+                snap.forEach(d => {
+                    const data = d.data();
+                    el.innerHTML += `
+                        <div class="glass-card p-6 border-l-4 border-emerald-500 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 bg-emerald-900/50 text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-bl font-mono">ARCHIVED</div>
+                            <h3 class="font-bold text-xl text-white mb-1">${data.location}</h3>
+                            <p class="text-sm text-slate-400 mb-4 font-mono">${data.customerName} • ${data.mobile}</p>
+                            <div class="grid grid-cols-2 gap-2 text-xs text-slate-500 font-mono bg-slate-900/50 p-3 rounded">
+                                <div>DEPTH: <span class="text-white">${data.depth} ft</span></div>
+                                <div>YIELD: <span class="text-emerald-400">${data.yield}</span></div>
+                            </div>
+                            <div class="mt-4 pt-2 border-t border-slate-700/50 text-[10px] text-slate-600 font-mono tracking-widest">
+                                ID: ${data.projectId}
+                            </div>
+                        </div>`;
                 });
             });
         }
 
-        // 5. UBER MAPS
-        let map, selectedLat, selectedLng;
+        // MAPS
+        let map;
         function initMapTools() {
             const input = document.getElementById('p_loc');
-            const autocomplete = new google.maps.places.Autocomplete(input);
-            autocomplete.addListener('place_changed', () => {
-                const place = autocomplete.getPlace();
-                if (place.geometry) { if(map) map.setCenter(place.geometry.location); }
+            const ac = new google.maps.places.Autocomplete(input);
+            ac.addListener('place_changed', () => {
+                const p = ac.getPlace();
+                if(p.geometry && map) map.setCenter(p.geometry.location);
             });
         }
         function openMapPicker() {
             document.getElementById('mapModal').style.display = 'flex';
             if(!map) {
-                map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true });
+                map = new google.maps.Map(document.getElementById('mapContainer'), { 
+                    center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true,
+                    styles: [ // DARK MODE MAP STYLE
+                        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+                        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+                        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+                        { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
+                        { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }
+                    ]
+                });
             }
             setTimeout(() => google.maps.event.trigger(map, 'resize'), 100);
         }
         function confirmLocation() {
             const c = map.getCenter();
-            selectedLat = c.lat(); selectedLng = c.lng();
-            document.getElementById('p_gps').value = `${selectedLat.toFixed(6)}, ${selectedLng.toFixed(6)}`;
+            document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`;
             document.getElementById('mapModal').style.display = 'none';
         }
 
-        // 6. SAVE
         function saveProject(e) {
             e.preventDefault();
             const year = new Date().getFullYear();
@@ -288,7 +379,7 @@
                 date: document.getElementById('p_date').value,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
-            db.collection('projects').add(data).then(() => { alert("Saved: "+data.projectId); e.target.reset(); });
+            db.collection('projects').add(data).then(() => { alert("RECORD SAVED: "+data.projectId); e.target.reset(); });
         }
 
         const s = document.createElement('script');
