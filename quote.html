@@ -81,13 +81,20 @@
                     </div>
                 </div>
 
-                <div class="mb-8">
-                    <label class="form-label">Site Location</label>
-                    <div class="relative">
-                        <input type="text" id="locInput" class="custom-input pr-24" placeholder="Village / Area Name">
-                        <button onclick="detectGPS()" class="absolute right-2 top-2 bottom-2 bg-blue-100 text-blue-600 px-4 rounded-lg font-bold text-xs hover:bg-blue-200 transition">DETECT</button>
+                <div>
+                        <label class="form-label">Site Location</label>
+                        <div class="relative flex gap-2">
+                            <input type="text" id="locInput" class="custom-input pr-24" placeholder="Village / Area Name">
+                            
+                            <button onclick="detectGPS()" class="absolute right-14 top-2 bottom-2 bg-blue-100 text-blue-600 px-3 rounded-lg font-bold text-xs hover:bg-blue-200 transition">
+                                DETECT
+                            </button>
+                            
+                            <button onclick="openMiniMap()" class="absolute right-2 top-2 bottom-2 bg-slate-100 text-slate-600 px-3 rounded-lg hover:bg-slate-200 transition" title="Pick on Map">
+                                <i class="ri-map-pin-2-fill"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <div>
@@ -159,7 +166,16 @@
     </main>
 
     <div id="footer-mount"></div>
-
+    <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+            <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl">
+                <h3 class="font-bold text-slate-800 mb-2">Pinpoint Exact Location</h3>
+                <div id="quoteMapContainer" style="width:100%; height:300px; border-radius:10px; background:#eee;"></div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-500">Cancel</button>
+                    <button onclick="confirmQuoteLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg">Set Pin</button>
+                </div>
+            </div>
+    </div>
     <script>
         // INIT
         if(CONTACT_INFO.firebase_config && !firebase.apps.length) {
