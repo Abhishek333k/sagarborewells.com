@@ -398,24 +398,86 @@
             });
         }
 
+        // --- PREVIEW / PDF LOGIC ---
         let currentPDFElement;
+        let currentDownloadName = "Certificate.pdf"; // Default fallback
+
         function previewQuote(encoded) {
             const data = JSON.parse(decodeURIComponent(encoded));
             let rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`;
             const content = getInvoiceHTML({ name: data.name, mobile: data.mobile, loc: data.loc, total: data.total, rows: rows });
+            
             document.getElementById('previewContent').innerHTML = content;
-            currentPDFElement = content; document.getElementById('previewModal').classList.add('open');
+            currentPDFElement = content;
+            
+            // Set Filename for Quote
+            currentDownloadName = `Quote_${data.name.replace(/\s+/g, '_')}.pdf`;
+            
+            document.getElementById('previewModal').classList.add('open');
         }
+
         function previewCert(encoded) {
             const data = JSON.parse(decodeURIComponent(encoded));
-            const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType };
+            
+            // 🟢 1. FORCE FILENAME TO BE CERTIFICATE ID
+            const certID = data.projectId || `SBW-${new Date().getFullYear()}-GEN`;
+            currentDownloadName = `${certID}.pdf`;
+
+            const certData = { 
+                id: certID, // Pass ID to template
+                name: data.customerName, 
+                loc: data.location, 
+                date: data.date, 
+                gps: data.gps, 
+                depth: data.depth, 
+                casing_depth: data.casing_depth, 
+                casing_type: data.casing_type, 
+                yield: data.yield, 
+                motor: data.motor, 
+                rigType: data.rigType 
+            };
+            
             const content = getCertificateHTML(certData);
             document.getElementById('previewContent').innerHTML = content;
-            currentPDFElement = content; document.getElementById('previewModal').classList.add('open');
+            currentPDFElement = content;
+            document.getElementById('previewModal').classList.add('open');
         }
-        function confirmDownloadPDF() { const el = document.createElement('div'); el.innerHTML = currentPDFElement; document.body.appendChild(el); html2pdf().from(el).save('Document.pdf').then(() => document.body.removeChild(el)); }
-        function downloadAdminCert(encoded) { previewCert(encoded); }
 
+        function confirmDownloadPDF() {
+            const element = document.createElement('div'); 
+            element.innerHTML = currentPDFElement; 
+            document.body.appendChild(element);
+            
+            // 🟢 2. SAVE USING THE SPECIFIC FILENAME
+            html2pdf().from(element).save(currentDownloadName).then(() => document.body.removeChild(element));
+        }
+
+        function downloadAdminCert(encoded) { 
+            // Direct download shortcut - reuses preview logic to set name, then downloads
+            const data = JSON.parse(decodeURIComponent(encoded));
+            const certID = data.projectId || `SBW-${new Date().getFullYear()}-GEN`;
+            
+            const certData = { 
+                id: certID,
+                name: data.customerName, 
+                loc: data.location, 
+                date: data.date, 
+                gps: data.gps, 
+                depth: data.depth, 
+                casing_depth: data.casing_depth, 
+                casing_type: data.casing_type, 
+                yield: data.yield, 
+                motor: data.motor, 
+                rigType: data.rigType 
+            };
+            const content = getCertificateHTML(certData);
+            const element = document.createElement('div');
+            element.innerHTML = content;
+            document.body.appendChild(element);
+            
+            // 🟢 3. DIRECT DOWNLOAD NAMING
+            html2pdf().from(element).save(`${certID}.pdf`).then(() => document.body.removeChild(element));
+        }
         let map;
         function initMapTools() { const input = document.getElementById('p_loc'); const ac = new google.maps.places.Autocomplete(input); ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); }
         function openMapPicker() { if(typeof google === 'undefined') { alert("System Initializing..."); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
