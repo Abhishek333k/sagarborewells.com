@@ -404,26 +404,25 @@
             }
         });
 
-        let qMap, qMarker;
+        let qMap;
         function openMiniMap() {
             document.getElementById('miniMapModal').style.display = 'flex';
-            // Default center or current location
             const center = {lat: 16.4410, lng: 80.5520}; 
             
             if(!qMap) {
-                qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), { center: center, zoom: 15 });
-                qMarker = new google.maps.Marker({ position: center, map: qMap, draggable: true });
-                qMap.addListener('click', (e) => qMarker.setPosition(e.latLng));
+                qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), { center: center, zoom: 15, disableDefaultUI: true });
             }
+            setTimeout(() => google.maps.event.trigger(qMap, 'resize'), 100);
         }
+
         function confirmQuoteLocation() {
-            const pos = qMarker.getPosition();
-            // Reverse Geocode to get address
+            const pos = qMap.getCenter(); // GET CENTER, NOT MARKER
+            
+            // Reverse Geocode
             const geocoder = new google.maps.Geocoder();
             geocoder.geocode({ location: pos }, (results, status) => {
                 if(status === 'OK' && results[0]) {
                     document.getElementById('locInput').value = results[0].formatted_address;
-                    // Trigger Smart Zone Logic
                     analyzeLocation(results[0].formatted_address, pos.lat(), pos.lng());
                 }
             });
