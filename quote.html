@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borewell Estimator | Sagar Ops</title>
+    <title>Estimate Engine | Sagar Ops</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #1e293b; }
-        .invoice-box { background: white; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .modal-active { display: flex !important; }
+        .modal { opacity: 0; pointer-events: none; transition: all 0.3s ease; }
+        .modal.active { opacity: 1; pointer-events: auto; }
+        .modal-content { transform: translateY(20px); transition: transform 0.3s ease; }
+        .modal.active .modal-content { transform: translateY(0); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -48,7 +50,7 @@
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Site Location</label>
                     <div class="flex gap-2">
                         <input type="text" id="locInput" placeholder="Village / Area Name" class="flex-grow p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
-                        <button onclick="detectGPS()" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded-lg">
+                        <button onclick="detectGPS()" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded-lg" title="Use GPS">
                             <i class="fa-solid fa-location-crosshairs"></i>
                         </button>
                     </div>
@@ -63,7 +65,7 @@
                     
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Usage Type</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Purpose</label>
                             <select id="purposeInput" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
                                 <option value="residential">Residential</option>
                                 <option value="agriculture">Agriculture</option>
@@ -82,22 +84,22 @@
                 </div>
 
                 <button onclick="generatePreview()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition">
-                    Generate Estimate
+                    Generate Official Estimate
                 </button>
             </div>
         </div>
     </main>
 
-    <div id="previewModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div id="previewModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4">
+        <div class="modal-content bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             
             <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
                 <span class="font-bold text-slate-700">Estimate Preview</span>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 font-bold text-sm">Edit <i class="fa-solid fa-pen ml-1"></i></button>
             </div>
 
-            <div class="p-6 overflow-y-auto bg-slate-100">
-                <div class="invoice-box p-6 rounded-lg bg-white text-sm">
+            <div class="p-6 overflow-y-auto bg-slate-100 flex-grow">
+                <div class="bg-white border border-slate-200 p-6 rounded-lg shadow-sm text-sm">
                     <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
                         <div>
                             <h2 class="font-extrabold text-blue-700 text-lg">SAGAR BOREWELLS</h2>
@@ -136,39 +138,34 @@
             </div>
 
             <div class="p-4 bg-white border-t border-slate-200">
-                <button onclick="sendWhatsApp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg flex justify-center items-center gap-2">
-                    <i class="fa-brands fa-whatsapp"></i> Confirm Booking
+                <button onclick="sendWhatsApp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg flex justify-center items-center gap-2 shadow-lg">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Confirm & Send Quote
                 </button>
             </div>
         </div>
     </div>
-<footer class="bg-[#0f172a] py-8 border-t border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 text-center">
-        <p class="text-slate-500 text-sm mb-4">&copy; 2026 Sagar Borewells. Built for Precision.</p>
-        <div class="flex justify-center gap-6 text-xs font-bold text-slate-600">
-            <a href="terms.html" class="hover:text-white transition">Terms of Service</a>
-            <a href="privacy.html" class="hover:text-white transition">Privacy Policy</a>
-            <a href="#" class="hover:text-white transition">Support</a>
-        </div>
-    </div>
-</footer>
+
     <script>
-        const FIXED_COSTS = 7000;
-        const SLAB_INCREMENT = 50;
-        const JUMP_AMOUNT = 5;
-        const BASE_RATES = { 'residential': 90, 'agriculture': 85, 'commercial': 110 };
+        // ADMIN CONFIGURATION (This will be fetched from DB later)
+        const pricingConfig = {
+            fixed_cost: 7000,
+            slab_size: 50,
+            slab_jump: 5,
+            rates: { 'residential': 90, 'agriculture': 85, 'commercial': 110 }
+        };
+        
         let leadData = {};
 
         function updateUI() { document.getElementById('depthDisplay').innerText = document.getElementById('depthSlider').value; }
 
         function detectGPS() {
             const btn = document.querySelector('button[onclick="detectGPS()"]');
-            btn.innerHTML = '...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     document.getElementById('locInput').value = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
                     btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                }, () => { alert('GPS Error'); btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>'; });
+                }, () => { alert('GPS Permission Denied'); btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>'; });
             }
         }
 
@@ -178,39 +175,50 @@
             const depth = parseInt(document.getElementById('depthSlider').value);
             const purpose = document.getElementById('purposeInput').value;
 
-            if(!name || !loc) { alert("Please fill details"); return; }
+            if(!name || !loc) { alert("Please enter Name and Location"); return; }
 
+            // CALCULATION LOGIC (Borewell Only)
             let remaining = depth;
             let floor = 0;
-            let rate = BASE_RATES[purpose];
+            let rate = pricingConfig.rates[purpose];
             let drillTotal = 0;
             let rows = "";
 
             while(remaining > 0) {
-                let chunk = (remaining >= SLAB_INCREMENT) ? SLAB_INCREMENT : remaining;
+                let chunk = (remaining >= pricingConfig.slab_size) ? pricingConfig.slab_size : remaining;
                 let cost = chunk * rate;
                 drillTotal += cost;
                 rows += `<tr class="border-b border-slate-50"><td class="py-2">${floor}-${floor+chunk}ft @ ₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
                 remaining -= chunk;
                 floor += chunk;
-                rate += JUMP_AMOUNT;
+                rate += pricingConfig.slab_jump;
             }
 
-            const total = drillTotal + FIXED_COSTS;
+            const total = drillTotal + pricingConfig.fixed_cost;
             
             document.getElementById('invName').innerText = name;
             document.getElementById('invLoc').innerText = loc;
             document.getElementById('invBody').innerHTML = rows;
             document.getElementById('invTotal').innerText = "₹" + total.toLocaleString();
 
-            leadData = { name, loc, depth, total };
-            document.getElementById('previewModal').classList.add('modal-active');
+            leadData = { name, loc, depth, total, mobile: document.getElementById('custMobile').value };
+            document.getElementById('previewModal').classList.add('active');
         }
 
-        function closeModal() { document.getElementById('previewModal').classList.remove('modal-active'); }
+        function closeModal() { document.getElementById('previewModal').classList.remove('active'); }
 
         function sendWhatsApp() {
-            const msg = `*BOOKING REQUEST*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.loc}%0A📉 ${leadData.depth}ft%0A💰 *Est: ₹${leadData.total.toLocaleString()}*%0A%0APlease schedule rig.`;
+            const formData = new FormData();
+            formData.append("name", leadData.name);
+            formData.append("mobile", leadData.mobile);
+            formData.append("location", leadData.loc);
+            formData.append("depth", leadData.depth);
+            formData.append("price", leadData.total);
+            formData.append("purpose", "Official Quote");
+
+            fetch(CONTACT_INFO.database_url, { method: "POST", body: formData, mode: "no-cors" });
+
+            const msg = `*OFFICIAL QUOTE REQUEST*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.loc}%0A📞 ${leadData.mobile}%0A%0A📉 Depth: ${leadData.depth}ft%0A💰 *Est. Total: ₹${leadData.total.toLocaleString()}*%0A%0A(Includes Fixed Costs). Please schedule site visit.`;
             window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
         }
     </script>
