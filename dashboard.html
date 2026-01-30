@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legacy Dashboard | Sagar Borewells</title>
+    <title>My Account | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -15,13 +15,14 @@
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
-    <script src="assets/js/pdf_template.js"></script>
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 700; }
-        .timeline-line { position: absolute; left: 15px; top: 30px; bottom: 0; width: 2px; background: #e2e8f0; z-index: 0; }
+        /* Loader Animation */
+        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #2563eb; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -32,10 +33,10 @@
         
         <div class="flex flex-col md:flex-row justify-between items-center mb-8">
             <div>
-                <h1 class="text-2xl font-extrabold text-slate-900">Client Legacy Portal</h1>
-                <p class="text-sm text-slate-500">Welcome back, <span id="userName" class="font-bold">Valued Client</span></p>
+                <h1 class="text-2xl font-extrabold text-slate-900">Client Portal</h1>
+                <p class="text-sm text-slate-500">Welcome back, <span id="userName" class="font-bold">Client</span></p>
             </div>
-            <button onclick="logout()" class="mt-4 md:mt-0 text-sm text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg transition font-semibold border border-red-100">
+            <button onclick="logout()" class="mt-4 md:mt-0 text-sm text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg transition font-semibold border border-red-100 flex items-center gap-2">
                 <i class="ri-logout-box-line"></i> Sign Out
             </button>
         </div>
@@ -43,26 +44,29 @@
         <div class="flex border-b border-slate-200 mb-8 overflow-x-auto">
             <button onclick="switchTab('projects')" id="tab-projects" class="tab-btn active px-6 py-3 text-slate-600 hover:text-slate-800 whitespace-nowrap">My Borewells</button>
             <button onclick="switchTab('quotes')" id="tab-quotes" class="tab-btn px-6 py-3 text-slate-600 hover:text-slate-800 whitespace-nowrap">Price Quotations</button>
-            <button onclick="switchTab('service')" id="tab-service" class="tab-btn px-6 py-3 text-slate-600 hover:text-slate-800 whitespace-nowrap">Service History</button>
         </div>
 
-        <div id="view-projects" class="tab-content">
+        <div id="global-loader" class="text-center py-12">
+            <div class="spinner"></div>
+            <p class="text-slate-400 text-sm mt-2">Syncing data...</p>
+        </div>
+
+        <div id="view-projects" class="tab-content hidden">
             <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 </div>
-            <div id="no-projects" class="hidden text-center py-12 bg-white rounded-xl border border-slate-100">
+            <div id="no-projects" class="hidden text-center py-12 bg-white rounded-xl border border-slate-100 shadow-sm">
                 <i class="ri-hammer-line text-4xl text-slate-300"></i>
-                <p class="text-slate-500 mt-2">No completed borewell projects yet.</p>
+                <p class="text-slate-500 mt-2 font-medium">No completed projects yet.</p>
+                <p class="text-xs text-slate-400">Once drilling is complete, your Digital Certificate will appear here.</p>
             </div>
         </div>
 
         <div id="view-quotes" class="tab-content hidden">
             <div id="quotes-grid" class="grid grid-cols-1 gap-4">
                 </div>
-        </div>
-
-        <div id="view-service" class="tab-content hidden">
-            <div class="bg-white p-6 rounded-xl border border-slate-200 relative" id="service-timeline">
-                <p class="text-center text-slate-400">No service history records found.</p>
+            <div id="no-quotes" class="hidden text-center py-12">
+                <p class="text-slate-400">No active price quotations found.</p>
+                <a href="quote.html" class="text-blue-600 font-bold hover:underline text-sm">Get a Quote</a>
             </div>
         </div>
 
@@ -70,105 +74,166 @@
 
     <div id="footer-mount"></div>
 
-   <script>
-        // 1. INIT FIREBASE
-        if(CONTACT_INFO.firebase_config) {
-            if (!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
-        }
+    <script>
+        // INIT FIREBASE
+        if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
         const db = firebase.firestore();
 
-        // 2. AUTH & LOAD DATA
+        // 1. AUTH LISTENER
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                console.log("Logged in as:", user.uid);
-                
-                // 🟢 QUERY FIX: We removed .orderBy() to prevent "Missing Index" errors
-                db.collection('leads')
-                  .where('userId', '==', user.uid)
-                  .get()
-                  .then((snapshot) => {
-                      // Hide Loader
-                      document.getElementById('loader').classList.add('hidden');
-                      
-                      if (snapshot.empty) {
-                          document.getElementById('no-orders').classList.remove('hidden');
-                          return;
-                      }
-                      
-                      // 🟢 MANUAL SORT: Sort by date (Newest First) using Javascript
-                      let leads = [];
-                      snapshot.forEach(doc => {
-                          let data = doc.data();
-                          // Add doc ID in case we need it later
-                          data.docId = doc.id; 
-                          leads.push(data);
-                      });
-                      
-                      // Sort Descending (Newest -> Oldest)
-                      leads.sort((a, b) => {
-                          let timeA = a.timestamp ? a.timestamp.seconds : 0;
-                          let timeB = b.timestamp ? b.timestamp.seconds : 0;
-                          return timeB - timeA;
-                      });
-
-                      const grid = document.getElementById('orders-grid');
-                      grid.classList.remove('hidden');
-                      grid.innerHTML = ""; // Clear existing
-                      
-                      leads.forEach(order => {
-                          // Format Date
-                          const dateObj = order.timestamp ? new Date(order.timestamp.toDate()) : new Date();
-                          const dateStr = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-                          
-                          const status = order.status || "Pending";
-                          let statusColor = "bg-yellow-100 text-yellow-800";
-                          if(status === "Completed") statusColor = "bg-green-100 text-green-800";
-
-                          const card = `
-                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 class="font-bold text-lg text-slate-800">${order.loc || "Site Location"}</h3>
-                                        <p class="text-xs text-slate-500 font-medium">Booked: ${dateStr}</p>
-                                    </div>
-                                    <span class="px-3 py-1 rounded-full text-[10px] uppercase tracking-wide font-bold ${statusColor}">${status}</span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4 text-sm mb-6 bg-slate-50 p-4 rounded-lg">
-                                    <div><span class="block text-slate-400 text-[10px] uppercase font-bold">Est. Depth</span><span class="font-bold text-slate-700">${order.depth} ft</span></div>
-                                    <div><span class="block text-slate-400 text-[10px] uppercase font-bold">Est. Cost</span><span class="font-bold text-slate-700">₹${parseInt(order.total).toLocaleString()}</span></div>
-                                </div>
-                                ${status === "Completed" ? 
-                                `<button onclick="generateCertificate('${order.name}', '${order.loc}', '${order.depth}')" class="w-full py-2.5 border border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition flex items-center justify-center gap-2">
-                                    <i class="ri-file-download-line"></i> Download Digital Certificate
-                                </button>` 
-                                : 
-                                `<button class="w-full py-2.5 bg-slate-100 text-slate-400 font-bold rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
-                                    <i class="ri-time-line"></i> Processing
-                                </button>`
-                                }
-                            </div>
-                          `;
-                          grid.innerHTML += card;
-                      });
-                  })
-                  .catch(e => {
-                      console.error("Dashboard Error:", e);
-                      // If it's a permission error, show it
-                      if(e.code === 'permission-denied') {
-                          alert("Database Rules Error: Please enable read/write in Firebase Console.");
-                      } else {
-                          alert("Error loading data: " + e.message);
-                      }
-                  });
+                document.getElementById('userName').innerText = user.phoneNumber;
+                loadClientData(user.uid, user.phoneNumber);
             } else {
-                // Not logged in -> Go to Login Page
                 window.location.href = "login.html";
             }
         });
 
-        function generateCertificate(name, loc, depth) {
-            // Re-use logic from pdf_template
-            alert("Certificate feature coming soon!"); 
+        function logout() {
+            firebase.auth().signOut().then(() => window.location.href = "index.html");
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            // Show selected
+            const selectedView = document.getElementById('view-' + tabName);
+            if(selectedView) selectedView.classList.remove('hidden');
+            
+            const selectedTab = document.getElementById('tab-' + tabName);
+            if(selectedTab) selectedTab.classList.add('active');
+        }
+
+        // 2. DATA LOADING (FIXED FOR NULL ERRORS)
+        function loadClientData(uid, phone) {
+            const loader = document.getElementById('global-loader');
+            
+            // --- A. LOAD QUOTATIONS (Leads) ---
+            db.collection('leads')
+              .where('userId', '==', uid)
+              .get() // No orderBy here to avoid Index Error
+              .then(snap => {
+                  const grid = document.getElementById('quotes-grid');
+                  const noData = document.getElementById('no-quotes');
+                  
+                  if(snap.empty) {
+                      noData.classList.remove('hidden');
+                  } else {
+                      let leads = [];
+                      snap.forEach(doc => leads.push(doc.data()));
+                      
+                      // JS Sort (Newest First)
+                      leads.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+                      grid.innerHTML = "";
+                      leads.forEach(data => {
+                          const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                          const card = `
+                            <div class="flex justify-between items-center p-5 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition">
+                                <div>
+                                    <h4 class="font-bold text-slate-700 text-lg">${data.loc || "Location"}</h4>
+                                    <p class="text-xs text-slate-400 mt-1"><i class="ri-calendar-line"></i> Quoted: ${date}</p>
+                                    <div class="mt-2 text-xs font-semibold text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded">
+                                        ${data.zone || 'Standard Zone'} • ${data.depth} ft
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-extrabold text-xl text-slate-900">₹${parseInt(data.total).toLocaleString()}</div>
+                                    <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1 inline-block">VALID</span>
+                                </div>
+                            </div>
+                          `;
+                          grid.innerHTML += card;
+                      });
+                  }
+                  
+                  // Hide loader after first data load
+                  if(loader) loader.style.display = 'none';
+                  // Show default tab
+                  switchTab('quotes'); 
+              })
+              .catch(err => {
+                  console.error("Quote Load Error:", err);
+                  if(loader) loader.innerHTML = `<p class="text-red-500">Error loading data. Check console.</p>`;
+              });
+
+            // --- B. LOAD PROJECTS (Completed Borewells) ---
+            db.collection('projects')
+              .where('mobile', '==', phone)
+              .get()
+              .then(snap => {
+                  const grid = document.getElementById('projects-grid');
+                  const noData = document.getElementById('no-projects');
+                  
+                  if(snap.empty) {
+                      noData.classList.remove('hidden');
+                  } else {
+                      grid.innerHTML = "";
+                      snap.forEach(doc => {
+                          const data = doc.data();
+                          const card = `
+                            <div class="bg-white p-6 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden">
+                                <div class="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">COMPLETED</div>
+                                <h3 class="text-xl font-extrabold text-slate-800 mb-1">${data.location}</h3>
+                                <p class="text-xs text-slate-500 mb-4">Drilled on: ${data.date}</p>
+                                
+                                <div class="grid grid-cols-2 gap-2 text-sm bg-slate-50 p-4 rounded-lg mb-6">
+                                    <div><span class="block text-[10px] text-slate-400 uppercase">Total Depth</span> <b class="text-slate-700">${data.depth} ft</b></div>
+                                    <div><span class="block text-[10px] text-slate-400 uppercase">Yield</span> <b class="text-emerald-600">${data.yield}</b></div>
+                                    <div><span class="block text-[10px] text-slate-400 uppercase">Motor</span> <b class="text-slate-700">${data.motor}</b></div>
+                                    <div><span class="block text-[10px] text-slate-400 uppercase">Casing</span> <b class="text-slate-700">${data.casing_depth} ft</b></div>
+                                </div>
+
+                                <button onclick='downloadCert(${JSON.stringify(data).replace(/'/g, "&apos;")})' class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition flex items-center justify-center gap-2">
+                                    <i class="ri-file-certificate-line text-yellow-400"></i> Download Birth Certificate
+                                </button>
+                            </div>
+                          `;
+                          grid.innerHTML += card;
+                      });
+                      // If projects exist, switch to project tab automatically
+                      switchTab('projects');
+                  }
+              });
+        }
+
+        // 3. CERTIFICATE GENERATION
+        function downloadCert(data) {
+            // Check if template exists
+            if(typeof getCertificateHTML === 'undefined') {
+                alert("Certificate Template Missing. Check assets/js/certificate_template.js");
+                return;
+            }
+
+            const content = getCertificateHTML({
+                id: data.projectId || "SBR-GEN-001",
+                name: "Valued Customer",
+                loc: data.location,
+                date: data.date,
+                gps: data.gps || "16.44, 80.55", 
+                depth: data.depth,
+                casing_depth: data.casing_depth,
+                casing_type: data.casing_type || "PVC Standard",
+                yield: data.yield,
+                water_gap: data.water_gap || "N/A",
+                motor: data.motor
+            });
+
+            const element = document.createElement('div');
+            element.innerHTML = content;
+            document.body.appendChild(element);
+            
+            const opt = {
+                margin: 0,
+                filename: `Borewell_Cert_${data.location}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => document.body.removeChild(element));
         }
     </script>
 </body>
