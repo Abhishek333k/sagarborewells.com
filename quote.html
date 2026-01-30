@@ -182,8 +182,10 @@
         function updateUI() { document.getElementById('depthDisplay').innerText = document.getElementById('depthSlider').value; }
 
         // --- GPS LOGIC (UPDATED: Now converts to ADDRESS) ---
+        // --- GPS LOGIC (Debug Version) ---
         function detectGPS() {
             const btn = document.querySelector('button[title="Use GPS"]');
+            const originalIcon = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             
             if(navigator.geolocation) {
@@ -191,27 +193,47 @@
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
                     
-                    // 1. Initialize Geocoder if missing
+                    // Safety Check: Is Google Maps loaded?
+                    if(typeof google === 'undefined' || typeof google.maps === 'undefined') {
+                        alert("Maps not loaded yet. Please wait 2 seconds.");
+                        btn.innerHTML = originalIcon;
+                        return;
+                    }
+
+                    // 1. Initialize Geocoder
                     if(!geocoder) geocoder = new google.maps.Geocoder();
                     
                     // 2. Convert to Address
                     const latlng = { lat: parseFloat(lat), lng: parseFloat(lng) };
+                    
                     geocoder.geocode({ location: latlng }, (results, status) => {
                         if (status === "OK" && results[0]) {
-                            // SUCCESS: Show the Address text
+                            // SUCCESS: Show text address
                             document.getElementById('locInput').value = results[0].formatted_address;
                             btn.innerHTML = '<i class="fa-solid fa-check"></i>';
                         } else {
-                            // FALLBACK: Show coords if address fails
+                            // FAILURE: Show error details
+                            console.error("Geocode Error:", status);
+                            if(status === 'REQUEST_DENIED') {
+                                alert("Error: You must enable 'Geocoding API' in Google Cloud Console.");
+                            } else {
+                                alert("Address lookup failed: " + status);
+                            }
+                            
+                            // Fallback to numbers
                             document.getElementById('locInput').value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-                            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                            btn.innerHTML = '<i class="fa-solid fa-location-dot"></i>';
                         }
                     });
 
-                }, () => { 
-                    alert('GPS Permission Denied'); 
-                    btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>'; 
+                }, (err) => { 
+                    console.warn(err);
+                    alert('GPS Permission Denied. Please enable location.'); 
+                    btn.innerHTML = originalIcon;
                 });
+            } else {
+                alert("Browser does not support GPS");
+                btn.innerHTML = originalIcon;
             }
         }
 
