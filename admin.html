@@ -18,28 +18,20 @@
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
-        /* CYBER THEME */
+        /* CYBER THEME & UTILS */
         body { background-color: #0f172a; font-family: 'Inter', sans-serif; color: #e2e8f0; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
-        
-        /* Glassmorphism */
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
         .glass-modal { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(59, 130, 246, 0.2); }
-
-        /* Navigation */
         .nav-item { display: flex; items-center; gap: 12px; padding: 12px 16px; color: #94a3b8; border-radius: 10px; transition: 0.3s; cursor: pointer; }
         .nav-item:hover, .nav-item.active { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-left: 3px solid #3b82f6; }
-
-        /* Inputs */
         .cyber-input { background: #1e293b; border: 1px solid #334155; color: white; padding: 12px; border-radius: 8px; width: 100%; outline: none; transition: 0.3s; }
         .cyber-input:focus { border-color: #3b82f6; background: #0f172a; }
         .cyber-select { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%233b82f6%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right .7rem top 50%; background-size: .65rem auto; }
-
-        /* Modal Overlay */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
         .modal-overlay.open { display: flex; opacity: 1; }
         
-        /* Map */
+        /* Map Pin */
         .map-wrapper { position: relative; width: 100%; height: 300px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
         .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none; display: flex; align-items: center; justify-content: center; }
         .reticle-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 15px 2px #ef4444; z-index: 2; }
@@ -60,7 +52,7 @@
         <nav class="flex-grow p-6 space-y-2">
             <div onclick="showSection('leads')" id="nav-leads" class="nav-item active"><i class="ri-radar-line"></i> <span>Live Leads</span></div>
             <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>BWBC Archives</span></div>
-            <div onclick="showSection('create')" id="nav-create" class="nav-item"><i class="ri-add-box-line"></i> <span>Issue Cert</span></div>
+            <div onclick="startNewCertificate()" id="nav-create" class="nav-item"><i class="ri-add-box-line"></i> <span>Issue Cert</span></div>
         </nav>
         <div class="p-6 border-t border-slate-800">
             <button onclick="logout()" class="flex items-center gap-3 text-sm text-slate-400 hover:text-red-400 transition"><i class="ri-shut-down-line"></i> Terminate Session</button>
@@ -95,7 +87,7 @@
         </header>
 
         <div id="filter-bar" class="mb-6 flex gap-4 hidden">
-            <input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input flex-grow" placeholder="Search by Name, Mobile, ID, or Location...">
+            <input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input flex-grow" placeholder="Search ID, Name, Mobile, Location...">
             <input type="date" id="dateInput" onchange="filterData()" class="cyber-input w-48">
             <button onclick="clearFilters()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 rounded-lg"><i class="ri-filter-off-line"></i></button>
         </div>
@@ -112,7 +104,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-xs text-slate-500 font-bold uppercase">ID:</span>
-                        <input type="text" id="p_id" class="bg-slate-900 border border-slate-700 text-emerald-400 font-mono font-bold px-3 py-1 rounded w-48 text-center" placeholder="Auto-Generating..." readonly>
+                        <input type="text" id="p_id" class="bg-slate-900 border border-slate-700 text-emerald-400 font-mono font-bold px-3 py-1 rounded w-48 text-center" placeholder="Calculating..." readonly>
                     </div>
                 </div>
 
@@ -130,26 +122,9 @@
         </div>
     </main>
 
-    <div id="detailModal" class="modal-overlay" style="z-index: 100;">
-        <div class="glass-modal p-8 w-full max-w-2xl rounded-2xl relative shadow-2xl overflow-y-auto max-h-[90vh]">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="ri-close-circle-line text-3xl"></i></button>
-            <div id="modalContent"></div>
-        </div>
-    </div>
-
-    <div id="previewModal" class="modal-overlay" style="z-index: 150;">
-        <div class="glass-modal p-4 w-full max-w-3xl rounded-xl h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4"><h3 class="text-white font-bold">Preview</h3><div class="flex gap-2"><button onclick="confirmDownloadPDF()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">Download</button><button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-400 px-4 py-2">Close</button></div></div>
-            <div id="previewContent" class="flex-grow bg-white overflow-y-auto rounded p-4 text-black"></div>
-        </div>
-    </div>
-
-    <div id="mapModal" class="modal-overlay" style="z-index: 200;">
-        <div class="glass-card p-6 w-full max-w-3xl border border-slate-600 shadow-2xl">
-            <div class="map-wrapper"><div id="mapContainer" class="w-full h-full"></div><div class="target-reticle"><div class="reticle-dot"></div><div class="reticle-ring"></div><div class="absolute top-[30px] w-[1px] h-[20px] bg-gradient-to-b from-blue-400 to-transparent opacity-50"></div><div class="absolute w-[80px] h-[1px] bg-blue-500/30"></div><div class="absolute h-[80px] w-[1px] bg-blue-500/30"></div></div></div>
-            <div class="flex justify-center gap-4 mt-6"><button onclick="document.getElementById('mapModal').classList.remove('open')" class="text-slate-400 hover:text-white font-bold px-6">ABORT</button><button onclick="confirmLocation()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded font-bold">LOCK COORDINATES</button></div>
-        </div>
-    </div>
+    <div id="detailModal" class="modal-overlay" style="z-index: 100;"><div class="glass-modal p-8 w-full max-w-2xl rounded-2xl relative shadow-2xl overflow-y-auto max-h-[90vh]"><button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="ri-close-circle-line text-3xl"></i></button><div id="modalContent"></div></div></div>
+    <div id="previewModal" class="modal-overlay" style="z-index: 150;"><div class="glass-modal p-4 w-full max-w-3xl rounded-xl h-[80vh] flex flex-col"><div class="flex justify-between items-center mb-4"><h3 class="text-white font-bold">Preview</h3><div class="flex gap-2"><button onclick="confirmDownloadPDF()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">Download</button><button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-400 px-4 py-2">Close</button></div></div><div id="previewContent" class="flex-grow bg-white overflow-y-auto rounded p-4 text-black"></div></div></div>
+    <div id="mapModal" class="modal-overlay" style="z-index: 200;"><div class="glass-card p-6 w-full max-w-3xl border border-slate-600 shadow-2xl"><h3 class="text-xl font-bold text-white mb-4 text-center">Satellite Targeting</h3><div class="map-wrapper"><div id="mapContainer" class="w-full h-full"></div><div class="target-reticle"><div class="reticle-dot"></div><div class="reticle-ring"></div><div class="absolute top-[30px] w-[1px] h-[20px] bg-gradient-to-b from-blue-400 to-transparent opacity-50"></div><div class="absolute w-[80px] h-[1px] bg-blue-500/30"></div><div class="absolute h-[80px] w-[1px] bg-blue-500/30"></div></div></div><div class="flex justify-center gap-4 mt-6"><button onclick="document.getElementById('mapModal').classList.remove('open')" class="text-slate-400 hover:text-white font-bold px-6">ABORT</button><button onclick="confirmLocation()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded font-bold">LOCK COORDINATES</button></div></div></div>
 
     <script>
         if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
@@ -184,14 +159,16 @@
         function verifyAdminOTP() { window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => alert("INVALID CODE")); }
         function logout() { auth.signOut(); window.location.reload(); }
 
-        // --- NAV & FILTER UI ---
+        // --- NAV & STATE ---
+        let isEditing = false; // 🟢 CRITICAL FLAG FOR LOGIC
+
         function showSection(id) {
             document.querySelectorAll('.content-section').forEach(e => e.classList.add('hidden'));
             document.getElementById('section-'+id).classList.remove('hidden');
             document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
             document.getElementById('nav-'+id).classList.add('active');
             
-            // Show/Hide Filter Bar
+            // Show filters for lists
             const filterBar = document.getElementById('filter-bar');
             if(id === 'leads' || id === 'projects') {
                 filterBar.classList.remove('hidden');
@@ -199,35 +176,33 @@
                 if(id==='projects') loadProjects();
             } else {
                 filterBar.classList.add('hidden');
-                if(id === 'create') resetForm();
             }
         }
 
-        // --- DATA CACHE & FILTER LOGIC ---
+        // 🟢 NEW: Explicitly start a new certificate (Reset Form + Generate ID)
+        function startNewCertificate() {
+            showSection('create');
+            resetForm(); // Clears everything and generates new ID
+        }
+
+        // --- DATA CACHE & FILTER ---
         let leadsCache = [], projectsCache = [];
         let currentView = 'leads';
 
         function filterData() {
             const term = document.getElementById('searchInput').value.toLowerCase();
             const date = document.getElementById('dateInput').value;
-            
             const list = currentView === 'leads' ? leadsCache : projectsCache;
             const container = document.getElementById(currentView === 'leads' ? 'leads-list' : 'projects-list');
             container.innerHTML = "";
 
             const filtered = list.filter(item => {
-                // Search Text
-                const searchStr = (item.name + item.mobile + item.loc + (item.projectId || '')).toLowerCase();
+                const searchStr = (item.name + item.mobile + item.loc + (item.projectId || '') + (item.docId || '')).toLowerCase();
                 const matchText = searchStr.includes(term);
-                
-                // Search Date (Optional)
                 let matchDate = true;
                 if(date) {
-                    // Normalize date formats
-                    const itemDateStr = item.date || (item.timestamp ? new Date(item.timestamp.toDate()).toISOString().split('T')[0] : '');
-                    // Compare simply strings or convert to Date objects if formats vary significantly
-                    // For now, assuming standard ISO or similar in cache
-                    matchDate = itemDateStr.includes(date); // Simple string match for YYYY-MM-DD
+                    const itemDate = item.date || (item.timestamp ? new Date(item.timestamp.toDate()).toISOString().split('T')[0] : '');
+                    matchDate = itemDate.includes(date);
                 }
                 return matchText && matchDate;
             });
@@ -242,7 +217,6 @@
             filterData();
         }
 
-        // --- FETCH & RENDER ---
         function loadLeads() {
             currentView = 'leads';
             db.collection('leads').orderBy('timestamp','desc').limit(100).get().then(snap => {
@@ -254,15 +228,12 @@
 
         function renderLeads(list) {
             const el = document.getElementById('leads-list'); el.innerHTML = "";
-            list.forEach((data, index) => {
+            list.forEach(data => {
                 const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
                 const statusColor = data.status === 'Closed' ? 'text-emerald-400' : (data.status === 'Site Visit' ? 'text-blue-400' : 'text-yellow-400');
                 el.innerHTML += `
                     <div onclick="openLeadModal('${data.docId}')" class="glass-card p-5 flex justify-between items-center hover:bg-slate-800/50 transition cursor-pointer group">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><i class="ri-user-search-line"></i></div>
-                            <div><div class="font-bold text-white">${data.name}</div><div class="text-xs text-slate-400 font-mono">${data.loc}</div></div>
-                        </div>
+                        <div class="flex items-center gap-4"><div class="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><i class="ri-user-search-line"></i></div><div><div class="font-bold text-white">${data.name}</div><div class="text-xs text-slate-400 font-mono">${data.loc}</div></div></div>
                         <div class="text-right"><div class="font-bold text-emerald-400 text-lg">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[10px] ${statusColor} font-mono font-bold uppercase">${data.status || 'Pending'}</div></div>
                     </div>`;
             });
@@ -270,7 +241,7 @@
 
         function loadProjects() {
             currentView = 'projects';
-            db.collection('projects').orderBy('timestamp', 'desc').get().then(snap => {
+            db.collection('projects').orderBy('projectId', 'desc').get().then(snap => {
                 projectsCache = [];
                 snap.forEach(d => { let data = d.data(); projectsCache.push(data); });
                 filterData();
@@ -279,7 +250,7 @@
 
         function renderProjects(list) {
             const el = document.getElementById('projects-list'); el.innerHTML = "";
-            list.forEach((data) => {
+            list.forEach(data => {
                 el.innerHTML += `
                     <div onclick="openProjectModal('${data.projectId}')" class="glass-card p-6 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition">
                         <h3 class="font-bold text-xl text-white mb-1">${data.location}</h3>
@@ -289,7 +260,7 @@
             });
         }
 
-        // --- MODALS ---
+        // --- MODALS & ACTIONS ---
         function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
 
         function openLeadModal(docId) {
@@ -343,33 +314,40 @@
             document.getElementById('detailModal').classList.add('open');
         }
 
-        // --- LOGIC: CREATE / EDIT / SAVE ---
-        let isEditing = false;
-
+        // --- CORE LOGIC: CREATE / EDIT / SAVE ---
+        
         function resetForm() {
             document.getElementById('projectForm').reset();
             isEditing = false;
-            document.getElementById('p_id').value = "Auto-Generating...";
             document.getElementById('form-mode-text').innerText = "CREATING NEW RECORD";
             document.getElementById('save-btn-text').innerText = "SAVE RECORD";
+            document.getElementById('p_id').value = "Calculating...";
             
-            // Auto Generate Next ID (Simple Logic: Count + 1)
-            const year = new Date().getFullYear();
-            db.collection('projects').get().then(snap => {
-                const count = snap.size + 1001; // Start from 1001
-                document.getElementById('p_id').value = `SBW-${year}-${count}`;
+            // 🟢 AUTO GENERATE NEXT BILL NO (Last + 1)
+            db.collection('projects').orderBy('projectId', 'desc').limit(1).get().then(snap => {
+                let nextNo = 1001;
+                if (!snap.empty) {
+                    const lastId = snap.docs[0].data().projectId; // e.g. SBW-2026-1005
+                    const parts = lastId.split('-');
+                    if(parts.length === 3 && !isNaN(parts[2])) {
+                        nextNo = parseInt(parts[2]) + 1;
+                    }
+                }
+                const year = new Date().getFullYear();
+                document.getElementById('p_id').value = `SBW-${year}-${nextNo}`;
             });
         }
 
         function editProject(projectId) {
             const data = projectsCache.find(p => p.projectId === projectId);
             closeModal();
-            showSection('create');
+            showSection('create'); // Switch to form WITHOUT resetting
             
             isEditing = true;
             document.getElementById('form-mode-text').innerText = "EDITING RECORD: " + projectId;
             document.getElementById('save-btn-text').innerText = "UPDATE RECORD";
             
+            // Load Data
             document.getElementById('p_id').value = data.projectId;
             document.getElementById('p_mobile').value = data.mobile.replace('+91','');
             document.getElementById('p_name').value = data.customerName;
@@ -386,10 +364,9 @@
 
         function convertToProject(docId) {
             const lead = leadsCache.find(l => l.docId === docId);
-            resetForm(); // Start fresh but prepopulate
+            startNewCertificate(); // Generate new ID
             closeModal();
-            showSection('create');
-            
+            // Pre-fill lead info
             document.getElementById('p_mobile').value = lead.mobile.replace('+91', '');
             document.getElementById('p_name').value = lead.name;
             document.getElementById('p_loc').value = lead.loc;
@@ -416,16 +393,17 @@
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // Check if ID exists before saving new
-            const docRef = db.collection('projects').doc(id); // Use ID as Doc Name
-            
+            const docRef = db.collection('projects').doc(id); // ID is document key
+
             docRef.get().then(doc => {
+                // If ID exists AND we are NOT in edit mode -> Collision Warning
                 if(doc.exists && !isEditing) {
-                    alert("ERROR: ID Already Exists! System generating new ID...");
-                    resetForm(); // Retry logic
+                    alert("ERROR: This ID already exists. Generating new ID...");
+                    resetForm();
                 } else {
+                    // Update or Create
                     docRef.set(data, { merge: true }).then(() => {
-                        alert(isEditing ? "Record Updated!" : "Certificate Issued!");
+                        alert(isEditing ? "Record Updated Successfully!" : "Certificate Issued Successfully!");
                         resetForm();
                         showSection('projects');
                     });
@@ -455,7 +433,7 @@
             const element = document.createElement('div'); element.innerHTML = currentPDFElement; document.body.appendChild(element);
             html2pdf().from(element).save('Document.pdf').then(() => document.body.removeChild(element));
         }
-        function downloadAdminCert(encoded) { previewCert(encoded); } // Shortcut: Just open preview
+        function downloadAdminCert(encoded) { previewCert(encoded); }
 
         // --- MAPS ---
         let map;
@@ -478,7 +456,6 @@
             document.getElementById('mapModal').classList.remove('open');
         }
         
-        // --- OTHER ---
         function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }); }
         function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => alert("Saved")); }
 
