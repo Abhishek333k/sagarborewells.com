@@ -12,23 +12,15 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; }
         .glass-panel { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
-        /* Smooth transitions for the multi-step form */
         .step-section { transition: all 0.4s ease-in-out; }
         .hidden-step { display: none; opacity: 0; }
-        
-        /* Custom Number Input to look like text */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <nav class="bg-[#0f172a] border-b border-slate-800 p-4 sticky top-0 z-50">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold tracking-tight">SAGAR <span class="text-blue-500">OPS</span></h1>
-            <a href="tel:+919876543210" class="text-xs font-bold text-slate-400"><i class="fa-solid fa-phone"></i> Help</a>
-        </div>
-    </nav>
+    <div id="header-mount"></div>
 
     <main class="flex-grow container mx-auto px-4 py-8 max-w-3xl">
         
@@ -71,6 +63,12 @@
                             <i class="fa-solid fa-location-dot absolute left-3 top-3.5 text-blue-500"></i>
                             <input id="locationInput" type="text" placeholder="Search locality or landmark..." 
                                 class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 pl-10 text-white focus:border-blue-500 outline-none">
+                            
+                            <div id="locLocked" class="hidden absolute right-3 top-3">
+                                <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-1 rounded border border-green-500/50 font-bold">
+                                    <i class="fa-solid fa-check"></i> MAP SELECTED
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -128,14 +126,8 @@
                             <span class="ml-2 text-sm text-slate-500 font-bold">ft</span>
                         </div>
                     </div>
-                    
                     <input type="range" id="depthSlider" min="100" max="1500" value="500" step="10" 
                         class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
-                    
-                    <div class="flex justify-between mt-2 text-[10px] text-slate-500 uppercase font-bold tracking-wider">
-                        <span>100 ft</span>
-                        <span>1500 ft</span>
-                    </div>
                 </div>
 
                 <div class="border-t-2 border-slate-700 pt-6">
@@ -149,8 +141,7 @@
                         <summary class="text-xs text-blue-400 cursor-pointer list-none flex items-center gap-2 font-bold">
                             <i class="fa-solid fa-circle-info"></i> View Rate Breakdown (50ft Slabs)
                         </summary>
-                        <div class="mt-3 p-3 bg-slate-900 rounded text-xs text-slate-400 space-y-1 font-mono border border-slate-700" id="breakdownLog">
-                            </div>
+                        <div class="mt-3 p-3 bg-slate-900 rounded text-xs text-slate-400 space-y-1 font-mono border border-slate-700" id="breakdownLog"></div>
                     </details>
 
                     <button onclick="submitLead()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition shadow-lg shadow-emerald-500/20 flex justify-center items-center gap-2">
@@ -159,32 +150,12 @@
                 </div>
             </div>
         </div>
-
     </main>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&libraries=places" async defer></script>
+    <script src="assets/js/components.js"></script>
 
     <script>
-        // --- 1. JUMPING RATE CONFIGURATION (The 50ft Slabs) ---
-        // This simulates the "Rate 1, Rate 2" logic.
-        // You can adjust these base prices.
-        const SLAB_INCREMENT = 50; // Every 50ft
-        
-        // Base Rates for the first slab (0-50ft) based on Purpose
-        const BASE_RATES = {
-            'residential': 90,
-            'agriculture': 85, // Usually slightly cheaper for bulk depth
-            'commercial': 110
-        };
-
-        // How much the price increases per slab (The "Jump")
-        // e.g., if JUMP_AMOUNT is 5, then:
-        // 0-50ft = 90
-        // 51-100ft = 95
-        // 101-150ft = 100
-        const JUMP_AMOUNT = 5; 
-
-        // --- 2. LEAD DATA STORAGE ---
+        // --- CONFIG & DATA ---
         let leadData = {
             name: "",
             mobile: "",
@@ -194,35 +165,58 @@
             price: 0
         };
 
-        // --- 3. GOOGLE PLACES SETUP ---
-        window.onload = function() {
-            const input = document.getElementById("locationInput");
-            if(window.google) {
+        const SLAB_INCREMENT = 50;
+        const BASE_RATES = { 'residential': 90, 'agriculture': 85, 'commercial': 110 };
+        const JUMP_AMOUNT = 5; 
+
+        // --- 1. THE FIX: PRE-FILL FROM MAP URL ---
+        document.addEventListener("DOMContentLoaded", function() {
+            // Read URL Params (sent from locate.html)
+            const params = new URLSearchParams(window.location.search);
+            const locParam = params.get('loc');
+            
+            if(locParam) {
+                const decodedLoc = decodeURIComponent(locParam);
+                
+                // 1. Fill the Visual Input
+                const inputField = document.getElementById("locationInput");
+                inputField.value = decodedLoc;
+                
+                // 2. Save to Data Object (So we don't need to type again)
+                leadData.location = decodedLoc;
+
+                // 3. Show "Locked" Badge
+                document.getElementById('locLocked').classList.remove('hidden');
+            }
+        });
+
+        // --- 2. GOOGLE AUTOCOMPLETE (Only if script loads) ---
+        function loadGoogleMaps() {
+            if(window.google && window.google.maps && window.google.maps.places) {
+                const input = document.getElementById("locationInput");
                 const autocomplete = new google.maps.places.Autocomplete(input);
                 autocomplete.addListener("place_changed", () => {
                     const place = autocomplete.getPlace();
                     leadData.location = place.formatted_address || input.value;
                 });
             }
-        };
+        }
 
-        // --- 4. STEP NAVIGATION ---
+        // --- 3. NAVIGATION LOGIC ---
         function goToStep2() {
             const name = document.getElementById('custName').value;
             const mobile = document.getElementById('custMobile').value;
-            const loc = document.getElementById('locationInput').value;
+            // Get location from input (in case user typed it manually instead of map)
+            const loc = document.getElementById('locationInput').value; 
 
-            // Validation
             if(name.length < 3) return alert("Please enter valid name");
             if(mobile.length < 10) return alert("Please enter valid mobile number");
             if(loc.length < 3) return alert("Please enter location");
 
-            // Save Data
             leadData.name = name;
             leadData.mobile = mobile;
             leadData.location = loc;
 
-            // Switch UI
             document.getElementById('step1').classList.add('hidden-step');
             setTimeout(() => {
                 document.getElementById('step1').style.display = 'none';
@@ -232,48 +226,36 @@
                 }, 50);
             }, 400);
 
-            // Update Header Indicators
+            // Update Indicators
             document.getElementById('step1-indicator').className = "flex flex-col items-center text-slate-500";
             document.getElementById('step1-indicator').children[0].className = "w-8 h-8 rounded-full bg-slate-800 text-slate-400 border border-slate-600 flex items-center justify-center font-bold text-sm";
-            
             document.getElementById('step2-indicator').className = "flex flex-col items-center text-blue-500";
             document.getElementById('step2-indicator').children[0].className = "w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm";
 
-            // Run Calc
             calculatePrice();
-            
-            // SILENT LEAD CAPTURE (Simulated)
-            // In a real app, here we would do: fetch('/api/save-lead', { ... })
-            console.log("Lead Captured:", leadData); 
         }
 
         function goBack() {
-            location.reload(); // Simple reload to restart
+            location.reload(); 
         }
 
-        // --- 5. CALCULATOR ENGINE (DUAL INPUT + SLABS) ---
+        // --- 4. CALCULATOR ENGINE ---
         const slider = document.getElementById('depthSlider');
         const numberInput = document.getElementById('depthInput');
         const priceDisplay = document.getElementById('totalPrice');
         const breakdownLog = document.getElementById('breakdownLog');
 
-        // Sync Slider & Number Input
-        slider.addEventListener('input', (e) => {
-            numberInput.value = e.target.value;
-            calculatePrice();
-        });
-        numberInput.addEventListener('input', (e) => {
-            let val = parseInt(e.target.value);
-            if(val > 1500) val = 1500; // Max Limit
-            slider.value = val;
-            calculatePrice();
+        slider.addEventListener('input', (e) => { numberInput.value = e.target.value; calculatePrice(); });
+        numberInput.addEventListener('input', (e) => { 
+            let val = parseInt(e.target.value); 
+            if(val > 1500) val = 1500; 
+            slider.value = val; 
+            calculatePrice(); 
         });
 
         function updateRateCard() {
             const radios = document.getElementsByName('purpose');
-            for(let r of radios) {
-                if(r.checked) leadData.purpose = r.value;
-            }
+            for(let r of radios) { if(r.checked) leadData.purpose = r.value; }
             calculatePrice();
         }
 
@@ -283,36 +265,19 @@
             let totalCost = 0;
             let currentSlabRate = startRate;
             let logHTML = "";
-
-            // LOGIC: Loop through every 50ft
-            // If depth is 120ft:
-            // Slab 1 (0-50): 50 * Rate1
-            // Slab 2 (51-100): 50 * Rate2
-            // Slab 3 (101-120): 20 * Rate3
-
             let remainingDepth = depth;
             let currentDepthFloor = 0;
 
             while (remainingDepth > 0) {
-                let depthInThisSlab = 0;
-                
-                if (remainingDepth >= SLAB_INCREMENT) {
-                    depthInThisSlab = SLAB_INCREMENT;
-                } else {
-                    depthInThisSlab = remainingDepth;
-                }
-
+                let depthInThisSlab = (remainingDepth >= SLAB_INCREMENT) ? SLAB_INCREMENT : remainingDepth;
                 const slabCost = depthInThisSlab * currentSlabRate;
                 totalCost += slabCost;
-
-                // Log for breakdown
-                const slabLabel = `${currentDepthFloor}-${currentDepthFloor + depthInThisSlab}ft`;
-                logHTML += `<div class="flex justify-between"><span>${slabLabel} (@ ₹${currentSlabRate})</span> <span>₹${slabCost.toLocaleString()}</span></div>`;
-
-                // Prepare next slab
+                
+                logHTML += `<div class="flex justify-between"><span>${currentDepthFloor}-${currentDepthFloor + depthInThisSlab}ft (@ ₹${currentSlabRate})</span> <span>₹${slabCost.toLocaleString()}</span></div>`;
+                
                 remainingDepth -= depthInThisSlab;
                 currentDepthFloor += depthInThisSlab;
-                currentSlabRate += JUMP_AMOUNT; // Price jumps every slab
+                currentSlabRate += JUMP_AMOUNT; 
             }
 
             priceDisplay.innerText = "₹" + totalCost.toLocaleString();
@@ -321,15 +286,13 @@
             leadData.depth = depth;
         }
 
-       function submitLead() {
+        // --- 5. SUBMIT HANDLER ---
+        function submitLead() {
             const btn = document.querySelector('button[onclick="submitLead()"]');
             const originalText = btn.innerHTML;
-            
-            // 1. Show Loading State
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
             btn.disabled = true;
-        
-            // 2. Prepare Data for Google Sheet
+
             const formData = new FormData();
             formData.append("name", leadData.name);
             formData.append("mobile", leadData.mobile);
@@ -337,20 +300,11 @@
             formData.append("purpose", leadData.purpose);
             formData.append("depth", leadData.depth);
             formData.append("price", leadData.price);
-        
-            // 3. Send to Backend (Google Script)
-            fetch(CONTACT_INFO.database_url, {
-                method: "POST",
-                body: formData,
-                mode: "no-cors" // Important for Google Script
-            })
+
+            fetch(CONTACT_INFO.database_url, { method: "POST", body: formData, mode: "no-cors" })
             .then(() => {
-                // 4. Success! Now open WhatsApp
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved!';
-                
-                // Generate WhatsApp Message
                 const msg = `*New Quote Request*%0A%0A👤 Name: ${leadData.name}%0A📱 Mobile: ${leadData.mobile}%0A📍 Loc: ${leadData.location}%0A%0A⚙️ *Job Details:*%0A- Purpose: ${leadData.purpose.toUpperCase()}%0A- Depth: ${leadData.depth} ft%0A- Est. Cost: ₹${leadData.price.toLocaleString()}%0A%0APlease contact me.`;
-                
                 setTimeout(() => {
                     window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
                     btn.innerHTML = originalText;
@@ -358,15 +312,21 @@
                 }, 1000);
             })
             .catch(err => {
-                console.error("Error saving lead", err);
-                alert("Connection error, opening WhatsApp directly.");
-                // Fallback: Open WhatsApp anyway
-                const msg = `*New Quote Request (Offline)*%0A%0A👤 Name: ${leadData.name}%0A📱 Mobile: ${leadData.mobile}%0A...`;
+                alert("Opening WhatsApp...");
+                const msg = `*New Quote Request*%0A%0A👤 Name: ${leadData.name}%0A...`;
                 window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             });
         }
+    </script>
+    
+    <script>
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=loadGoogleMaps`;
+        script.async = true;
+        script.defer = true;
+        document.body.appendChild(script);
     </script>
 </body>
 </html>
