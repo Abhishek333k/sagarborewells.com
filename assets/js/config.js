@@ -4,8 +4,8 @@ const CONTACT_INFO = {
     // The Master Phone Number (Format: CountryCode + Number)
     whatsapp_api: "916304094177", 
     
-    // Display format for the screen
-    phone_display: "+91 98765-43210", 
+    // Display format for the screen (I updated this to match your real number)
+    phone_display: "+91 63040-94177", 
     
     // Support Email
     email: "support@sagarborewells.com",
@@ -13,9 +13,10 @@ const CONTACT_INFO = {
     // Office Address
     address: "Mangalagiri, Andhra Pradesh",
     
-    // Google Maps API Key (Optional: Centralize your key here if you want)
-    google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus" 
+    // Google Maps API Key
+    google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus", // <--- COMMA WAS MISSING HERE!
 
+    // Your Database URL
     database_url: "https://script.google.com/macros/s/AKfycbwMJ16yDE-PsghDqyBa6mS4J-QXrMn10OYSEthKZEMRhv9uw6N1NpBN3_FgNX7PsmeSig/exec"
 };
 
