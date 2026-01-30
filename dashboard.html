@@ -248,27 +248,31 @@
         }
 
         // 4. GENERATE CERTIFICATE PDF
-        function downloadCert(encodedData) {
-            const data = JSON.parse(decodeURIComponent(encodedData));
-            const content = getCertificateHTML({
-                id: data.projectId || "SBR-GEN-001",
-                name: "Valued Customer",
+        function downloadCert(data) {
+            // FIX: Map customerName from DB to 'name' for template
+            const certData = {
+                id: data.projectId,
+                name: data.customerName || "Valued Customer", // 🟢 FIXED
                 loc: data.location,
                 date: data.date,
-                gps: data.gps || "Unavailable", 
+                gps: data.gps,
                 depth: data.depth,
                 casing_depth: data.casing_depth,
-                casing_type: "PVC Standard",
+                casing_type: data.casing_type,
                 yield: data.yield,
-                water_gap: data.water_gap || "N/A",
-                motor: data.motor
-            });
+                motor: data.motor,
+                rigType: data.rigType // 🟢 Added Rig Type
+            };
 
+            const content = getCertificateHTML(certData);
             const element = document.createElement('div');
             element.innerHTML = content;
             document.body.appendChild(element);
             
-            html2pdf().from(element).save(`Borewell_Cert_${data.location}.pdf`).then(() => document.body.removeChild(element));
+            // 🟢 FIXED: Filename uses Project ID
+            const filename = `${data.projectId || 'Certificate'}.pdf`;
+
+            html2pdf().from(element).save(filename).then(() => document.body.removeChild(element));
         }
     </script>
 </body>
