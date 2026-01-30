@@ -379,11 +379,26 @@
         function goToStep1() { document.getElementById('step-2').style.display = 'none'; document.getElementById('step-1').style.display = 'block'; }
         
         function confirmBooking() {
-            db.collection('leads').add({ ...leadData, timestamp: firebase.firestore.FieldValue.serverTimestamp(), userId: firebase.auth().currentUser.uid })
+            // 🟢 GENERATE STRUCTURED ID FOR ADMIN
+            const year = new Date().getFullYear();
+            const rand = Math.floor(1000 + Math.random() * 9000);
+            const leadId = `QT-${year}-${rand}`;
+
+            const finalData = { 
+                ...leadData, 
+                id: leadId, // Store formatted ID
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(), 
+                userId: firebase.auth().currentUser.uid 
+            };
+
+            // Use .doc(leadId).set() to use the custom ID as the document key
+            db.collection('leads').doc(leadId).set(finalData)
             .then(() => {
                 document.getElementById('step-2').style.display = 'none';
                 document.getElementById('step-3').style.display = 'block';
-                window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=Booking ${leadData.name}`, '_blank');
+                // Send WhatsApp with Ref ID
+                const waText = `Hello Sagar Borewells, I have a booking. Ref: ${leadId}`;
+                window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${encodeURIComponent(waText)}`, '_blank');
             });
         }
         function downloadPDF() {
