@@ -3,80 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generate Quote | Sagar Borewells</title>
+    <title>Borewell Estimator | Sagar Ops</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #0f172a; }
-        
-        /* Modal Transition */
-        .modal-wrap { opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
-        .modal-wrap.active { opacity: 1; pointer-events: auto; }
-        .modal-content { transform: translateY(20px); transition: transform 0.3s ease; }
-        .modal-wrap.active .modal-content { transform: translateY(0); }
-
-        /* Invoice Styling */
-        .invoice-paper { background: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
-        .est-table th { text-align: left; padding: 8px; font-size: 11px; text-transform: uppercase; color: #64748b; background: #f1f5f9; }
-        .est-table td { padding: 8px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #1e293b; }
+        .invoice-box { background: white; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .modal-active { display: flex !important; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="min-h-screen flex flex-col">
 
     <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-30">
-        <div class="max-w-3xl mx-auto flex justify-between items-center">
-            <a href="index.html" class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <i class="fa-solid fa-arrow-left text-slate-400"></i> Back
+        <div class="max-w-2xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Home
             </a>
-            <span class="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1 rounded-full">ESTIMATOR TOOL</span>
+            <span class="text-xs font-bold bg-blue-600 text-white px-3 py-1 rounded-full uppercase tracking-wider">Quote Engine</span>
         </div>
     </nav>
 
-    <main class="max-w-3xl mx-auto p-4 py-8">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
-            <h1 class="text-2xl font-bold text-slate-900 mb-6">Project Details</h1>
-
-            <div class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <main class="flex-grow p-4">
+        <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 p-6 border-b border-slate-200">
+                <h1 class="text-xl font-bold text-slate-800">Project Details</h1>
+                <p class="text-sm text-slate-500">Enter details to generate an official borewell estimate.</p>
+            </div>
+            
+            <div class="p-6 md:p-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Customer Name</label>
-                        <input type="text" id="custName" placeholder="Enter Name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none transition">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Name</label>
+                        <input type="text" id="custName" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Mobile Number</label>
-                        <input type="tel" id="custMobile" placeholder="9876543210" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none transition">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Mobile</label>
+                        <input type="tel" id="custMobile" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Drilling Site Location</label>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Site Location</label>
                     <div class="flex gap-2">
-                        <input type="text" id="locInput" placeholder="Enter Location or use GPS" class="flex-grow p-3 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none transition">
-                        <button onclick="detectGPS()" class="px-4 bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-600 transition"><i class="fa-solid fa-crosshairs"></i></button>
+                        <input type="text" id="locInput" placeholder="Village / Area Name" class="flex-grow p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
+                        <button onclick="detectGPS()" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded-lg">
+                            <i class="fa-solid fa-location-crosshairs"></i>
+                        </button>
                     </div>
                 </div>
 
-                <div class="p-6 bg-slate-50 rounded-xl border border-slate-200">
-                    <div class="flex justify-between mb-4">
-                        <label class="font-bold text-slate-700">Estimated Depth</label>
+                <div class="p-5 bg-blue-50/50 rounded-xl border border-blue-100">
+                    <div class="flex justify-between mb-2">
+                        <label class="font-bold text-blue-900 text-sm">Target Depth</label>
                         <span class="font-bold text-blue-600"><span id="depthDisplay">500</span> ft</span>
                     </div>
-                    <input type="range" id="depthSlider" min="100" max="1500" value="500" step="10" class="w-full h-2 bg-slate-300 rounded-lg accent-blue-600 cursor-pointer" oninput="updateUI()">
+                    <input type="range" id="depthSlider" min="100" max="1500" value="500" step="10" class="w-full h-2 bg-blue-200 rounded-lg accent-blue-600 cursor-pointer mb-6" oninput="updateUI()">
                     
-                    <div class="grid grid-cols-2 gap-4 mt-6">
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Purpose</label>
-                            <select id="purposeInput" class="w-full p-2 bg-white border border-slate-200 rounded-lg" onchange="updateUI()">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Usage Type</label>
+                            <select id="purposeInput" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
                                 <option value="residential">Residential</option>
                                 <option value="agriculture">Agriculture</option>
                                 <option value="commercial">Commercial</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Casing Type</label>
-                            <select id="casingType" class="w-full p-2 bg-white border border-slate-200 rounded-lg">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Casing Pipe</label>
+                            <select id="casingType" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
                                 <option value="PVC">PVC (Standard)</option>
                                 <option value="Heavy">PVC (Heavy)</option>
                                 <option value="Iron">MS Iron</option>
@@ -85,116 +81,96 @@
                     </div>
                 </div>
 
-                <button onclick="generatePreview()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition transform hover:scale-[1.01]">
-                    Generate Official Quote
+                <button onclick="generatePreview()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition">
+                    Generate Estimate
                 </button>
             </div>
         </div>
     </main>
 
-    <div id="previewModal" class="fixed inset-0 z-50 modal-wrap flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col modal-content">
+    <div id="previewModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             
             <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
-                <h2 class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-file-invoice text-blue-600"></i> Estimate Preview</h2>
-                <button onclick="closeModal()" class="text-sm font-bold text-blue-600 hover:underline">Edit Details</button>
+                <span class="font-bold text-slate-700">Estimate Preview</span>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
 
-            <div class="flex-grow overflow-y-auto p-6 bg-slate-100">
-                <div class="invoice-paper p-6 rounded-lg bg-white">
-                    
-                    <div class="flex justify-between border-b-2 border-slate-100 pb-4 mb-4">
+            <div class="p-6 overflow-y-auto bg-slate-100">
+                <div class="invoice-box p-6 rounded-lg bg-white text-sm">
+                    <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
                         <div>
-                            <div class="text-xl font-extrabold text-blue-800">SAGAR OPS</div>
-                            <div class="text-xs text-slate-500">Official Cost Estimate</div>
+                            <h2 class="font-extrabold text-blue-700 text-lg">SAGAR BOREWELLS</h2>
+                            <p class="text-slate-500 text-xs">Official Quote #PREVIEW</p>
                         </div>
                         <div class="text-right">
-                            <div class="text-[10px] text-slate-400 uppercase font-bold">Total Estimate</div>
-                            <div class="text-2xl font-bold text-slate-900" id="invTotal">₹0</div>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Estimated Total</p>
+                            <p class="text-2xl font-bold text-slate-900" id="invTotal">₹0</p>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 mb-6 text-xs">
-                        <div>
-                            <span class="block text-slate-400 font-bold uppercase">Customer</span>
-                            <span class="block text-slate-800 font-semibold" id="invName">--</span>
-                        </div>
-                        <div>
-                            <span class="block text-slate-400 font-bold uppercase">Location</span>
-                            <span class="block text-slate-800 font-semibold" id="invLoc">--</span>
-                        </div>
+                    <div class="mb-4 text-xs text-slate-500">
+                        <p><strong>Customer:</strong> <span id="invName">--</span></p>
+                        <p><strong>Location:</strong> <span id="invLoc">--</span></p>
                     </div>
 
-                    <h3 class="text-xs font-bold text-slate-900 uppercase mb-2">1. Drilling Cost Breakdown</h3>
-                    <table class="est-table w-full mb-6">
-                        <thead><tr><th>Depth Slab</th><th class="text-right">Amount</th></tr></thead>
-                        <tbody id="drillingBody"></tbody>
-                    </table>
-
-                    <h3 class="text-xs font-bold text-slate-900 uppercase mb-2">2. Fixed Operational Costs</h3>
-                    <table class="est-table w-full mb-6">
-                        <tbody>
-                            <tr>
-                                <td>Transport, Setup, Labor & Food</td>
-                                <td class="text-right font-bold text-slate-700">₹7,000</td>
+                    <table class="w-full mb-4 text-left border-collapse">
+                        <thead>
+                            <tr class="text-[10px] uppercase text-slate-400 border-b border-slate-100">
+                                <th class="py-2">Description</th>
+                                <th class="py-2 text-right">Amount</th>
                             </tr>
-                        </tbody>
+                        </thead>
+                        <tbody id="invBody" class="text-slate-700 font-medium"></tbody>
                     </table>
 
-                    <div class="bg-yellow-50 p-3 rounded border border-yellow-100 text-[11px] text-yellow-800 mb-2">
-                        <strong>Note:</strong> Casing Pipe (<span id="invCasing">PVC</span>) & GST are charged extra based on actual usage.
+                    <div class="flex justify-between border-t border-slate-100 pt-3 mt-2 font-bold text-slate-700">
+                        <span>Fixed Costs (Transport/Setup)</span>
+                        <span>₹7,000</span>
+                    </div>
+
+                    <div class="mt-4 p-3 bg-blue-50 text-blue-800 text-[10px] rounded border border-blue-100">
+                        * Quote excludes GST & Casing Pipe costs. Final invoice based on actual depth drilled.
                     </div>
                 </div>
             </div>
 
             <div class="p-4 bg-white border-t border-slate-200">
-                <button onclick="sendWhatsApp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-lg flex justify-center items-center gap-2">
-                    <i class="fa-brands fa-whatsapp text-lg"></i> Confirm & Send Quote
+                <button onclick="sendWhatsApp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg flex justify-center items-center gap-2">
+                    <i class="fa-brands fa-whatsapp"></i> Confirm Booking
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        // CONFIG
         const FIXED_COSTS = 7000;
         const SLAB_INCREMENT = 50;
         const JUMP_AMOUNT = 5;
         const BASE_RATES = { 'residential': 90, 'agriculture': 85, 'commercial': 110 };
-        
         let leadData = {};
 
-        // 1. UI UPDATES
-        function updateUI() {
-            document.getElementById('depthDisplay').innerText = document.getElementById('depthSlider').value;
-        }
+        function updateUI() { document.getElementById('depthDisplay').innerText = document.getElementById('depthSlider').value; }
 
-        // 2. LOCATION
         function detectGPS() {
             const btn = document.querySelector('button[onclick="detectGPS()"]');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.innerHTML = '...';
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
-                    // In real app, use Geocoder here. For now, simple lat/lng
                     document.getElementById('locInput').value = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
                     btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                }, () => { alert('GPS Denied'); btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i>'; });
+                }, () => { alert('GPS Error'); btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>'; });
             }
         }
 
-        // 3. GENERATE PREVIEW (Opens Modal)
         function generatePreview() {
-            // Get Values
             const name = document.getElementById('custName').value;
-            const mobile = document.getElementById('custMobile').value;
             const loc = document.getElementById('locInput').value;
             const depth = parseInt(document.getElementById('depthSlider').value);
             const purpose = document.getElementById('purposeInput').value;
-            const casing = document.getElementById('casingType').value;
 
-            if(!name || !loc) { alert("Please enter Name and Location"); return; }
+            if(!name || !loc) { alert("Please fill details"); return; }
 
-            // Calc Logic
             let remaining = depth;
             let floor = 0;
             let rate = BASE_RATES[purpose];
@@ -205,42 +181,27 @@
                 let chunk = (remaining >= SLAB_INCREMENT) ? SLAB_INCREMENT : remaining;
                 let cost = chunk * rate;
                 drillTotal += cost;
-                
-                rows += `<tr>
-                    <td>${floor}-${floor+chunk}ft @ ₹${rate}</td>
-                    <td class="text-right">₹${cost.toLocaleString()}</td>
-                </tr>`;
-
+                rows += `<tr class="border-b border-slate-50"><td class="py-2">${floor}-${floor+chunk}ft @ ₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
                 remaining -= chunk;
                 floor += chunk;
                 rate += JUMP_AMOUNT;
             }
 
-            const grandTotal = drillTotal + FIXED_COSTS;
-
-            // Fill Modal
+            const total = drillTotal + FIXED_COSTS;
+            
             document.getElementById('invName').innerText = name;
             document.getElementById('invLoc').innerText = loc;
-            document.getElementById('invCasing').innerText = casing;
-            document.getElementById('drillingBody').innerHTML = rows;
-            document.getElementById('invTotal').innerText = "₹" + grandTotal.toLocaleString();
+            document.getElementById('invBody').innerHTML = rows;
+            document.getElementById('invTotal').innerText = "₹" + total.toLocaleString();
 
-            // Store Data
-            leadData = { name, mobile, loc, depth, total: grandTotal };
-
-            // Show Modal
-            document.getElementById('previewModal').classList.add('active');
+            leadData = { name, loc, depth, total };
+            document.getElementById('previewModal').classList.add('modal-active');
         }
 
-        function closeModal() {
-            document.getElementById('previewModal').classList.remove('active');
-        }
+        function closeModal() { document.getElementById('previewModal').classList.remove('modal-active'); }
 
-        // 4. SEND
         function sendWhatsApp() {
-            // Send to Google Sheet logic can go here (fetch call)
-            
-            const msg = `*OFFICIAL QUOTE*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.loc}%0A📞 ${leadData.mobile}%0A%0A📉 Depth: ${leadData.depth}ft%0A💰 *Total Est:* ₹${leadData.total.toLocaleString()}%0A%0A(Includes Fixed Costs). Please confirm.`;
+            const msg = `*BOOKING REQUEST*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.loc}%0A📉 ${leadData.depth}ft%0A💰 *Est: ₹${leadData.total.toLocaleString()}*%0A%0APlease schedule rig.`;
             window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
         }
     </script>
