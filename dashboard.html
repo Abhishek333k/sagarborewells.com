@@ -71,40 +71,55 @@
     <div id="footer-mount"></div>
 
    <script>
-        if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        // 1. INIT FIREBASE
+        if(CONTACT_INFO.firebase_config) {
+            if (!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        }
         const db = firebase.firestore();
 
-        // 1. AUTH & LOAD
+        // 2. AUTH & LOAD DATA
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                // Show User ID for debugging
                 console.log("Logged in as:", user.uid);
                 
-                // 🟢 UPDATED QUERY: Removed .orderBy() to fix "Missing Index" error
+                // 🟢 QUERY FIX: We removed .orderBy() to prevent "Missing Index" errors
                 db.collection('leads')
                   .where('userId', '==', user.uid)
                   .get()
                   .then((snapshot) => {
+                      // Hide Loader
                       document.getElementById('loader').classList.add('hidden');
                       
                       if (snapshot.empty) {
-                          console.log("No records found for this user.");
                           document.getElementById('no-orders').classList.remove('hidden');
                           return;
                       }
                       
+                      // 🟢 MANUAL SORT: Sort by date (Newest First) using Javascript
+                      let leads = [];
+                      snapshot.forEach(doc => {
+                          let data = doc.data();
+                          // Add doc ID in case we need it later
+                          data.docId = doc.id; 
+                          leads.push(data);
+                      });
+                      
+                      // Sort Descending (Newest -> Oldest)
+                      leads.sort((a, b) => {
+                          let timeA = a.timestamp ? a.timestamp.seconds : 0;
+                          let timeB = b.timestamp ? b.timestamp.seconds : 0;
+                          return timeB - timeA;
+                      });
+
                       const grid = document.getElementById('orders-grid');
                       grid.classList.remove('hidden');
-                      grid.innerHTML = "";
+                      grid.innerHTML = ""; // Clear existing
                       
-                      // Convert to array and Sort in Javascript instead
-                      let leads = [];
-                      snapshot.forEach(doc => leads.push(doc.data()));
-                      leads.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-
                       leads.forEach(order => {
-                          // Fallback timestamp if missing
-                          const date = order.timestamp ? new Date(order.timestamp.toDate()).toLocaleDateString() : 'Just Now';
+                          // Format Date
+                          const dateObj = order.timestamp ? new Date(order.timestamp.toDate()) : new Date();
+                          const dateStr = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                          
                           const status = order.status || "Pending";
                           let statusColor = "bg-yellow-100 text-yellow-800";
                           if(status === "Completed") statusColor = "bg-green-100 text-green-800";
@@ -114,7 +129,7 @@
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
                                         <h3 class="font-bold text-lg text-slate-800">${order.loc || "Site Location"}</h3>
-                                        <p class="text-xs text-slate-500 font-medium">Booked: ${date}</p>
+                                        <p class="text-xs text-slate-500 font-medium">Booked: ${dateStr}</p>
                                     </div>
                                     <span class="px-3 py-1 rounded-full text-[10px] uppercase tracking-wide font-bold ${statusColor}">${status}</span>
                                 </div>
@@ -128,7 +143,7 @@
                                 </button>` 
                                 : 
                                 `<button class="w-full py-2.5 bg-slate-100 text-slate-400 font-bold rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
-                                    <i class="ri-time-line"></i> Certificate Available After Completion
+                                    <i class="ri-time-line"></i> Processing
                                 </button>`
                                 }
                             </div>
@@ -138,7 +153,12 @@
                   })
                   .catch(e => {
                       console.error("Dashboard Error:", e);
-                      alert("Error loading data. See console.");
+                      // If it's a permission error, show it
+                      if(e.code === 'permission-denied') {
+                          alert("Database Rules Error: Please enable read/write in Firebase Console.");
+                      } else {
+                          alert("Error loading data: " + e.message);
+                      }
                   });
             } else {
                 // Not logged in -> Go to Login Page
@@ -147,7 +167,8 @@
         });
 
         function generateCertificate(name, loc, depth) {
-            alert("Certificate download starting..."); 
+            // Re-use logic from pdf_template
+            alert("Certificate feature coming soon!"); 
         }
     </script>
 </body>
