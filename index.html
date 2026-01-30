@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sagar Borewells | Precision Drilling</title>
+    <title>Sagar Borewells | Intelligent Drilling</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -38,20 +38,20 @@
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Systems Online
                     </div>
                     <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
-                        Securing Your <br><span class="text-blue-500">Water Future.</span>
+                        Precision Drilling. <br><span class="text-blue-500">Zone-Based Pricing.</span>
                     </h1>
                     <p class="text-slate-400 text-lg mb-8 leading-relaxed">
-                        Advanced sensor-based drilling. Get an official estimate in 30 seconds. No hidden costs.
+                        We analyze your soil zone and geological data to provide the most accurate drilling estimate in Andhra Pradesh.
                     </p>
                     
                     <div class="flex flex-col sm:flex-row gap-4">
                         <a href="quote.html" class="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/25 transition transform hover:scale-105 flex items-center justify-center gap-3">
-                            <span>Get Instant Quote</span> <i class="fa-solid fa-arrow-right"></i>
+                            <span>Get Zone Estimate</span> <i class="fa-solid fa-arrow-right"></i>
                         </a>
                     </div>
                 </div>
 
-                <div class="glass-panel p-8 rounded-3xl border-t border-blue-500/20 shadow-2xl">
+                <div id="liveStatsCard" class="hidden glass-panel p-8 rounded-3xl border-t border-blue-500/20 shadow-2xl">
                     <div class="flex justify-between items-start mb-8">
                         <div>
                             <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest">Live Operations</h3>
@@ -64,10 +64,11 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-slate-800/50 p-4 rounded-xl">
-                            <div class="text-3xl font-bold text-white">22</div> <div class="text-xs text-slate-400 font-bold uppercase mt-1">Active Rigs</div>
+                            <div class="text-3xl font-bold text-white" id="statRigs">--</div>
+                            <div class="text-xs text-slate-400 font-bold uppercase mt-1">Active Rigs</div>
                         </div>
                         <div class="bg-slate-800/50 p-4 rounded-xl">
-                            <div class="text-3xl font-bold text-blue-400">98%</div>
+                            <div class="text-3xl font-bold text-blue-400" id="statSuccess">--%</div>
                             <div class="text-xs text-slate-400 font-bold uppercase mt-1">Success Rate</div>
                         </div>
                     </div>
@@ -78,60 +79,32 @@
 
             </div>
         </div>
-
-        <div class="bg-[#1e293b] py-20 border-t border-slate-800">
-            <div class="max-w-6xl mx-auto px-4">
-                <h2 class="text-2xl font-bold text-center mb-12">Get Water in 4 Simple Steps</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
-                    <div class="relative">
-                        <div class="text-5xl font-black text-slate-800 absolute -top-6 -left-2 z-0">01</div>
-                        <div class="relative z-10">
-                            <h3 class="text-lg font-bold text-blue-400 mb-2">Get Quote</h3>
-                            <p class="text-xs text-slate-400">Fill our smart form and get an official estimate in 30 seconds.</p>
-                        </div>
-                    </div>
-                    <div class="relative">
-                        <div class="text-5xl font-black text-slate-800 absolute -top-6 -left-2 z-0">02</div>
-                        <div class="relative z-10">
-                            <h3 class="text-lg font-bold text-white mb-2">Expert Call</h3>
-                            <p class="text-xs text-slate-400">Our senior geologist calls you within 5 mins to confirm details.</p>
-                        </div>
-                    </div>
-                    <div class="relative">
-                        <div class="text-5xl font-black text-slate-800 absolute -top-6 -left-2 z-0">03</div>
-                        <div class="relative z-10">
-                            <h3 class="text-lg font-bold text-white mb-2">Book Slot</h3>
-                            <p class="text-xs text-slate-400">Confirm your drilling date and lock the rig for your location.</p>
-                        </div>
-                    </div>
-                    <div class="relative">
-                        <div class="text-5xl font-black text-slate-800 absolute -top-6 -left-2 z-0">04</div>
-                        <div class="relative z-10">
-                            <h3 class="text-lg font-bold text-emerald-400 mb-2">Get Water</h3>
-                            <p class="text-xs text-slate-400">Professional drilling & installation completed within 48 hours.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </main>
 
     <footer class="bg-[#0f172a] py-8 border-t border-slate-800 text-center">
-        <div class="max-w-6xl mx-auto px-4">
-            <p class="text-slate-500 text-sm mb-4">&copy; 2026 Sagar Borewells.</p>
-            <div class="flex justify-center gap-6 text-xs font-bold text-slate-600">
-                <a href="terms.html" class="hover:text-white">Terms</a>
-                <a href="privacy.html" class="hover:text-white">Privacy</a>
-            </div>
-        </div>
+        <p class="text-slate-500 text-sm">&copy; 2026 Sagar Borewells.</p>
     </footer>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
+            // 1. Setup Links
             if(typeof CONTACT_INFO !== 'undefined') {
                 const btn = document.getElementById('navCallBtn');
                 if(btn) btn.href = `tel:+${CONTACT_INFO.whatsapp_api}`;
             }
+
+            // 2. Fetch Dynamic Data from Google Sheet
+            fetch(CONTACT_INFO.database_url + "?action=getSettings")
+                .then(r => r.json())
+                .then(data => {
+                    // Logic: If active_rigs has a value, Show Card. Else, Hide Card.
+                    if (data.active_rigs && data.active_rigs > 0) {
+                        document.getElementById('liveStatsCard').classList.remove('hidden');
+                        document.getElementById('statRigs').innerText = data.active_rigs;
+                        document.getElementById('statSuccess').innerText = data.success_rate || "98";
+                    }
+                })
+                .catch(e => console.log("Offline or Config Error"));
         });
     </script>
 </body>
