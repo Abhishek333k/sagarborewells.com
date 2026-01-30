@@ -26,7 +26,17 @@ const CONTACT_INFO = {
     social_instagram: "https://www.instagram.com/sagar_bore_wells/",
     social_youtube: "https://www.youtube.com/@Sagar_Bore_Wells",
 
-    // Keys
+    // FIREBASE CONFIG (You get this from Firebase Console) ---
+    const firebaseConfig = {
+    apiKey: "AIzaSyAp3D__eHpiOaPoQmO2eXL25C2evR0yqfQ",
+    authDomain: "sbw-ops-956b1.firebaseapp.com",
+    projectId: "sbw-ops-956b1",
+    storageBucket: "sbw-ops-956b1.firebasestorage.app",
+    messagingSenderId: "958364659529",
+    appId: "1:958364659529:web:bb3387a1ded9374ed0f498",
+    measurementId: "G-XLMWW4MMTL"
+  };
+    // Tech Keys
     google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus", 
     database_url: "https://script.google.com/macros/s/AKfycbwMJ16yDE-PsghDqyBa6mS4J-QXrMn10OYSEthKZEMRhv9uw6N1NpBN3_FgNX7PsmeSig/exec"
 };
