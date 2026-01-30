@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Dashboard | Sagar Borewells</title>
+    <title>Legacy Dashboard | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -16,36 +16,56 @@
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
     <script src="assets/js/pdf_template.js"></script>
+    <script src="assets/js/certificate_template.js"></script>
 
-    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 700; }
+        .timeline-line { position: absolute; left: 15px; top: 30px; bottom: 0; width: 2px; background: #e2e8f0; z-index: 0; }
+    </style>
 </head>
-<body class="bg-slate-50 flex flex-col min-h-screen">
+<body class="flex flex-col min-h-screen">
 
     <div id="navbar-mount"></div>
 
     <main class="flex-grow container mx-auto px-4 py-8">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-slate-800">My Dashboard</h1>
-            <button onclick="firebase.auth().signOut().then(()=>window.location='login.html')" class="text-sm text-red-500 hover:underline font-semibold">
-                <i class="ri-logout-box-r-line"></i> Sign Out
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8">
+            <div>
+                <h1 class="text-2xl font-extrabold text-slate-900">Client Legacy Portal</h1>
+                <p class="text-sm text-slate-500">Welcome back, <span id="userName" class="font-bold">Valued Client</span></p>
+            </div>
+            <button onclick="logout()" class="mt-4 md:mt-0 text-sm text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg transition font-semibold border border-red-100">
+                <i class="ri-logout-box-line"></i> Sign Out
             </button>
         </div>
 
-        <div id="loader" class="text-center py-10">
-            <i class="ri-loader-4-line ri-spin text-3xl text-blue-600"></i>
-            <p class="text-slate-500 mt-2">Loading...</p>
+        <div class="flex border-b border-slate-200 mb-8 overflow-x-auto">
+            <button onclick="switchTab('projects')" id="tab-projects" class="tab-btn active px-6 py-3 text-slate-600 hover:text-slate-800 whitespace-nowrap">My Borewells</button>
+            <button onclick="switchTab('quotes')" id="tab-quotes" class="tab-btn px-6 py-3 text-slate-600 hover:text-slate-800 whitespace-nowrap">Price Quotations</button>
+            <button onclick="switchTab('service')" id="tab-service" class="tab-btn px-6 py-3 text-slate-600 hover:text-slate-800 whitespace-nowrap">Service History</button>
         </div>
 
-        <div id="orders-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden"></div>
-        
-        <div id="no-orders" class="hidden text-center py-12 bg-white rounded-xl shadow-sm border border-slate-100">
-            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400 text-2xl">
-                <i class="ri-folder-open-line"></i>
+        <div id="view-projects" class="tab-content">
+            <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                </div>
+            <div id="no-projects" class="hidden text-center py-12 bg-white rounded-xl border border-slate-100">
+                <i class="ri-hammer-line text-4xl text-slate-300"></i>
+                <p class="text-slate-500 mt-2">No completed borewell projects yet.</p>
             </div>
-            <h3 class="text-lg font-bold text-slate-700">No active bookings</h3>
-            <p class="text-slate-500 mb-6">Get an estimate to start your project.</p>
-            <a href="quote.html" class="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Get Quote</a>
         </div>
+
+        <div id="view-quotes" class="tab-content hidden">
+            <div id="quotes-grid" class="grid grid-cols-1 gap-4">
+                </div>
+        </div>
+
+        <div id="view-service" class="tab-content hidden">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 relative" id="service-timeline">
+                <p class="text-center text-slate-400">No service history records found.</p>
+            </div>
+        </div>
+
     </main>
 
     <div id="footer-mount"></div>
@@ -54,74 +74,124 @@
         if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
         const db = firebase.firestore();
 
+        // 1. AUTH & LOAD
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                // Fetch leads where user is the owner
-                // We use collectionGroup or simple collection query
-                db.collection('leads')
-                  .where('userId', '==', user.uid)
-                  .orderBy('timestamp', 'desc')
-                  .get()
-                  .then((snapshot) => {
-                      document.getElementById('loader').classList.add('hidden');
-                      if (snapshot.empty) {
-                          document.getElementById('no-orders').classList.remove('hidden');
-                          return;
-                      }
-                      
-                      const grid = document.getElementById('orders-grid');
-                      grid.classList.remove('hidden');
-                      grid.innerHTML = "";
-                      
-                      snapshot.forEach(doc => {
-                          const order = doc.data();
-                          // Fallback timestamp if missing
-                          const date = order.timestamp ? new Date(order.timestamp.toDate()).toLocaleDateString() : 'Just Now';
-                          const status = order.status || "Pending";
-                          let statusColor = "bg-yellow-100 text-yellow-800";
-                          if(status === "Completed") statusColor = "bg-green-100 text-green-800";
-
-                          const card = `
-                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 class="font-bold text-lg text-slate-800">${order.loc || "Site Location"}</h3>
-                                        <p class="text-xs text-slate-500 font-medium">Booked: ${date}</p>
-                                    </div>
-                                    <span class="px-3 py-1 rounded-full text-[10px] uppercase tracking-wide font-bold ${statusColor}">${status}</span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4 text-sm mb-6 bg-slate-50 p-4 rounded-lg">
-                                    <div><span class="block text-slate-400 text-[10px] uppercase font-bold">Est. Depth</span><span class="font-bold text-slate-700">${order.depth} ft</span></div>
-                                    <div><span class="block text-slate-400 text-[10px] uppercase font-bold">Est. Cost</span><span class="font-bold text-slate-700">₹${parseInt(order.total).toLocaleString()}</span></div>
-                                </div>
-                                ${status === "Completed" ? 
-                                `<button onclick="generateCertificate('${order.name}', '${order.loc}', '${order.depth}')" class="w-full py-2.5 border border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition flex items-center justify-center gap-2">
-                                    <i class="ri-file-download-line"></i> Download Digital Certificate
-                                </button>` 
-                                : 
-                                `<button class="w-full py-2.5 bg-slate-100 text-slate-400 font-bold rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
-                                    <i class="ri-time-line"></i> Certificate Available After Completion
-                                </button>`
-                                }
-                            </div>
-                          `;
-                          grid.innerHTML += card;
-                      });
-                  }).catch(e => {
-                      console.error(e);
-                      // If index error, standard fallback
-                      if(e.code == 'failed-precondition') console.log("Requires Index creation in Firebase Console");
-                  });
+                document.getElementById('userName').innerText = user.phoneNumber;
+                loadData(user.uid, user.phoneNumber);
             } else {
-                // Not logged in -> Go to Login Page
                 window.location.href = "login.html";
             }
         });
 
-        function generateCertificate(name, loc, depth) {
-            // Re-use logic from pdf_template but specific for certificate
-            alert("Certificate download starting..."); 
-            // You can add specific cert logic here later
+        function logout() {
+            firebase.auth().signOut().then(() => window.location.href = "index.html");
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('view-' + tabName).classList.remove('hidden');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        // 2. DATA LOADING
+        function loadData(uid, phone) {
+            
+            // A. LOAD PROJECTS (Completed Borewells)
+            // Ideally, you (Admin) create these records manually in Firestore when job is done.
+            db.collection('projects').where('mobile', '==', phone).get().then(snap => {
+                const grid = document.getElementById('projects-grid');
+                if(snap.empty) {
+                    document.getElementById('no-projects').classList.remove('hidden');
+                } else {
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        const card = `
+                            <div class="bg-white p-6 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden">
+                                <div class="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">ID: ${data.projectId || 'SBR-001'}</div>
+                                <h3 class="text-xl font-extrabold text-slate-800 mb-1">${data.location}</h3>
+                                <p class="text-xs text-slate-500 mb-4">Completed: ${data.date}</p>
+                                
+                                <div class="grid grid-cols-2 gap-2 text-sm bg-slate-50 p-4 rounded-lg mb-6">
+                                    <div><span class="block text-[10px] text-slate-400 uppercase">Depth</span> <b class="text-slate-700">${data.depth} ft</b></div>
+                                    <div><span class="block text-[10px] text-slate-400 uppercase">Yield</span> <b class="text-green-600">${data.yield}</b></div>
+                                    <div><span class="block text-[10px] text-slate-400 uppercase">Motor</span> <b class="text-slate-700">${data.motor}</b></div>
+                                    <div><span class="block text-[10px] text-slate-400 uppercase">Casing</span> <b class="text-slate-700">${data.casing_depth} ft</b></div>
+                                </div>
+
+                                <button onclick='downloadCert(${JSON.stringify(data)})' class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition flex items-center justify-center gap-2">
+                                    <i class="ri-file-certificate-line text-yellow-400"></i> Download Birth Certificate
+                                </button>
+                            </div>
+                        `;
+                        grid.innerHTML += card;
+                    });
+                }
+            });
+
+            // B. LOAD QUOTES (From Leads)
+            db.collection('leads').where('userId', '==', uid).orderBy('timestamp', 'desc').get().then(snap => {
+                const grid = document.getElementById('quotes-grid');
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const date = data.timestamp ? new Date(data.timestamp.toDate()) : new Date();
+                    
+                    // Expiration Logic (30 Days)
+                    const diffTime = Math.abs(new Date() - date);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                    const isExpired = diffDays > 30;
+
+                    const card = `
+                        <div class="flex justify-between items-center p-4 bg-white border ${isExpired ? 'border-red-100 opacity-60' : 'border-slate-100'} rounded-lg">
+                            <div>
+                                <h4 class="font-bold text-slate-700">${data.loc}</h4>
+                                <p class="text-xs text-slate-400">Quote Date: ${date.toLocaleDateString()}</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-bold text-slate-900">₹${parseInt(data.total).toLocaleString()}</div>
+                                ${isExpired 
+                                    ? '<span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded">EXPIRED</span>' 
+                                    : '<span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded">VALID</span>'}
+                            </div>
+                        </div>
+                    `;
+                    grid.innerHTML += card;
+                });
+            });
+        }
+
+        // 3. CERTIFICATE GENERATION
+        function downloadCert(data) {
+            // Using the template from certificate_template.js
+            const content = getCertificateHTML({
+                id: data.projectId || "SBR-GEN-001",
+                name: "Valued Customer", // You can store real name in project too
+                loc: data.location,
+                date: data.date,
+                gps: "16.44, 80.55", // Store GPS in project data
+                depth: data.depth,
+                casing_depth: data.casing_depth,
+                casing_type: "PVC 6Kg",
+                yield: data.yield,
+                water_gap: data.water_gap || "N/A",
+                motor: data.motor
+            });
+
+            const element = document.createElement('div');
+            element.innerHTML = content;
+            document.body.appendChild(element);
+            
+            const opt = {
+                margin: 0,
+                filename: `Borewell_Birth_Certificate_${data.location}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => document.body.removeChild(element));
         }
     </script>
 </body>
