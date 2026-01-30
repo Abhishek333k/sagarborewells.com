@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us | Sagar Borewells</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/layout.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #334155; }</style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <div id="navbar-mount"></div>
+
+    <main class="flex-grow">
+        <div class="bg-white py-16 text-center border-b border-slate-200">
+            <h1 class="text-4xl font-extrabold text-slate-900 mb-4">Contact & Support</h1>
+            <p class="text-slate-500 max-w-2xl mx-auto px-4">
+                We are here to help. Reach out to us for bookings, geological support, or inquiries.
+            </p>
+        </div>
+
+        <div class="max-w-6xl mx-auto px-4 py-12">
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+                
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-solid fa-headset text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-slate-900 mb-1">Support</h3>
+                    <p class="text-xs text-slate-500 mb-4">Response time: Within 15 mins</p>
+                    <a href="#" class="text-xl font-bold text-blue-600 dynamic-phone hover:underline">...</a>
+                </div>
+
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-brands fa-whatsapp text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-slate-900 mb-1">WhatsApp</h3>
+                    <p class="text-xs text-slate-500 mb-4">Business & Emergency</p>
+                    <button onclick="openWA()" class="border border-emerald-500 text-emerald-600 px-6 py-2 rounded-full font-bold text-sm hover:bg-emerald-50 transition">
+                        Chat on WhatsApp
+                    </button>
+                </div>
+
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-solid fa-envelope text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-slate-900 mb-1">Email</h3>
+                    <p class="text-xs text-slate-500 mb-4">Drop us a line anytime</p>
+                    <a href="#" class="text-sm font-bold text-slate-700 dynamic-email hover:text-purple-600">...</a>
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-8 items-start">
+                
+                <div class="w-full md:w-1/3">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-6">Visit Our Office</h2>
+                    
+                    <div class="mb-6">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fa-solid fa-location-dot text-blue-600"></i>
+                            <span class="font-bold text-slate-800">Headquarters</span>
+                        </div>
+                        <p class="text-slate-500 text-sm leading-relaxed dynamic-address pl-6">
+                            Loading Address...
+                        </p>
+                    </div>
+
+                    <div class="bg-red-50 border border-red-100 p-4 rounded-xl">
+                        <h4 class="text-red-700 font-bold text-sm mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-bell"></i> Emergency Support
+                        </h4>
+                        <p class="text-red-600 text-xs">
+                            24/7 available on WhatsApp & Phone for urgent rig requirements.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-2/3 h-80 bg-slate-200 rounded-2xl overflow-hidden border border-slate-300 shadow-inner relative">
+                    <div id="officeMap" class="w-full h-full"></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="footer-mount"></div>
+
+    <script>
+        function openWA() {
+            window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}`, '_blank');
+        }
+
+        // Initialize Office Map
+        function initOfficeMap() {
+            const officeLoc = { lat: CONTACT_INFO.office_lat, lng: CONTACT_INFO.office_lng };
+            const map = new google.maps.Map(document.getElementById("officeMap"), {
+                zoom: 15,
+                center: officeLoc,
+                disableDefaultUI: true,
+                styles: [ { "featureType": "poi", "stylers": [ { "visibility": "off" } ] } ]
+            });
+            new google.maps.Marker({ position: officeLoc, map: map, title: "Sagar Borewells HQ" });
+        }
+    </script>
+
+    <script>
+        const s = document.createElement('script');
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&callback=initOfficeMap`;
+        s.async = true; s.defer = true;
+        document.body.appendChild(s);
+    </script>
+
+</body>
+</html>
