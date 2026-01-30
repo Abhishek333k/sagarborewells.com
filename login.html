@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Login | Sagar Borewells</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/layout.js"></script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .login-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <div id="navbar-mount"></div>
+
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <div class="flex flex-col justify-center">
+                <h1 class="text-3xl font-extrabold text-slate-900 mb-4">Client Portal</h1>
+                <p class="text-slate-500 mb-8">Access your project history and documents securely.</p>
+                
+                <div class="space-y-6">
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl"><i class="ri-file-list-3-line"></i></div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Track Bookings</h3>
+                            <p class="text-sm text-slate-500">See status of rig deployment and drilling progress.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl"><i class="ri-award-line"></i></div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Digital Certificates</h3>
+                            <p class="text-sm text-slate-500">Download official yield reports for your property.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xl"><i class="ri-customer-service-2-line"></i></div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Priority Support</h3>
+                            <p class="text-sm text-slate-500">Direct line to site managers for active projects.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="login-card p-8 border border-slate-100">
+                <h2 class="text-xl font-bold text-slate-800 mb-6">Login / Sign Up</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Mobile Number</label>
+                    <div class="flex bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+                        <span class="px-4 py-3 text-slate-500 font-bold border-r border-slate-200">+91</span>
+                        <input type="tel" id="loginMobile" class="w-full bg-transparent px-4 py-3 font-bold text-slate-800 outline-none" placeholder="98765 43210" maxlength="10">
+                    </div>
+                </div>
+
+                <div id="otp-container" class="hidden mb-6">
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Enter OTP</label>
+                    <input type="text" id="loginOtp" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-center tracking-[0.5em] text-slate-800 outline-none" maxlength="6">
+                </div>
+
+                <div id="recaptcha-container"></div>
+
+                <button id="loginBtn" onclick="sendLoginOTP()" class="w-full py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition shadow-lg mt-2">
+                    Send OTP <i class="ri-arrow-right-line ml-2"></i>
+                </button>
+                <button id="verifyBtn" onclick="verifyLoginOTP()" class="hidden w-full py-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-lg mt-2">
+                    Verify & Login
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="footer-mount"></div>
+
+    <script>
+        if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        
+        // Redirect if already logged in
+        firebase.auth().onAuthStateChanged(user => {
+            if(user) window.location.href = "dashboard.html";
+        });
+
+        function sendLoginOTP() {
+            const phone = document.getElementById('loginMobile').value;
+            if(phone.length !== 10) return alert("Enter valid 10-digit number");
+            
+            const btn = document.getElementById('loginBtn');
+            btn.innerText = "Sending...";
+            
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
+            
+            firebase.auth().signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier)
+                .then(cr => {
+                    window.confirmationResult = cr;
+                    document.getElementById('otp-container').classList.remove('hidden');
+                    document.getElementById('loginBtn').classList.add('hidden');
+                    document.getElementById('verifyBtn').classList.remove('hidden');
+                })
+                .catch(e => { console.error(e); alert("SMS Error. Check Console."); btn.innerText = "Send OTP"; });
+        }
+
+        function verifyLoginOTP() {
+            const code = document.getElementById('loginOtp').value;
+            window.confirmationResult.confirm(code).then(() => {
+                window.location.href = "dashboard.html";
+            }).catch(() => alert("Invalid OTP"));
+        }
+    </script>
+</body>
+</html>
