@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Command Center | Sagar Borewells</title>
+    <title>Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -15,277 +14,168 @@
     <script src="assets/js/config.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        .sidebar-link { display: flex; items-center; gap: 12px; padding: 12px 16px; color: #94a3b8; border-radius: 8px; transition: all 0.2s; font-weight: 500; cursor: pointer; }
-        .sidebar-link:hover, .sidebar-link.active { background: #1e293b; color: #fff; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-        .input-field { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; margin-top: 4px; }
-        .input-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; }
+        /* Map Modal */
+        #mapModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+        #mapContainer { width: 100%; height: 400px; border-radius: 8px; margin-bottom: 10px; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="bg-slate-100 p-8">
 
-    <aside class="w-64 bg-slate-900 text-white flex flex-col flex-shrink-0">
-        <div class="p-6 border-b border-slate-800">
-            <h1 class="text-xl font-bold tracking-tight">Sagar<span class="text-blue-500">Admin</span></h1>
-            <p class="text-xs text-slate-500 mt-1">Command Center</p>
-        </div>
-        
-        <nav class="flex-grow p-4 space-y-2">
-            <div onclick="showSection('leads')" id="nav-leads" class="sidebar-link active">
-                <i class="ri-list-check"></i> Incoming Leads
-            </div>
-            <div onclick="showSection('projects')" id="nav-projects" class="sidebar-link">
-                <i class="ri-hammer-line"></i> Manage Projects
-            </div>
-            <div onclick="showSection('create')" id="nav-create" class="sidebar-link text-emerald-400">
-                <i class="ri-add-circle-line"></i> + New Certificate
-            </div>
-        </nav>
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+        <h1 class="text-2xl font-bold mb-6">Issue Birth Certificate</h1>
 
-        <div class="p-4 border-t border-slate-800">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold">A</div>
-                <div class="text-sm">
-                    <p class="font-bold">Admin</p>
-                    <p class="text-xs text-slate-500">Super User</p>
+        <form id="projectForm" onsubmit="saveProject(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase">Customer Mobile</label>
+                <div class="flex border border-slate-300 rounded-lg overflow-hidden mt-1">
+                    <span class="bg-slate-100 px-3 py-2 text-slate-600 font-bold border-r">+91</span>
+                    <input type="tel" id="p_mobile" class="w-full px-3 py-2 outline-none font-bold" 
+                           placeholder="98765 43210" maxlength="10" 
+                           oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
                 </div>
-                <button onclick="logout()" class="ml-auto text-slate-500 hover:text-white"><i class="ri-logout-box-line"></i></button>
             </div>
-        </div>
-    </aside>
 
-    <main class="flex-grow overflow-y-auto p-8 relative">
-        
-        <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center">
-            <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
-                <h2 class="text-2xl font-bold mb-2">Admin Login</h2>
-                <p class="text-slate-500 text-sm mb-6">Restricted Access Only</p>
-                <button onclick="adminLogin()" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Login via Google/Phone</button>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase">Customer Name</label>
+                <input type="text" id="p_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1" required>
             </div>
-        </div>
 
-        <div id="section-leads" class="content-section">
-            <h2 class="text-2xl font-bold text-slate-800 mb-6">Incoming Quotations</h2>
-            <div id="leads-list" class="space-y-4">
-                <div class="text-center py-10"><i class="ri-loader-4-line ri-spin text-2xl text-blue-500"></i></div>
+            <div class="col-span-full">
+                <label class="block text-xs font-bold text-slate-500 uppercase">Site Location</label>
+                <input type="text" id="p_loc" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1" placeholder="Start typing address..." required>
             </div>
-        </div>
 
-        <div id="section-projects" class="content-section hidden">
-            <h2 class="text-2xl font-bold text-slate-800 mb-6">Completed Projects (Birth Certificates)</h2>
-            <div id="projects-list" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                </div>
-        </div>
-
-        <div id="section-create" class="content-section hidden max-w-4xl">
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">Issue New Birth Certificate</h2>
-            <p class="text-slate-500 mb-6">Enter technical details to generate the official record.</p>
-
-            <form id="projectForm" onsubmit="saveProject(event)" class="card p-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div class="col-span-full border-b pb-2 mb-2"><h3 class="font-bold text-slate-900">1. Customer Details</h3></div>
-                    
-                    <div>
-                        <label class="input-label">Customer Mobile (+91...)</label>
-                        <input type="text" id="p_mobile" class="input-field bg-yellow-50 border-yellow-200" placeholder="+919876543210" required>
-                        <p class="text-[10px] text-slate-400 mt-1">Must match user login exactly.</p>
-                    </div>
-                    <div>
-                        <label class="input-label">Customer Name</label>
-                        <input type="text" id="p_name" class="input-field" placeholder="Full Name" required>
-                    </div>
-                    <div class="col-span-full">
-                        <label class="input-label">Site Location</label>
-                        <input type="text" id="p_loc" class="input-field" placeholder="Village, District" required>
-                    </div>
-
-                    <div class="col-span-full border-b pb-2 mb-2 mt-4"><h3 class="font-bold text-slate-900">2. Technical Specifications</h3></div>
-
-                    <div>
-                        <label class="input-label">Total Depth (ft)</label>
-                        <input type="number" id="p_depth" class="input-field" placeholder="e.g., 650" required>
-                    </div>
-                    <div>
-                        <label class="input-label">Water Yield</label>
-                        <input type="text" id="p_yield" class="input-field" placeholder="e.g., 3.5 Inches / 4000 GPH" required>
-                    </div>
-                    <div>
-                        <label class="input-label">Casing Depth (ft)</label>
-                        <input type="number" id="p_casing" class="input-field" placeholder="e.g., 120" required>
-                    </div>
-                    <div>
-                        <label class="input-label">Casing Type</label>
-                        <select id="p_casingType" class="input-field">
-                            <option value="PVC 6Kg/cm²">PVC 6Kg/cm² (Standard)</option>
-                            <option value="PVC 10Kg/cm²">PVC 10Kg/cm² (Heavy)</option>
-                            <option value="MS Iron">MS Iron</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="input-label">Rig Type</label>
-                        <select id="p_rig" class="input-field">
-                            <option value="Sensor Robotic">Sensor Robotic Hydraulic</option>
-                            <option value="Standard Hydraulic">Standard Hydraulic</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="input-label">Motor / Pump Details</label>
-                        <input type="text" id="p_motor" class="input-field" placeholder="e.g., 7.5 HP Texmo Submersible">
-                    </div>
-                    <div>
-                        <label class="input-label">GPS Coordinates</label>
-                        <input type="text" id="p_gps" class="input-field" placeholder="Lat, Lng (Optional)">
-                    </div>
-                    <div>
-                        <label class="input-label">Drill Date</label>
-                        <input type="date" id="p_date" class="input-field" required>
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-4 pt-6 border-t">
-                    <button type="button" onclick="showSection('leads')" class="px-6 py-2 text-slate-500 font-bold hover:bg-slate-100 rounded-lg">Cancel</button>
-                    <button type="submit" class="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200">
-                        Create Record
+            <div class="col-span-full">
+                <label class="block text-xs font-bold text-slate-500 uppercase">GPS Coordinates</label>
+                <div class="flex gap-2 mt-1">
+                    <input type="text" id="p_gps" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-slate-50" placeholder="Lat, Lng" readonly>
+                    <button type="button" onclick="openMapPicker()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700">
+                        <i class="ri-map-pin-line"></i> Pick on Map
                     </button>
                 </div>
-            </form>
-        </div>
+            </div>
 
-    </main>
+            <div><label class="block text-xs font-bold text-slate-500 uppercase">Total Depth (ft)</label><input type="number" id="p_depth" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1" required></div>
+            <div><label class="block text-xs font-bold text-slate-500 uppercase">Yield</label><input type="text" id="p_yield" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1" required></div>
+            <div><label class="block text-xs font-bold text-slate-500 uppercase">Casing Depth (ft)</label><input type="number" id="p_casing" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1" required></div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase">Casing Type</label>
+                <select id="p_casingType" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1">
+                    <option>PVC 6Kg/cm²</option>
+                    <option>PVC 10Kg/cm²</option>
+                    <option>MS Iron</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase">Rig Type</label>
+                <select id="p_rig" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1">
+                    <option>Sensor Robotic Hydraulic</option>
+                    <option>Standard Hydraulic</option>
+                </select>
+            </div>
+            <div><label class="block text-xs font-bold text-slate-500 uppercase">Motor Details</label><input type="text" id="p_motor" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1"></div>
+            <div><label class="block text-xs font-bold text-slate-500 uppercase">Date</label><input type="date" id="p_date" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1" required></div>
+
+            <div class="col-span-full pt-4">
+                <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 shadow-lg">Generate & Save Certificate</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="mapModal">
+        <div class="bg-white p-4 rounded-xl w-full max-w-2xl">
+            <h3 class="font-bold text-lg mb-2">Click to Pin Location</h3>
+            <div id="mapContainer"></div>
+            <div class="flex justify-end gap-2">
+                <button onclick="document.getElementById('mapModal').style.display='none'" class="px-4 py-2 text-slate-500 font-bold">Cancel</button>
+                <button onclick="confirmLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg">Set Location</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // INIT
         if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
         const db = firebase.firestore();
-        const auth = firebase.auth();
 
-        // 1. AUTH LOGIC
-        auth.onAuthStateChanged(user => {
-            if(user) {
-                // OPTIONAL: Check if user is YOU (Security)
-                // if(user.phoneNumber !== "+919652246869") { alert("Unauthorized"); auth.signOut(); return; }
-                
-                document.getElementById('login-overlay').style.display = 'none';
-                loadLeads();
-            } else {
-                document.getElementById('login-overlay').style.display = 'flex';
-            }
-        });
+        // 1. Google Maps & Autocomplete Init
+        let map, marker, selectedLat, selectedLng;
 
-        function adminLogin() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(e => alert(e.message));
+        function initMapTools() {
+            // Autocomplete for Address
+            const input = document.getElementById('p_loc');
+            const autocomplete = new google.maps.places.Autocomplete(input);
+            autocomplete.addListener('place_changed', () => {
+                const place = autocomplete.getPlace();
+                if (place.geometry) {
+                    selectedLat = place.geometry.location.lat();
+                    selectedLng = place.geometry.location.lng();
+                    document.getElementById('p_gps').value = `${selectedLat}, ${selectedLng}`;
+                }
+            });
         }
-        function logout() { auth.signOut(); }
 
-        // 2. NAVIGATION
-        function showSection(id) {
-            document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
-            document.getElementById('section-' + id).classList.remove('hidden');
+        function openMapPicker() {
+            document.getElementById('mapModal').style.display = 'flex';
             
-            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
-            document.getElementById('nav-' + id).classList.add('active');
+            // Default to Mangalagiri or current selection
+            const center = (selectedLat && selectedLng) ? {lat: selectedLat, lng: selectedLng} : {lat: 16.4410, lng: 80.5520};
 
-            if(id === 'leads') loadLeads();
-            if(id === 'projects') loadProjects();
-        }
-
-        // 3. LOAD LEADS (Read-Only)
-        function loadLeads() {
-            db.collection('leads').orderBy('timestamp', 'desc').limit(50).get().then(snap => {
-                const container = document.getElementById('leads-list');
-                container.innerHTML = "";
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                    const div = document.createElement('div');
-                    div.className = "card p-4 flex justify-between items-center";
-                    div.innerHTML = `
-                        <div>
-                            <div class="font-bold text-slate-800">${data.name} <span class="text-slate-400 font-normal">(${data.mobile})</span></div>
-                            <div class="text-sm text-slate-500">${data.loc} • ${data.depth}ft • ${data.zone || 'Zone?'}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-bold text-blue-600">₹${parseInt(data.total).toLocaleString()}</div>
-                            <div class="text-xs text-slate-400">${date}</div>
-                        </div>
-                    `;
-                    container.appendChild(div);
+            if(!map) {
+                map = new google.maps.Map(document.getElementById('mapContainer'), { center: center, zoom: 15 });
+                marker = new google.maps.Marker({ position: center, map: map, draggable: true });
+                
+                // Update on click
+                map.addListener('click', (e) => {
+                    marker.setPosition(e.latLng);
                 });
-            });
+            } else {
+                map.setCenter(center);
+                marker.setPosition(center);
+            }
         }
 
-        // 4. LOAD PROJECTS
-        function loadProjects() {
-            db.collection('projects').get().then(snap => {
-                const container = document.getElementById('projects-list');
-                container.innerHTML = "";
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const div = document.createElement('div');
-                    div.className = "card p-6 border-l-4 border-blue-500";
-                    div.innerHTML = `
-                        <div class="flex justify-between mb-2">
-                            <h3 class="font-bold text-lg">${data.location}</h3>
-                            <span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded uppercase">Completed</span>
-                        </div>
-                        <p class="text-sm text-slate-600 mb-4">${data.customerName} • ${data.mobile}</p>
-                        <div class="grid grid-cols-2 gap-2 text-xs text-slate-500">
-                            <div>Depth: <b>${data.depth} ft</b></div>
-                            <div>Yield: <b>${data.yield}</b></div>
-                            <div>Casing: <b>${data.casing_depth} ft</b></div>
-                            <div>Date: <b>${data.date}</b></div>
-                        </div>
-                        <div class="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-400 font-mono">
-                            ID: ${data.projectId || doc.id}
-                        </div>
-                    `;
-                    container.appendChild(div);
-                });
-            });
+        function confirmLocation() {
+            const pos = marker.getPosition();
+            selectedLat = pos.lat();
+            selectedLng = pos.lng();
+            document.getElementById('p_gps').value = `${selectedLat.toFixed(6)}, ${selectedLng.toFixed(6)}`;
+            document.getElementById('mapModal').style.display = 'none';
         }
 
-        // 5. SAVE NEW PROJECT (Birth Certificate)
+        // 2. Save Function (Updated)
         function saveProject(e) {
             e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
-            const originalText = btn.innerText;
-            btn.innerText = "Saving...";
-            btn.disabled = true;
-
             const year = new Date().getFullYear();
             const randomID = Math.floor(1000 + Math.random() * 9000);
-
-            const projectData = {
+            
+            const data = {
                 projectId: `SBR-${year}-${randomID}`,
-                mobile: document.getElementById('p_mobile').value.trim(),
-                customerName: document.getElementById('p_name').value.trim(),
-                location: document.getElementById('p_loc').value.trim(),
+                mobile: "+91" + document.getElementById('p_mobile').value, // Add Prefix
+                customerName: document.getElementById('p_name').value,
+                location: document.getElementById('p_loc').value,
+                gps: document.getElementById('p_gps').value,
                 depth: document.getElementById('p_depth').value,
                 yield: document.getElementById('p_yield').value,
                 casing_depth: document.getElementById('p_casing').value,
                 casing_type: document.getElementById('p_casingType').value,
-                rigType: document.getElementById('p_rig').value,
+                rigType: document.getElementById('p_rig').value, // Save Rig Type
                 motor: document.getElementById('p_motor').value,
-                gps: document.getElementById('p_gps').value,
                 date: new Date(document.getElementById('p_date').value).toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'}),
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            db.collection('projects').add(projectData).then(() => {
-                alert("Birth Certificate Created Successfully!");
+            db.collection('projects').add(data).then(() => {
+                alert("Success! ID: " + data.projectId);
                 e.target.reset();
-                showSection('projects');
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }).catch(err => {
-                console.error(err);
-                alert("Error saving: " + err.message);
-                btn.innerText = originalText;
-                btn.disabled = false;
-            });
+            }).catch(e => alert("Error: " + e.message));
         }
+
+        // Load Google Maps
+        const s = document.createElement('script');
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`;
+        s.async = true; s.defer = true;
+        document.body.appendChild(s);
     </script>
 </body>
 </html>
