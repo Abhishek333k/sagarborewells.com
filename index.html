@@ -3,207 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borewell Estimator | Sagar Ops</title>
+    <title>Sagar Borewells | Advanced Drilling Solutions</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #1e293b; }
-        .invoice-box { background: white; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .modal-active { display: flex !important; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; }
+        .hero-glow { background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.15) 0%, rgba(15, 23, 42, 0) 60%); }
+        .glass-card { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
+        .step-line { position: absolute; left: 24px; top: 40px; bottom: -40px; width: 2px; background: #334155; z-index: 0; }
+        .last-step .step-line { display: none; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="flex flex-col min-h-screen">
 
-    <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-30">
-        <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 flex items-center gap-2">
-                <i class="fa-solid fa-arrow-left"></i> Home
+    <nav class="border-b border-slate-800 p-4 sticky top-0 z-50 bg-[#0f172a]/90 backdrop-blur">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                <i class="fa-solid fa-droplet text-blue-500"></i> SAGAR <span class="text-blue-500">OPS</span>
             </a>
-            <span class="text-xs font-bold bg-blue-600 text-white px-3 py-1 rounded-full uppercase tracking-wider">Quote Engine</span>
+            <div class="flex gap-4 items-center">
+                <span class="hidden md:block text-xs font-bold text-emerald-400 uppercase tracking-wider"><i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Systems Online</span>
+                <a id="navCallBtn" href="#" class="bg-white text-blue-900 px-5 py-2 rounded-full text-sm font-bold shadow-lg hover:bg-blue-50 transition flex items-center gap-2">
+                    <i class="fa-solid fa-phone"></i> <span class="hidden md:inline">Call Expert</span>
+                </a>
+            </div>
         </div>
     </nav>
 
-    <main class="flex-grow p-4">
-        <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="bg-slate-50 p-6 border-b border-slate-200">
-                <h1 class="text-xl font-bold text-slate-800">Project Details</h1>
-                <p class="text-sm text-slate-500">Enter details to generate an official borewell estimate.</p>
-            </div>
-            
-            <div class="p-6 md:p-8 space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Name</label>
-                        <input type="text" id="custName" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Mobile</label>
-                        <input type="tel" id="custMobile" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Site Location</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="locInput" placeholder="Village / Area Name" class="flex-grow p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
-                        <button onclick="detectGPS()" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded-lg">
-                            <i class="fa-solid fa-location-crosshairs"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="p-5 bg-blue-50/50 rounded-xl border border-blue-100">
-                    <div class="flex justify-between mb-2">
-                        <label class="font-bold text-blue-900 text-sm">Target Depth</label>
-                        <span class="font-bold text-blue-600"><span id="depthDisplay">500</span> ft</span>
-                    </div>
-                    <input type="range" id="depthSlider" min="100" max="1500" value="500" step="10" class="w-full h-2 bg-blue-200 rounded-lg accent-blue-600 cursor-pointer mb-6" oninput="updateUI()">
+    <main class="flex-grow">
+        <div class="relative hero-glow">
+            <div class="max-w-6xl mx-auto px-4 py-20 md:py-32">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                     
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Usage Type</label>
-                            <select id="purposeInput" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
-                                <option value="residential">Residential</option>
-                                <option value="agriculture">Agriculture</option>
-                                <option value="commercial">Commercial</option>
-                            </select>
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/30 border border-blue-500/30 text-blue-400 text-[10px] font-bold uppercase mb-6">
+                            <i class="fa-solid fa-robot"></i> Advanced Sensor Rigs
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Casing Pipe</label>
-                            <select id="casingType" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
-                                <option value="PVC">PVC (Standard)</option>
-                                <option value="Heavy">PVC (Heavy)</option>
-                                <option value="Iron">MS Iron</option>
-                            </select>
+                        <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
+                            Securing Your <br><span class="text-blue-500">Water Future.</span>
+                        </h1>
+                        <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+                            We combine advanced geological sensors with 15 years of drilling experience to deliver water in 48 hours.
+                        </p>
+                        
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <a href="quote.html" class="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/25 transition transform hover:scale-105 flex items-center justify-center gap-3">
+                                <span>Get Instant Quote</span> <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                            <div class="flex items-center gap-4 px-4 py-2">
+                                <div class="flex -space-x-3">
+                                    <div class="w-10 h-10 rounded-full bg-slate-700 border-2 border-[#0f172a]"></div>
+                                    <div class="w-10 h-10 rounded-full bg-slate-600 border-2 border-[#0f172a]"></div>
+                                    <div class="w-10 h-10 rounded-full bg-slate-500 border-2 border-[#0f172a] flex items-center justify-center text-xs font-bold">+2k</div>
+                                </div>
+                                <div class="text-xs text-slate-400">
+                                    <strong class="text-white block">Trusted by</strong>
+                                    2,400+ Homeowners
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="glass-card p-8 rounded-3xl border-t border-blue-500/20 shadow-2xl">
+                            <div class="flex justify-between items-start mb-8">
+                                <div>
+                                    <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest">Live Operations</h3>
+                                    <div class="text-2xl font-bold mt-1">Andhra Pradesh</div>
+                                </div>
+                                <div class="animate-pulse bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-500/30">
+                                    LIVE FEED
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-slate-800/50 p-4 rounded-xl">
+                                    <div class="text-3xl font-bold text-white">22</div>
+                                    <div class="text-xs text-slate-400 font-bold uppercase mt-1">Active Rigs</div>
+                                </div>
+                                <div class="bg-slate-800/50 p-4 rounded-xl">
+                                    <div class="text-3xl font-bold text-blue-400">98%</div>
+                                    <div class="text-xs text-slate-400 font-bold uppercase mt-1">Success Rate</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 pt-6 border-t border-slate-700/50">
+                                <div class="flex items-center gap-3 text-sm text-slate-300">
+                                    <i class="fa-solid fa-check-circle text-emerald-500"></i>
+                                    <span>Guaranteed <strong class="text-white">48 Hour</strong> Deployment</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-[#1e293b] py-20 border-y border-slate-800">
+            <div class="max-w-6xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-16">Get Water in 4 Simple Steps</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div class="relative pl-6 md:pl-0">
+                        <div class="text-6xl font-black text-slate-800 absolute -top-8 -left-4 md:-left-2 z-0">01</div>
+                        <div class="relative z-10">
+                            <h3 class="text-xl font-bold text-blue-400 mb-2">Get Quote</h3>
+                            <p class="text-sm text-slate-400">Fill our smart form and get an official estimate in 30 seconds.</p>
+                        </div>
+                    </div>
+
+                    <div class="relative pl-6 md:pl-0">
+                        <div class="text-6xl font-black text-slate-800 absolute -top-8 -left-4 md:-left-2 z-0">02</div>
+                        <div class="relative z-10">
+                            <h3 class="text-xl font-bold text-white mb-2">Expert Call</h3>
+                            <p class="text-sm text-slate-400">Our senior geologist calls you within 5 mins to confirm soil details.</p>
+                        </div>
+                    </div>
+
+                    <div class="relative pl-6 md:pl-0">
+                        <div class="text-6xl font-black text-slate-800 absolute -top-8 -left-4 md:-left-2 z-0">03</div>
+                        <div class="relative z-10">
+                            <h3 class="text-xl font-bold text-white mb-2">Book Slot</h3>
+                            <p class="text-sm text-slate-400">Confirm your drilling date and lock the rig for your location.</p>
+                        </div>
+                    </div>
+
+                    <div class="relative pl-6 md:pl-0">
+                        <div class="text-6xl font-black text-slate-800 absolute -top-8 -left-4 md:-left-2 z-0">04</div>
+                        <div class="relative z-10">
+                            <h3 class="text-xl font-bold text-emerald-400 mb-2">Get Water</h3>
+                            <p class="text-sm text-slate-400">Professional drilling & installation completed within 48 hours.</p>
                         </div>
                     </div>
                 </div>
-
-                <button onclick="generatePreview()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition">
-                    Generate Estimate
-                </button>
             </div>
         </div>
     </main>
 
-    <div id="previewModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            
-            <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
-                <span class="font-bold text-slate-700">Estimate Preview</span>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            </div>
-
-            <div class="p-6 overflow-y-auto bg-slate-100">
-                <div class="invoice-box p-6 rounded-lg bg-white text-sm">
-                    <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
-                        <div>
-                            <h2 class="font-extrabold text-blue-700 text-lg">SAGAR BOREWELLS</h2>
-                            <p class="text-slate-500 text-xs">Official Quote #PREVIEW</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[10px] text-slate-400 font-bold uppercase">Estimated Total</p>
-                            <p class="text-2xl font-bold text-slate-900" id="invTotal">₹0</p>
-                        </div>
-                    </div>
-
-                    <div class="mb-4 text-xs text-slate-500">
-                        <p><strong>Customer:</strong> <span id="invName">--</span></p>
-                        <p><strong>Location:</strong> <span id="invLoc">--</span></p>
-                    </div>
-
-                    <table class="w-full mb-4 text-left border-collapse">
-                        <thead>
-                            <tr class="text-[10px] uppercase text-slate-400 border-b border-slate-100">
-                                <th class="py-2">Description</th>
-                                <th class="py-2 text-right">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody id="invBody" class="text-slate-700 font-medium"></tbody>
-                    </table>
-
-                    <div class="flex justify-between border-t border-slate-100 pt-3 mt-2 font-bold text-slate-700">
-                        <span>Fixed Costs (Transport/Setup)</span>
-                        <span>₹7,000</span>
-                    </div>
-
-                    <div class="mt-4 p-3 bg-blue-50 text-blue-800 text-[10px] rounded border border-blue-100">
-                        * Quote excludes GST & Casing Pipe costs. Final invoice based on actual depth drilled.
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-white border-t border-slate-200">
-                <button onclick="sendWhatsApp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg flex justify-center items-center gap-2">
-                    <i class="fa-brands fa-whatsapp"></i> Confirm Booking
-                </button>
-            </div>
-        </div>
-    </div>
+    <footer class="bg-[#0f172a] py-8 text-center border-t border-slate-800 text-slate-500 text-sm">
+        <p>&copy; 2026 Sagar Borewells. Built for Precision.</p>
+    </footer>
 
     <script>
-        const FIXED_COSTS = 7000;
-        const SLAB_INCREMENT = 50;
-        const JUMP_AMOUNT = 5;
-        const BASE_RATES = { 'residential': 90, 'agriculture': 85, 'commercial': 110 };
-        let leadData = {};
-
-        function updateUI() { document.getElementById('depthDisplay').innerText = document.getElementById('depthSlider').value; }
-
-        function detectGPS() {
-            const btn = document.querySelector('button[onclick="detectGPS()"]');
-            btn.innerHTML = '...';
-            if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    document.getElementById('locInput').value = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
-                    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                }, () => { alert('GPS Error'); btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>'; });
+        document.addEventListener("DOMContentLoaded", () => {
+            if(typeof CONTACT_INFO !== 'undefined') {
+                document.getElementById('navCallBtn').href = `tel:+${CONTACT_INFO.whatsapp_api}`;
             }
-        }
-
-        function generatePreview() {
-            const name = document.getElementById('custName').value;
-            const loc = document.getElementById('locInput').value;
-            const depth = parseInt(document.getElementById('depthSlider').value);
-            const purpose = document.getElementById('purposeInput').value;
-
-            if(!name || !loc) { alert("Please fill details"); return; }
-
-            let remaining = depth;
-            let floor = 0;
-            let rate = BASE_RATES[purpose];
-            let drillTotal = 0;
-            let rows = "";
-
-            while(remaining > 0) {
-                let chunk = (remaining >= SLAB_INCREMENT) ? SLAB_INCREMENT : remaining;
-                let cost = chunk * rate;
-                drillTotal += cost;
-                rows += `<tr class="border-b border-slate-50"><td class="py-2">${floor}-${floor+chunk}ft @ ₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                remaining -= chunk;
-                floor += chunk;
-                rate += JUMP_AMOUNT;
-            }
-
-            const total = drillTotal + FIXED_COSTS;
-            
-            document.getElementById('invName').innerText = name;
-            document.getElementById('invLoc').innerText = loc;
-            document.getElementById('invBody').innerHTML = rows;
-            document.getElementById('invTotal').innerText = "₹" + total.toLocaleString();
-
-            leadData = { name, loc, depth, total };
-            document.getElementById('previewModal').classList.add('modal-active');
-        }
-
-        function closeModal() { document.getElementById('previewModal').classList.remove('modal-active'); }
-
-        function sendWhatsApp() {
-            const msg = `*BOOKING REQUEST*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.loc}%0A📉 ${leadData.depth}ft%0A💰 *Est: ₹${leadData.total.toLocaleString()}*%0A%0APlease schedule rig.`;
-            window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
-        }
+        });
     </script>
 </body>
 </html>
