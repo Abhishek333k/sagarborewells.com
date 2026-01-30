@@ -6,6 +6,7 @@
     <title>My Dashboard | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -14,6 +15,9 @@
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
+    <script src="assets/js/pdf_template.js"></script>
+
+    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
 <body class="bg-slate-50 flex flex-col min-h-screen">
 
@@ -22,15 +26,26 @@
     <main class="flex-grow container mx-auto px-4 py-8">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-slate-800">My Dashboard</h1>
-            <button onclick="firebase.auth().signOut().then(()=>window.location='quote.html')" class="text-sm text-red-500 hover:underline">Sign Out</button>
+            <button onclick="firebase.auth().signOut().then(()=>window.location='login.html')" class="text-sm text-red-500 hover:underline font-semibold">
+                <i class="ri-logout-box-r-line"></i> Sign Out
+            </button>
         </div>
 
         <div id="loader" class="text-center py-10">
             <i class="ri-loader-4-line ri-spin text-3xl text-blue-600"></i>
+            <p class="text-slate-500 mt-2">Loading...</p>
         </div>
 
         <div id="orders-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden"></div>
-        <div id="no-orders" class="hidden text-center py-10"><p>No bookings found.</p></div>
+        
+        <div id="no-orders" class="hidden text-center py-12 bg-white rounded-xl shadow-sm border border-slate-100">
+            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400 text-2xl">
+                <i class="ri-folder-open-line"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-700">No active bookings</h3>
+            <p class="text-slate-500 mb-6">Get an estimate to start your project.</p>
+            <a href="quote.html" class="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Get Quote</a>
+        </div>
     </main>
 
     <div id="footer-mount"></div>
@@ -41,12 +56,10 @@
 
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                // Fetch leads where userId matches OR mobile matches
-                // For simplicity, we filter by the user's phone number
-                const mobile = user.phoneNumber; 
-                
+                // Fetch leads where user is the owner
+                // We use collectionGroup or simple collection query
                 db.collection('leads')
-                  .where('mobile', '==', mobile) // IMPORTANT: You must create an index in Firebase Console for this to work perfectly, or it works by default for simple queries.
+                  .where('userId', '==', user.uid)
                   .orderBy('timestamp', 'desc')
                   .get()
                   .then((snapshot) => {
@@ -58,34 +71,58 @@
                       
                       const grid = document.getElementById('orders-grid');
                       grid.classList.remove('hidden');
+                      grid.innerHTML = "";
                       
                       snapshot.forEach(doc => {
                           const order = doc.data();
-                          const date = order.timestamp ? new Date(order.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                          
-                          let statusColor = "bg-yellow-100 text-yellow-700";
-                          if(order.status === "Completed") statusColor = "bg-green-100 text-green-700";
+                          // Fallback timestamp if missing
+                          const date = order.timestamp ? new Date(order.timestamp.toDate()).toLocaleDateString() : 'Just Now';
+                          const status = order.status || "Pending";
+                          let statusColor = "bg-yellow-100 text-yellow-800";
+                          if(status === "Completed") statusColor = "bg-green-100 text-green-800";
 
                           const card = `
                             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                                 <div class="flex justify-between items-start mb-4">
-                                    <div><h3 class="font-bold text-lg text-slate-800">${order.loc}</h3><p class="text-xs text-slate-500">${date}</p></div>
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${statusColor}">${order.status}</span>
+                                    <div>
+                                        <h3 class="font-bold text-lg text-slate-800">${order.loc || "Site Location"}</h3>
+                                        <p class="text-xs text-slate-500 font-medium">Booked: ${date}</p>
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full text-[10px] uppercase tracking-wide font-bold ${statusColor}">${status}</span>
                                 </div>
-                                <div class="grid grid-cols-2 gap-4 text-sm mb-6">
-                                    <div class="bg-slate-50 p-3 rounded"><span class="block text-slate-400 text-xs uppercase">Est. Depth</span><span class="font-bold text-slate-700">${order.depth} ft</span></div>
-                                    <div class="bg-slate-50 p-3 rounded"><span class="block text-slate-400 text-xs uppercase">Total</span><span class="font-bold text-slate-700">₹${parseInt(order.total).toLocaleString()}</span></div>
+                                <div class="grid grid-cols-2 gap-4 text-sm mb-6 bg-slate-50 p-4 rounded-lg">
+                                    <div><span class="block text-slate-400 text-[10px] uppercase font-bold">Est. Depth</span><span class="font-bold text-slate-700">${order.depth} ft</span></div>
+                                    <div><span class="block text-slate-400 text-[10px] uppercase font-bold">Est. Cost</span><span class="font-bold text-slate-700">₹${parseInt(order.total).toLocaleString()}</span></div>
                                 </div>
-                                ${order.status === "Completed" ? `<button onclick="alert('Cert Download')" class="w-full py-2 border border-blue-600 text-blue-600 rounded-lg">Download Certificate</button>` : ''}
+                                ${status === "Completed" ? 
+                                `<button onclick="generateCertificate('${order.name}', '${order.loc}', '${order.depth}')" class="w-full py-2.5 border border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition flex items-center justify-center gap-2">
+                                    <i class="ri-file-download-line"></i> Download Digital Certificate
+                                </button>` 
+                                : 
+                                `<button class="w-full py-2.5 bg-slate-100 text-slate-400 font-bold rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                                    <i class="ri-time-line"></i> Certificate Available After Completion
+                                </button>`
+                                }
                             </div>
                           `;
                           grid.innerHTML += card;
                       });
+                  }).catch(e => {
+                      console.error(e);
+                      // If index error, standard fallback
+                      if(e.code == 'failed-precondition') console.log("Requires Index creation in Firebase Console");
                   });
             } else {
-                window.location.href = "quote.html";
+                // Not logged in -> Go to Login Page
+                window.location.href = "login.html";
             }
         });
+
+        function generateCertificate(name, loc, depth) {
+            // Re-use logic from pdf_template but specific for certificate
+            alert("Certificate download starting..."); 
+            // You can add specific cert logic here later
+        }
     </script>
 </body>
 </html>
