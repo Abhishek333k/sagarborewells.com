@@ -7,16 +7,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script> <script src="assets/js/config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
     <script src="assets/js/pdf_template.js"></script>
 
     <style>
-        /* (Keep all your existing CSS exactly the same) */
         :root { --primary: #2563eb; --primary-dark: #1e40af; --text-main: #1e293b; --bg: #f8fafc; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text-main); }
         .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
@@ -27,13 +28,21 @@
         .custom-input, .custom-select { width: 100%; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; }
         .custom-input:focus { border-color: var(--primary); background: #fff; }
         .btn-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; font-weight: 700; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; }
-        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; } 
+        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; opacity: 0.7; }
+        
         .est-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95rem; }
         .est-table th { text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 0.8rem; text-transform: uppercase; }
         .est-table td { padding: 16px 12px; border-bottom: 1px solid #f1f5f9; font-weight: 600; }
+        
         .slider-container { background: #f1f5f9; border-radius: 20px; padding: 40px 30px; text-align: center; border: 1px solid #e2e8f0; }
+        
+        /* 🔴 UPDATED FONT SIZE FOR DEPTH */
+        #display-val { font-size: 8rem; font-weight: 800; color: var(--primary); line-height: 1; letter-spacing: -4px; }
+        #display-unit { font-size: 2rem; font-weight: 700; color: #94a3b8; vertical-align: super; }
+
         .range-slider { width: 100%; height: 16px; border-radius: 8px; background: #cbd5e1; outline: none; cursor: pointer; -webkit-appearance: none; }
         .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 40px; height: 40px; border-radius: 50%; background: var(--primary); border: 6px solid #fff; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.5); cursor: pointer; }
+        
         #recaptcha-container { margin-bottom: 10px; }
         .otp-group { display: flex; gap: 10px; margin-top: 10px; display: none; }
         .verified-badge { color: #10b981; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; display: none; align-items: center; gap: 5px; margin-top: 5px; }
@@ -80,23 +89,19 @@
                     </div>
                 </div>
 
-                <hr class="border-slate-100 my-8">
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label class="form-label">Soil / Zone Type</label>
+                        <select id="zoneInput" class="custom-select cursor-pointer bg-blue-50 border-blue-200 text-blue-800 font-bold">
+                            <option value="" disabled selected>Loading Zones...</option>
+                        </select>
+                    </div>
                     <div>
                         <label class="form-label">Purpose</label>
                         <select id="purposeInput" class="custom-select cursor-pointer">
                             <option value="residential">Residential Use</option>
                             <option value="agriculture">Agriculture / Farm</option>
                             <option value="commercial">Commercial / Industrial</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">Casing Type</label>
-                        <select id="casingType" class="custom-select cursor-pointer">
-                            <option value="PVC">PVC Standard</option>
-                            <option value="Heavy">PVC Heavy Duty</option>
-                            <option value="Iron">MS Iron</option>
                         </select>
                     </div>
                 </div>
@@ -110,7 +115,9 @@
                     </div>
                 </div>
 
-                <button id="generateBtn" onclick="goToStep2()" class="btn-primary" disabled><i class="ri-lock-line" id="btnIcon"></i> Verify Phone to Generate Quote</button>
+                <button id="generateBtn" onclick="goToStep2()" class="btn-primary" disabled>
+                    <i class="ri-lock-line" id="btnIcon"></i> Verify Phone to Generate Quote
+                </button>
             </div>
         </div>
 
@@ -123,6 +130,7 @@
                 <div class="flex gap-8 text-sm text-slate-600 mb-8 bg-slate-50 p-4 rounded-xl">
                     <div><span class="text-slate-400 text-xs block font-bold uppercase">Customer</span> <span id="invName" class="font-bold text-slate-800">--</span></div>
                     <div><span class="text-slate-400 text-xs block font-bold uppercase">Location</span> <span id="invLoc" class="font-bold text-slate-800">--</span></div>
+                    <div><span class="text-slate-400 text-xs block font-bold uppercase">Zone</span> <span id="invZone" class="font-bold text-slate-800">--</span></div>
                 </div>
                 <table class="est-table">
                     <thead><tr><th>Description</th><th class="text-right">Amount</th></tr></thead>
@@ -153,246 +161,192 @@
     <div id="footer-mount"></div>
 
     <script>
-        // 1. INIT FIREBASE
-        if(CONTACT_INFO.firebase_config) {
-            if (!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        // INIT
+        if(CONTACT_INFO.firebase_config && !firebase.apps.length) {
+            firebase.initializeApp(CONTACT_INFO.firebase_config);
         }
         const db = firebase.firestore();
 
-        // 2. LOAD ZONES & PREPARE DATA
-        let zoneData = []; 
-        let zoneRates = {};
-
-        document.addEventListener("DOMContentLoaded", () => {
-            const zoneSelect = document.getElementById('zoneInput');
-            
-            db.collection('zones').get().then((snapshot) => {
-                zoneSelect.innerHTML = '<option value="" disabled selected>Select Soil Type / Zone</option>';
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const zoneId = doc.id;
-                    
-                    zoneData.push({
-                        id: zoneId,
-                        name: data.name || zoneId,
-                        rate: data.rate || 90,
-                        keywords: data.keywords || [] 
-                    });
-                    
-                    zoneRates[zoneId] = { name: data.name, rate: data.rate }; // For Calc
-                    
-                    const option = document.createElement('option');
-                    option.value = zoneId;
-                    option.innerText = `${data.name} (₹${data.rate}/ft)`;
-                    zoneSelect.appendChild(option);
-                });
-            }).catch(err => console.error("Error loading zones:", err));
-        });
-
-        // 🟢 3. SMART INTELLIGENCE (Keywords + Elevation)
-        function analyzeLocation(address, lat, lng) {
-            
-            // A. KEYWORD MATCHING (Zone Detection)
-            const lowerAddr = address.toLowerCase();
-            let foundZone = null;
-            for (const zone of zoneData) {
-                if (zone.keywords.some(k => lowerAddr.includes(k.toLowerCase()))) {
-                    foundZone = zone;
-                    break;
-                }
-            }
-
-            if (foundZone) {
-                const select = document.getElementById('zoneInput');
-                select.value = foundZone.id;
-                select.classList.add('bg-green-50', 'border-green-500', 'text-green-700');
-                // We don't lock it, just suggest it.
-            }
-
-            // B. ELEVATION LOGIC (Depth Prediction)
-            if(typeof google !== 'undefined') {
-                const elevator = new google.maps.ElevationService();
-                elevator.getElevationForLocations({
-                    'locations': [{lat: lat, lng: lng}]
-                }, (results, status) => {
-                    if (status === 'OK' && results[0]) {
-                        const elevation = results[0].elevation; // Meters above sea level
-                        console.log("Elevation:", elevation + "m");
-                        
-                        // LOGIC: Higher Ground = Deeper Water
-                        const slider = document.getElementById('depthSlider');
-                        let suggestedDepth = 300; // Base
-
-                        if (elevation > 100) { // Hill / High Ground
-                            suggestedDepth = 900; 
-                        } else if (elevation > 50) { // Medium
-                            suggestedDepth = 600;
-                        } else if (elevation < 15) { // Coastal / Low
-                            suggestedDepth = 200;
-                        }
-
-                        // Animate Slider to suggested depth
-                        slider.value = suggestedDepth;
-                        slider.dispatchEvent(new Event('input')); // Trigger visual update
-                        
-                        // Optional: Show user why
-                        // alert(`🌊 Elevation Detected: ${Math.round(elevation)}m.\nAdjusting recommended depth to ${suggestedDepth}ft.`);
-                    }
-                });
-            }
-        }
-
-        // Hook into GPS
-        function detectGPS() {
-            const btn = document.querySelector('button[onclick="detectGPS()"]');
-            btn.innerHTML = "<i class='ri-loader-4-line ri-spin'></i>";
-            
-            if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const lat = pos.coords.latitude; 
-                    const lng = pos.coords.longitude;
-                    
-                    if(typeof google !== 'undefined') {
-                        const geocoder = new google.maps.Geocoder();
-                        geocoder.geocode({ location: {lat, lng} }, (res, status) => {
-                            if(status === 'OK') {
-                                const address = res[0].formatted_address;
-                                document.getElementById('locInput').value = address;
-                                btn.innerHTML = "DETECT";
-                                
-                                // 🟢 RUN INTELLIGENCE
-                                analyzeLocation(address, lat, lng);
-                            }
-                        });
-                    }
-                }, () => { alert('GPS Denied'); btn.innerHTML = "DETECT"; });
-            }
-        }
-
-        // --- EXISTING LOGIC BELOW (Auth, Calc, Slider UI) ---
-        
-        let leadData = {};
-        const FIXED_COST = 7000;
-
+        // 1. AUTH CHECK
         firebase.auth().onAuthStateChanged((user) => {
+            const genBtn = document.getElementById('generateBtn');
             if (user) {
-                const mobileInput = document.getElementById('custMobile');
-                mobileInput.value = user.phoneNumber.replace('+91', '');
-                mobileInput.disabled = true;
+                // LOGGED IN: Unlock Button
+                document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
+                document.getElementById('custMobile').disabled = true;
                 document.getElementById('sendOtpBtn').style.display = 'none';
                 document.getElementById('otpSection').style.display = 'none';
-                document.getElementById('verifiedBadge').style.display = 'flex';
-                document.getElementById('verifiedBadge').innerHTML = `<i class="ri-user-follow-line"></i> Welcome Back`;
-                const genBtn = document.getElementById('generateBtn');
+                
+                const badge = document.getElementById('verifiedBadge');
+                badge.style.display = 'flex';
+                badge.innerHTML = `<i class="ri-user-follow-line"></i> Welcome Back`;
+                
                 genBtn.disabled = false;
                 genBtn.innerHTML = `Generate Official Estimate <i class="ri-arrow-right-line"></i>`;
                 genBtn.classList.remove('bg-slate-300');
+            } else {
+                // NOT LOGGED IN: Lock Button
+                genBtn.disabled = true;
             }
         });
 
+        // 2. ZONE LOADING
+        let zoneData = []; let zoneRates = {};
+        document.addEventListener("DOMContentLoaded", () => {
+            db.collection('zones').get().then((snapshot) => {
+                const zoneSelect = document.getElementById('zoneInput');
+                zoneSelect.innerHTML = '<option value="" disabled selected>Select Soil Type / Zone</option>';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    zoneData.push({ id: doc.id, name: data.name, rate: data.rate || 90, keywords: data.keywords || [] });
+                    zoneRates[doc.id] = { name: data.name, rate: data.rate };
+                    const option = document.createElement('option');
+                    option.value = doc.id; option.innerText = `${data.name} (₹${data.rate}/ft)`;
+                    zoneSelect.appendChild(option);
+                });
+            }).catch(e => console.log("Offline mode"));
+        });
+
+        // 3. OTP
         function sendOTP() {
             const phone = document.getElementById('custMobile').value;
-            if (phone.length !== 10) { alert("Invalid number"); return; }
-            const formatted = "+91" + phone;
-            document.getElementById('sendOtpBtn').innerText = "Sending...";
+            if (phone.length !== 10) return alert("Enter 10 digit number");
+            const btn = document.getElementById('sendOtpBtn');
+            btn.innerText = "Sending...";
+            
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
-            firebase.auth().signInWithPhoneNumber(formatted, window.recaptchaVerifier)
-                .then((confirmationResult) => {
-                    window.confirmationResult = confirmationResult;
-                    document.getElementById('sendOtpBtn').style.display = 'none';
+            
+            firebase.auth().signInWithPhoneNumber('+91' + phone, window.recaptchaVerifier)
+                .then((cr) => {
+                    window.confirmationResult = cr;
+                    btn.style.display = 'none';
                     document.getElementById('otpSection').style.display = 'flex';
-                    document.getElementById('otpMsg').innerText = "OTP sent to " + formatted;
-                }).catch((error) => { console.error(error); alert("Error sending SMS."); });
+                }).catch((e) => { console.error(e); alert("SMS Failed. Enable Billing in Console."); btn.innerText="VERIFY"; });
         }
 
         function verifyOTP() {
             const code = document.getElementById('otpInput').value;
             window.confirmationResult.confirm(code).then(() => {
                 document.getElementById('otpSection').style.display = 'none';
-                const genBtn = document.getElementById('generateBtn');
-                genBtn.disabled = false;
-                genBtn.innerHTML = `Generate Official Estimate <i class="ri-arrow-right-line"></i>`;
-                genBtn.classList.remove('bg-slate-300');
+                // Auth listener will handle button unlocking
             }).catch(() => alert("Invalid OTP"));
         }
 
+        // 4. CALC & SLIDER
         const slider = document.getElementById('depthSlider');
         const displayVal = document.getElementById('display-val');
         slider.addEventListener('input', function() {
             let val = parseInt(this.value);
             displayVal.innerText = val;
-            let currentMax = parseInt(this.max);
-            // Elastic Slider Logic
-            if (val >= currentMax - 20 && currentMax < 1500) { this.max = currentMax + 500; document.getElementById('maxLabel').innerText = this.max + " FT"; }
-            if (val < 400 && currentMax > 500) { this.max = 500; document.getElementById('maxLabel').innerText = "500 FT"; }
-            const percent = ((val - this.min) / (this.max - this.min)) * 100;
-            this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${percent}%, #cbd5e1 ${percent}%, #cbd5e1 100%)`;
+            let max = parseInt(this.max);
+            if (val >= max - 20 && max < 1500) { this.max = max + 500; document.getElementById('maxLabel').innerText = this.max + " FT"; }
+            if (val < 400 && max > 500) { this.max = 500; document.getElementById('maxLabel').innerText = "500 FT"; }
+            const pct = ((val - this.min) / (this.max - this.min)) * 100;
+            this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
         });
 
-        function calculateQuote() {
-            const depth = parseInt(slider.value);
+        // 5. MANUAL TYPING & GPS
+        document.getElementById('locInput').addEventListener('change', function() {
+            if(this.value.length > 3 && typeof google !== 'undefined') {
+                new google.maps.Geocoder().geocode({'address': this.value}, (res, status) => {
+                    if(status === 'OK') analyzeLocation(this.value, res[0].geometry.location.lat(), res[0].geometry.location.lng());
+                });
+            }
+        });
+
+        function detectGPS() {
+            if(navigator.geolocation) {
+                const btn = document.querySelector('button[onclick="detectGPS()"]');
+                btn.innerHTML = "...";
+                navigator.geolocation.getCurrentPosition(pos => {
+                    if(typeof google !== 'undefined') {
+                        new google.maps.Geocoder().geocode({ location: {lat: pos.coords.latitude, lng: pos.coords.longitude} }, (res, status) => {
+                            if(status === 'OK') {
+                                document.getElementById('locInput').value = res[0].formatted_address;
+                                analyzeLocation(res[0].formatted_address, pos.coords.latitude, pos.coords.longitude);
+                                btn.innerHTML = "DETECT";
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        function analyzeLocation(addr, lat, lng) {
+            // Zone Logic
+            const lowerAddr = addr.toLowerCase();
+            const found = zoneData.find(z => z.keywords.some(k => lowerAddr.includes(k.toLowerCase())));
+            if(found) {
+                const sel = document.getElementById('zoneInput');
+                sel.value = found.id;
+                sel.classList.add('bg-green-50', 'border-green-500');
+            }
+            // Elevation Logic
+            if(typeof google !== 'undefined') {
+                new google.maps.ElevationService().getElevationForLocations({'locations': [{lat, lng}]}, (res, status) => {
+                    if(status === 'OK' && res[0]) {
+                        const el = res[0].elevation;
+                        let depth = 300;
+                        if(el > 100) depth = 900; else if(el > 50) depth = 600; else if(el < 15) depth = 200;
+                        slider.value = depth;
+                        slider.dispatchEvent(new Event('input'));
+                    }
+                });
+            }
+        }
+
+        // 6. SUBMIT
+        let leadData = {};
+        function goToStep2() {
+            if(document.getElementById('generateBtn').disabled) return;
+            const name = document.getElementById('custName').value;
+            const loc = document.getElementById('locInput').value;
             const zoneId = document.getElementById('zoneInput').value;
-            if(!zoneId || !zoneRates[zoneId]) { alert("Please select a valid Zone"); return; }
-
-            const selectedZone = zoneRates[zoneId];
-            let remaining = depth, floor = 0, drillTotal = 0, rows = "";
-            let currentRate = selectedZone.rate;
-            const slab_size = 50, slab_jump = 5; 
-
+            if(!name || !loc || !zoneId) { alert("Please fill Name, Location and Zone"); return; }
+            
+            const depth = parseInt(slider.value);
+            const rate = zoneRates[zoneId].rate;
+            let total = 7000; // Fixed
+            
+            let remaining = depth, floor = 0, currentRate = rate, slab_jump = 5, rows = "";
             while(remaining > 0) {
-                let chunk = (remaining >= slab_size) ? slab_size : remaining;
-                let cost = chunk * currentRate; drillTotal += cost;
+                let chunk = (remaining >= 50) ? 50 : remaining;
+                let cost = chunk * currentRate;
+                total += cost;
                 rows += `<tr><td>${floor}-${floor+chunk}ft @ ₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
                 remaining -= chunk; floor += chunk; currentRate += slab_jump;
             }
-            
-            const total = drillTotal + FIXED_COST;
-            document.getElementById('invName').innerText = document.getElementById('custName').value;
-            document.getElementById('invLoc').innerText = document.getElementById('locInput').value;
-            document.getElementById('invZone').innerText = selectedZone.name;
+
+            document.getElementById('invName').innerText = name;
+            document.getElementById('invLoc').innerText = loc;
+            document.getElementById('invZone').innerText = zoneRates[zoneId].name;
             document.getElementById('invBody').innerHTML = rows;
             document.getElementById('invTotal').innerText = "₹" + total.toLocaleString();
             
-            leadData = { 
-                name: document.getElementById('custName').value, 
-                mobile: "+91" + document.getElementById('custMobile').value,
-                loc: document.getElementById('locInput').value, 
-                zone: selectedZone.name, total: total, depth: depth, status: "Pending Review"
-            };
-        }
-
-        function goToStep2() {
-            if(document.getElementById('generateBtn').disabled) return;
-            if(!document.getElementById('custName').value || !document.getElementById('locInput').value) { alert("Enter details"); return; }
-            calculateQuote();
+            leadData = { name, mobile: "+91"+document.getElementById('custMobile').value, loc, zone: zoneRates[zoneId].name, depth, total, status: "Pending Review" };
+            
             document.getElementById('step-1').style.display = 'none';
             document.getElementById('step-2').style.display = 'block';
             window.scrollTo(0,0);
         }
-        function goToStep1() { document.getElementById('step-2').style.display = 'none'; document.getElementById('step-1').style.display = 'block'; }
 
+        function goToStep1() { document.getElementById('step-2').style.display = 'none'; document.getElementById('step-1').style.display = 'block'; }
+        
         function confirmBooking() {
-            db.collection('leads').add({
-                ...leadData,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                userId: firebase.auth().currentUser ? firebase.auth().currentUser.uid : 'anon'
-            }).then(() => {
-                openWhatsAppChat();
+            db.collection('leads').add({ ...leadData, timestamp: firebase.firestore.FieldValue.serverTimestamp(), userId: firebase.auth().currentUser.uid })
+            .then(() => {
                 document.getElementById('step-2').style.display = 'none';
                 document.getElementById('step-3').style.display = 'block';
-            }).catch((err) => { console.error("Error:", err); alert("Booking failed."); });
+                window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=Booking ${leadData.name}`, '_blank');
+            });
+        }
+        function downloadPDF() {
+            const content = getInvoiceHTML({ ...leadData, rows: document.getElementById('invBody').innerHTML });
+            const el = document.createElement('div'); el.innerHTML = content; document.body.appendChild(el);
+            html2pdf().from(el).save().then(() => document.body.removeChild(el));
         }
 
-        function downloadPDF() { 
-            const templateData = { name: leadData.name, mobile: leadData.mobile, loc: leadData.loc, total: leadData.total, rows: document.getElementById('invBody').innerHTML };
-            const content = getInvoiceHTML(templateData);
-            const element = document.createElement('div');
-            element.innerHTML = content;
-            document.body.appendChild(element);
-            html2pdf().from(element).save().then(() => document.body.removeChild(element));
-        }
-        function openWhatsAppChat() { window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=Booking ${leadData.name}`, '_blank'); }
-        
+        // Load Maps
         const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`; s.async = true; s.defer = true; document.body.appendChild(s);
         slider.dispatchEvent(new Event('input'));
     </script>
