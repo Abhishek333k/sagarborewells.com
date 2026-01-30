@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estimate Engine | Sagar Ops</title>
+    <title>Zone Estimator | Sagar Ops</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -21,17 +21,17 @@
     <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-30">
         <div class="max-w-2xl mx-auto flex justify-between items-center">
             <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 flex items-center gap-2">
-                <i class="fa-solid fa-arrow-left"></i> Home
+                <i class="fa-solid fa-arrow-left"></i> Back
             </a>
-            <span class="text-xs font-bold bg-blue-600 text-white px-3 py-1 rounded-full uppercase tracking-wider">Quote Engine</span>
+            <span class="text-xs font-bold bg-blue-600 text-white px-3 py-1 rounded-full uppercase tracking-wider">Zone Engine</span>
         </div>
     </nav>
 
     <main class="flex-grow p-4">
         <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="bg-slate-50 p-6 border-b border-slate-200">
-                <h1 class="text-xl font-bold text-slate-800">Project Details</h1>
-                <p class="text-sm text-slate-500">Enter details to generate an official borewell estimate.</p>
+                <h1 class="text-xl font-bold text-slate-800">Project Parameters</h1>
+                <p class="text-sm text-slate-500">Provide site details for zone-based pricing.</p>
             </div>
             
             <div class="p-6 md:p-8 space-y-6">
@@ -47,44 +47,44 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Site Location</label>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Site Coordinates / Area</label>
                     <div class="flex gap-2">
-                        <input type="text" id="locInput" placeholder="Village / Area Name" class="flex-grow p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
-                        <button onclick="detectGPS()" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded-lg" title="Use GPS">
+                        <input type="text" id="locInput" placeholder="Village or GPS Location" class="flex-grow p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
+                        <button onclick="detectGPS()" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded-lg" title="Capture Geo-Data">
                             <i class="fa-solid fa-location-crosshairs"></i>
                         </button>
                     </div>
                 </div>
 
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Soil Zone / Land Type</label>
+                    <select id="zoneInput" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none font-bold text-slate-700">
+                        <option value="zone_standard">Standard Soil (Normal Zone)</option>
+                        <option value="zone_rocky">Hard Rock / Hilly Zone</option>
+                        <option value="zone_coastal">Coastal / Loose Soil Zone</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400 mt-1">Pricing adjusts based on geological risk factors.</p>
+                </div>
+
                 <div class="p-5 bg-blue-50/50 rounded-xl border border-blue-100">
-                    <div class="flex justify-between mb-2">
+                    <div class="flex justify-between mb-4">
                         <label class="font-bold text-blue-900 text-sm">Target Depth</label>
                         <span class="font-bold text-blue-600"><span id="depthDisplay">500</span> ft</span>
                     </div>
                     <input type="range" id="depthSlider" min="100" max="1500" value="500" step="10" class="w-full h-2 bg-blue-200 rounded-lg accent-blue-600 cursor-pointer mb-6" oninput="updateUI()">
                     
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Purpose</label>
-                            <select id="purposeInput" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
-                                <option value="residential">Residential</option>
-                                <option value="agriculture">Agriculture</option>
-                                <option value="commercial">Commercial</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Casing Pipe</label>
-                            <select id="casingType" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
-                                <option value="PVC">PVC (Standard)</option>
-                                <option value="Heavy">PVC (Heavy)</option>
-                                <option value="Iron">MS Iron</option>
-                            </select>
-                        </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Purpose (For Consultation)</label>
+                        <select id="purposeInput" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
+                            <option value="Residential">Residential</option>
+                            <option value="Agriculture">Agriculture</option>
+                            <option value="Commercial">Commercial/Industrial</option>
+                        </select>
                     </div>
                 </div>
 
                 <button onclick="generatePreview()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition">
-                    Generate Official Estimate
+                    Compute Estimate
                 </button>
             </div>
         </div>
@@ -102,7 +102,7 @@
                 <div class="bg-white border border-slate-200 p-6 rounded-lg shadow-sm text-sm">
                     <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
                         <div>
-                            <h2 class="font-extrabold text-blue-700 text-lg">SAGAR BOREWELLS</h2>
+                            <h2 class="font-extrabold text-blue-700 text-lg">SAGAR OPS</h2>
                             <p class="text-slate-500 text-xs">Official Quote #PREVIEW</p>
                         </div>
                         <div class="text-right">
@@ -111,15 +111,15 @@
                         </div>
                     </div>
 
-                    <div class="mb-4 text-xs text-slate-500">
-                        <p><strong>Customer:</strong> <span id="invName">--</span></p>
+                    <div class="mb-4 text-xs text-slate-500 grid grid-cols-2 gap-2">
+                        <p><strong>Zone:</strong> <span id="invZone">--</span></p>
                         <p><strong>Location:</strong> <span id="invLoc">--</span></p>
                     </div>
 
                     <table class="w-full mb-4 text-left border-collapse">
                         <thead>
                             <tr class="text-[10px] uppercase text-slate-400 border-b border-slate-100">
-                                <th class="py-2">Description</th>
+                                <th class="py-2">Depth Range</th>
                                 <th class="py-2 text-right">Amount</th>
                             </tr>
                         </thead>
@@ -127,12 +127,12 @@
                     </table>
 
                     <div class="flex justify-between border-t border-slate-100 pt-3 mt-2 font-bold text-slate-700">
-                        <span>Fixed Costs (Transport/Setup)</span>
-                        <span>₹7,000</span>
+                        <span>Fixed Operational Costs</span>
+                        <span>₹<span id="invFixed">0</span></span>
                     </div>
 
                     <div class="mt-4 p-3 bg-blue-50 text-blue-800 text-[10px] rounded border border-blue-100">
-                        * Quote excludes GST & Casing Pipe costs. Final invoice based on actual depth drilled.
+                        * Final invoice subject to expert site verification. Casing pipe charged extra.
                     </div>
                 </div>
             </div>
@@ -146,15 +146,28 @@
     </div>
 
     <script>
-        // ADMIN CONFIGURATION (This will be fetched from DB later)
-        const pricingConfig = {
+        // CONFIG LOADER
+        let pricingConfig = {
             fixed_cost: 7000,
             slab_size: 50,
             slab_jump: 5,
-            rates: { 'residential': 90, 'agriculture': 85, 'commercial': 110 }
+            zone_rates: { 'zone_standard': 90, 'zone_rocky': 110, 'zone_coastal': 125 }
         };
         
         let leadData = {};
+
+        // 1. FETCH DB SETTINGS
+        document.addEventListener("DOMContentLoaded", () => {
+            fetch(CONTACT_INFO.database_url + "?action=getSettings")
+                .then(r => r.json())
+                .then(data => {
+                    if(data.fixed_cost) pricingConfig.fixed_cost = data.fixed_cost;
+                    if(data.zone_standard) pricingConfig.zone_rates['zone_standard'] = data.zone_standard;
+                    if(data.zone_rocky) pricingConfig.zone_rates['zone_rocky'] = data.zone_rocky;
+                    if(data.zone_coastal) pricingConfig.zone_rates['zone_coastal'] = data.zone_coastal;
+                })
+                .catch(e => console.log("Using default prices"));
+        });
 
         function updateUI() { document.getElementById('depthDisplay').innerText = document.getElementById('depthSlider').value; }
 
@@ -173,14 +186,15 @@
             const name = document.getElementById('custName').value;
             const loc = document.getElementById('locInput').value;
             const depth = parseInt(document.getElementById('depthSlider').value);
-            const purpose = document.getElementById('purposeInput').value;
+            const zoneKey = document.getElementById('zoneInput').value;
+            const zoneName = document.getElementById('zoneInput').options[document.getElementById('zoneInput').selectedIndex].text;
 
             if(!name || !loc) { alert("Please enter Name and Location"); return; }
 
-            // CALCULATION LOGIC (Borewell Only)
+            // ZONE BASED CALCULATION
             let remaining = depth;
             let floor = 0;
-            let rate = pricingConfig.rates[purpose];
+            let rate = pricingConfig.zone_rates[zoneKey]; // Base rate depends on Soil Type
             let drillTotal = 0;
             let rows = "";
 
@@ -196,12 +210,19 @@
 
             const total = drillTotal + pricingConfig.fixed_cost;
             
+            // FILL MODAL
             document.getElementById('invName').innerText = name;
             document.getElementById('invLoc').innerText = loc;
+            document.getElementById('invZone').innerText = zoneName;
+            document.getElementById('invFixed').innerText = pricingConfig.fixed_cost.toLocaleString();
             document.getElementById('invBody').innerHTML = rows;
             document.getElementById('invTotal').innerText = "₹" + total.toLocaleString();
 
-            leadData = { name, loc, depth, total, mobile: document.getElementById('custMobile').value };
+            leadData = { 
+                name, loc, depth, total, zone: zoneName, 
+                mobile: document.getElementById('custMobile').value,
+                purpose: document.getElementById('purposeInput').value 
+            };
             document.getElementById('previewModal').classList.add('active');
         }
 
@@ -214,11 +235,12 @@
             formData.append("location", leadData.loc);
             formData.append("depth", leadData.depth);
             formData.append("price", leadData.total);
-            formData.append("purpose", "Official Quote");
+            formData.append("zone", leadData.zone);
+            formData.append("purpose", leadData.purpose); // Just for info
 
             fetch(CONTACT_INFO.database_url, { method: "POST", body: formData, mode: "no-cors" });
 
-            const msg = `*OFFICIAL QUOTE REQUEST*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.loc}%0A📞 ${leadData.mobile}%0A%0A📉 Depth: ${leadData.depth}ft%0A💰 *Est. Total: ₹${leadData.total.toLocaleString()}*%0A%0A(Includes Fixed Costs). Please schedule site visit.`;
+            const msg = `*OFFICIAL QUOTE REQUEST*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.loc}%0A🌍 Zone: ${leadData.zone}%0A📉 Depth: ${leadData.depth}ft%0A💰 *Est. Total: ₹${leadData.total.toLocaleString()}*%0A%0A(Purpose: ${leadData.purpose})`;
             window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
         }
     </script>
