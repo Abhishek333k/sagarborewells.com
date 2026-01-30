@@ -3,246 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Quote | Sagar Ops</title>
+    <title>Estimate Engine | Sagar Ops</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #0f172a; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #1e293b; }
         .modal { opacity: 0; pointer-events: none; transition: all 0.3s ease; }
         .modal.active { opacity: 1; pointer-events: auto; }
-        .status-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+        .modal-content { transform: translateY(20px); transition: transform 0.3s ease; }
+        .modal.active .modal-content { transform: translateY(0); }
+        /* Map Styles */
+        #miniMap { height: 250px; width: 100%; border-radius: 8px; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-50">
+    <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-30">
         <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <a href="index.html" class="font-bold text-slate-600 flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i> Back</a>
-            <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold">GEO-PRICING ACTIVE</span>
+            <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Home
+            </a>
+            <span class="text-xs font-bold bg-blue-600 text-white px-3 py-1 rounded-full uppercase tracking-wider">Quote Engine</span>
         </div>
     </nav>
 
     <main class="flex-grow p-4">
-        <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
+        <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 p-6 border-b border-slate-200">
+                <h1 class="text-xl font-bold text-slate-800">Project Details</h1>
+                <p class="text-sm text-slate-500">Enter details to generate an official borewell estimate.</p>
+            </div>
             
-            <h1 class="text-xl font-bold text-slate-800 mb-6">Site Analysis</h1>
-
-            <div class="mb-6">
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Location Coordinates</label>
-                <div class="flex gap-2">
-                    <input type="text" id="locInput" placeholder="Detecting..." readonly class="flex-grow p-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-500 text-sm">
-                    <button onclick="startGeoProcess()" class="px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg">
-                        <i class="fa-solid fa-location-crosshairs"></i> Detect
-                    </button>
-                </div>
-                <input type="hidden" id="latVal">
-                <input type="hidden" id="lngVal">
-            </div>
-
-            <div id="zoneStatusBox" class="hidden mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
-                <div class="flex justify-between items-start">
+            <div class="p-6 md:p-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <div class="text-[10px] text-emerald-600 font-bold uppercase mb-1">Zone Identified</div>
-                        <div class="text-lg font-bold text-emerald-900" id="zoneNameDisplay">--</div>
-                        <div class="text-xs text-emerald-700 mt-1"><i class="fa-solid fa-layer-group"></i> Soil: <span id="soilTypeDisplay">--</span></div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Name</label>
+                        <input type="text" id="custName" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
                     </div>
-                    <div class="text-right">
-                        <div class="text-[10px] text-emerald-600 font-bold uppercase mb-1">Base Rate</div>
-                        <div class="text-2xl font-bold text-emerald-700">₹<span id="rateDisplay">0</span><span class="text-sm">/ft</span></div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Mobile</label>
+                        <input type="tel" id="custMobile" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
                     </div>
                 </div>
-            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Name</label>
-                    <input type="text" id="custName" class="w-full p-3 border border-slate-300 rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Mobile</label>
-                    <input type="tel" id="custMobile" class="w-full p-3 border border-slate-300 rounded-lg">
-                </div>
-            </div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Site Location</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="locInput" placeholder="Village / Area Name" class="flex-grow p-3 bg-white border border-slate-300 rounded-lg focus:border-blue-500 outline-none">
+                        
+                        <button onclick="detectGPS()" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded-lg" title="Use GPS">
+                            <i class="fa-solid fa-location-crosshairs"></i>
+                        </button>
+                        
+                        <button onclick="toggleMap()" class="px-4 bg-blue-100 hover:bg-blue-200 text-blue-600 border border-blue-200 rounded-lg" title="Pin on Map">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                        </button>
+                    </div>
 
-            <div class="p-5 bg-slate-50 rounded-xl border border-slate-200 mb-6">
-                <div class="flex justify-between mb-2">
-                    <label class="font-bold text-slate-700 text-sm">Depth Required</label>
-                    <span class="font-bold text-blue-600"><span id="depthDisplay">500</span> ft</span>
+                    <div id="mapContainer" class="hidden mt-3 relative border border-slate-300 rounded-lg overflow-hidden shadow-inner">
+                        <div id="miniMap"></div>
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-red-600 text-3xl pointer-events-none drop-shadow-md pb-4">
+                            <i class="fa-solid fa-location-dot"></i>
+                        </div>
+                        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
+                            <button onclick="confirmMapPin()" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg">
+                                Set This Location
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <input type="range" id="depthSlider" min="100" max="1500" value="500" step="10" class="w-full h-2 bg-slate-300 rounded-lg accent-blue-600 cursor-pointer" oninput="updateUI()">
-                <div class="mt-2 text-xs text-slate-400 flex justify-between">
-                    <span>Est. Water at: <b id="estWaterDisplay">--</b></span>
-                </div>
-            </div>
 
-            <button onclick="generatePreview()" class="w-full py-4 bg-slate-900 text-white font-bold rounded-xl shadow-xl">
-                Generate Official Quote
-            </button>
+                <div class="p-5 bg-blue-50/50 rounded-xl border border-blue-100">
+                    <div class="flex justify-between mb-2">
+                        <label class="font-bold text-blue-900 text-sm">Target Depth</label>
+                        <span class="font-bold text-blue-600"><span id="depthDisplay">500</span> ft</span>
+                    </div>
+                    <input type="range" id="depthSlider" min="100" max="1500" value="500" step="10" class="w-full h-2 bg-blue-200 rounded-lg accent-blue-600 cursor-pointer mb-6" oninput="updateUI()">
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Usage Type</label>
+                            <select id="purposeInput" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
+                                <option value="residential">Residential</option>
+                                <option value="agriculture">Agriculture</option>
+                                <option value="commercial">Commercial</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Casing Pipe</label>
+                            <select id="casingType" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
+                                <option value="PVC">PVC (Standard)</option>
+                                <option value="Heavy">PVC (Heavy)</option>
+                                <option value="Iron">MS Iron</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="generatePreview()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition">
+                    Generate Official Estimate
+                </button>
+            </div>
         </div>
     </main>
 
-    <div id="previewModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-        <div class="modal-content bg-white w-full max-w-lg rounded-xl overflow-hidden shadow-2xl">
-            <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
-                <span class="font-bold">Estimate Preview</span>
-                <button onclick="closeModal()" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+    <div id="previewModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4">
+        <div class="modal-content bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                <span class="font-bold text-slate-700">Estimate Preview</span>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 font-bold text-sm">Edit <i class="fa-solid fa-pen ml-1"></i></button>
             </div>
-            <div class="p-6 bg-slate-100 max-h-[60vh] overflow-y-auto">
-                <div class="bg-white p-6 rounded shadow-sm text-sm">
-                    <div class="flex justify-between border-b pb-4 mb-4">
-                        <h2 class="font-extrabold text-blue-800 text-lg">SAGAR OPS</h2>
+            <div class="p-6 overflow-y-auto bg-slate-100 flex-grow">
+                <div class="bg-white border border-slate-200 p-6 rounded-lg shadow-sm text-sm">
+                    <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
+                        <div>
+                            <h2 class="font-extrabold text-blue-700 text-lg">SAGAR BOREWELLS</h2>
+                            <p class="text-slate-500 text-xs">Official Quote #PREVIEW</p>
+                        </div>
                         <div class="text-right">
-                            <p class="text-xs text-slate-400 uppercase">Total Estimate</p>
-                            <p class="text-2xl font-bold" id="invTotal">₹0</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Estimated Total</p>
+                            <p class="text-2xl font-bold text-slate-900" id="invTotal">₹0</p>
                         </div>
                     </div>
-                    <p class="text-xs mb-4"><strong>Zone Applied:</strong> <span id="invZone">--</span></p>
-                    <table class="w-full text-left mb-4">
-                        <thead><tr class="text-[10px] uppercase text-slate-400 border-b"><th class="py-2">Item</th><th class="text-right">Cost</th></tr></thead>
-                        <tbody id="invBody"></tbody>
+                    <div class="mb-4 text-xs text-slate-500">
+                        <p><strong>Customer:</strong> <span id="invName">--</span></p>
+                        <p><strong>Location:</strong> <span id="invLoc">--</span></p>
+                    </div>
+                    <table class="w-full mb-4 text-left border-collapse">
+                        <thead>
+                            <tr class="text-[10px] uppercase text-slate-400 border-b border-slate-100">
+                                <th class="py-2">Description</th>
+                                <th class="py-2 text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invBody" class="text-slate-700 font-medium"></tbody>
                     </table>
+                    <div class="flex justify-between border-t border-slate-100 pt-3 mt-2 font-bold text-slate-700">
+                        <span>Fixed Costs (Transport/Setup)</span>
+                        <span>₹7,000</span>
+                    </div>
+                    <div class="mt-4 p-3 bg-blue-50 text-blue-800 text-[10px] rounded border border-blue-100">
+                        * Quote excludes GST & Casing Pipe costs. Final invoice based on actual depth drilled.
+                    </div>
                 </div>
             </div>
-            <div class="p-4 bg-white border-t">
-                <button onclick="sendWhatsApp()" class="w-full py-3 bg-emerald-600 text-white font-bold rounded-lg flex justify-center items-center gap-2">
-                    <i class="fa-brands fa-whatsapp"></i> Send Quote
+            <div class="p-4 bg-white border-t border-slate-200">
+                <button onclick="sendWhatsApp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg flex justify-center items-center gap-2 shadow-lg">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Confirm & Send Quote
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 1. CONFIG & STATE ---
-        let zoneData = []; // Will hold the table from Google Sheet
-        let currentZone = null;
+        // CONFIG
+        let pricingConfig = {
+            fixed_cost: 7000,
+            slab_size: 50,
+            slab_jump: 5,
+            rates: { 'residential': 90, 'agriculture': 85, 'commercial': 110 }
+        };
         let leadData = {};
-        const FIXED_COST = 7000;
-        const DEFAULT_RATE = 90; // Fallback if outside all circles
+        
+        // MAP VARIABLES
+        let map, geocoder, marker;
 
-        // --- 2. FETCH ZONES ON LOAD ---
+        // FETCH LIVE PRICES
         document.addEventListener("DOMContentLoaded", () => {
-            console.log("Downloading Geofence Data...");
-            fetch(CONTACT_INFO.database_url + "?action=getZones")
+            fetch(CONTACT_INFO.database_url + "?action=getSettings")
                 .then(r => r.json())
                 .then(data => {
-                    zoneData = data;
-                    console.log("Zones Loaded:", zoneData.length);
-                })
-                .catch(e => console.error("Zone Fetch Failed", e));
+                    if(data.fixed_cost) pricingConfig.fixed_cost = data.fixed_cost;
+                    if(data.price_residential) pricingConfig.rates['residential'] = data.price_residential;
+                }).catch(e => console.log("Using default prices"));
         });
 
         function updateUI() { document.getElementById('depthDisplay').innerText = document.getElementById('depthSlider').value; }
 
-        // --- 3. THE GEO-FENCING ENGINE (Small/Big Circle Logic) ---
-        function startGeoProcess() {
-            const btn = document.querySelector('button[onclick="startGeoProcess()"]');
+        // --- GPS LOGIC ---
+        function detectGPS() {
+            const btn = document.querySelector('button[title="Use GPS"]');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
             if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-                    
-                    document.getElementById('locInput').value = `${userLat.toFixed(5)}, ${userLng.toFixed(5)}`;
-                    document.getElementById('latVal').value = userLat;
-                    document.getElementById('lngVal').value = userLng;
-
-                    findBestZone(userLat, userLng);
-                    btn.innerHTML = 'Refine';
-                }, () => { alert("GPS Denied"); btn.innerHTML = 'Detect'; });
+                navigator.geolocation.getCurrentPosition(pos => {
+                    document.getElementById('locInput').value = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                }, () => { alert('GPS Permission Denied'); btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>'; });
             }
         }
 
-        function findBestZone(lat, lng) {
-            // Sort zones by Radius (Smallest first) - Priority to small circles
-            // This ensures if you are in "Moghalrajpuram (1km)" AND "Vijayawada (15km)", 
-            // the 1km rule wins.
-            zoneData.sort((a, b) => a.radius - b.radius);
+        // --- MAP LOGIC ---
+        function toggleMap() {
+            const container = document.getElementById('mapContainer');
+            container.classList.toggle('hidden');
+            
+            if(!container.classList.contains('hidden') && !map) {
+                // Init Map Only Once
+                initMap();
+            }
+        }
 
-            let match = null;
-
-            for(let zone of zoneData) {
-                const dist = getDistanceFromLatLonInKm(lat, lng, zone.lat, zone.lng);
-                console.log(`Checking ${zone.name}: Distance = ${dist.toFixed(2)}km, Limit = ${zone.radius}km`);
+        function initMap() {
+            if(window.google) {
+                geocoder = new google.maps.Geocoder();
+                // Default: Mangalagiri
+                const center = { lat: 16.4428, lng: 80.5645 }; 
                 
-                if(dist <= zone.radius) {
-                    match = zone;
-                    break; // Found the smallest matching circle! Stop looking.
-                }
-            }
+                map = new google.maps.Map(document.getElementById('miniMap'), {
+                    center: center,
+                    zoom: 15,
+                    disableDefaultUI: true, // Clean look
+                    zoomControl: true
+                });
 
-            if(match) {
-                currentZone = match;
-                showZoneUI(match);
+                // Listen for Drag End to find address
+                map.addListener('idle', () => {
+                    const c = map.getCenter();
+                    // Reverse Geocode
+                    geocoder.geocode({ location: c }, (results, status) => {
+                        if (status === "OK" && results[0]) {
+                            // Update the "Confirm" button text optionally, or just store it
+                            document.getElementById('locInput').dataset.mapAddr = results[0].formatted_address;
+                        }
+                    });
+                });
+            }
+        }
+
+        function confirmMapPin() {
+            const addr = document.getElementById('locInput').dataset.mapAddr;
+            const c = map.getCenter();
+            
+            if(addr) {
+                document.getElementById('locInput').value = addr;
             } else {
-                // Outside all circles
-                currentZone = { name: "Out of Zone (Standard)", rate: DEFAULT_RATE, soil: "Standard", est_depth: "Unknown" };
-                showZoneUI(currentZone);
+                document.getElementById('locInput').value = `${c.lat().toFixed(5)}, ${c.lng().toFixed(5)}`;
             }
+            
+            document.getElementById('mapContainer').classList.add('hidden');
         }
 
-        function showZoneUI(zone) {
-            document.getElementById('zoneStatusBox').classList.remove('hidden');
-            document.getElementById('zoneNameDisplay').innerText = zone.name;
-            document.getElementById('soilTypeDisplay').innerText = zone.soil;
-            document.getElementById('rateDisplay').innerText = zone.rate;
-            document.getElementById('estWaterDisplay').innerText = zone.est_depth || "N/A";
-        }
-
-        // --- 4. MATH (Haversine Formula) ---
-        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-            var R = 6371; // Radius of the earth in km
-            var dLat = deg2rad(lat2-lat1);  
-            var dLon = deg2rad(lon2-lon1); 
-            var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
-            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-            var d = R * c; // Distance in km
-            return d;
-        }
-        function deg2rad(deg) { return deg * (Math.PI/180); }
-
-        // --- 5. GENERATE QUOTE ---
+        // --- CALC LOGIC ---
         function generatePreview() {
-            if(!currentZone) { alert("Please detect location first"); return; }
-            
+            const name = document.getElementById('custName').value;
+            const loc = document.getElementById('locInput').value;
             const depth = parseInt(document.getElementById('depthSlider').value);
-            const rate = currentZone.rate;
-            const drillCost = depth * rate;
-            const total = drillCost + FIXED_COST;
+            const purpose = document.getElementById('purposeInput').value;
+
+            if(!name || !loc) { alert("Please enter Name and Location"); return; }
+
+            let remaining = depth;
+            let floor = 0;
+            let rate = pricingConfig.rates[purpose];
+            let drillTotal = 0;
+            let rows = "";
+
+            while(remaining > 0) {
+                let chunk = (remaining >= pricingConfig.slab_size) ? pricingConfig.slab_size : remaining;
+                let cost = chunk * rate;
+                drillTotal += cost;
+                rows += `<tr class="border-b border-slate-50"><td class="py-2">${floor}-${floor+chunk}ft @ ₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                remaining -= chunk;
+                floor += chunk;
+                rate += pricingConfig.slab_jump;
+            }
+
+            const total = drillTotal + pricingConfig.fixed_cost;
             
-            document.getElementById('invZone').innerText = currentZone.name;
-            document.getElementById('invBody').innerHTML = `
-                <tr><td>Drilling (${depth}ft @ ₹${rate})</td><td class="text-right">₹${drillCost.toLocaleString()}</td></tr>
-                <tr><td>Fixed Transport</td><td class="text-right">₹${FIXED_COST.toLocaleString()}</td></tr>
-            `;
+            document.getElementById('invName').innerText = name;
+            document.getElementById('invLoc').innerText = loc;
+            document.getElementById('invBody').innerHTML = rows;
             document.getElementById('invTotal').innerText = "₹" + total.toLocaleString();
 
-            leadData = { 
-                name: document.getElementById('custName').value, 
-                mobile: document.getElementById('custMobile').value,
-                zone: currentZone.name,
-                total: total
-            };
+            leadData = { name, loc, depth, total, mobile: document.getElementById('custMobile').value };
             document.getElementById('previewModal').classList.add('active');
         }
 
         function closeModal() { document.getElementById('previewModal').classList.remove('active'); }
 
         function sendWhatsApp() {
-            // Save to DB
             const formData = new FormData();
             formData.append("name", leadData.name);
             formData.append("mobile", leadData.mobile);
-            formData.append("zone_detected", leadData.zone);
+            formData.append("location", leadData.loc);
+            formData.append("depth", leadData.depth);
             formData.append("price", leadData.total);
+            formData.append("purpose", "Official Quote");
+
             fetch(CONTACT_INFO.database_url, { method: "POST", body: formData, mode: "no-cors" });
 
-            const msg = `*GEO-QUOTE REQUEST*%0A%0A👤 ${leadData.name}%0A🌍 Zone: ${leadData.zone}%0A💰 *Total: ₹${leadData.total.toLocaleString()}*`;
+            const msg = `*OFFICIAL QUOTE REQUEST*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.loc}%0A📞 ${leadData.mobile}%0A%0A📉 Depth: ${leadData.depth}ft%0A💰 *Est. Total: ₹${leadData.total.toLocaleString()}*%0A%0A(Includes Fixed Costs). Please schedule site visit.`;
             window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
         }
+    </script>
+    
+    <script>
+        const s = document.createElement('script');
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`;
+        s.async = true; s.defer = true;
+        document.body.appendChild(s);
     </script>
 </body>
 </html>
