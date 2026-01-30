@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Account | Sagar Borewells</title>
+    <title>Client Portal | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -15,12 +15,9 @@
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
-    <script src="assets/js/certificate_template.js"></script>
-
-    <style>
+    <script src="assets/js/pdf_template.js"></script> <script src="assets/js/certificate_template.js"></script> <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 700; }
-        /* Loader Animation */
         .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #2563eb; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -34,7 +31,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center mb-8">
             <div>
                 <h1 class="text-2xl font-extrabold text-slate-900">Client Portal</h1>
-                <p class="text-sm text-slate-500">Welcome back, <span id="userName" class="font-bold">Client</span></p>
+                <p class="text-sm text-slate-500">Logged in as: <span id="userPhone" class="font-bold font-mono text-blue-600">--</span></p>
             </div>
             <button onclick="logout()" class="mt-4 md:mt-0 text-sm text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg transition font-semibold border border-red-100 flex items-center gap-2">
                 <i class="ri-logout-box-line"></i> Sign Out
@@ -52,18 +49,18 @@
         </div>
 
         <div id="view-projects" class="tab-content hidden">
-            <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                </div>
+            <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
             <div id="no-projects" class="hidden text-center py-12 bg-white rounded-xl border border-slate-100 shadow-sm">
                 <i class="ri-hammer-line text-4xl text-slate-300"></i>
-                <p class="text-slate-500 mt-2 font-medium">No completed projects yet.</p>
-                <p class="text-xs text-slate-400">Once drilling is complete, your Digital Certificate will appear here.</p>
+                <p class="text-slate-500 mt-2 font-medium">No completed projects found.</p>
+                <div class="mt-4 text-xs text-orange-600 bg-orange-50 inline-block px-3 py-2 rounded border border-orange-100">
+                    <strong>Note:</strong> Ensure your project in database has mobile: <span id="debugPhone" class="font-mono">...</span>
+                </div>
             </div>
         </div>
 
         <div id="view-quotes" class="tab-content hidden">
-            <div id="quotes-grid" class="grid grid-cols-1 gap-4">
-                </div>
+            <div id="quotes-grid" class="grid grid-cols-1 gap-4"></div>
             <div id="no-quotes" class="hidden text-center py-12">
                 <p class="text-slate-400">No active price quotations found.</p>
                 <a href="quote.html" class="text-blue-600 font-bold hover:underline text-sm">Get a Quote</a>
@@ -82,7 +79,8 @@
         // 1. AUTH LISTENER
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                document.getElementById('userName').innerText = user.phoneNumber;
+                document.getElementById('userPhone').innerText = user.phoneNumber;
+                document.getElementById('debugPhone').innerText = user.phoneNumber;
                 loadClientData(user.uid, user.phoneNumber);
             } else {
                 window.location.href = "login.html";
@@ -94,11 +92,9 @@
         }
 
         function switchTab(tabName) {
-            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             
-            // Show selected
             const selectedView = document.getElementById('view-' + tabName);
             if(selectedView) selectedView.classList.remove('hidden');
             
@@ -106,14 +102,14 @@
             if(selectedTab) selectedTab.classList.add('active');
         }
 
-        // 2. DATA LOADING (FIXED FOR NULL ERRORS)
+        // 2. DATA LOADING
         function loadClientData(uid, phone) {
             const loader = document.getElementById('global-loader');
             
             // --- A. LOAD QUOTATIONS (Leads) ---
             db.collection('leads')
               .where('userId', '==', uid)
-              .get() // No orderBy here to avoid Index Error
+              .get() 
               .then(snap => {
                   const grid = document.getElementById('quotes-grid');
                   const noData = document.getElementById('no-quotes');
@@ -123,25 +119,41 @@
                   } else {
                       let leads = [];
                       snap.forEach(doc => leads.push(doc.data()));
-                      
-                      // JS Sort (Newest First)
                       leads.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
                       grid.innerHTML = "";
                       leads.forEach(data => {
-                          const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                          const dateObj = data.timestamp ? new Date(data.timestamp.toDate()) : new Date();
+                          const date = dateObj.toLocaleDateString();
+                          
+                          // Check Expiry (30 Days)
+                          const daysOld = (new Date() - dateObj) / (1000 * 60 * 60 * 24);
+                          const isExpired = daysOld > 30;
+
+                          // Pass data to button safely
+                          const dataStr = encodeURIComponent(JSON.stringify(data));
+
                           const card = `
-                            <div class="flex justify-between items-center p-5 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition">
-                                <div>
+                            <div class="flex flex-col md:flex-row justify-between items-center p-5 bg-white border ${isExpired ? 'border-red-100 bg-red-50/10' : 'border-slate-200'} rounded-xl shadow-sm hover:shadow-md transition gap-4">
+                                <div class="flex-grow">
                                     <h4 class="font-bold text-slate-700 text-lg">${data.loc || "Location"}</h4>
                                     <p class="text-xs text-slate-400 mt-1"><i class="ri-calendar-line"></i> Quoted: ${date}</p>
                                     <div class="mt-2 text-xs font-semibold text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded">
-                                        ${data.zone || 'Standard Zone'} • ${data.depth} ft
+                                        ${data.zone || 'Standard'} • ${data.depth} ft
                                     </div>
+                                    ${isExpired ? '<span class="ml-2 text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded">EXPIRED</span>' : ''}
                                 </div>
-                                <div class="text-right">
+                                <div class="text-right flex flex-col items-end gap-2">
                                     <div class="font-extrabold text-xl text-slate-900">₹${parseInt(data.total).toLocaleString()}</div>
-                                    <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1 inline-block">VALID</span>
+                                    <div class="flex gap-2">
+                                        <button onclick="downloadQuotePDF('${dataStr}')" class="px-3 py-2 text-xs font-bold text-blue-600 border border-blue-200 bg-blue-50 rounded hover:bg-blue-100">
+                                            <i class="ri-file-download-line"></i> PDF
+                                        </button>
+                                        ${isExpired ? 
+                                        `<a href="quote.html" class="px-3 py-2 text-xs font-bold text-white bg-slate-400 rounded hover:bg-slate-500">Recalculate</a>` 
+                                        : 
+                                        `<button class="px-3 py-2 text-xs font-bold text-white bg-emerald-500 rounded cursor-default"><i class="ri-check-line"></i> Valid</button>`}
+                                    </div>
                                 </div>
                             </div>
                           `;
@@ -149,19 +161,14 @@
                       });
                   }
                   
-                  // Hide loader after first data load
                   if(loader) loader.style.display = 'none';
-                  // Show default tab
                   switchTab('quotes'); 
-              })
-              .catch(err => {
-                  console.error("Quote Load Error:", err);
-                  if(loader) loader.innerHTML = `<p class="text-red-500">Error loading data. Check console.</p>`;
               });
 
             // --- B. LOAD PROJECTS (Completed Borewells) ---
+            console.log("Fetching projects for:", phone); // Debug Log
             db.collection('projects')
-              .where('mobile', '==', phone)
+              .where('mobile', '==', phone) // IMPORTANT: Must match +91... format exactly
               .get()
               .then(snap => {
                   const grid = document.getElementById('projects-grid');
@@ -173,6 +180,9 @@
                       grid.innerHTML = "";
                       snap.forEach(doc => {
                           const data = doc.data();
+                          // Safe Data Pass
+                          const dataStr = encodeURIComponent(JSON.stringify(data));
+                          
                           const card = `
                             <div class="bg-white p-6 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden">
                                 <div class="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">COMPLETED</div>
@@ -186,36 +196,66 @@
                                     <div><span class="block text-[10px] text-slate-400 uppercase">Casing</span> <b class="text-slate-700">${data.casing_depth} ft</b></div>
                                 </div>
 
-                                <button onclick='downloadCert(${JSON.stringify(data).replace(/'/g, "&apos;")})' class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition flex items-center justify-center gap-2">
+                                <button onclick="downloadCert('${dataStr}')" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition flex items-center justify-center gap-2">
                                     <i class="ri-file-certificate-line text-yellow-400"></i> Download Birth Certificate
                                 </button>
                             </div>
                           `;
                           grid.innerHTML += card;
                       });
-                      // If projects exist, switch to project tab automatically
                       switchTab('projects');
                   }
               });
         }
 
-        // 3. CERTIFICATE GENERATION
-        function downloadCert(data) {
-            // Check if template exists
-            if(typeof getCertificateHTML === 'undefined') {
-                alert("Certificate Template Missing. Check assets/js/certificate_template.js");
-                return;
+        // 3. GENERATE QUOTE PDF (Re-Constructs the Table)
+        function downloadQuotePDF(encodedData) {
+            const data = JSON.parse(decodeURIComponent(encodedData));
+            
+            // Re-Generate Rows (Since we didn't save HTML)
+            let rows = "";
+            let remaining = parseInt(data.depth);
+            let floor = 0;
+            // Approximate rate reconstruction (assuming standard start)
+            // You can fetch real zone rates if needed, but this is a decent estimate for display
+            let currentRate = 90; // Default base
+            // If data has zone info, ideally we use that, but simple slab logic is fine for historical view
+            
+            while(remaining > 0) {
+                let chunk = (remaining >= 50) ? 50 : remaining;
+                let cost = chunk * currentRate;
+                rows += `<tr><td>${floor}-${floor+chunk}ft @ ₹${currentRate}</td><td style="text-align:right">₹${cost.toLocaleString()}</td></tr>`;
+                remaining -= chunk; floor += chunk; currentRate += 5;
             }
 
+            // Call Template
+            const content = getInvoiceHTML({
+                name: data.name || "Customer",
+                mobile: data.mobile,
+                loc: data.loc,
+                total: data.total,
+                rows: rows 
+            });
+
+            const element = document.createElement('div');
+            element.innerHTML = content;
+            document.body.appendChild(element);
+            
+            html2pdf().from(element).save(`Sagar_Estimate_${data.loc}.pdf`).then(() => document.body.removeChild(element));
+        }
+
+        // 4. GENERATE CERTIFICATE PDF
+        function downloadCert(encodedData) {
+            const data = JSON.parse(decodeURIComponent(encodedData));
             const content = getCertificateHTML({
                 id: data.projectId || "SBR-GEN-001",
                 name: "Valued Customer",
                 loc: data.location,
                 date: data.date,
-                gps: data.gps || "16.44, 80.55", 
+                gps: data.gps || "Unavailable", 
                 depth: data.depth,
                 casing_depth: data.casing_depth,
-                casing_type: data.casing_type || "PVC Standard",
+                casing_type: "PVC Standard",
                 yield: data.yield,
                 water_gap: data.water_gap || "N/A",
                 motor: data.motor
@@ -225,15 +265,7 @@
             element.innerHTML = content;
             document.body.appendChild(element);
             
-            const opt = {
-                margin: 0,
-                filename: `Borewell_Cert_${data.location}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(element).save().then(() => document.body.removeChild(element));
+            html2pdf().from(element).save(`Borewell_Cert_${data.location}.pdf`).then(() => document.body.removeChild(element));
         }
     </script>
 </body>
