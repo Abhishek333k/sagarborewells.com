@@ -1,6 +1,9 @@
 // FILENAME: assets/js/layout.js
 
 function renderNavbar() {
+    const mount = document.getElementById('navbar-mount');
+    if (!mount) return;
+
     const nav = document.createElement('nav');
     nav.className = "bg-white shadow-sm sticky top-0 z-50";
     nav.innerHTML = `
@@ -18,7 +21,6 @@ function renderNavbar() {
 
                 <div class="hidden md:flex items-center gap-8">
                     <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
-                    <a href="locate.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Find Us</a>
                     <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
                     
                     <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
@@ -41,28 +43,48 @@ function renderNavbar() {
         <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 p-4 absolute w-full shadow-lg">
             <a href="index.html" class="block py-3 font-bold text-slate-600">Home</a>
             <a href="dashboard.html" class="block py-3 font-bold text-slate-600">My Account</a>
+            <a href="contact.html" class="block py-3 font-bold text-slate-600">Contact</a>
             <a href="quote.html" class="block py-3 mt-2 text-center bg-blue-600 text-white font-bold rounded-lg">Get Quote</a>
         </div>
     `;
-    document.getElementById('navbar-mount').appendChild(nav);
+    mount.appendChild(nav);
 
     // Toggle Mobile Menu
-    document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-        document.getElementById('mobile-menu').classList.toggle('hidden');
-    });
+    const btn = document.getElementById('mobile-menu-btn');
+    if(btn) btn.addEventListener('click', () => document.getElementById('mobile-menu').classList.toggle('hidden'));
 }
 
 function renderFooter() {
-    // (Keep your existing footer code here, or I can provide it if needed)
-    // For brevity, just ensuring navbar is the focus.
+    const mount = document.getElementById('footer-mount');
+    if (!mount) return;
+
     const footer = document.createElement('footer');
     footer.className = "bg-slate-900 text-white py-12 mt-auto";
     footer.innerHTML = `
-        <div class="max-w-7xl mx-auto px-4 text-center">
-            <p class="text-slate-500 text-sm">© ${new Date().getFullYear()} Sagar Borewells. All rights reserved.</p>
+        <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
+            <div>
+                <h4 class="text-lg font-bold text-white mb-4">Sagar Borewells</h4>
+                <p class="text-slate-400">Advanced geological drilling solutions using sensor-based technology and zone-specific pricing.</p>
+            </div>
+            <div>
+                <h4 class="text-lg font-bold text-white mb-4">Quick Links</h4>
+                <ul class="space-y-2 text-slate-400">
+                    <li><a href="index.html" class="hover:text-blue-400">Home</a></li>
+                    <li><a href="quote.html" class="hover:text-blue-400">Get Estimate</a></li>
+                    <li><a href="dashboard.html" class="hover:text-blue-400">Client Login</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-lg font-bold text-white mb-4">Contact</h4>
+                <p class="text-slate-400 dynamic-address">Mangalagiri, AP</p>
+                <p class="text-slate-400 mt-2 dynamic-phone">+91 9XXXX XXXXX</p>
+            </div>
+        </div>
+        <div class="text-center text-slate-600 text-xs mt-12 pt-8 border-t border-slate-800">
+            &copy; ${new Date().getFullYear()} Sagar Borewells. All rights reserved.
         </div>
     `;
-    document.getElementById('footer-mount').appendChild(footer);
+    mount.appendChild(footer);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
