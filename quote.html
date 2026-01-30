@@ -406,6 +406,9 @@
 
         let qMap;
         function openMiniMap() {
+            if(typeof google === 'undefined') {
+                alert("Map is loading... please wait a moment.");
+                return;
             document.getElementById('miniMapModal').style.display = 'flex';
             const center = {lat: 16.4410, lng: 80.5520}; 
             
