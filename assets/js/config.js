@@ -20,6 +20,11 @@ const CONTACT_INFO = {
     // Go to your business on Google Maps -> Share -> Copy Link -> Paste here
     map_link: "https://maps.app.goo.gl/VGqQCjRQCx729Qmd6",
 
+    // 🟢 2. FOR EMBED MAP VIEW (The Iframe Src)
+    // I put a working code for Mangalagiri here. 
+    // To change it: Go to Google Maps > Share > Embed a map > Copy ONLY the part inside src="..."
+    map_embed_url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3826.664669677336!2d80.56233321486333!3d16.44185798865166!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a35f0a2a0d0a0a1%3A0x0!2sMangalagiri!5e0!3m2!1sen!2sin!4v1600000000000!5m2!1sen!2sin",
+    
     // --- SOCIAL LINKS ---
     social_instagram: "https://www.instagram.com/sagar_bore_wells/",
     social_youtube: "https://www.youtube.com/@Sagar_Bore_Wells",
@@ -27,7 +32,6 @@ const CONTACT_INFO = {
     // --- TECH KEYS ---
     // Google Maps API Key
     google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus", 
-
     // Your Database URL (Google App Script)
     database_url: "https://script.google.com/macros/s/AKfycbwMJ16yDE-PsghDqyBa6mS4J-QXrMn10OYSEthKZEMRhv9uw6N1NpBN3_FgNX7PsmeSig/exec"
 };
