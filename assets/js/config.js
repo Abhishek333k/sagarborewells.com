@@ -20,7 +20,7 @@ const CONTACT_INFO = {
     
     // Maps Links
     map_link: "https://maps.app.goo.gl/VGqQCjRQCx729Qmd6", 
-    map_embed_url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d776.0440277623776!2d80.5658408030123!3d16.429048203298898!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a35f1606165d7b7%3A0xc31ff66a47bd70ce!2sSAGAR%20BOREWELLS!5e1!3m2!1sen!2sin!4v1769769624882!5m2!1sen!2sin" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade",
+    map_embed_url: "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d359.0849250400801!2d80.5657855623069!3d16.42902986953823!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a35f1606165d7b7%3A0xc31ff66a47bd70ce!2sSAGAR%20BOREWELLS!5e1!3m2!1sen!2sin!4v1769771062388!5m2!1sen!2sin",
 
     // Socials
     social_instagram: "https://www.instagram.com/sagar_bore_wells/",
