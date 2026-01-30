@@ -166,15 +166,22 @@
     </main>
 
     <div id="footer-mount"></div>
-    <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
-            <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl">
-                <h3 class="font-bold text-slate-800 mb-2">Pinpoint Exact Location</h3>
-                <div id="quoteMapContainer" style="width:100%; height:300px; border-radius:10px; background:#eee;"></div>
-                <div class="flex justify-end gap-2 mt-4">
-                    <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-500">Cancel</button>
-                    <button onclick="confirmQuoteLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg">Set Pin</button>
-                </div>
+   <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
+        <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl">
+            <h3 class="font-bold text-slate-800 mb-2 text-center">Drag Map to Pin Location</h3>
+            
+            <div style="position: relative; width: 100%; height: 300px; background: #eee; border-radius: 10px; overflow: hidden;">
+                <div id="quoteMapContainer" style="width:100%; height:100%;"></div>
+                
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjMjU2M2ViIiBkPSJNMTIgMEM3LjU4IDAgNCAzLjU4IDQgOGMwIDUuMjUgNyAxMyA4IDEzczgtNy43NSA4LTEzYzAtNC40Mi0zLjU4LTgtOC04em0wIDEyYy0yLjIxIDAtNC0xLjc5LTQtNHMxLjc5LTQgNC00IDQgMS43OSA0IDQgLTEuNzkgNC00IDR6Ii8+PC9zdmc+" 
+                     style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 1000; pointer-events: none;">
             </div>
+
+            <div class="flex justify-end gap-2 mt-4">
+                <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-500">Cancel</button>
+                <button onclick="confirmQuoteLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg">Set Pin</button>
+            </div>
+        </div>
     </div>
     <script>
         // INIT
@@ -409,12 +416,14 @@
             if(typeof google === 'undefined') {
                 alert("Map is loading... please wait a moment.");
                 return;
+            } 
             document.getElementById('miniMapModal').style.display = 'flex';
             const center = {lat: 16.4410, lng: 80.5520}; 
-            
             if(!qMap) {
+                // disableDefaultUI removes the zoom controls/street view for a cleaner "Uber" look
                 qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), { center: center, zoom: 15, disableDefaultUI: true });
             }
+            // Trigger resize to prevent grey box
             setTimeout(() => google.maps.event.trigger(qMap, 'resize'), 100);
         }
 
