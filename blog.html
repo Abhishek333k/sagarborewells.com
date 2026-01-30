@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Room | Sagar Borewells</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/layout.js"></script>
+
+    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }</style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <div id="navbar-mount"></div>
+
+    <main class="flex-grow container mx-auto px-4 py-12">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-slate-900 mb-2">News Room</h1>
+            <p class="text-slate-500">Updates from the field and technological advancements.</p>
+        </div>
+
+        <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="col-span-full text-center py-20 text-slate-400">Loading articles...</div>
+        </div>
+    </main>
+
+    <div id="footer-mount"></div>
+
+    <script>
+        if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        const db = firebase.firestore();
+
+        db.collection('posts').orderBy('timestamp', 'desc').get().then(snap => {
+            const grid = document.getElementById('blog-grid');
+            if(snap.empty) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400">No articles published yet.</div>'; return; }
+            
+            grid.innerHTML = "";
+            snap.forEach(doc => {
+                const data = doc.data();
+                const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : data.date;
+                grid.innerHTML += `
+                    <article class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition border border-slate-100 group">
+                        <div class="h-48 bg-slate-200 overflow-hidden relative">
+                            <img src="${data.image || 'https://source.unsplash.com/random/800x600/?drilling'}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600">${date}</div>
+                        </div>
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold text-slate-900 mb-3 leading-tight">${data.title}</h3>
+                            <p class="text-slate-500 text-sm line-clamp-3 mb-4">${data.content}</p>
+                            <span class="text-blue-600 font-bold text-sm hover:underline cursor-pointer">Read Full Story →</span>
+                        </div>
+                    </article>
+                `;
+            });
+        });
+    </script>
+</body>
+</html>
