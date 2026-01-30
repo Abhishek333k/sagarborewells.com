@@ -3,189 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transparent Quote | Sagar Borewells</title>
+    <title>Official Estimate | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; }
-        .glass-panel { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
-        .step-section { transition: all 0.4s ease-in-out; }
-        .hidden-step { display: none; opacity: 0; }
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #334155; }
         
-        /* Receipt Style Log */
-        .receipt-log {
-            background-image: radial-gradient(#334155 1px, transparent 1px);
-            background-size: 10px 10px;
-        }
+        /* The "TorQ" Style Card */
+        .est-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .est-header { background: #2563eb; color: white; padding: 24px; }
+        .est-body { padding: 24px; }
+        
+        /* Table Styles */
+        .est-table { width: 100%; font-size: 13px; border-collapse: collapse; margin-bottom: 20px; }
+        .est-table th { text-align: left; padding: 8px 0; color: #64748b; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
+        .est-table td { padding: 12px 0; border-bottom: 1px solid #f1f5f9; color: #0f172a; font-weight: 600; }
+        .est-table .subtotal-row td { border-top: 2px solid #e2e8f0; border-bottom: none; font-size: 14px; color: #1e293b; padding-top: 16px; }
+
+        /* Variable Grid */
+        .var-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 11px; }
+        .var-item { display: flex; justify-content: space-between; align-items: center; padding: 6px; background: #f8fafc; border-radius: 4px; }
+        .var-badge { background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+
+        /* Input Styles */
+        .input-dark { background: #1e293b; border: 1px solid #334155; color: white; }
+        .input-dark:focus { border-color: #3b82f6; outline: none; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col bg-slate-900">
 
     <div id="header-mount"></div>
 
-    <main class="flex-grow container mx-auto px-4 py-8 max-w-3xl">
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-4xl">
         
-        <div class="flex items-center justify-between mb-8 px-4">
-            <div id="step1-indicator" class="flex flex-col items-center text-blue-500">
-                <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">1</div>
-                <span class="text-[10px] font-bold mt-1 uppercase">Contact</span>
-            </div>
-            <div class="flex-grow h-0.5 bg-slate-700 mx-4"></div>
-            <div id="step2-indicator" class="flex flex-col items-center text-slate-600">
-                <div class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 border border-slate-600 flex items-center justify-center font-bold text-sm">2</div>
-                <span class="text-[10px] font-bold mt-1 uppercase">Estimate</span>
-            </div>
-        </div>
-
-        <div id="step1" class="step-section">
-            <div class="glass-panel p-6 md:p-8">
-                <h2 class="text-2xl font-bold mb-6">Start Your Project</h2>
-                
-                <div class="space-y-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Full Name</label>
-                            <input type="text" id="custName" placeholder="Enter your name" 
-                                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Mobile Number</label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-3 text-slate-500">+91</span>
-                                <input type="tel" id="custMobile" placeholder="9876543210" maxlength="10"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 pl-12 text-white focus:border-blue-500 outline-none font-mono">
-                            </div>
-                        </div>
-                    </div>
-
+        <div id="inputSection" class="bg-[#1e293b] rounded-2xl p-6 md:p-8 border border-slate-700 shadow-2xl">
+            <h1 class="text-2xl font-bold text-white mb-6">Generate Official Estimate</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="space-y-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Drilling Site Location</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-location-dot absolute left-3 top-3.5 text-blue-500"></i>
-                            <input id="locationInput" type="text" placeholder="Search locality or landmark..." 
-                                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 pl-10 text-white focus:border-blue-500 outline-none">
-                            <div id="locLocked" class="hidden absolute right-3 top-3">
-                                <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-1 rounded border border-green-500/50 font-bold">
-                                    <i class="fa-solid fa-check"></i> MAP SELECTED
-                                </span>
-                            </div>
-                        </div>
+                        <label class="text-xs font-bold text-slate-400 uppercase">Customer Name</label>
+                        <input type="text" id="custName" placeholder="Enter Name" class="w-full mt-1 p-3 rounded-lg input-dark">
                     </div>
-
-                    <button onclick="goToStep2()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow-lg shadow-blue-500/20 mt-4">
-                        Proceed to Estimator <i class="fa-solid fa-arrow-right ml-2"></i>
-                    </button>
-                    
-                    <p class="text-[10px] text-center text-slate-500">
-                        <i class="fa-solid fa-lock"></i> Your details are secure and used for estimation only.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div id="step2" class="step-section hidden-step">
-            <div class="glass-panel p-6 md:p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold">Cost Breakdown</h2>
-                    <button onclick="goBack()" class="text-xs text-slate-400 hover:text-white underline">Edit Details</button>
-                </div>
-
-                <div class="mb-6">
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-3">Purpose</label>
-                    <div class="grid grid-cols-3 gap-3">
-                        <label class="cursor-pointer">
-                            <input type="radio" name="purpose" value="residential" class="peer hidden" checked onchange="updateCalc()">
-                            <div class="p-3 rounded-lg bg-slate-800 border border-slate-700 peer-checked:border-blue-500 peer-checked:bg-blue-900/20 text-center transition">
-                                <i class="fa-solid fa-house mb-2 text-slate-400 peer-checked:text-blue-400"></i>
-                                <p class="text-[10px] font-bold">Home</p>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="purpose" value="agriculture" class="peer hidden" onchange="updateCalc()">
-                            <div class="p-3 rounded-lg bg-slate-800 border border-slate-700 peer-checked:border-green-500 peer-checked:bg-green-900/20 text-center transition">
-                                <i class="fa-solid fa-wheat-awn mb-2 text-slate-400 peer-checked:text-green-400"></i>
-                                <p class="text-[10px] font-bold">Agri</p>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="purpose" value="commercial" class="peer hidden" onchange="updateCalc()">
-                            <div class="p-3 rounded-lg bg-slate-800 border border-slate-700 peer-checked:border-purple-500 peer-checked:bg-purple-900/20 text-center transition">
-                                <i class="fa-solid fa-building mb-2 text-slate-400 peer-checked:text-purple-400"></i>
-                                <p class="text-[10px] font-bold">Comm.</p>
-                            </div>
-                        </label>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase">Mobile Number</label>
+                        <input type="tel" id="custMobile" placeholder="9876543210" class="w-full mt-1 p-3 rounded-lg input-dark font-mono">
                     </div>
                 </div>
-
-                <div class="mb-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
-                    <div class="flex justify-between items-end mb-4">
-                        <label class="text-sm font-bold text-slate-300">Drilling Depth</label>
-                        <div class="flex items-center">
-                            <input type="number" id="depthInput" value="500" min="100" max="1500" 
-                                class="w-24 bg-slate-900 border border-blue-500/50 rounded p-2 text-right font-bold text-white text-lg outline-none focus:ring-2 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-slate-500 font-bold">ft</span>
-                        </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase">Site Location</label>
+                        <input type="text" id="locationInput" placeholder="Mangalagiri, AP" class="w-full mt-1 p-3 rounded-lg input-dark">
                     </div>
-                    <input type="range" id="depthSlider" min="100" max="1500" value="500" step="10" 
-                        class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
-                </div>
-
-                <div class="mb-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
-                    <div class="flex justify-between items-center mb-3">
-                        <label class="text-sm font-bold text-slate-300">Casing Pipe Details</label>
-                        <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">Req. for loose soil</span>
-                    </div>
-                    
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="text-[10px] text-slate-500 uppercase font-bold">Pipe Material</label>
-                            <select id="casingType" onchange="updateCalc()" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white">
-                                <option value="350">PVC - Standard</option>
-                                <option value="450">PVC - Heavy Duty</option>
-                                <option value="650">MS Iron (Rocky)</option>
-                            </select>
+                            <label class="text-xs font-bold text-slate-400 uppercase">Drill Depth (ft)</label>
+                            <input type="number" id="depthInput" value="500" class="w-full mt-1 p-3 rounded-lg input-dark font-bold text-blue-400">
                         </div>
                         <div>
-                            <label class="text-[10px] text-slate-500 uppercase font-bold">Est. Casing Depth</label>
-                            <div class="flex items-center mt-1">
-                                <input type="number" id="casingDepth" value="80" min="0" max="500" oninput="updateCalc()"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
-                                <span class="ml-2 text-xs text-slate-500">ft</span>
-                            </div>
+                            <label class="text-xs font-bold text-slate-400 uppercase">Purpose</label>
+                            <select id="purposeInput" class="w-full mt-1 p-3 rounded-lg input-dark">
+                                <option value="residential">Residential</option>
+                                <option value="agriculture">Agriculture</option>
+                                <option value="commercial">Commercial</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="generateQuote()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow-lg shadow-blue-500/20 flex justify-center items-center gap-2">
+                <i class="fa-solid fa-calculator"></i> GENERATE QUOTE PREVIEW
+            </button>
+        </div>
+
+
+        <div id="quoteResult" class="hidden mt-8">
+            <div class="est-card">
+                
+                <div class="est-header">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 class="text-2xl font-extrabold tracking-tight">SAGAR <span class="text-blue-200">OPS</span></h2>
+                            <span class="text-xs font-mono bg-blue-700 px-2 py-1 rounded text-blue-100">EST #PREVIEW</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-blue-200 uppercase font-bold">Estimated Total</div>
+                            <div class="text-3xl font-bold" id="headerTotal">₹0</div>
+                            <div class="text-[10px] text-blue-200">*Excl. Casing & GST</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-6 text-sm border-t border-blue-500 pt-4">
+                        <div>
+                            <span class="text-blue-300 text-xs uppercase block">Location</span>
+                            <strong id="displayLoc">--</strong>
+                        </div>
+                        <div>
+                            <span class="text-blue-300 text-xs uppercase block">Service</span>
+                            <strong>6.5" High Pressure</strong>
+                        </div>
+                        <div>
+                            <span class="text-blue-300 text-xs uppercase block">Depth</span>
+                            <strong id="displayDepth">--</strong>
                         </div>
                     </div>
                 </div>
 
-                <div class="border-t-2 border-slate-700 pt-6">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm text-slate-400">Drilling Total</span>
-                        <span class="text-lg font-bold text-white" id="drillTotalDisplay">₹0</span>
-                    </div>
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-sm text-slate-400">Casing Total</span>
-                        <span class="text-lg font-bold text-orange-400" id="casingTotalDisplay">₹0</span>
-                    </div>
+                <div class="est-body">
                     
-                    <div class="flex justify-between items-center mb-6 pt-4 border-t border-slate-700 border-dashed">
-                        <span class="text-lg font-bold text-white">Grand Estimate</span>
-                        <span class="text-4xl font-extrabold text-blue-400" id="grandTotalDisplay">₹0</span>
+                    <div class="mb-8">
+                        <div class="text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group"></i> Drilling Cost Structure
+                        </div>
+                        <table class="est-table">
+                            <thead>
+                                <tr>
+                                    <th>Depth Range</th>
+                                    <th class="text-center">Rate</th>
+                                    <th class="text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="drillingTableBody">
+                                </tbody>
+                            <tfoot>
+                                <tr class="subtotal-row">
+                                    <td colspan="2">Drilling Subtotal</td>
+                                    <td class="text-right" id="drillingSubtotal">₹0</td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
 
-                    <div class="mb-6">
-                        <p class="text-[10px] text-slate-500 uppercase font-bold mb-2 tracking-widest">Rate Card Breakdown (50ft Slabs)</p>
-                        <div class="p-4 bg-slate-900 rounded-xl text-xs text-slate-400 space-y-2 font-mono border border-slate-700 max-h-48 overflow-y-auto receipt-log" id="breakdownLog">
+                    <div class="mb-8">
+                        <div class="text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-truck-fast"></i> Fixed Operational Costs
+                        </div>
+                        <table class="est-table">
+                            <tbody>
+                                <tr>
+                                    <td>Rig Setting & Transport</td>
+                                    <td class="text-right">₹5,000</td>
+                                </tr>
+                                <tr>
+                                    <td>Labor & Food Charges</td>
+                                    <td class="text-right">₹2,000</td>
+                                </tr>
+                                <tr class="subtotal-row">
+                                    <td>Fixed Costs Subtotal</td>
+                                    <td class="text-right">₹7,000</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
+                        <div class="flex gap-3 mb-3">
+                            <i class="fa-solid fa-triangle-exclamation text-yellow-600 mt-0.5"></i>
+                            <div>
+                                <div class="text-xs font-bold text-slate-800 uppercase">Variable Materials</div>
+                                <div class="text-[10px] text-slate-500">Charged based on actual site usage. NOT included in total above.</div>
                             </div>
+                        </div>
+                        
+                        <div class="var-grid">
+                            <div class="var-item"><span>6.5" PVC Pipe (Std)</span> <span class="var-badge">₹350/ft</span></div>
+                            <div class="var-item"><span>6.5" PVC Pipe (Heavy)</span> <span class="var-badge">₹450/ft</span></div>
+                            <div class="var-item"><span>7" MS Iron Casing</span> <span class="var-badge">₹650/ft</span></div>
+                            <div class="var-item"><span>Welding Charge</span> <span class="var-badge">₹500/Joint</span></div>
+                            <div class="var-item"><span>Cap & Collar</span> <span class="var-badge">₹450/Set</span></div>
+                            <div class="var-item"><span>Water Injection</span> <span class="var-badge">₹15/ft</span></div>
+                        </div>
                     </div>
 
-                    <button onclick="submitLead()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition shadow-lg shadow-emerald-500/20 flex justify-center items-center gap-2">
-                        <i class="fa-brands fa-whatsapp text-xl"></i> Get This Quote on WhatsApp
-                    </button>
-                    <p class="text-[10px] text-center text-slate-600 mt-3">*GST & Transport excluded. Final depth depends on site geology.</p>
+                    <div class="text-center">
+                        <button onclick="submitBooking()" class="w-full max-w-sm py-4 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition mb-3">
+                            Confirm Booking to Proceed
+                        </button>
+                        <p class="text-[10px] text-slate-400">VALID FOR 30 DAYS • COMPUTER GENERATED ESTIMATE</p>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -195,168 +196,103 @@
     <script src="assets/js/components.js"></script>
 
     <script>
-        // CONFIG
-        let leadData = {
-            name: "", mobile: "", location: "", purpose: "residential",
-            drillDepth: 500, casingDepth: 80, casingType: "PVC-Std",
-            totalPrice: 0
-        };
-
-        const SLAB_INCREMENT = 50;
+        // --- CONFIGURATION ---
+        const FIXED_COSTS = 7000; // Transport (5000) + Food (2000)
+        
+        // Slab Logic (Same as before)
+        const SLAB_INCREMENT = 50; 
         const JUMP_AMOUNT = 5; 
         const BASE_RATES = { 'residential': 90, 'agriculture': 85, 'commercial': 110 };
 
-        // INIT
+        let quoteData = {};
+
+        // --- PRE-FILL FROM MAP ---
         document.addEventListener("DOMContentLoaded", function() {
             const params = new URLSearchParams(window.location.search);
             if(params.get('loc')) {
-                const loc = decodeURIComponent(params.get('loc'));
-                document.getElementById("locationInput").value = loc;
-                leadData.location = loc;
-                document.getElementById('locLocked').classList.remove('hidden');
+                document.getElementById("locationInput").value = decodeURIComponent(params.get('loc'));
             }
         });
 
-        // STEP NAVIGATION
-        function goToStep2() {
+        // --- GENERATOR ENGINE ---
+        function generateQuote() {
+            // 1. Gather Inputs
             const name = document.getElementById('custName').value;
-            const mobile = document.getElementById('custMobile').value;
             const loc = document.getElementById('locationInput').value;
+            const depth = parseInt(document.getElementById('depthInput').value) || 0;
+            const purpose = document.getElementById('purposeInput').value;
 
-            if(name.length < 3) return alert("Enter Name");
-            if(mobile.length < 10) return alert("Enter Mobile");
-            if(loc.length < 3) return alert("Enter Location");
+            if(!name || !loc || depth < 100) {
+                alert("Please fill all details correctly.");
+                return;
+            }
 
-            leadData.name = name;
-            leadData.mobile = mobile;
-            leadData.location = loc;
-
-            document.getElementById('step1').classList.add('hidden-step');
-            setTimeout(() => {
-                document.getElementById('step1').style.display = 'none';
-                document.getElementById('step2').style.display = 'block';
-                setTimeout(() => { document.getElementById('step2').classList.remove('hidden-step'); }, 50);
-            }, 400);
-
-            // Update Indicators
-            document.getElementById('step1-indicator').className = "flex flex-col items-center text-slate-500";
-            document.getElementById('step1-indicator').children[0].className = "w-8 h-8 rounded-full bg-slate-800 text-slate-400 border border-slate-600 flex items-center justify-center font-bold text-sm";
-            document.getElementById('step2-indicator').className = "flex flex-col items-center text-blue-500";
-            document.getElementById('step2-indicator').children[0].className = "w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm";
-
-            updateCalc();
-        }
-
-        function goBack() { location.reload(); }
-
-        // CALCULATOR ENGINE
-        const slider = document.getElementById('depthSlider');
-        const numberInput = document.getElementById('depthInput');
-
-        slider.addEventListener('input', (e) => { numberInput.value = e.target.value; updateCalc(); });
-        numberInput.addEventListener('input', (e) => { 
-            let val = parseInt(e.target.value); if(val>1500) val=1500; slider.value = val; updateCalc(); 
-        });
-
-        function updateCalc() {
-            // 1. Get Values
-            const purposes = document.getElementsByName('purpose');
-            for(let p of purposes) { if(p.checked) leadData.purpose = p.value; }
-            
-            const drillDepth = parseInt(numberInput.value) || 0;
-            const casingDepth = parseInt(document.getElementById('casingDepth').value) || 0;
-            const casingRate = parseInt(document.getElementById('casingType').value);
-            const casingLabel = document.getElementById('casingType').options[document.getElementById('casingType').selectedIndex].text;
-
-            // 2. Drill Cost (Slab Logic)
-            let drillTotal = 0;
-            let currentSlabRate = BASE_RATES[leadData.purpose];
-            let logHTML = "";
-            let remaining = drillDepth;
+            // 2. Calculate Drilling Slabs
+            let remaining = depth;
             let floor = 0;
+            let currentRate = BASE_RATES[purpose];
+            let drillTotal = 0;
+            let tableHTML = "";
 
             while(remaining > 0) {
                 let chunk = (remaining >= SLAB_INCREMENT) ? SLAB_INCREMENT : remaining;
-                let chunkCost = chunk * currentSlabRate;
+                let chunkCost = chunk * currentRate;
                 drillTotal += chunkCost;
-                
-                // Visible Log Entry
-                logHTML += `<div class="flex justify-between border-b border-slate-800/50 pb-1 mb-1 last:border-0">
-                    <span>${floor}-${floor + chunk}ft (@ ₹${currentSlabRate})</span> 
-                    <span class="text-white">₹${chunkCost.toLocaleString()}</span>
-                </div>`;
-                
+
+                // Create Table Row
+                tableHTML += `
+                    <tr>
+                        <td>${floor} - ${floor + chunk} ft</td>
+                        <td class="text-center">₹${currentRate}</td>
+                        <td class="text-right">₹${chunkCost.toLocaleString()}</td>
+                    </tr>
+                `;
+
                 remaining -= chunk;
                 floor += chunk;
-                currentSlabRate += JUMP_AMOUNT;
+                currentRate += JUMP_AMOUNT;
             }
 
-            // 3. Casing Cost
-            const casingTotal = casingDepth * casingRate;
+            // 3. Final Math
+            const grandTotal = drillTotal + FIXED_COSTS;
 
-            // 4. Update UI
-            document.getElementById('drillTotalDisplay').innerText = "₹" + drillTotal.toLocaleString();
-            document.getElementById('casingTotalDisplay').innerText = "₹" + casingTotal.toLocaleString();
-            document.getElementById('grandTotalDisplay').innerText = "₹" + (drillTotal + casingTotal).toLocaleString();
-            document.getElementById('breakdownLog').innerHTML = logHTML;
+            // 4. Populate UI
+            document.getElementById('displayLoc').innerText = loc;
+            document.getElementById('displayDepth').innerText = depth + " ft";
+            
+            document.getElementById('drillingTableBody').innerHTML = tableHTML;
+            document.getElementById('drillingSubtotal').innerText = "₹" + drillTotal.toLocaleString();
+            
+            document.getElementById('headerTotal').innerText = "₹" + grandTotal.toLocaleString();
 
-            // 5. Save Data
-            leadData.drillDepth = drillDepth;
-            leadData.casingDepth = casingDepth;
-            leadData.casingType = casingLabel;
-            leadData.totalPrice = drillTotal + casingTotal;
+            // 5. Show Result & Hide Input (Optional: Scroll to result)
+            document.getElementById('quoteResult').classList.remove('hidden');
+            document.getElementById('quoteResult').scrollIntoView({ behavior: 'smooth' });
+
+            // Save for WhatsApp
+            quoteData = { name, loc, depth, total: grandTotal };
         }
 
-        // SUBMIT
-        function submitLead() {
-            const btn = document.querySelector('button[onclick="submitLead()"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Sending...';
-            btn.disabled = true;
-
+        // --- SUBMIT ---
+        function submitBooking() {
+            const btn = document.querySelector('button[onclick="submitBooking()"]');
+            btn.innerHTML = "Processing...";
+            
+            // Send to Google Sheet (using config.js URL)
             const formData = new FormData();
-            formData.append("name", leadData.name);
-            formData.append("mobile", leadData.mobile);
-            formData.append("location", leadData.location);
-            formData.append("purpose", leadData.purpose);
-            formData.append("depth", leadData.drillDepth);
-            formData.append("price", leadData.totalPrice);
+            formData.append("name", quoteData.name);
+            formData.append("location", quoteData.loc);
+            formData.append("depth", quoteData.depth);
+            formData.append("price", quoteData.total);
+            formData.append("purpose", "Official Quote");
 
             fetch(CONTACT_INFO.database_url, { method: "POST", body: formData, mode: "no-cors" })
             .then(() => {
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Sent!';
-                
-                const msg = `*Official Quote Request*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.location}%0A%0A🛠 *Drilling:* ${leadData.drillDepth}ft (${leadData.purpose})%0A🕳 *Casing:* ${leadData.casingDepth}ft (${leadData.casingType})%0A💰 *Grand Est:* ₹${leadData.totalPrice.toLocaleString()}%0A%0APlease confirm scheduler.`;
-                
-                setTimeout(() => {
-                    window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }, 1000);
-            })
-            .catch(err => {
-                const msg = `*Quote Request (Offline)*%0A%0A👤 ${leadData.name}%0A💰 ₹${leadData.totalPrice}`;
+                const msg = `*OFFICIAL BOOKING*%0A%0A👤 ${quoteData.name}%0A📍 ${quoteData.loc}%0A📉 Depth: ${quoteData.depth}ft%0A💰 *Est. Total:* ₹${quoteData.total.toLocaleString()}%0A%0A(Includes Fixed Costs. Excl Casing).`;
                 window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+                btn.innerHTML = "Booking Sent!";
             });
         }
-    </script>
-    
-    <script>
-        function loadMaps() {
-            if(window.google && window.google.maps && window.google.maps.places) {
-                const input = document.getElementById("locationInput");
-                const autocomplete = new google.maps.places.Autocomplete(input);
-                autocomplete.addListener("place_changed", () => {
-                    leadData.location = autocomplete.getPlace().formatted_address || input.value;
-                });
-            }
-        }
-        const s = document.createElement('script');
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=loadMaps`;
-        s.async = true; s.defer = true;
-        document.body.appendChild(s);
     </script>
 </body>
 </html>
