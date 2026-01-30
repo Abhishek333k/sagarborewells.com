@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
+    <title>Admin Command Center | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -14,95 +15,256 @@
     <script src="assets/js/config.js"></script>
 
     <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .sidebar-link { display: flex; items-center; gap: 12px; padding: 12px 16px; color: #94a3b8; border-radius: 8px; transition: all 0.2s; font-weight: 500; cursor: pointer; }
+        .sidebar-link:hover, .sidebar-link.active { background: #1e293b; color: #fff; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .input-field { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; margin-top: 4px; }
+        .input-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; }
+        
         /* Map Modal */
         #mapModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
         #mapContainer { width: 100%; height: 400px; border-radius: 8px; margin-bottom: 10px; }
     </style>
 </head>
-<body class="bg-slate-100 p-8">
+<body class="flex h-screen overflow-hidden">
 
-    <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg">
-        <h1 class="text-2xl font-bold mb-6">Issue Birth Certificate</h1>
+    <aside class="w-64 bg-slate-900 text-white flex flex-col flex-shrink-0">
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-xl font-bold tracking-tight">Sagar<span class="text-blue-500">Admin</span></h1>
+            <p class="text-xs text-slate-500 mt-1">Command Center</p>
+        </div>
+        
+        <nav class="flex-grow p-4 space-y-2">
+            <div onclick="showSection('leads')" id="nav-leads" class="sidebar-link active">
+                <i class="ri-list-check"></i> Incoming Leads
+            </div>
+            <div onclick="showSection('projects')" id="nav-projects" class="sidebar-link">
+                <i class="ri-hammer-line"></i> Manage Projects
+            </div>
+            <div onclick="showSection('create')" id="nav-create" class="sidebar-link text-emerald-400">
+                <i class="ri-add-circle-line"></i> + New Certificate
+            </div>
+        </nav>
 
-        <form id="projectForm" onsubmit="saveProject(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase">Customer Mobile</label>
-                <div class="flex border border-slate-300 rounded-lg overflow-hidden mt-1">
-                    <span class="bg-slate-100 px-3 py-2 text-slate-600 font-bold border-r">+91</span>
-                    <input type="tel" id="p_mobile" class="w-full px-3 py-2 outline-none font-bold" 
-                           placeholder="98765 43210" maxlength="10" 
-                           oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+        <div class="p-4 border-t border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold">A</div>
+                <div class="text-sm">
+                    <p class="font-bold">Admin</p>
+                    <button onclick="logout()" class="text-xs text-red-400 hover:underline">Sign Out</button>
                 </div>
             </div>
+        </div>
+    </aside>
 
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase">Customer Name</label>
-                <input type="text" id="p_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1" required>
-            </div>
-
-            <div class="col-span-full">
-                <label class="block text-xs font-bold text-slate-500 uppercase">Site Location</label>
-                <input type="text" id="p_loc" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1" placeholder="Start typing address..." required>
-            </div>
-
-            <div class="col-span-full">
-                <label class="block text-xs font-bold text-slate-500 uppercase">GPS Coordinates</label>
-                <div class="flex gap-2 mt-1">
-                    <input type="text" id="p_gps" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-slate-50" placeholder="Lat, Lng" readonly>
-                    <button type="button" onclick="openMapPicker()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700">
-                        <i class="ri-map-pin-line"></i> Pick on Map
-                    </button>
+    <main class="flex-grow overflow-y-auto p-8 relative">
+        
+        <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center">
+            <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
+                <h2 class="text-2xl font-bold mb-2">Admin Login</h2>
+                <p class="text-slate-500 text-sm mb-6">Restricted Access Only</p>
+                
+                <div class="text-left mb-4">
+                    <label class="block text-xs font-bold text-slate-400 uppercase">Mobile Number</label>
+                    <div class="flex border rounded-lg overflow-hidden mt-1">
+                        <span class="bg-slate-100 px-3 py-2 border-r">+91</span>
+                        <input type="tel" id="adminPhone" class="w-full px-3 py-2 outline-none font-bold" placeholder="98765 43210">
+                    </div>
                 </div>
-            </div>
 
-            <div><label class="block text-xs font-bold text-slate-500 uppercase">Total Depth (ft)</label><input type="number" id="p_depth" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1" required></div>
-            <div><label class="block text-xs font-bold text-slate-500 uppercase">Yield</label><input type="text" id="p_yield" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1" required></div>
-            <div><label class="block text-xs font-bold text-slate-500 uppercase">Casing Depth (ft)</label><input type="number" id="p_casing" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1" required></div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase">Casing Type</label>
-                <select id="p_casingType" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1">
-                    <option>PVC 6Kg/cm²</option>
-                    <option>PVC 10Kg/cm²</option>
-                    <option>MS Iron</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase">Rig Type</label>
-                <select id="p_rig" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1">
-                    <option>Sensor Robotic Hydraulic</option>
-                    <option>Standard Hydraulic</option>
-                </select>
-            </div>
-            <div><label class="block text-xs font-bold text-slate-500 uppercase">Motor Details</label><input type="text" id="p_motor" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1"></div>
-            <div><label class="block text-xs font-bold text-slate-500 uppercase">Date</label><input type="date" id="p_date" class="w-full border border-slate-300 rounded-lg px-3 py-2 mt-1" required></div>
+                <div id="otp-group" class="hidden text-left mb-4">
+                    <label class="block text-xs font-bold text-slate-400 uppercase">Enter OTP</label>
+                    <input type="text" id="adminOtp" class="w-full border rounded-lg px-3 py-2 mt-1 text-center tracking-widest font-bold">
+                </div>
 
-            <div class="col-span-full pt-4">
-                <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 shadow-lg">Generate & Save Certificate</button>
+                <div id="recaptcha-container" class="mb-4"></div>
+
+                <button id="sendOtpBtn" onclick="sendAdminOTP()" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Send OTP</button>
+                <button id="verifyOtpBtn" onclick="verifyAdminOTP()" class="hidden w-full py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700">Verify & Login</button>
             </div>
-        </form>
-    </div>
+        </div>
+
+        <div id="section-leads" class="content-section">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Incoming Quotations</h2>
+            <div id="leads-list" class="space-y-4">
+                <div class="text-center py-10"><i class="ri-loader-4-line ri-spin text-2xl text-blue-500"></i></div>
+            </div>
+        </div>
+
+        <div id="section-projects" class="content-section hidden">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Completed Projects (Birth Certificates)</h2>
+            <div id="projects-list" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
+        </div>
+
+        <div id="section-create" class="content-section hidden max-w-4xl">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Issue New Birth Certificate</h2>
+            <p class="text-slate-500 mb-6">Enter technical details to generate the official record.</p>
+
+            <form id="projectForm" onsubmit="saveProject(event)" class="card p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="col-span-full border-b pb-2 mb-2"><h3 class="font-bold text-slate-900">1. Customer Details</h3></div>
+                
+                <div>
+                    <label class="input-label">Customer Mobile</label>
+                    <div class="flex border rounded-lg mt-1 overflow-hidden">
+                        <span class="bg-slate-100 px-3 py-2 border-r">+91</span>
+                        <input type="tel" id="p_mobile" class="w-full px-3 py-2 outline-none font-bold" placeholder="98765 43210" required>
+                    </div>
+                </div>
+                <div><label class="input-label">Customer Name</label><input type="text" id="p_name" class="input-field" required></div>
+                
+                <div class="col-span-full">
+                    <label class="input-label">Site Location</label>
+                    <input type="text" id="p_loc" class="input-field" placeholder="Start typing address..." required>
+                </div>
+                <div class="col-span-full">
+                    <label class="input-label">GPS Coordinates</label>
+                    <div class="flex gap-2 mt-1">
+                        <input type="text" id="p_gps" class="input-field bg-slate-50" readonly placeholder="Lat, Lng">
+                        <button type="button" onclick="openMapPicker()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm">Map</button>
+                    </div>
+                </div>
+
+                <div class="col-span-full border-b pb-2 mb-2 mt-4"><h3 class="font-bold text-slate-900">2. Technical Specifications</h3></div>
+
+                <div><label class="input-label">Total Depth (ft)</label><input type="number" id="p_depth" class="input-field" required></div>
+                <div><label class="input-label">Yield</label><input type="text" id="p_yield" class="input-field" placeholder="e.g. 3.5 Inches" required></div>
+                <div><label class="input-label">Casing Depth (ft)</label><input type="number" id="p_casing" class="input-field" required></div>
+                <div>
+                    <label class="input-label">Casing Type</label>
+                    <select id="p_casingType" class="input-field">
+                        <option>PVC 6Kg/cm²</option><option>PVC 10Kg/cm²</option><option>MS Iron</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="input-label">Rig Type</label>
+                    <select id="p_rig" class="input-field">
+                        <option>Sensor Robotic Hydraulic</option><option>Standard Hydraulic</option>
+                    </select>
+                </div>
+                <div><label class="input-label">Motor Details</label><input type="text" id="p_motor" class="input-field"></div>
+                <div><label class="input-label">Drill Date</label><input type="date" id="p_date" class="input-field" required></div>
+
+                <div class="col-span-full pt-6 flex justify-end gap-4 border-t">
+                    <button type="button" onclick="showSection('leads')" class="px-4 py-2 text-slate-500 font-bold">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-lg">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </main>
 
     <div id="mapModal">
         <div class="bg-white p-4 rounded-xl w-full max-w-2xl">
-            <h3 class="font-bold text-lg mb-2">Click to Pin Location</h3>
+            <h3 class="font-bold text-lg mb-2">Pick Location</h3>
             <div id="mapContainer"></div>
             <div class="flex justify-end gap-2">
-                <button onclick="document.getElementById('mapModal').style.display='none'" class="px-4 py-2 text-slate-500 font-bold">Cancel</button>
-                <button onclick="confirmLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg">Set Location</button>
+                <button onclick="document.getElementById('mapModal').style.display='none'" class="px-4 py-2 text-slate-500 font-bold">Close</button>
+                <button onclick="confirmLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg">Set Pin</button>
             </div>
         </div>
     </div>
 
     <script>
+        // INIT
         if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
-        // 1. Google Maps & Autocomplete Init
+        // 1. AUTH STATE
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                document.getElementById('login-overlay').style.display = 'none';
+                loadLeads();
+            } else {
+                document.getElementById('login-overlay').style.display = 'flex';
+            }
+        });
+
+        // 2. PHONE LOGIN LOGIC
+        function sendAdminOTP() {
+            const phone = document.getElementById('adminPhone').value;
+            if(phone.length !== 10) return alert("Enter 10 digit number");
+            
+            const btn = document.getElementById('sendOtpBtn');
+            btn.innerText = "Sending...";
+            
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
+            
+            auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier)
+                .then(cr => {
+                    window.confirmationResult = cr;
+                    btn.classList.add('hidden');
+                    document.getElementById('otp-group').classList.remove('hidden');
+                    document.getElementById('verifyOtpBtn').classList.remove('hidden');
+                }).catch(e => { console.error(e); alert("SMS Error: " + e.message); btn.innerText="Try Again"; });
+        }
+
+        function verifyAdminOTP() {
+            const code = document.getElementById('adminOtp').value;
+            window.confirmationResult.confirm(code).catch(() => alert("Invalid OTP"));
+        }
+        function logout() { auth.signOut(); }
+
+        // 3. NAVIGATION
+        function showSection(id) {
+            document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('section-' + id).classList.remove('hidden');
+            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+            document.getElementById('nav-' + id).classList.add('active');
+            if(id === 'leads') loadLeads();
+            if(id === 'projects') loadProjects();
+        }
+
+        // 4. LOAD LEADS
+        function loadLeads() {
+            db.collection('leads').orderBy('timestamp', 'desc').limit(50).get().then(snap => {
+                const container = document.getElementById('leads-list');
+                container.innerHTML = "";
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                    const div = document.createElement('div');
+                    div.className = "card p-4 flex justify-between items-center";
+                    div.innerHTML = `
+                        <div>
+                            <div class="font-bold text-slate-800">${data.name} <span class="text-slate-400 font-normal">(${data.mobile})</span></div>
+                            <div class="text-sm text-slate-500">${data.loc} • ${data.depth}ft • ${data.zone || 'Zone?'}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-blue-600">₹${parseInt(data.total).toLocaleString()}</div>
+                            <div class="text-xs text-slate-400">${date}</div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            });
+        }
+
+        // 5. LOAD PROJECTS
+        function loadProjects() {
+            db.collection('projects').get().then(snap => {
+                const container = document.getElementById('projects-list');
+                container.innerHTML = "";
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const div = document.createElement('div');
+                    div.className = "card p-6 border-l-4 border-emerald-500";
+                    div.innerHTML = `
+                        <div class="flex justify-between mb-2">
+                            <h3 class="font-bold text-lg">${data.location}</h3>
+                            <span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded uppercase">Completed</span>
+                        </div>
+                        <p class="text-sm text-slate-600 mb-4">${data.customerName} • ${data.mobile}</p>
+                        <div class="text-xs text-slate-400 font-mono">ID: ${data.projectId}</div>
+                    `;
+                    container.appendChild(div);
+                });
+            });
+        }
+
+        // 6. MAP TOOLS
         let map, marker, selectedLat, selectedLng;
-
         function initMapTools() {
-            // Autocomplete for Address
             const input = document.getElementById('p_loc');
             const autocomplete = new google.maps.places.Autocomplete(input);
             autocomplete.addListener('place_changed', () => {
@@ -110,40 +272,27 @@
                 if (place.geometry) {
                     selectedLat = place.geometry.location.lat();
                     selectedLng = place.geometry.location.lng();
-                    document.getElementById('p_gps').value = `${selectedLat}, ${selectedLng}`;
+                    document.getElementById('p_gps').value = `${selectedLat.toFixed(6)}, ${selectedLng.toFixed(6)}`;
                 }
             });
         }
-
         function openMapPicker() {
             document.getElementById('mapModal').style.display = 'flex';
-            
-            // Default to Mangalagiri or current selection
             const center = (selectedLat && selectedLng) ? {lat: selectedLat, lng: selectedLng} : {lat: 16.4410, lng: 80.5520};
-
             if(!map) {
                 map = new google.maps.Map(document.getElementById('mapContainer'), { center: center, zoom: 15 });
                 marker = new google.maps.Marker({ position: center, map: map, draggable: true });
-                
-                // Update on click
-                map.addListener('click', (e) => {
-                    marker.setPosition(e.latLng);
-                });
-            } else {
-                map.setCenter(center);
-                marker.setPosition(center);
-            }
+                map.addListener('click', (e) => marker.setPosition(e.latLng));
+            } else { map.setCenter(center); marker.setPosition(center); }
         }
-
         function confirmLocation() {
             const pos = marker.getPosition();
-            selectedLat = pos.lat();
-            selectedLng = pos.lng();
+            selectedLat = pos.lat(); selectedLng = pos.lng();
             document.getElementById('p_gps').value = `${selectedLat.toFixed(6)}, ${selectedLng.toFixed(6)}`;
             document.getElementById('mapModal').style.display = 'none';
         }
 
-        // 2. Save Function (Updated)
+        // 7. SAVE PROJECT
         function saveProject(e) {
             e.preventDefault();
             const year = new Date().getFullYear();
@@ -151,7 +300,7 @@
             
             const data = {
                 projectId: `SBR-${year}-${randomID}`,
-                mobile: "+91" + document.getElementById('p_mobile').value, // Add Prefix
+                mobile: "+91" + document.getElementById('p_mobile').value,
                 customerName: document.getElementById('p_name').value,
                 location: document.getElementById('p_loc').value,
                 gps: document.getElementById('p_gps').value,
@@ -159,19 +308,20 @@
                 yield: document.getElementById('p_yield').value,
                 casing_depth: document.getElementById('p_casing').value,
                 casing_type: document.getElementById('p_casingType').value,
-                rigType: document.getElementById('p_rig').value, // Save Rig Type
+                rigType: document.getElementById('p_rig').value,
                 motor: document.getElementById('p_motor').value,
                 date: new Date(document.getElementById('p_date').value).toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'}),
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             db.collection('projects').add(data).then(() => {
-                alert("Success! ID: " + data.projectId);
+                alert("Certificate Issued! ID: " + data.projectId);
                 e.target.reset();
-            }).catch(e => alert("Error: " + e.message));
+                showSection('projects');
+            }).catch(err => alert("Error: " + err.message));
         }
 
-        // Load Google Maps
+        // Load Maps
         const s = document.createElement('script');
         s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`;
         s.async = true; s.defer = true;
