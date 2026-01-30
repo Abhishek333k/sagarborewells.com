@@ -184,7 +184,38 @@
         } else {
             console.error("Firebase Config Missing in assets/js/config.js");
         }
-
+// --- AUTO-LOGIN LOGIC ---
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            // User is ALREADY logged in!
+            console.log("User found:", user.phoneNumber);
+            
+            // 1. Fill the phone number automatically
+            const mobileInput = document.getElementById('custMobile');
+            mobileInput.value = user.phoneNumber.replace('+91', ''); // Strip +91 for display
+            mobileInput.disabled = true; // Lock it so they don't change it
+            
+            // 2. Hide "Verify" button & OTP box
+            document.getElementById('sendOtpBtn').style.display = 'none';
+            document.getElementById('otpSection').style.display = 'none';
+            
+            // 3. Show "Verified" Badge
+            const badge = document.getElementById('verifiedBadge');
+            badge.style.display = 'flex';
+            badge.innerHTML = `<i class="ri-user-follow-line"></i> Welcome Back`;
+            badge.classList.add('text-blue-600'); // Make it blue
+            
+            // 4. Unlock the Generate Button
+            const genBtn = document.getElementById('generateBtn');
+            genBtn.disabled = false;
+            genBtn.innerHTML = `Generate Official Estimate <i class="ri-arrow-right-line"></i>`;
+            genBtn.classList.remove('bg-slate-300');
+            
+        } else {
+            console.log("No user logged in");
+        }
+    });
+        
         // --- OTP LOGIC ---
         function sendOTP() {
             const phone = document.getElementById('custMobile').value;
