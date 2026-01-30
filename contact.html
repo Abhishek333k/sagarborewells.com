@@ -25,11 +25,15 @@
 
         <div class="max-w-6xl mx-auto px-4 py-12">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center">
-                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fa-solid fa-phone text-xl"></i></div>
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-solid fa-phone text-xl"></i>
+                    </div>
                     <h3 class="font-bold text-lg text-slate-900 mb-1">Call Us</h3>
-                    <p class="text-xs text-slate-500 mb-4">Immediate Response</p>
+                    <p class="text-xs text-slate-500 mb-4">Response time: Immediate</p>
                     <a href="#" id="displayPhone" class="text-xl font-bold text-blue-600 hover:underline">...</a>
+                    
+                    <div id="extraNumbersContainer"></div> 
                 </div>
                 <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center">
                     <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fa-brands fa-whatsapp text-xl"></i></div>
@@ -70,14 +74,42 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('displayPhone').innerText = CONTACT_INFO.phone_display;
-            document.getElementById('displayPhone').href = `tel:+${CONTACT_INFO.whatsapp_api}`;
+            // 1. Fill Main Data
+            const mainPhone = document.getElementById('displayPhone');
+            mainPhone.innerText = CONTACT_INFO.phone_display;
+            mainPhone.href = `tel:+${CONTACT_INFO.whatsapp_api}`;
+            
             document.getElementById('displayEmail').innerText = CONTACT_INFO.email;
             document.getElementById('displayEmail').href = `mailto:${CONTACT_INFO.email}`;
             document.getElementById('displayAddress').innerHTML = `${CONTACT_INFO.address_line1}<br>${CONTACT_INFO.address_line2}`;
             
             if(CONTACT_INFO.map_embed_url) {
                 document.getElementById('mapFrame').src = CONTACT_INFO.map_embed_url;
+            }
+
+            // 2. 🟢 NEW: Inject Extra Numbers
+            const extraList = CONTACT_INFO.extra_phones;
+            const container = document.getElementById('extraNumbersContainer');
+
+            if(extraList && extraList.length > 0) {
+                // Create a divider
+                let html = '<div class="mt-4 pt-4 border-t border-slate-100 space-y-2">';
+                
+                // Loop through numbers and add them
+                extraList.forEach(item => {
+                    // Remove spaces/dashes for the actual link (tel:91999...)
+                    const cleanNum = item.number.replace(/[^0-9+]/g, '');
+                    html += `
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-500 font-medium">${item.label}:</span>
+                            <a href="tel:${cleanNum}" class="font-bold text-slate-700 hover:text-blue-600">${item.number}</a>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                // Inject into the page
+                container.innerHTML = html;
             }
         });
 
