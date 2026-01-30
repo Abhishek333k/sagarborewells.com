@@ -157,39 +157,132 @@
         if(CONTACT_INFO.firebase_config) {
             if (!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
         }
-        const db = firebase.firestore(); // Init DB
+        const db = firebase.firestore();
 
-        // 2. CONFIG LOAD
-        let pricingConfig = { fixed_cost: 7000, rates: { 'residential': 90 } };
-        let leadData = {};
+        // 2. LOAD ZONES & PREPARE DATA
+        let zoneData = []; 
+        let zoneRates = {};
 
-        // Fetch Prices from Firestore (REPLACES GOOGLE SHEET FETCH)
-        db.collection('settings').doc('pricing').get().then((doc) => {
-            if (doc.exists) {
-                const data = doc.data();
-                pricingConfig.fixed_cost = data.fixed_cost || 7000;
-                pricingConfig.rates['residential'] = data.price_residential || 90;
-                pricingConfig.rates['agriculture'] = data.price_agriculture || 85;
-                pricingConfig.rates['commercial'] = data.price_commercial || 110;
+        document.addEventListener("DOMContentLoaded", () => {
+            const zoneSelect = document.getElementById('zoneInput');
+            
+            db.collection('zones').get().then((snapshot) => {
+                zoneSelect.innerHTML = '<option value="" disabled selected>Select Soil Type / Zone</option>';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const zoneId = doc.id;
+                    
+                    zoneData.push({
+                        id: zoneId,
+                        name: data.name || zoneId,
+                        rate: data.rate || 90,
+                        keywords: data.keywords || [] 
+                    });
+                    
+                    zoneRates[zoneId] = { name: data.name, rate: data.rate }; // For Calc
+                    
+                    const option = document.createElement('option');
+                    option.value = zoneId;
+                    option.innerText = `${data.name} (₹${data.rate}/ft)`;
+                    zoneSelect.appendChild(option);
+                });
+            }).catch(err => console.error("Error loading zones:", err));
+        });
+
+        // 🟢 3. SMART INTELLIGENCE (Keywords + Elevation)
+        function analyzeLocation(address, lat, lng) {
+            
+            // A. KEYWORD MATCHING (Zone Detection)
+            const lowerAddr = address.toLowerCase();
+            let foundZone = null;
+            for (const zone of zoneData) {
+                if (zone.keywords.some(k => lowerAddr.includes(k.toLowerCase()))) {
+                    foundZone = zone;
+                    break;
+                }
             }
-        }).catch((error) => console.log("Using default prices:", error));
 
-        // 3. AUTH & AUTO-LOGIN
+            if (foundZone) {
+                const select = document.getElementById('zoneInput');
+                select.value = foundZone.id;
+                select.classList.add('bg-green-50', 'border-green-500', 'text-green-700');
+                // We don't lock it, just suggest it.
+            }
+
+            // B. ELEVATION LOGIC (Depth Prediction)
+            if(typeof google !== 'undefined') {
+                const elevator = new google.maps.ElevationService();
+                elevator.getElevationForLocations({
+                    'locations': [{lat: lat, lng: lng}]
+                }, (results, status) => {
+                    if (status === 'OK' && results[0]) {
+                        const elevation = results[0].elevation; // Meters above sea level
+                        console.log("Elevation:", elevation + "m");
+                        
+                        // LOGIC: Higher Ground = Deeper Water
+                        const slider = document.getElementById('depthSlider');
+                        let suggestedDepth = 300; // Base
+
+                        if (elevation > 100) { // Hill / High Ground
+                            suggestedDepth = 900; 
+                        } else if (elevation > 50) { // Medium
+                            suggestedDepth = 600;
+                        } else if (elevation < 15) { // Coastal / Low
+                            suggestedDepth = 200;
+                        }
+
+                        // Animate Slider to suggested depth
+                        slider.value = suggestedDepth;
+                        slider.dispatchEvent(new Event('input')); // Trigger visual update
+                        
+                        // Optional: Show user why
+                        // alert(`🌊 Elevation Detected: ${Math.round(elevation)}m.\nAdjusting recommended depth to ${suggestedDepth}ft.`);
+                    }
+                });
+            }
+        }
+
+        // Hook into GPS
+        function detectGPS() {
+            const btn = document.querySelector('button[onclick="detectGPS()"]');
+            btn.innerHTML = "<i class='ri-loader-4-line ri-spin'></i>";
+            
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const lat = pos.coords.latitude; 
+                    const lng = pos.coords.longitude;
+                    
+                    if(typeof google !== 'undefined') {
+                        const geocoder = new google.maps.Geocoder();
+                        geocoder.geocode({ location: {lat, lng} }, (res, status) => {
+                            if(status === 'OK') {
+                                const address = res[0].formatted_address;
+                                document.getElementById('locInput').value = address;
+                                btn.innerHTML = "DETECT";
+                                
+                                // 🟢 RUN INTELLIGENCE
+                                analyzeLocation(address, lat, lng);
+                            }
+                        });
+                    }
+                }, () => { alert('GPS Denied'); btn.innerHTML = "DETECT"; });
+            }
+        }
+
+        // --- EXISTING LOGIC BELOW (Auth, Calc, Slider UI) ---
+        
+        let leadData = {};
+        const FIXED_COST = 7000;
+
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                console.log("Logged in:", user.phoneNumber);
                 const mobileInput = document.getElementById('custMobile');
                 mobileInput.value = user.phoneNumber.replace('+91', '');
                 mobileInput.disabled = true;
-                
                 document.getElementById('sendOtpBtn').style.display = 'none';
                 document.getElementById('otpSection').style.display = 'none';
-                
-                const badge = document.getElementById('verifiedBadge');
-                badge.style.display = 'flex';
-                badge.innerHTML = `<i class="ri-user-follow-line"></i> Welcome Back`;
-                badge.classList.add('text-blue-600');
-                
+                document.getElementById('verifiedBadge').style.display = 'flex';
+                document.getElementById('verifiedBadge').innerHTML = `<i class="ri-user-follow-line"></i> Welcome Back`;
                 const genBtn = document.getElementById('generateBtn');
                 genBtn.disabled = false;
                 genBtn.innerHTML = `Generate Official Estimate <i class="ri-arrow-right-line"></i>`;
@@ -197,60 +290,66 @@
             }
         });
 
-        // 4. OTP LOGIC
         function sendOTP() {
             const phone = document.getElementById('custMobile').value;
             if (phone.length !== 10) { alert("Invalid number"); return; }
             const formatted = "+91" + phone;
             document.getElementById('sendOtpBtn').innerText = "Sending...";
-            
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
-
             firebase.auth().signInWithPhoneNumber(formatted, window.recaptchaVerifier)
                 .then((confirmationResult) => {
                     window.confirmationResult = confirmationResult;
                     document.getElementById('sendOtpBtn').style.display = 'none';
                     document.getElementById('otpSection').style.display = 'flex';
                     document.getElementById('otpMsg').innerText = "OTP sent to " + formatted;
-                }).catch((error) => {
-                    console.error(error);
-                    alert("Error sending SMS. Check billing.");
-                });
+                }).catch((error) => { console.error(error); alert("Error sending SMS."); });
         }
 
         function verifyOTP() {
             const code = document.getElementById('otpInput').value;
             window.confirmationResult.confirm(code).then(() => {
                 document.getElementById('otpSection').style.display = 'none';
+                const genBtn = document.getElementById('generateBtn');
+                genBtn.disabled = false;
+                genBtn.innerHTML = `Generate Official Estimate <i class="ri-arrow-right-line"></i>`;
+                genBtn.classList.remove('bg-slate-300');
             }).catch(() => alert("Invalid OTP"));
         }
 
-        // 5. CALCULATION & NAVIGATION
         const slider = document.getElementById('depthSlider');
         const displayVal = document.getElementById('display-val');
         slider.addEventListener('input', function() {
             let val = parseInt(this.value);
             displayVal.innerText = val;
+            let currentMax = parseInt(this.max);
+            // Elastic Slider Logic
+            if (val >= currentMax - 20 && currentMax < 1500) { this.max = currentMax + 500; document.getElementById('maxLabel').innerText = this.max + " FT"; }
+            if (val < 400 && currentMax > 500) { this.max = 500; document.getElementById('maxLabel').innerText = "500 FT"; }
             const percent = ((val - this.min) / (this.max - this.min)) * 100;
             this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${percent}%, #cbd5e1 ${percent}%, #cbd5e1 100%)`;
         });
 
         function calculateQuote() {
             const depth = parseInt(slider.value);
-            const purpose = document.getElementById('purposeInput').value;
-            let remaining = depth, floor = 0, rate = pricingConfig.rates[purpose], drillTotal = 0, rows = "";
-            let slab_size = 50, slab_jump = 5; // Can also fetch from DB if needed
+            const zoneId = document.getElementById('zoneInput').value;
+            if(!zoneId || !zoneRates[zoneId]) { alert("Please select a valid Zone"); return; }
+
+            const selectedZone = zoneRates[zoneId];
+            let remaining = depth, floor = 0, drillTotal = 0, rows = "";
+            let currentRate = selectedZone.rate;
+            const slab_size = 50, slab_jump = 5; 
 
             while(remaining > 0) {
                 let chunk = (remaining >= slab_size) ? slab_size : remaining;
-                let cost = chunk * rate; drillTotal += cost;
-                rows += `<tr><td>${floor}-${floor+chunk}ft @ ₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                remaining -= chunk; floor += chunk; rate += slab_jump;
+                let cost = chunk * currentRate; drillTotal += cost;
+                rows += `<tr><td>${floor}-${floor+chunk}ft @ ₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                remaining -= chunk; floor += chunk; currentRate += slab_jump;
             }
-            const total = drillTotal + pricingConfig.fixed_cost;
             
+            const total = drillTotal + FIXED_COST;
             document.getElementById('invName').innerText = document.getElementById('custName').value;
             document.getElementById('invLoc').innerText = document.getElementById('locInput').value;
+            document.getElementById('invZone').innerText = selectedZone.name;
             document.getElementById('invBody').innerHTML = rows;
             document.getElementById('invTotal').innerText = "₹" + total.toLocaleString();
             
@@ -258,9 +357,7 @@
                 name: document.getElementById('custName').value, 
                 mobile: "+91" + document.getElementById('custMobile').value,
                 loc: document.getElementById('locInput').value, 
-                total: total,
-                depth: depth,
-                status: "Pending Review"
+                zone: selectedZone.name, total: total, depth: depth, status: "Pending Review"
             };
         }
 
@@ -274,9 +371,7 @@
         }
         function goToStep1() { document.getElementById('step-2').style.display = 'none'; document.getElementById('step-1').style.display = 'block'; }
 
-        // 6. SAVE TO FIRESTORE
         function confirmBooking() {
-            // Save to 'leads' collection
             db.collection('leads').add({
                 ...leadData,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -285,15 +380,10 @@
                 openWhatsAppChat();
                 document.getElementById('step-2').style.display = 'none';
                 document.getElementById('step-3').style.display = 'block';
-            }).catch((err) => {
-                console.error("Error saving lead:", err);
-                alert("Booking failed. Please try again.");
-            });
+            }).catch((err) => { console.error("Error:", err); alert("Booking failed."); });
         }
 
-        // Extras
         function downloadPDF() { 
-            // Use the external template function
             const templateData = { name: leadData.name, mobile: leadData.mobile, loc: leadData.loc, total: leadData.total, rows: document.getElementById('invBody').innerHTML };
             const content = getInvoiceHTML(templateData);
             const element = document.createElement('div');
@@ -302,11 +392,7 @@
             html2pdf().from(element).save().then(() => document.body.removeChild(element));
         }
         function openWhatsAppChat() { window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=Booking ${leadData.name}`, '_blank'); }
-        function detectGPS() {
-            if(navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => document.getElementById('locInput').value = `${pos.coords.latitude}, ${pos.coords.longitude}`);
-        }
         
-        // Maps
         const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`; s.async = true; s.defer = true; document.body.appendChild(s);
         slider.dispatchEvent(new Event('input'));
     </script>
