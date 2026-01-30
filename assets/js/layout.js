@@ -23,6 +23,10 @@ function renderNavbar() {
                     <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
                     <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
                     
+                    <a href="admin.html" id="admin-link" class="hidden font-bold text-red-600 border border-red-200 bg-red-50 px-3 py-1 rounded-lg hover:bg-red-100 transition flex items-center gap-2">
+                        <i class="ri-shield-user-line"></i> Admin
+                    </a>
+
                     <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
                         <i class="ri-user-line"></i> Account
                     </a>
@@ -42,6 +46,7 @@ function renderNavbar() {
         
         <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 p-4 absolute w-full shadow-lg">
             <a href="index.html" class="block py-3 font-bold text-slate-600">Home</a>
+            <a href="admin.html" id="mobile-admin-link" class="hidden block py-3 font-bold text-red-600">Admin Panel</a>
             <a href="dashboard.html" class="block py-3 font-bold text-slate-600">My Account</a>
             <a href="contact.html" class="block py-3 font-bold text-slate-600">Contact</a>
             <a href="quote.html" class="block py-3 mt-2 text-center bg-blue-600 text-white font-bold rounded-lg">Get Quote</a>
@@ -52,6 +57,29 @@ function renderNavbar() {
     // Toggle Mobile Menu
     const btn = document.getElementById('mobile-menu-btn');
     if(btn) btn.addEventListener('click', () => document.getElementById('mobile-menu').classList.toggle('hidden'));
+
+    // 🟢 AUTH CHECK: Reveal Admin Button if authorized
+    checkAdminStatus();
+}
+
+function checkAdminStatus() {
+    if(typeof firebase === 'undefined' || !firebase.auth) return;
+    
+    firebase.auth().onAuthStateChanged(user => {
+        if(user) {
+            const db = firebase.firestore();
+            db.collection('admins').doc(user.phoneNumber).get()
+            .then(doc => {
+                if (doc.exists) {
+                    // Show Button in Desktop & Mobile
+                    const deskLink = document.getElementById('admin-link');
+                    const mobLink = document.getElementById('mobile-admin-link');
+                    if(deskLink) deskLink.classList.remove('hidden');
+                    if(mobLink) mobLink.classList.remove('hidden');
+                }
+            }).catch(e => console.log("User is not admin")); // Silent fail
+        }
+    });
 }
 
 function renderFooter() {
