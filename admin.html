@@ -41,7 +41,6 @@
         
         /* Map */
         .map-wrapper { position: relative; width: 100%; height: 300px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
-        /* 🎯 TARGET RETICLE ANIMATIONS */
         .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none; display: flex; align-items: center; justify-content: center; }
         .reticle-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 15px 2px #ef4444; z-index: 2; }
         .reticle-ring { position: absolute; width: 60px; height: 60px; border: 2px dashed #0ea5e9; border-radius: 50%; box-shadow: 0 0 20px rgba(14, 165, 233, 0.3); animation: reticleSpin 10s linear infinite; }
@@ -60,7 +59,7 @@
         </div>
         <nav class="flex-grow p-6 space-y-2">
             <div onclick="showSection('leads')" id="nav-leads" class="nav-item active"><i class="ri-radar-line"></i> <span>Live Leads</span></div>
-            <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>Archives</span></div>
+            <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>BWBC Archives</span></div>
             <div onclick="showSection('create')" id="nav-create" class="nav-item"><i class="ri-add-box-line"></i> <span>Issue Cert</span></div>
         </nav>
         <div class="p-6 border-t border-slate-800">
@@ -95,18 +94,37 @@
             <div class="glass-card px-4 py-2 flex items-center gap-3"><i class="ri-server-line text-emerald-400"></i><span class="text-xs font-mono text-emerald-400">DB: CONNECTED</span></div>
         </header>
 
-        <div id="section-leads" class="content-section"><div id="leads-list" class="space-y-4"></div></div>
+        <div id="filter-bar" class="mb-6 flex gap-4 hidden">
+            <input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input flex-grow" placeholder="Search by Name, Mobile, ID, or Location...">
+            <input type="date" id="dateInput" onchange="filterData()" class="cyber-input w-48">
+            <button onclick="clearFilters()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 rounded-lg"><i class="ri-filter-off-line"></i></button>
+        </div>
 
+        <div id="section-leads" class="content-section"><div id="leads-list" class="space-y-4"></div></div>
         <div id="section-projects" class="content-section hidden"><div id="projects-list" class="grid grid-cols-1 xl:grid-cols-2 gap-6"></div></div>
 
         <div id="section-create" class="content-section hidden max-w-5xl mx-auto">
             <div class="glass-card p-8">
-                <div class="flex justify-between items-center border-b border-slate-700 pb-6 mb-8"><h3 class="text-xl font-bold text-white">Generate Birth Certificate</h3><span class="px-3 py-1 bg-blue-900 text-blue-300 text-xs font-mono rounded border border-blue-700">NEW_RECORD_ENTRY</span></div>
+                <div class="flex justify-between items-center border-b border-slate-700 pb-6 mb-8">
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Certificate Manager</h3>
+                        <p class="text-xs text-slate-400 font-mono mt-1" id="form-mode-text">CREATING NEW RECORD</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-500 font-bold uppercase">ID:</span>
+                        <input type="text" id="p_id" class="bg-slate-900 border border-slate-700 text-emerald-400 font-mono font-bold px-3 py-1 rounded w-48 text-center" placeholder="Auto-Generating..." readonly>
+                    </div>
+                </div>
+
                 <form id="projectForm" onsubmit="saveProject(event)" class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="col-span-full"><h4 class="text-xs text-blue-400 font-bold uppercase mb-4">Identity</h4><div class="grid md:grid-cols-2 gap-6"><div><label class="text-xs text-slate-400 block mb-2">Mobile</label><div class="flex bg-slate-800 border border-slate-600 rounded-lg"><span class="px-4 py-3 text-slate-400 border-r border-slate-600">+91</span><input type="tel" id="p_mobile" class="w-full bg-transparent px-4 text-white outline-none" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"></div></div><div><label class="text-xs text-slate-400 block mb-2">Name</label><input type="text" id="p_name" class="cyber-input" required></div></div></div>
                     <div class="col-span-full border-t border-slate-700 pt-6"><h4 class="text-xs text-purple-400 font-bold uppercase mb-4">Location</h4><div class="grid md:grid-cols-2 gap-6"><div class="col-span-full"><input type="text" id="p_loc" class="cyber-input" placeholder="Address..." required></div><div class="col-span-full flex gap-4"><input type="text" id="p_gps" class="cyber-input bg-slate-800" readonly><button type="button" onclick="openMapPicker('p')" class="bg-purple-600 text-white px-6 rounded-lg font-bold flex items-center gap-2"><i class="ri-map-pin-line"></i> PINPOINT</button></div></div></div>
                     <div class="col-span-full border-t border-slate-700 pt-6"><h4 class="text-xs text-orange-400 font-bold uppercase mb-4">Technical</h4><div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div><label class="text-[10px] text-slate-500 uppercase">Depth</label><input type="number" id="p_depth" class="cyber-input" required></div><div><label class="text-[10px] text-slate-500 uppercase">Yield</label><input type="text" id="p_yield" class="cyber-input" required></div><div><label class="text-[10px] text-slate-500 uppercase">Casing</label><input type="number" id="p_casing" class="cyber-input" required></div><div><label class="text-[10px] text-slate-500 uppercase">Type</label><select id="p_casingType" class="cyber-input"><option>PVC 6Kg</option><option>PVC 10Kg</option><option>MS Iron</option></select></div><div class="col-span-2"><label class="text-[10px] text-slate-500 uppercase">Rig</label><select id="p_rig" class="cyber-input"><option value="">-- None --</option><option>Sensor Robotic</option><option>Hydraulic</option></select></div><div class="col-span-2"><label class="text-[10px] text-slate-500 uppercase">Date</label><input type="date" id="p_date" class="cyber-input" required></div><div class="col-span-full"><label class="text-[10px] text-slate-500 uppercase">Motor</label><input type="text" id="p_motor" class="cyber-input"></div></div></div>
-                    <div class="col-span-full pt-8 flex justify-end"><button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-lg font-bold shadow-lg flex items-center gap-3"><i class="ri-save-3-line"></i> WRITE TO LEDGER</button></div>
+                    
+                    <div class="col-span-full pt-8 flex justify-end gap-4">
+                        <button type="button" onclick="showSection('projects')" class="text-slate-500 font-bold hover:text-white">Cancel</button>
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-lg font-bold shadow-lg flex items-center gap-3"><i class="ri-save-3-line"></i> <span id="save-btn-text">SAVE RECORD</span></button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -121,30 +139,14 @@
 
     <div id="previewModal" class="modal-overlay" style="z-index: 150;">
         <div class="glass-modal p-4 w-full max-w-3xl rounded-xl h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-white font-bold">Estimate Preview</h3>
-                <div class="flex gap-2">
-                    <button onclick="confirmDownloadPDF()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">Download</button>
-                    <button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-400 px-4 py-2">Close</button>
-                </div>
-            </div>
+            <div class="flex justify-between items-center mb-4"><h3 class="text-white font-bold">Preview</h3><div class="flex gap-2"><button onclick="confirmDownloadPDF()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">Download</button><button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-400 px-4 py-2">Close</button></div></div>
             <div id="previewContent" class="flex-grow bg-white overflow-y-auto rounded p-4 text-black"></div>
         </div>
     </div>
 
     <div id="mapModal" class="modal-overlay" style="z-index: 200;">
         <div class="glass-card p-6 w-full max-w-3xl border border-slate-600 shadow-2xl">
-            <h3 class="text-xl font-bold text-white mb-4 text-center">Satellite Targeting</h3>
-            <div class="map-wrapper">
-                <div id="mapContainer" class="w-full h-full"></div>
-                <div class="target-reticle">
-                    <div class="reticle-dot"></div>
-                    <div class="reticle-ring"></div>
-                    <div class="absolute top-[30px] w-[1px] h-[20px] bg-gradient-to-b from-blue-400 to-transparent opacity-50"></div>
-                    <div class="absolute w-[80px] h-[1px] bg-blue-500/30"></div>
-                    <div class="absolute h-[80px] w-[1px] bg-blue-500/30"></div>
-                </div>
-            </div>
+            <div class="map-wrapper"><div id="mapContainer" class="w-full h-full"></div><div class="target-reticle"><div class="reticle-dot"></div><div class="reticle-ring"></div><div class="absolute top-[30px] w-[1px] h-[20px] bg-gradient-to-b from-blue-400 to-transparent opacity-50"></div><div class="absolute w-[80px] h-[1px] bg-blue-500/30"></div><div class="absolute h-[80px] w-[1px] bg-blue-500/30"></div></div></div>
             <div class="flex justify-center gap-4 mt-6"><button onclick="document.getElementById('mapModal').classList.remove('open')" class="text-slate-400 hover:text-white font-bold px-6">ABORT</button><button onclick="confirmLocation()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded font-bold">LOCK COORDINATES</button></div>
         </div>
     </div>
@@ -182,69 +184,119 @@
         function verifyAdminOTP() { window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => alert("INVALID CODE")); }
         function logout() { auth.signOut(); window.location.reload(); }
 
-        // --- NAV ---
+        // --- NAV & FILTER UI ---
         function showSection(id) {
             document.querySelectorAll('.content-section').forEach(e => e.classList.add('hidden'));
             document.getElementById('section-'+id).classList.remove('hidden');
             document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
             document.getElementById('nav-'+id).classList.add('active');
-            if(id==='leads') loadLeads(); if(id==='projects') loadProjects();
+            
+            // Show/Hide Filter Bar
+            const filterBar = document.getElementById('filter-bar');
+            if(id === 'leads' || id === 'projects') {
+                filterBar.classList.remove('hidden');
+                if(id==='leads') loadLeads();
+                if(id==='projects') loadProjects();
+            } else {
+                filterBar.classList.add('hidden');
+                if(id === 'create') resetForm();
+            }
         }
 
-        // --- DATA ---
+        // --- DATA CACHE & FILTER LOGIC ---
         let leadsCache = [], projectsCache = [];
+        let currentView = 'leads';
 
+        function filterData() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const date = document.getElementById('dateInput').value;
+            
+            const list = currentView === 'leads' ? leadsCache : projectsCache;
+            const container = document.getElementById(currentView === 'leads' ? 'leads-list' : 'projects-list');
+            container.innerHTML = "";
+
+            const filtered = list.filter(item => {
+                // Search Text
+                const searchStr = (item.name + item.mobile + item.loc + (item.projectId || '')).toLowerCase();
+                const matchText = searchStr.includes(term);
+                
+                // Search Date (Optional)
+                let matchDate = true;
+                if(date) {
+                    // Normalize date formats
+                    const itemDateStr = item.date || (item.timestamp ? new Date(item.timestamp.toDate()).toISOString().split('T')[0] : '');
+                    // Compare simply strings or convert to Date objects if formats vary significantly
+                    // For now, assuming standard ISO or similar in cache
+                    matchDate = itemDateStr.includes(date); // Simple string match for YYYY-MM-DD
+                }
+                return matchText && matchDate;
+            });
+
+            if(currentView === 'leads') renderLeads(filtered);
+            else renderProjects(filtered);
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = "";
+            document.getElementById('dateInput').value = "";
+            filterData();
+        }
+
+        // --- FETCH & RENDER ---
         function loadLeads() {
-            db.collection('leads').orderBy('timestamp','desc').limit(50).get().then(snap => {
-                const el = document.getElementById('leads-list'); el.innerHTML="";
+            currentView = 'leads';
+            db.collection('leads').orderBy('timestamp','desc').limit(100).get().then(snap => {
                 leadsCache = [];
-                snap.forEach(d => {
-                    const data = d.data();
-                    data.docId = d.id;
-                    leadsCache.push(data);
-                    const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                    const statusColor = data.status === 'Closed' ? 'text-emerald-400' : (data.status === 'Site Visit' ? 'text-blue-400' : 'text-yellow-400');
-                    el.innerHTML += `
-                        <div onclick="openLeadModal(${leadsCache.length - 1})" class="glass-card p-5 flex justify-between items-center hover:bg-slate-800/50 transition cursor-pointer group">
-                            <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition"><i class="ri-user-search-line"></i></div>
-                                <div><div class="font-bold text-white">${data.name}</div><div class="text-xs text-slate-400 font-mono">${data.loc}</div></div>
-                            </div>
-                            <div class="text-right"><div class="font-bold text-emerald-400 text-lg">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[10px] ${statusColor} font-mono font-bold uppercase">${data.status || 'Pending'}</div></div>
-                        </div>`;
-                });
+                snap.forEach(d => { let data = d.data(); data.docId = d.id; leadsCache.push(data); });
+                filterData();
+            });
+        }
+
+        function renderLeads(list) {
+            const el = document.getElementById('leads-list'); el.innerHTML = "";
+            list.forEach((data, index) => {
+                const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                const statusColor = data.status === 'Closed' ? 'text-emerald-400' : (data.status === 'Site Visit' ? 'text-blue-400' : 'text-yellow-400');
+                el.innerHTML += `
+                    <div onclick="openLeadModal('${data.docId}')" class="glass-card p-5 flex justify-between items-center hover:bg-slate-800/50 transition cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><i class="ri-user-search-line"></i></div>
+                            <div><div class="font-bold text-white">${data.name}</div><div class="text-xs text-slate-400 font-mono">${data.loc}</div></div>
+                        </div>
+                        <div class="text-right"><div class="font-bold text-emerald-400 text-lg">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[10px] ${statusColor} font-mono font-bold uppercase">${data.status || 'Pending'}</div></div>
+                    </div>`;
             });
         }
 
         function loadProjects() {
-            db.collection('projects').get().then(snap => {
-                const el = document.getElementById('projects-list'); el.innerHTML="";
+            currentView = 'projects';
+            db.collection('projects').orderBy('timestamp', 'desc').get().then(snap => {
                 projectsCache = [];
-                snap.forEach(d => {
-                    const data = d.data();
-                    projectsCache.push(data);
-                    el.innerHTML += `
-                        <div onclick="openProjectModal(${projectsCache.length - 1})" class="glass-card p-6 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition">
-                            <h3 class="font-bold text-xl text-white mb-1">${data.location}</h3>
-                            <p class="text-sm text-slate-400 mb-4 font-mono">${data.customerName}</p>
-                            <div class="text-[10px] text-slate-600 font-mono tracking-widest">ID: ${data.projectId}</div>
-                        </div>`;
-                });
+                snap.forEach(d => { let data = d.data(); projectsCache.push(data); });
+                filterData();
             });
         }
 
-        // --- INTERACTIVE MODALS ---
+        function renderProjects(list) {
+            const el = document.getElementById('projects-list'); el.innerHTML = "";
+            list.forEach((data) => {
+                el.innerHTML += `
+                    <div onclick="openProjectModal('${data.projectId}')" class="glass-card p-6 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition">
+                        <h3 class="font-bold text-xl text-white mb-1">${data.location}</h3>
+                        <p class="text-sm text-slate-400 mb-4 font-mono">${data.customerName}</p>
+                        <div class="text-[10px] text-slate-600 font-mono tracking-widest">ID: ${data.projectId}</div>
+                    </div>`;
+            });
+        }
+
+        // --- MODALS ---
         function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
 
-        function openLeadModal(index) {
-            const data = leadsCache[index];
-            const notes = data.adminNotes || ""; // Fetch existing notes
-            
+        function openLeadModal(docId) {
+            const data = leadsCache.find(l => l.docId === docId);
+            const notes = data.adminNotes || "";
             const content = `
-                <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold text-white">Lead Details</h2>
-                    <p class="text-slate-400 font-mono text-sm">Quote: ${data.docId}</p>
-                </div>
+                <div class="text-center mb-6"><h2 class="text-2xl font-bold text-white">Lead Details</h2><p class="text-slate-400 font-mono text-sm">Quote: ${data.docId}</p></div>
                 <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-6 rounded-xl border border-slate-700">
                     <div><span class="text-xs text-slate-500 uppercase">Customer</span><div class="text-white font-bold">${data.name}</div></div>
                     <div><span class="text-xs text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono">${data.mobile}</div></div>
@@ -252,143 +304,74 @@
                     <div><span class="text-xs text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono">${data.depth} ft</div></div>
                     <div><span class="text-xs text-slate-500 uppercase">Zone</span><div class="text-white">${data.zone || 'Standard'}</div></div>
                 </div>
-                
                 <div class="mb-6 grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs text-slate-500 uppercase block mb-1">Status</label>
-                        <select id="statusSelect" class="cyber-input cyber-select w-full" onchange="updateLeadStatus('${data.docId}', this.value)">
-                            <option ${data.status==='Pending'?'selected':''}>Pending</option>
-                            <option ${data.status==='Contacted'?'selected':''}>Contacted</option>
-                            <option ${data.status==='Site Visit'?'selected':''}>Site Visit</option>
-                            <option ${data.status==='Closed'?'selected':''}>Closed</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-slate-500 uppercase block mb-1">Mission Log</label>
-                        <div class="flex gap-2">
-                            <textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Add notes...">${notes}</textarea>
-                            <button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-3 rounded text-white"><i class="ri-save-line"></i></button>
-                        </div>
-                    </div>
+                    <div><label class="text-xs text-slate-500 uppercase block mb-1">Status</label><select class="cyber-input cyber-select w-full" onchange="updateLeadStatus('${data.docId}', this.value)"><option ${data.status==='Pending'?'selected':''}>Pending</option><option ${data.status==='Contacted'?'selected':''}>Contacted</option><option ${data.status==='Site Visit'?'selected':''}>Site Visit</option><option ${data.status==='Closed'?'selected':''}>Closed</option></select></div>
+                    <div><label class="text-xs text-slate-500 uppercase block mb-1">Mission Log</label><div class="flex gap-2"><textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Add notes...">${notes}</textarea><button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-3 rounded text-white"><i class="ri-save-line"></i></button></div></div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
                     <a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2"><i class="ri-whatsapp-line"></i> Chat</a>
                     <a href="tel:${data.mobile}" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2"><i class="ri-phone-line"></i> Call</a>
                     <button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2"><i class="ri-eye-line"></i> Preview</button>
-                    <button onclick="convertToProject(${index})" class="bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 border border-purple-400 shadow-[0_0_15px_rgba(147,51,234,0.5)]"><i class="ri-magic-line"></i> Convert to Project</button>
-                </div>
-            `;
+                    <button onclick="convertToProject('${data.docId}')" class="bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 border border-purple-400"><i class="ri-magic-line"></i> Convert</button>
+                </div>`;
             document.getElementById('modalContent').innerHTML = content;
             document.getElementById('detailModal').classList.add('open');
         }
 
-        function openProjectModal(index) {
-            const data = projectsCache[index];
-            
-            // Helper for cleaner HTML
+        function openProjectModal(projectId) {
+            const data = projectsCache.find(p => p.projectId === projectId);
             const val = (v) => v || '<span class="text-slate-600 italic">--</span>';
-
             const content = `
-                <div class="text-center mb-6">
-                    <div class="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center text-3xl text-white mx-auto mb-4 shadow-lg shadow-emerald-500/50">
-                        <i class="ri-database-2-line"></i>
-                    </div>
-                    <h2 class="text-2xl font-bold text-white">Project Archive</h2>
-                    <p class="text-slate-400 font-mono text-sm">ID: ${data.projectId}</p>
-                </div>
-
+                <div class="text-center mb-6"><div class="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center text-3xl text-white mx-auto mb-4 shadow-lg shadow-emerald-500/50"><i class="ri-database-2-line"></i></div><h2 class="text-2xl font-bold text-white">Project Archive</h2><p class="text-slate-400 font-mono text-sm">ID: ${data.projectId}</p></div>
                 <div class="grid grid-cols-2 gap-4 mb-8 bg-slate-900/50 p-6 rounded-xl border border-slate-700">
                     <div><span class="text-xs text-slate-500 uppercase">Customer</span><div class="text-white font-bold">${val(data.customerName)}</div></div>
                     <div><span class="text-xs text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono">${val(data.mobile)}</div></div>
-                    
                     <div><span class="text-xs text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${val(data.depth)} ft</div></div>
                     <div><span class="text-xs text-slate-500 uppercase">Yield</span><div class="text-emerald-400 font-bold">${val(data.yield)}</div></div>
-                    
                     <div><span class="text-xs text-slate-500 uppercase">Casing</span><div class="text-white">${val(data.casing_depth)} ft</div></div>
                     <div><span class="text-xs text-slate-500 uppercase">Type</span><div class="text-slate-300 text-sm">${val(data.casing_type)}</div></div>
-                    
                     <div><span class="text-xs text-slate-500 uppercase">Rig</span><div class="text-white">${val(data.rigType)}</div></div>
                     <div><span class="text-xs text-slate-500 uppercase">Motor</span><div class="text-white">${val(data.motor)}</div></div>
-
-                    <div class="col-span-2 border-t border-slate-700 pt-2 mt-2">
-                        <span class="text-xs text-slate-500 uppercase">GPS Coordinates</span>
-                        <div class="text-slate-300 font-mono text-xs flex items-center gap-2">
-                            <i class="ri-map-pin-line"></i> ${val(data.gps)}
-                        </div>
-                    </div>
+                    <div class="col-span-2 border-t border-slate-700 pt-2 mt-2"><span class="text-xs text-slate-500 uppercase">GPS Coordinates</span><div class="text-slate-300 font-mono text-xs flex items-center gap-2"><i class="ri-map-pin-line"></i> ${val(data.gps)}</div></div>
                 </div>
-
                 <div class="grid grid-cols-3 gap-3">
-                    <button onclick="editProject(${index})" class="bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition">
-                        <i class="ri-edit-line"></i> Edit
-                    </button>
-
-                    <button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition">
-                        <i class="ri-eye-line"></i> Preview
-                    </button>
-
-                    <button onclick="downloadAdminCert('${encodeURIComponent(JSON.stringify(data))}')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition shadow-[0_0_15px_rgba(16,185,129,0.4)]">
-                        <i class="ri-download-cloud-line"></i> PDF
-                    </button>
-                </div>
-            `;
+                    <button onclick="editProject('${data.projectId}')" class="bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition"><i class="ri-edit-line"></i> Edit</button>
+                    <button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition"><i class="ri-eye-line"></i> Preview</button>
+                    <button onclick="downloadAdminCert('${encodeURIComponent(JSON.stringify(data))}')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition shadow-lg"><i class="ri-download-cloud-line"></i> PDF</button>
+                </div>`;
             document.getElementById('modalContent').innerHTML = content;
             document.getElementById('detailModal').classList.add('open');
         }
 
-        // --- ACTIONS ---
-        function updateLeadStatus(docId, status) {
-            db.collection('leads').doc(docId).update({ status: status }).then(() => console.log("Status Saved")).catch(e => alert(e));
-        }
-        
-        function saveNote(docId) {
-            const note = document.getElementById('adminNotes').value;
-            db.collection('leads').doc(docId).update({ adminNotes: note }).then(() => alert("Note Saved")).catch(e => alert(e));
+        // --- LOGIC: CREATE / EDIT / SAVE ---
+        let isEditing = false;
+
+        function resetForm() {
+            document.getElementById('projectForm').reset();
+            isEditing = false;
+            document.getElementById('p_id').value = "Auto-Generating...";
+            document.getElementById('form-mode-text').innerText = "CREATING NEW RECORD";
+            document.getElementById('save-btn-text').innerText = "SAVE RECORD";
+            
+            // Auto Generate Next ID (Simple Logic: Count + 1)
+            const year = new Date().getFullYear();
+            db.collection('projects').get().then(snap => {
+                const count = snap.size + 1001; // Start from 1001
+                document.getElementById('p_id').value = `SBW-${year}-${count}`;
+            });
         }
 
-        function convertToProject(index) {
-            const lead = leadsCache[index];
+        function editProject(projectId) {
+            const data = projectsCache.find(p => p.projectId === projectId);
             closeModal();
             showSection('create');
-            document.getElementById('p_mobile').value = lead.mobile.replace('+91', '');
-            document.getElementById('p_name').value = lead.name;
-            document.getElementById('p_loc').value = lead.loc;
-            document.getElementById('p_depth').value = lead.depth;
-            document.getElementById('projectForm').scrollIntoView({behavior: "smooth"});
-        }
-
-        // --- PREVIEW ---
-        let currentPDFElement;
-        function previewQuote(encoded) {
-            const data = JSON.parse(decodeURIComponent(encoded));
-            let rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`;
-            const content = getInvoiceHTML({ name: data.name, mobile: data.mobile, loc: data.loc, total: data.total, rows: rows });
-            document.getElementById('previewContent').innerHTML = content;
-            currentPDFElement = content; // Store for download
-            document.getElementById('previewModal').classList.add('open');
-        }
-        
-        function confirmDownloadPDF() {
-            const element = document.createElement('div'); element.innerHTML = currentPDFElement; document.body.appendChild(element);
-            html2pdf().from(element).save('Quote.pdf').then(() => document.body.removeChild(element));
-        }
-
-        function downloadAdminCert(encoded) {
-            const data = JSON.parse(decodeURIComponent(encoded));
-            const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType };
-            const content = getCertificateHTML(certData);
-            const el = document.createElement('div'); el.innerHTML = content; document.body.appendChild(el);
-            html2pdf().from(el).save(`${data.projectId}.pdf`).then(() => document.body.removeChild(el));
-        }
-        // --- NEW ACTIONS ---
-        function editProject(index) {
-            const data = projectsCache[index];
-            closeModal();
-            showSection('create'); // Go to form
             
-            // Fill Form Data
-            document.getElementById('p_mobile').value = data.mobile.replace('+91', '');
+            isEditing = true;
+            document.getElementById('form-mode-text').innerText = "EDITING RECORD: " + projectId;
+            document.getElementById('save-btn-text').innerText = "UPDATE RECORD";
+            
+            document.getElementById('p_id').value = data.projectId;
+            document.getElementById('p_mobile').value = data.mobile.replace('+91','');
             document.getElementById('p_name').value = data.customerName;
             document.getElementById('p_loc').value = data.location;
             document.getElementById('p_gps').value = data.gps;
@@ -398,58 +381,27 @@
             document.getElementById('p_casingType').value = data.casing_type;
             document.getElementById('p_rig').value = data.rigType;
             document.getElementById('p_motor').value = data.motor;
-            // Parse Date format "12 Jan 2024" back to "2024-01-12" for input
-            // (Skipping complex date parsing for now, user can re-select date)
-            
-            alert("Record loaded into form. Edit and Save as new version.");
+            document.getElementById('p_date').value = data.date ? new Date(data.date).toISOString().split('T')[0] : '';
         }
 
-        function previewCert(encoded) {
-            const data = JSON.parse(decodeURIComponent(encoded));
-            const certData = { 
-                id: data.projectId, name: data.customerName, loc: data.location, 
-                date: data.date, gps: data.gps, depth: data.depth, 
-                casing_depth: data.casing_depth, casing_type: data.casing_type, 
-                yield: data.yield, motor: data.motor, rigType: data.rigType 
-            };
+        function convertToProject(docId) {
+            const lead = leadsCache.find(l => l.docId === docId);
+            resetForm(); // Start fresh but prepopulate
+            closeModal();
+            showSection('create');
             
-            const content = getCertificateHTML(certData);
-            document.getElementById('previewContent').innerHTML = content;
-            currentPDFElement = content; // Store for potential download
-            document.getElementById('previewModal').classList.add('open');
-        }
-        // --- MAPS ---
-        let map;
-        function initMapTools() {
-            const input = document.getElementById('p_loc');
-            const ac = new google.maps.places.Autocomplete(input);
-            ac.addListener('place_changed', () => {
-                const p = ac.getPlace();
-                if(p.geometry && map) map.setCenter(p.geometry.location);
-            });
-        }
-        function openMapPicker() {
-            if(typeof google === 'undefined') { alert("System Initializing..."); return; }
-            document.getElementById('mapModal').classList.add('open');
-            if(!map) {
-                map = new google.maps.Map(document.getElementById('mapContainer'), { 
-                    center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true,
-                    styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }]
-                });
-            }
-            setTimeout(() => google.maps.event.trigger(map, 'resize'), 100);
-        }
-        function confirmLocation() {
-            const c = map.getCenter();
-            document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`;
-            document.getElementById('mapModal').classList.remove('open');
+            document.getElementById('p_mobile').value = lead.mobile.replace('+91', '');
+            document.getElementById('p_name').value = lead.name;
+            document.getElementById('p_loc').value = lead.loc;
+            document.getElementById('p_depth').value = lead.depth;
+            document.getElementById('projectForm').scrollIntoView({behavior: "smooth"});
         }
 
         function saveProject(e) {
             e.preventDefault();
-            const year = new Date().getFullYear();
+            const id = document.getElementById('p_id').value;
             const data = {
-                projectId: `SBR-${year}-${Math.floor(1000+Math.random()*9000)}`,
+                projectId: id,
                 mobile: "+91" + document.getElementById('p_mobile').value,
                 customerName: document.getElementById('p_name').value,
                 location: document.getElementById('p_loc').value,
@@ -463,8 +415,72 @@
                 date: document.getElementById('p_date').value,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
-            db.collection('projects').add(data).then(() => { alert("RECORD SAVED: "+data.projectId); e.target.reset(); });
+
+            // Check if ID exists before saving new
+            const docRef = db.collection('projects').doc(id); // Use ID as Doc Name
+            
+            docRef.get().then(doc => {
+                if(doc.exists && !isEditing) {
+                    alert("ERROR: ID Already Exists! System generating new ID...");
+                    resetForm(); // Retry logic
+                } else {
+                    docRef.set(data, { merge: true }).then(() => {
+                        alert(isEditing ? "Record Updated!" : "Certificate Issued!");
+                        resetForm();
+                        showSection('projects');
+                    });
+                }
+            });
         }
+
+        // --- PREVIEW / PDF ---
+        let currentPDFElement;
+        function previewQuote(encoded) {
+            const data = JSON.parse(decodeURIComponent(encoded));
+            let rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`;
+            const content = getInvoiceHTML({ name: data.name, mobile: data.mobile, loc: data.loc, total: data.total, rows: rows });
+            document.getElementById('previewContent').innerHTML = content;
+            currentPDFElement = content;
+            document.getElementById('previewModal').classList.add('open');
+        }
+        function previewCert(encoded) {
+            const data = JSON.parse(decodeURIComponent(encoded));
+            const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType };
+            const content = getCertificateHTML(certData);
+            document.getElementById('previewContent').innerHTML = content;
+            currentPDFElement = content;
+            document.getElementById('previewModal').classList.add('open');
+        }
+        function confirmDownloadPDF() {
+            const element = document.createElement('div'); element.innerHTML = currentPDFElement; document.body.appendChild(element);
+            html2pdf().from(element).save('Document.pdf').then(() => document.body.removeChild(element));
+        }
+        function downloadAdminCert(encoded) { previewCert(encoded); } // Shortcut: Just open preview
+
+        // --- MAPS ---
+        let map;
+        function initMapTools() {
+            const input = document.getElementById('p_loc');
+            const ac = new google.maps.places.Autocomplete(input);
+            ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); });
+        }
+        function openMapPicker() {
+            if(typeof google === 'undefined') { alert("System Initializing..."); return; }
+            document.getElementById('mapModal').classList.add('open');
+            if(!map) {
+                map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] });
+            }
+            setTimeout(() => google.maps.event.trigger(map, 'resize'), 100);
+        }
+        function confirmLocation() {
+            const c = map.getCenter();
+            document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`;
+            document.getElementById('mapModal').classList.remove('open');
+        }
+        
+        // --- OTHER ---
+        function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }); }
+        function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => alert("Saved")); }
 
         const s = document.createElement('script');
         s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`;
