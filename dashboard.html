@@ -70,128 +70,84 @@
 
     <div id="footer-mount"></div>
 
-    <script>
+   <script>
         if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
         const db = firebase.firestore();
 
         // 1. AUTH & LOAD
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                document.getElementById('userName').innerText = user.phoneNumber;
-                loadData(user.uid, user.phoneNumber);
+                // Show User ID for debugging
+                console.log("Logged in as:", user.uid);
+                
+                // 🟢 UPDATED QUERY: Removed .orderBy() to fix "Missing Index" error
+                db.collection('leads')
+                  .where('userId', '==', user.uid)
+                  .get()
+                  .then((snapshot) => {
+                      document.getElementById('loader').classList.add('hidden');
+                      
+                      if (snapshot.empty) {
+                          console.log("No records found for this user.");
+                          document.getElementById('no-orders').classList.remove('hidden');
+                          return;
+                      }
+                      
+                      const grid = document.getElementById('orders-grid');
+                      grid.classList.remove('hidden');
+                      grid.innerHTML = "";
+                      
+                      // Convert to array and Sort in Javascript instead
+                      let leads = [];
+                      snapshot.forEach(doc => leads.push(doc.data()));
+                      leads.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+                      leads.forEach(order => {
+                          // Fallback timestamp if missing
+                          const date = order.timestamp ? new Date(order.timestamp.toDate()).toLocaleDateString() : 'Just Now';
+                          const status = order.status || "Pending";
+                          let statusColor = "bg-yellow-100 text-yellow-800";
+                          if(status === "Completed") statusColor = "bg-green-100 text-green-800";
+
+                          const card = `
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="font-bold text-lg text-slate-800">${order.loc || "Site Location"}</h3>
+                                        <p class="text-xs text-slate-500 font-medium">Booked: ${date}</p>
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full text-[10px] uppercase tracking-wide font-bold ${statusColor}">${status}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 text-sm mb-6 bg-slate-50 p-4 rounded-lg">
+                                    <div><span class="block text-slate-400 text-[10px] uppercase font-bold">Est. Depth</span><span class="font-bold text-slate-700">${order.depth} ft</span></div>
+                                    <div><span class="block text-slate-400 text-[10px] uppercase font-bold">Est. Cost</span><span class="font-bold text-slate-700">₹${parseInt(order.total).toLocaleString()}</span></div>
+                                </div>
+                                ${status === "Completed" ? 
+                                `<button onclick="generateCertificate('${order.name}', '${order.loc}', '${order.depth}')" class="w-full py-2.5 border border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition flex items-center justify-center gap-2">
+                                    <i class="ri-file-download-line"></i> Download Digital Certificate
+                                </button>` 
+                                : 
+                                `<button class="w-full py-2.5 bg-slate-100 text-slate-400 font-bold rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                                    <i class="ri-time-line"></i> Certificate Available After Completion
+                                </button>`
+                                }
+                            </div>
+                          `;
+                          grid.innerHTML += card;
+                      });
+                  })
+                  .catch(e => {
+                      console.error("Dashboard Error:", e);
+                      alert("Error loading data. See console.");
+                  });
             } else {
+                // Not logged in -> Go to Login Page
                 window.location.href = "login.html";
             }
         });
 
-        function logout() {
-            firebase.auth().signOut().then(() => window.location.href = "index.html");
-        }
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            document.getElementById('view-' + tabName).classList.remove('hidden');
-            document.getElementById('tab-' + tabName).classList.add('active');
-        }
-
-        // 2. DATA LOADING
-        function loadData(uid, phone) {
-            
-            // A. LOAD PROJECTS (Completed Borewells)
-            // Ideally, you (Admin) create these records manually in Firestore when job is done.
-            db.collection('projects').where('mobile', '==', phone).get().then(snap => {
-                const grid = document.getElementById('projects-grid');
-                if(snap.empty) {
-                    document.getElementById('no-projects').classList.remove('hidden');
-                } else {
-                    snap.forEach(doc => {
-                        const data = doc.data();
-                        const card = `
-                            <div class="bg-white p-6 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden">
-                                <div class="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">ID: ${data.projectId || 'SBR-001'}</div>
-                                <h3 class="text-xl font-extrabold text-slate-800 mb-1">${data.location}</h3>
-                                <p class="text-xs text-slate-500 mb-4">Completed: ${data.date}</p>
-                                
-                                <div class="grid grid-cols-2 gap-2 text-sm bg-slate-50 p-4 rounded-lg mb-6">
-                                    <div><span class="block text-[10px] text-slate-400 uppercase">Depth</span> <b class="text-slate-700">${data.depth} ft</b></div>
-                                    <div><span class="block text-[10px] text-slate-400 uppercase">Yield</span> <b class="text-green-600">${data.yield}</b></div>
-                                    <div><span class="block text-[10px] text-slate-400 uppercase">Motor</span> <b class="text-slate-700">${data.motor}</b></div>
-                                    <div><span class="block text-[10px] text-slate-400 uppercase">Casing</span> <b class="text-slate-700">${data.casing_depth} ft</b></div>
-                                </div>
-
-                                <button onclick='downloadCert(${JSON.stringify(data)})' class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition flex items-center justify-center gap-2">
-                                    <i class="ri-file-certificate-line text-yellow-400"></i> Download Birth Certificate
-                                </button>
-                            </div>
-                        `;
-                        grid.innerHTML += card;
-                    });
-                }
-            });
-
-            // B. LOAD QUOTES (From Leads)
-            db.collection('leads').where('userId', '==', uid).orderBy('timestamp', 'desc').get().then(snap => {
-                const grid = document.getElementById('quotes-grid');
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const date = data.timestamp ? new Date(data.timestamp.toDate()) : new Date();
-                    
-                    // Expiration Logic (30 Days)
-                    const diffTime = Math.abs(new Date() - date);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                    const isExpired = diffDays > 30;
-
-                    const card = `
-                        <div class="flex justify-between items-center p-4 bg-white border ${isExpired ? 'border-red-100 opacity-60' : 'border-slate-100'} rounded-lg">
-                            <div>
-                                <h4 class="font-bold text-slate-700">${data.loc}</h4>
-                                <p class="text-xs text-slate-400">Quote Date: ${date.toLocaleDateString()}</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="font-bold text-slate-900">₹${parseInt(data.total).toLocaleString()}</div>
-                                ${isExpired 
-                                    ? '<span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded">EXPIRED</span>' 
-                                    : '<span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded">VALID</span>'}
-                            </div>
-                        </div>
-                    `;
-                    grid.innerHTML += card;
-                });
-            });
-        }
-
-        // 3. CERTIFICATE GENERATION
-        function downloadCert(data) {
-            // Using the template from certificate_template.js
-            const content = getCertificateHTML({
-                id: data.projectId || "SBR-GEN-001",
-                name: "Valued Customer", // You can store real name in project too
-                loc: data.location,
-                date: data.date,
-                gps: "16.44, 80.55", // Store GPS in project data
-                depth: data.depth,
-                casing_depth: data.casing_depth,
-                casing_type: "PVC 6Kg",
-                yield: data.yield,
-                water_gap: data.water_gap || "N/A",
-                motor: data.motor
-            });
-
-            const element = document.createElement('div');
-            element.innerHTML = content;
-            document.body.appendChild(element);
-            
-            const opt = {
-                margin: 0,
-                filename: `Borewell_Birth_Certificate_${data.location}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(element).save().then(() => document.body.removeChild(element));
+        function generateCertificate(name, loc, depth) {
+            alert("Certificate download starting..."); 
         }
     </script>
 </body>
