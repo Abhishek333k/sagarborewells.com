@@ -6,6 +6,7 @@
     <title>Estimate Engine | Sagar Ops</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
+    <script src="assets/js/layout.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
@@ -19,14 +20,7 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-30">
-        <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 flex items-center gap-2">
-                <i class="fa-solid fa-arrow-left"></i> Home
-            </a>
-            <span class="text-xs font-bold bg-blue-600 text-white px-3 py-1 rounded-full uppercase tracking-wider">Quote Engine</span>
-        </div>
-    </nav>
+    <div id="navbar-mount"></div>
 
     <main class="flex-grow p-4">
         <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -156,6 +150,8 @@
         </div>
     </div>
 
+    <div id="footer-mount"></div>
+
     <script>
         // CONFIG
         let pricingConfig = {
@@ -181,7 +177,6 @@
 
         function updateUI() { document.getElementById('depthDisplay').innerText = document.getElementById('depthSlider').value; }
 
-        // --- GPS LOGIC (UPDATED: Now converts to ADDRESS) ---
         // --- GPS LOGIC (Debug Version) ---
         function detectGPS() {
             const btn = document.querySelector('button[title="Use GPS"]');
@@ -264,7 +259,6 @@
                     const c = map.getCenter();
                     geocoder.geocode({ location: c }, (results, status) => {
                         if (status === "OK" && results[0]) {
-                            // Store address temporarily
                             document.getElementById('locInput').dataset.mapAddr = results[0].formatted_address;
                         }
                     });
@@ -279,125 +273,4 @@
             if(addr) {
                 document.getElementById('locInput').value = addr;
             } else {
-                document.getElementById('locInput').value = `${c.lat().toFixed(5)}, ${c.lng().toFixed(5)}`;
-            }
-            
-            document.getElementById('mapContainer').classList.add('hidden');
-        }
-
-        // --- CALC LOGIC ---
-        function generatePreview() {
-            const name = document.getElementById('custName').value;
-            const loc = document.getElementById('locInput').value;
-            const depth = parseInt(document.getElementById('depthSlider').value);
-            const purpose = document.getElementById('purposeInput').value;
-
-            if(!name || !loc) { alert("Please enter Name and Location"); return; }
-
-            let remaining = depth;
-            let floor = 0;
-            let rate = pricingConfig.rates[purpose];
-            let drillTotal = 0;
-            let rows = "";
-
-            while(remaining > 0) {
-                let chunk = (remaining >= pricingConfig.slab_size) ? pricingConfig.slab_size : remaining;
-                let cost = chunk * rate;
-                drillTotal += cost;
-                rows += `<tr class="border-b border-slate-50"><td class="py-2">${floor}-${floor+chunk}ft @ ₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                remaining -= chunk;
-                floor += chunk;
-                rate += pricingConfig.slab_jump;
-            }
-
-            const total = drillTotal + pricingConfig.fixed_cost;
-            
-            document.getElementById('invName').innerText = name;
-            document.getElementById('invLoc').innerText = loc;
-            document.getElementById('invBody').innerHTML = rows;
-            document.getElementById('invTotal').innerText = "₹" + total.toLocaleString();
-
-            leadData = { name, loc, depth, total, mobile: document.getElementById('custMobile').value };
-            document.getElementById('previewModal').classList.add('active');
-        }
-
-        function closeModal() { document.getElementById('previewModal').classList.remove('active'); }
-
-        function sendWhatsApp() {
-            const formData = new FormData();
-            formData.append("name", leadData.name);
-            formData.append("mobile", leadData.mobile);
-            formData.append("location", leadData.loc);
-            formData.append("depth", leadData.depth);
-            formData.append("price", leadData.total);
-            formData.append("purpose", "Official Quote");
-
-            fetch(CONTACT_INFO.database_url, { method: "POST", body: formData, mode: "no-cors" });
-
-            const msg = `*OFFICIAL QUOTE REQUEST*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.loc}%0A📞 ${leadData.mobile}%0A%0A📉 Depth: ${leadData.depth}ft%0A💰 *Est. Total: ₹${leadData.total.toLocaleString()}*%0A%0A(Includes Fixed Costs). Please schedule site visit.`;
-            window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
-        }
-    </script>
-    
-    <script>
-        const s = document.createElement('script');
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`;
-        s.async = true; s.defer = true;
-        document.body.appendChild(s);
-    </script>
-    <footer class="bg-[#0f172a] pt-16 pb-8 border-t border-slate-800 text-slate-400 font-sans">
-    <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-        
-        <div class="col-span-1 md:col-span-1">
-            <a href="index.html" class="text-xl font-extrabold text-white flex items-center gap-2 mb-4">
-                <i class="fa-solid fa-droplet text-blue-500"></i> SAGAR <span class="text-blue-500">OPS</span>
-            </a>
-            <p class="text-xs leading-relaxed mb-4">
-                Advanced geological sensor drilling. Delivering water solutions with transparency and precision since 2010.
-            </p>
-            <div class="flex gap-4">
-                <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition"><i class="fa-brands fa-whatsapp"></i></a>
-                <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition"><i class="fa-brands fa-instagram"></i></a>
-            </div>
-        </div>
-
-        <div>
-            <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Company</h4>
-            <ul class="space-y-3 text-sm">
-                <li><a href="index.html" class="hover:text-blue-400 transition">Home</a></li>
-                <li><a href="quote.html" class="hover:text-blue-400 transition">Get Estimate</a></li>
-                <li><a href="#services" class="hover:text-blue-400 transition">Services</a></li>
-            </ul>
-        </div>
-
-        <div>
-            <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Legal & Policies</h4>
-            <ul class="space-y-3 text-sm">
-                <li><a href="terms.html" class="hover:text-blue-400 transition">Terms & Conditions</a></li>
-                <li><a href="privacy.html" class="hover:text-blue-400 transition">Privacy Policy</a></li>
-                <li><a href="refund.html" class="hover:text-blue-400 transition">Refund Policy</a></li>
-                <li><a href="disclaimer.html" class="hover:text-blue-400 transition">Legal Disclaimer</a></li>
-            </ul>
-        </div>
-
-        <div>
-            <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Contact</h4>
-            <ul class="space-y-3 text-sm">
-                <li class="flex items-start gap-3">
-                    <i class="fa-solid fa-location-dot mt-1 text-blue-500"></i>
-                    <span>Mangalagiri, Andhra Pradesh<br>India - 522503</span>
-                </li>
-                <li class="flex items-center gap-3">
-                    <i class="fa-solid fa-envelope text-blue-500"></i>
-                    <a href="mailto:support@sagarborewells.com" class="hover:text-white">support@sagarborewells.com</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="border-t border-slate-800 pt-8 text-center text-xs">
-        <p>&copy; 2026 Sagar Borewells. All rights reserved. | Built for Precision.</p>
-    </div>
-</footer>
-</body>
-</html>
+                document.getElementById('locInput').value = `${c.lat().toFixed(5)},
