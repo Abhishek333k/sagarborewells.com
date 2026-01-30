@@ -85,66 +85,97 @@
     <div id="footer-mount"></div>
 
     <script>
-        if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
-        const db = firebase.firestore();
+        // 🟢 CONFIGURATION: Your Blogger URL
+        // Replace this with your actual blog ID or URL later
+        const BLOG_ID = 'YOUR_BLOG_ID_HERE'; // Or we use the Feed URL directly
+        const BLOG_FEED_URL = 'https://googleblog.blogspot.com/feeds/posts/default?alt=json'; // Example: Google's official blog for testing
 
-        let postsCache = [];
-
-        // 1. LOAD POSTS
-        db.collection('posts').orderBy('timestamp', 'desc').get().then(snap => {
+        // 1. FETCH POSTS FROM BLOGGER
+        async function loadBlogPosts() {
             const grid = document.getElementById('blog-grid');
-            if(snap.empty) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400 py-12">No articles published yet.</div>'; return; }
-            
-            grid.innerHTML = "";
-            postsCache = [];
+            grid.innerHTML = '<div class="col-span-full text-center py-20"><i class="ri-loader-4-line text-4xl text-blue-600 animate-spin"></i></div>';
 
-            snap.forEach(doc => {
-                const data = doc.data();
-                postsCache.push(data); // Store for modal
-                const index = postsCache.length - 1;
-                
-                // Truncate content for preview (Remove HTML tags for clean summary)
-                const plainText = data.content.replace(/<[^>]*>?/gm, ''); 
-                
-                grid.innerHTML += `
-                    <article onclick="openArticle(${index})" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition border border-slate-100 group cursor-pointer h-full flex flex-col">
-                        <div class="h-48 bg-slate-200 overflow-hidden relative">
-                            <img src="${data.image || 'https://source.unsplash.com/random/800x600/?drilling'}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                            <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm">${data.date}</div>
-                        </div>
-                        <div class="p-6 flex flex-col flex-grow">
-                            <h3 class="text-xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-blue-600 transition">${data.title}</h3>
-                            <p class="text-slate-500 text-sm line-clamp-3 mb-4 flex-grow">${plainText}</p>
-                            <span class="text-blue-600 font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">Read Full Story <i class="ri-arrow-right-line"></i></span>
-                        </div>
-                    </article>
-                `;
-            });
-        });
+            try {
+                const response = await fetch(BLOG_FEED_URL);
+                const data = await response.json();
+                const posts = data.feed.entry;
 
-        // 2. OPEN ARTICLE (Renders HTML)
-        function openArticle(index) {
-            const data = postsCache[index];
-            const modal = document.getElementById('articleView');
-            
-            document.getElementById('view-img').src = data.image || 'https://source.unsplash.com/random/800x600/?technology';
-            document.getElementById('view-title').innerText = data.title;
-            document.getElementById('view-date').innerText = data.date;
-            
-            // 🟢 THIS LINE RENDERS YOUR HTML TAGS
-            document.getElementById('view-content').innerHTML = data.content; 
-            
-            modal.classList.add('open');
-            document.body.style.overflow = 'hidden'; // Stop background scrolling
+                if (!posts || posts.length === 0) {
+                    grid.innerHTML = '<div class="col-span-full text-center text-slate-400">No articles found.</div>';
+                    return;
+                }
+
+                grid.innerHTML = ""; // Clear loader
+                
+                posts.forEach((post, index) => {
+                    // EXTRACT DATA FROM GOOGLE JSON STRUCTURE
+                    const title = post.title.$t;
+                    const content = post.content ? post.content.$t : (post.summary ? post.summary.$t : "");
+                    
+                    // Extract Date
+                    const dateObj = new Date(post.published.$t);
+                    const dateStr = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+
+                    // Extract First Image (Blogger stores images in content HTML)
+                    const imgDiv = document.createElement('div');
+                    imgDiv.innerHTML = content;
+                    const imgTag = imgDiv.querySelector('img');
+                    const imgUrl = imgTag ? imgTag.src : 'https://source.unsplash.com/random/800x600/?drilling'; // Fallback
+
+                    // Create Clean Summary (No HTML tags)
+                    const cleanSummary = content.replace(/<[^>]*>?/gm, '').substring(0, 150) + "...";
+
+                    // Store full content for Modal
+                    // We attach it to the DOM element directly to avoid global variable issues
+                    
+                    const articleHTML = `
+                        <article onclick="openArticle(this)" data-title="${encodeURIComponent(title)}" data-date="${dateStr}" data-img="${imgUrl}" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition border border-slate-100 group cursor-pointer h-full flex flex-col">
+                            <div class="h-48 bg-slate-200 overflow-hidden relative">
+                                <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                                <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm">${dateStr}</div>
+                            </div>
+                            <div class="p-6 flex flex-col flex-grow">
+                                <h3 class="text-xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-blue-600 transition">${title}</h3>
+                                <p class="text-slate-500 text-sm line-clamp-3 mb-4 flex-grow">${cleanSummary}</p>
+                                <span class="text-blue-600 font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">Read Full Story <i class="ri-arrow-right-line"></i></span>
+                            </div>
+                            <div class="hidden full-content">${content}</div>
+                        </article>
+                    `;
+                    grid.innerHTML += articleHTML;
+                });
+
+            } catch (error) {
+                console.error("Blogger Fetch Error:", error);
+                grid.innerHTML = `<div class="col-span-full text-center text-red-400">Failed to load news. (${error.message})</div>`;
+            }
         }
 
-        // 3. CLOSE ARTICLE
+        // 2. OPEN ARTICLE MODAL
+        function openArticle(element) {
+            const modal = document.getElementById('articleView');
+            const title = decodeURIComponent(element.getAttribute('data-title'));
+            const date = element.getAttribute('data-date');
+            const img = element.getAttribute('data-img');
+            const content = element.querySelector('.full-content').innerHTML;
+
+            document.getElementById('view-img').src = img;
+            document.getElementById('view-title').innerText = title;
+            document.getElementById('view-date').innerText = date;
+            document.getElementById('view-content').innerHTML = content;
+            
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 3. CLOSE MODAL
         function closeArticle() {
             document.getElementById('articleView').classList.remove('open');
             document.body.style.overflow = 'auto';
         }
 
-        // Close on Escape Key
+        // INIT
+        document.addEventListener('DOMContentLoaded', loadBlogPosts);
         document.addEventListener('keydown', (e) => { if(e.key === "Escape") closeArticle(); });
     </script>
 </body>
