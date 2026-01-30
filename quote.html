@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instant Quote | Sagar Borewells</title>
+    <title>Transparent Quote | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
@@ -16,6 +16,12 @@
         .hidden-step { display: none; opacity: 0; }
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        /* Receipt Style Log */
+        .receipt-log {
+            background-image: radial-gradient(#334155 1px, transparent 1px);
+            background-size: 10px 10px;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -63,7 +69,6 @@
                             <i class="fa-solid fa-location-dot absolute left-3 top-3.5 text-blue-500"></i>
                             <input id="locationInput" type="text" placeholder="Search locality or landmark..." 
                                 class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 pl-10 text-white focus:border-blue-500 outline-none">
-                            
                             <div id="locLocked" class="hidden absolute right-3 top-3">
                                 <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-1 rounded border border-green-500/50 font-bold">
                                     <i class="fa-solid fa-check"></i> MAP SELECTED
@@ -86,40 +91,40 @@
         <div id="step2" class="step-section hidden-step">
             <div class="glass-panel p-6 md:p-8">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold">Estimation Details</h2>
-                    <button onclick="goBack()" class="text-xs text-slate-400 hover:text-white underline">Edit Contact</button>
+                    <h2 class="text-2xl font-bold">Cost Breakdown</h2>
+                    <button onclick="goBack()" class="text-xs text-slate-400 hover:text-white underline">Edit Details</button>
                 </div>
 
-                <div class="mb-8">
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-3">Purpose of Drilling</label>
+                <div class="mb-6">
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-3">Purpose</label>
                     <div class="grid grid-cols-3 gap-3">
                         <label class="cursor-pointer">
-                            <input type="radio" name="purpose" value="residential" class="peer hidden" checked onchange="updateRateCard()">
+                            <input type="radio" name="purpose" value="residential" class="peer hidden" checked onchange="updateCalc()">
                             <div class="p-3 rounded-lg bg-slate-800 border border-slate-700 peer-checked:border-blue-500 peer-checked:bg-blue-900/20 text-center transition">
                                 <i class="fa-solid fa-house mb-2 text-slate-400 peer-checked:text-blue-400"></i>
-                                <p class="text-xs font-bold">Residential</p>
+                                <p class="text-[10px] font-bold">Home</p>
                             </div>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="radio" name="purpose" value="agriculture" class="peer hidden" onchange="updateRateCard()">
+                            <input type="radio" name="purpose" value="agriculture" class="peer hidden" onchange="updateCalc()">
                             <div class="p-3 rounded-lg bg-slate-800 border border-slate-700 peer-checked:border-green-500 peer-checked:bg-green-900/20 text-center transition">
                                 <i class="fa-solid fa-wheat-awn mb-2 text-slate-400 peer-checked:text-green-400"></i>
-                                <p class="text-xs font-bold">Agriculture</p>
+                                <p class="text-[10px] font-bold">Agri</p>
                             </div>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="radio" name="purpose" value="commercial" class="peer hidden" onchange="updateRateCard()">
+                            <input type="radio" name="purpose" value="commercial" class="peer hidden" onchange="updateCalc()">
                             <div class="p-3 rounded-lg bg-slate-800 border border-slate-700 peer-checked:border-purple-500 peer-checked:bg-purple-900/20 text-center transition">
                                 <i class="fa-solid fa-building mb-2 text-slate-400 peer-checked:text-purple-400"></i>
-                                <p class="text-xs font-bold">Commercial</p>
+                                <p class="text-[10px] font-bold">Comm.</p>
                             </div>
                         </label>
                     </div>
                 </div>
 
-                <div class="mb-8 p-5 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                <div class="mb-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
                     <div class="flex justify-between items-end mb-4">
-                        <label class="text-sm font-bold text-slate-300">Estimated Depth</label>
+                        <label class="text-sm font-bold text-slate-300">Drilling Depth</label>
                         <div class="flex items-center">
                             <input type="number" id="depthInput" value="500" min="100" max="1500" 
                                 class="w-24 bg-slate-900 border border-blue-500/50 rounded p-2 text-right font-bold text-white text-lg outline-none focus:ring-2 focus:ring-blue-500">
@@ -130,88 +135,97 @@
                         class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
                 </div>
 
-                <div class="border-t-2 border-slate-700 pt-6">
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-sm text-slate-400">Drilling Estimation</span>
-                        <span class="text-3xl font-extrabold text-white" id="totalPrice">₹0</span>
+                <div class="mb-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="text-sm font-bold text-slate-300">Casing Pipe Details</label>
+                        <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">Req. for loose soil</span>
                     </div>
-                    <p class="text-[10px] text-right text-slate-500 mb-6">*Excluding GST & Transport</p>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] text-slate-500 uppercase font-bold">Pipe Material</label>
+                            <select id="casingType" onchange="updateCalc()" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white">
+                                <option value="350">PVC - Standard</option>
+                                <option value="450">PVC - Heavy Duty</option>
+                                <option value="650">MS Iron (Rocky)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 uppercase font-bold">Est. Casing Depth</label>
+                            <div class="flex items-center mt-1">
+                                <input type="number" id="casingDepth" value="80" min="0" max="500" oninput="updateCalc()"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
+                                <span class="ml-2 text-xs text-slate-500">ft</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <details class="mb-6 group">
-                        <summary class="text-xs text-blue-400 cursor-pointer list-none flex items-center gap-2 font-bold">
-                            <i class="fa-solid fa-circle-info"></i> View Rate Breakdown (50ft Slabs)
-                        </summary>
-                        <div class="mt-3 p-3 bg-slate-900 rounded text-xs text-slate-400 space-y-1 font-mono border border-slate-700" id="breakdownLog"></div>
-                    </details>
+                <div class="border-t-2 border-slate-700 pt-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-slate-400">Drilling Total</span>
+                        <span class="text-lg font-bold text-white" id="drillTotalDisplay">₹0</span>
+                    </div>
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-sm text-slate-400">Casing Total</span>
+                        <span class="text-lg font-bold text-orange-400" id="casingTotalDisplay">₹0</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-6 pt-4 border-t border-slate-700 border-dashed">
+                        <span class="text-lg font-bold text-white">Grand Estimate</span>
+                        <span class="text-4xl font-extrabold text-blue-400" id="grandTotalDisplay">₹0</span>
+                    </div>
+
+                    <div class="mb-6">
+                        <p class="text-[10px] text-slate-500 uppercase font-bold mb-2 tracking-widest">Rate Card Breakdown (50ft Slabs)</p>
+                        <div class="p-4 bg-slate-900 rounded-xl text-xs text-slate-400 space-y-2 font-mono border border-slate-700 max-h-48 overflow-y-auto receipt-log" id="breakdownLog">
+                            </div>
+                    </div>
 
                     <button onclick="submitLead()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition shadow-lg shadow-emerald-500/20 flex justify-center items-center gap-2">
-                        <i class="fa-brands fa-whatsapp text-xl"></i> Get Detailed Quote on WhatsApp
+                        <i class="fa-brands fa-whatsapp text-xl"></i> Get This Quote on WhatsApp
                     </button>
+                    <p class="text-[10px] text-center text-slate-600 mt-3">*GST & Transport excluded. Final depth depends on site geology.</p>
                 </div>
             </div>
         </div>
+
     </main>
 
     <script src="assets/js/components.js"></script>
 
     <script>
-        // --- CONFIG & DATA ---
+        // CONFIG
         let leadData = {
-            name: "",
-            mobile: "",
-            location: "",
-            purpose: "residential",
-            depth: 500,
-            price: 0
+            name: "", mobile: "", location: "", purpose: "residential",
+            drillDepth: 500, casingDepth: 80, casingType: "PVC-Std",
+            totalPrice: 0
         };
 
         const SLAB_INCREMENT = 50;
-        const BASE_RATES = { 'residential': 90, 'agriculture': 85, 'commercial': 110 };
         const JUMP_AMOUNT = 5; 
+        const BASE_RATES = { 'residential': 90, 'agriculture': 85, 'commercial': 110 };
 
-        // --- 1. THE FIX: PRE-FILL FROM MAP URL ---
+        // INIT
         document.addEventListener("DOMContentLoaded", function() {
-            // Read URL Params (sent from locate.html)
             const params = new URLSearchParams(window.location.search);
-            const locParam = params.get('loc');
-            
-            if(locParam) {
-                const decodedLoc = decodeURIComponent(locParam);
-                
-                // 1. Fill the Visual Input
-                const inputField = document.getElementById("locationInput");
-                inputField.value = decodedLoc;
-                
-                // 2. Save to Data Object (So we don't need to type again)
-                leadData.location = decodedLoc;
-
-                // 3. Show "Locked" Badge
+            if(params.get('loc')) {
+                const loc = decodeURIComponent(params.get('loc'));
+                document.getElementById("locationInput").value = loc;
+                leadData.location = loc;
                 document.getElementById('locLocked').classList.remove('hidden');
             }
         });
 
-        // --- 2. GOOGLE AUTOCOMPLETE (Only if script loads) ---
-        function loadGoogleMaps() {
-            if(window.google && window.google.maps && window.google.maps.places) {
-                const input = document.getElementById("locationInput");
-                const autocomplete = new google.maps.places.Autocomplete(input);
-                autocomplete.addListener("place_changed", () => {
-                    const place = autocomplete.getPlace();
-                    leadData.location = place.formatted_address || input.value;
-                });
-            }
-        }
-
-        // --- 3. NAVIGATION LOGIC ---
+        // STEP NAVIGATION
         function goToStep2() {
             const name = document.getElementById('custName').value;
             const mobile = document.getElementById('custMobile').value;
-            // Get location from input (in case user typed it manually instead of map)
-            const loc = document.getElementById('locationInput').value; 
+            const loc = document.getElementById('locationInput').value;
 
-            if(name.length < 3) return alert("Please enter valid name");
-            if(mobile.length < 10) return alert("Please enter valid mobile number");
-            if(loc.length < 3) return alert("Please enter location");
+            if(name.length < 3) return alert("Enter Name");
+            if(mobile.length < 10) return alert("Enter Mobile");
+            if(loc.length < 3) return alert("Enter Location");
 
             leadData.name = name;
             leadData.mobile = mobile;
@@ -221,9 +235,7 @@
             setTimeout(() => {
                 document.getElementById('step1').style.display = 'none';
                 document.getElementById('step2').style.display = 'block';
-                setTimeout(() => {
-                    document.getElementById('step2').classList.remove('hidden-step');
-                }, 50);
+                setTimeout(() => { document.getElementById('step2').classList.remove('hidden-step'); }, 50);
             }, 400);
 
             // Update Indicators
@@ -232,65 +244,74 @@
             document.getElementById('step2-indicator').className = "flex flex-col items-center text-blue-500";
             document.getElementById('step2-indicator').children[0].className = "w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm";
 
-            calculatePrice();
+            updateCalc();
         }
 
-        function goBack() {
-            location.reload(); 
-        }
+        function goBack() { location.reload(); }
 
-        // --- 4. CALCULATOR ENGINE ---
+        // CALCULATOR ENGINE
         const slider = document.getElementById('depthSlider');
         const numberInput = document.getElementById('depthInput');
-        const priceDisplay = document.getElementById('totalPrice');
-        const breakdownLog = document.getElementById('breakdownLog');
 
-        slider.addEventListener('input', (e) => { numberInput.value = e.target.value; calculatePrice(); });
+        slider.addEventListener('input', (e) => { numberInput.value = e.target.value; updateCalc(); });
         numberInput.addEventListener('input', (e) => { 
-            let val = parseInt(e.target.value); 
-            if(val > 1500) val = 1500; 
-            slider.value = val; 
-            calculatePrice(); 
+            let val = parseInt(e.target.value); if(val>1500) val=1500; slider.value = val; updateCalc(); 
         });
 
-        function updateRateCard() {
-            const radios = document.getElementsByName('purpose');
-            for(let r of radios) { if(r.checked) leadData.purpose = r.value; }
-            calculatePrice();
-        }
+        function updateCalc() {
+            // 1. Get Values
+            const purposes = document.getElementsByName('purpose');
+            for(let p of purposes) { if(p.checked) leadData.purpose = p.value; }
+            
+            const drillDepth = parseInt(numberInput.value) || 0;
+            const casingDepth = parseInt(document.getElementById('casingDepth').value) || 0;
+            const casingRate = parseInt(document.getElementById('casingType').value);
+            const casingLabel = document.getElementById('casingType').options[document.getElementById('casingType').selectedIndex].text;
 
-        function calculatePrice() {
-            const depth = parseInt(numberInput.value) || 0;
-            const startRate = BASE_RATES[leadData.purpose];
-            let totalCost = 0;
-            let currentSlabRate = startRate;
+            // 2. Drill Cost (Slab Logic)
+            let drillTotal = 0;
+            let currentSlabRate = BASE_RATES[leadData.purpose];
             let logHTML = "";
-            let remainingDepth = depth;
-            let currentDepthFloor = 0;
+            let remaining = drillDepth;
+            let floor = 0;
 
-            while (remainingDepth > 0) {
-                let depthInThisSlab = (remainingDepth >= SLAB_INCREMENT) ? SLAB_INCREMENT : remainingDepth;
-                const slabCost = depthInThisSlab * currentSlabRate;
-                totalCost += slabCost;
+            while(remaining > 0) {
+                let chunk = (remaining >= SLAB_INCREMENT) ? SLAB_INCREMENT : remaining;
+                let chunkCost = chunk * currentSlabRate;
+                drillTotal += chunkCost;
                 
-                logHTML += `<div class="flex justify-between"><span>${currentDepthFloor}-${currentDepthFloor + depthInThisSlab}ft (@ ₹${currentSlabRate})</span> <span>₹${slabCost.toLocaleString()}</span></div>`;
+                // Visible Log Entry
+                logHTML += `<div class="flex justify-between border-b border-slate-800/50 pb-1 mb-1 last:border-0">
+                    <span>${floor}-${floor + chunk}ft (@ ₹${currentSlabRate})</span> 
+                    <span class="text-white">₹${chunkCost.toLocaleString()}</span>
+                </div>`;
                 
-                remainingDepth -= depthInThisSlab;
-                currentDepthFloor += depthInThisSlab;
-                currentSlabRate += JUMP_AMOUNT; 
+                remaining -= chunk;
+                floor += chunk;
+                currentSlabRate += JUMP_AMOUNT;
             }
 
-            priceDisplay.innerText = "₹" + totalCost.toLocaleString();
-            breakdownLog.innerHTML = logHTML;
-            leadData.price = totalCost;
-            leadData.depth = depth;
+            // 3. Casing Cost
+            const casingTotal = casingDepth * casingRate;
+
+            // 4. Update UI
+            document.getElementById('drillTotalDisplay').innerText = "₹" + drillTotal.toLocaleString();
+            document.getElementById('casingTotalDisplay').innerText = "₹" + casingTotal.toLocaleString();
+            document.getElementById('grandTotalDisplay').innerText = "₹" + (drillTotal + casingTotal).toLocaleString();
+            document.getElementById('breakdownLog').innerHTML = logHTML;
+
+            // 5. Save Data
+            leadData.drillDepth = drillDepth;
+            leadData.casingDepth = casingDepth;
+            leadData.casingType = casingLabel;
+            leadData.totalPrice = drillTotal + casingTotal;
         }
 
-        // --- 5. SUBMIT HANDLER ---
+        // SUBMIT
         function submitLead() {
             const btn = document.querySelector('button[onclick="submitLead()"]');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Sending...';
             btn.disabled = true;
 
             const formData = new FormData();
@@ -298,13 +319,15 @@
             formData.append("mobile", leadData.mobile);
             formData.append("location", leadData.location);
             formData.append("purpose", leadData.purpose);
-            formData.append("depth", leadData.depth);
-            formData.append("price", leadData.price);
+            formData.append("depth", leadData.drillDepth);
+            formData.append("price", leadData.totalPrice);
 
             fetch(CONTACT_INFO.database_url, { method: "POST", body: formData, mode: "no-cors" })
             .then(() => {
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved!';
-                const msg = `*New Quote Request*%0A%0A👤 Name: ${leadData.name}%0A📱 Mobile: ${leadData.mobile}%0A📍 Loc: ${leadData.location}%0A%0A⚙️ *Job Details:*%0A- Purpose: ${leadData.purpose.toUpperCase()}%0A- Depth: ${leadData.depth} ft%0A- Est. Cost: ₹${leadData.price.toLocaleString()}%0A%0APlease contact me.`;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Sent!';
+                
+                const msg = `*Official Quote Request*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.location}%0A%0A🛠 *Drilling:* ${leadData.drillDepth}ft (${leadData.purpose})%0A🕳 *Casing:* ${leadData.casingDepth}ft (${leadData.casingType})%0A💰 *Grand Est:* ₹${leadData.totalPrice.toLocaleString()}%0A%0APlease confirm scheduler.`;
+                
                 setTimeout(() => {
                     window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
                     btn.innerHTML = originalText;
@@ -312,8 +335,7 @@
                 }, 1000);
             })
             .catch(err => {
-                alert("Opening WhatsApp...");
-                const msg = `*New Quote Request*%0A%0A👤 Name: ${leadData.name}%0A...`;
+                const msg = `*Quote Request (Offline)*%0A%0A👤 ${leadData.name}%0A💰 ₹${leadData.totalPrice}`;
                 window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -322,11 +344,19 @@
     </script>
     
     <script>
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=loadGoogleMaps`;
-        script.async = true;
-        script.defer = true;
-        document.body.appendChild(script);
+        function loadMaps() {
+            if(window.google && window.google.maps && window.google.maps.places) {
+                const input = document.getElementById("locationInput");
+                const autocomplete = new google.maps.places.Autocomplete(input);
+                autocomplete.addListener("place_changed", () => {
+                    leadData.location = autocomplete.getPlace().formatted_address || input.value;
+                });
+            }
+        }
+        const s = document.createElement('script');
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=loadMaps`;
+        s.async = true; s.defer = true;
+        document.body.appendChild(s);
     </script>
 </body>
 </html>
