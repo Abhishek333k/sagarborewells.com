@@ -3,67 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sagar Borewells | Precision Drilling</title>
+    <title>Sagar Borewells | Advanced Drilling Solutions</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; }
-        .hero-glow { background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.2) 0%, rgba(15, 23, 42, 0) 70%); }
-        .glass-panel { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
+        .hero-glow { background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.15) 0%, rgba(15, 23, 42, 0) 60%); }
+        .glass-card { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
+        .step-line { position: absolute; left: 24px; top: 40px; bottom: -40px; width: 2px; background: #334155; z-index: 0; }
+        .last-step .step-line { display: none; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
-    <nav class="border-b border-slate-800 p-4 sticky top-0 z-40 bg-[#0f172a]/90 backdrop-blur">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <a href="index.html" class="text-xl font-extrabold tracking-tight text-white">SAGAR <span class="text-blue-500">BOREWELLS</span></a>
-            <a id="navCallBtn" href="#" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-blue-500/20 flex items-center gap-2 transition">
-                <i class="fa-solid fa-phone"></i> Call Now
+    <nav class="border-b border-slate-800 p-4 sticky top-0 z-50 bg-[#0f172a]/90 backdrop-blur">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                <i class="fa-solid fa-droplet text-blue-500"></i> SAGAR <span class="text-blue-500">OPS</span>
             </a>
+            <div class="flex gap-4 items-center">
+                <span class="hidden md:block text-xs font-bold text-emerald-400 uppercase tracking-wider"><i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Systems Online</span>
+                <a id="navCallBtn" href="#" class="bg-white text-blue-900 px-5 py-2 rounded-full text-sm font-bold shadow-lg hover:bg-blue-50 transition flex items-center gap-2">
+                    <i class="fa-solid fa-phone"></i> <span class="hidden md:inline">Call Expert</span>
+                </a>
+            </div>
         </div>
     </nav>
 
-    <main class="flex-grow relative hero-glow flex items-center">
-        <div class="max-w-7xl mx-auto px-4 py-20 w-full">
-            <div class="text-center max-w-3xl mx-auto">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/30 border border-blue-500/30 text-blue-400 text-xs font-bold mb-6">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ONLINE ESTIMATOR LIVE
-                </div>
-                <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight">
-                    Professional Drilling. <br><span class="text-blue-500">Transparent Pricing.</span>
-                </h1>
-                <p class="text-slate-400 text-lg mb-10 max-w-2xl mx-auto">
-                    Get an official, breakdown-style estimate for your borewell project in seconds. No hidden costs.
-                </p>
-                
-                <div class="flex flex-col sm:flex-row justify-center gap-4">
-                    <a href="quote.html" class="px-8 py-4 bg-white text-blue-900 font-bold rounded-xl shadow-xl hover:bg-slate-100 transition transform hover:scale-105 flex items-center justify-center gap-3">
-                        <i class="fa-solid fa-calculator"></i> Generate Official Quote
-                    </a>
+    <main class="flex-grow">
+        <div class="relative hero-glow">
+            <div class="max-w-6xl mx-auto px-4 py-20 md:py-32">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/30 border border-blue-500/30 text-blue-400 text-[10px] font-bold uppercase mb-6">
+                            <i class="fa-solid fa-robot"></i> Advanced Sensor Rigs
+                        </div>
+                        <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
+                            Securing Your <br><span class="text-blue-500">Water Future.</span>
+                        </h1>
+                        <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+                            We combine advanced geological sensors with 15 years of drilling experience to deliver water in 48 hours.
+                        </p>
+                        
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <a href="quote.html" class="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/25 transition transform hover:scale-105 flex items-center justify-center gap-3">
+                                <span>Get Instant Quote</span> <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                            <div class="flex items-center gap-4 px-4 py-2">
+                                <div class="flex -space-x-3">
+                                    <div class="w-10 h-10 rounded-full bg-slate-700 border-2 border-[#0f172a]"></div>
+                                    <div class="w-10 h-10 rounded-full bg-slate-600 border-2 border-[#0f172a]"></div>
+                                    <div class="w-10 h-10 rounded-full bg-slate-500 border-2 border-[#0f172a] flex items-center justify-center text-xs font-bold">+2k</div>
+                                </div>
+                                <div class="text-xs text-slate-400">
+                                    <strong class="text-white block">Trusted by</strong>
+                                    2,400+ Homeowners
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="glass-card p-8 rounded-3xl border-t border-blue-500/20 shadow-2xl">
+                            <div class="flex justify-between items-start mb-8">
+                                <div>
+                                    <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest">Live Operations</h3>
+                                    <div class="text-2xl font-bold mt-1">Andhra Pradesh</div>
+                                </div>
+                                <div class="animate-pulse bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-500/30">
+                                    LIVE FEED
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-slate-800/50 p-4 rounded-xl">
+                                    <div class="text-3xl font-bold text-white">22</div>
+                                    <div class="text-xs text-slate-400 font-bold uppercase mt-1">Active Rigs</div>
+                                </div>
+                                <div class="bg-slate-800/50 p-4 rounded-xl">
+                                    <div class="text-3xl font-bold text-blue-400">98%</div>
+                                    <div class="text-xs text-slate-400 font-bold uppercase mt-1">Success Rate</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 pt-6 border-t border-slate-700/50">
+                                <div class="flex items-center gap-3 text-sm text-slate-300">
+                                    <i class="fa-solid fa-check-circle text-emerald-500"></i>
+                                    <span>Guaranteed <strong class="text-white">48 Hour</strong> Deployment</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
+        </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20">
-                <div class="glass-panel p-6 rounded-2xl text-center">
-                    <h3 class="text-3xl font-bold">500+</h3>
-                    <p class="text-xs text-slate-500 uppercase font-bold mt-1">Sites Delivered</p>
-                </div>
-                <div class="glass-panel p-6 rounded-2xl text-center">
-                    <h3 class="text-3xl font-bold">98%</h3>
-                    <p class="text-xs text-slate-500 uppercase font-bold mt-1">Success Rate</p>
-                </div>
-                <div class="glass-panel p-6 rounded-2xl text-center">
-                    <h3 class="text-3xl font-bold">100%</h3>
-                    <p class="text-xs text-slate-500 uppercase font-bold mt-1">Price Transparency</p>
+        <div class="bg-[#1e293b] py-20 border-y border-slate-800">
+            <div class="max-w-6xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-16">Get Water in 4 Simple Steps</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div class="relative pl-6 md:pl-0">
+                        <div class="text-6xl font-black text-slate-800 absolute -top-8 -left-4 md:-left-2 z-0">01</div>
+                        <div class="relative z-10">
+                            <h3 class="text-xl font-bold text-blue-400 mb-2">Get Quote</h3>
+                            <p class="text-sm text-slate-400">Fill our smart form and get an official estimate in 30 seconds.</p>
+                        </div>
+                    </div>
+
+                    <div class="relative pl-6 md:pl-0">
+                        <div class="text-6xl font-black text-slate-800 absolute -top-8 -left-4 md:-left-2 z-0">02</div>
+                        <div class="relative z-10">
+                            <h3 class="text-xl font-bold text-white mb-2">Expert Call</h3>
+                            <p class="text-sm text-slate-400">Our senior geologist calls you within 5 mins to confirm soil details.</p>
+                        </div>
+                    </div>
+
+                    <div class="relative pl-6 md:pl-0">
+                        <div class="text-6xl font-black text-slate-800 absolute -top-8 -left-4 md:-left-2 z-0">03</div>
+                        <div class="relative z-10">
+                            <h3 class="text-xl font-bold text-white mb-2">Book Slot</h3>
+                            <p class="text-sm text-slate-400">Confirm your drilling date and lock the rig for your location.</p>
+                        </div>
+                    </div>
+
+                    <div class="relative pl-6 md:pl-0">
+                        <div class="text-6xl font-black text-slate-800 absolute -top-8 -left-4 md:-left-2 z-0">04</div>
+                        <div class="relative z-10">
+                            <h3 class="text-xl font-bold text-emerald-400 mb-2">Get Water</h3>
+                            <p class="text-sm text-slate-400">Professional drilling & installation completed within 48 hours.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
+    <footer class="bg-[#0f172a] py-8 text-center border-t border-slate-800 text-slate-500 text-sm">
+        <p>&copy; 2026 Sagar Borewells. Built for Precision.</p>
+    </footer>
+
     <script>
-        // Load Phone Number
         document.addEventListener("DOMContentLoaded", () => {
             if(typeof CONTACT_INFO !== 'undefined') {
                 document.getElementById('navCallBtn').href = `tel:+${CONTACT_INFO.whatsapp_api}`;
