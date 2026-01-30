@@ -68,13 +68,13 @@
         
         <nav class="flex-grow p-6 space-y-2">
             <div onclick="showSection('leads')" id="nav-leads" class="nav-item active">
-                <i class="ri-radar-line"></i> <span>Live Radar</span>
+                <i class="ri-radar-line"></i> <span>Live Leads</span>
             </div>
             <div onclick="showSection('projects')" id="nav-projects" class="nav-item">
                 <i class="ri-database-2-line"></i> <span>Archives</span>
             </div>
             <div onclick="showSection('create')" id="nav-create" class="nav-item">
-                <i class="ri-add-box-line"></i> <span>Issue Cert</span>
+                <i class="ri-add-box-line"></i> <span>Issue BWBC</span>
             </div>
         </nav>
 
@@ -98,14 +98,16 @@
                     <div class="flex bg-slate-900 border border-slate-700 rounded-lg overflow-hidden glow-border">
                         <span class="px-4 py-3 text-slate-500 font-mono border-r border-slate-700">+91</span>
                         <input type="tel" id="adminPhone" class="w-full bg-transparent px-4 py-3 text-white outline-none font-mono font-bold" 
-                               placeholder="ACCESS ID" maxlength="10" 
+                               placeholder="ACCESS ID" maxlength="10" inputmode="numeric" 
                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
                     </div>
                 </div>
 
                 <div id="otp-group" class="hidden text-left mb-6 fade-in-up">
                     <label class="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-2 block">Security Code</label>
-                    <input type="text" id="adminOtp" class="cyber-input text-center tracking-[0.5em] font-bold text-xl" placeholder="••••••">
+                    <input type="tel" id="adminOtp" class="cyber-input text-center tracking-[0.5em] font-bold text-xl" 
+                           placeholder="••••••" maxlength="6" inputmode="numeric" autocomplete="one-time-code"
+                           oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)">
                 </div>
 
                 <div id="recaptcha-container" class="mb-4 flex justify-center"></div>
@@ -235,6 +237,7 @@
         // AUTHENTICATION LOGIC
         auth.onAuthStateChanged(user => {
             if(user) {
+                // 🟢 QUERY FIRESTORE FOR ADMIN STATUS (Secure)
                 db.collection('admins').doc(user.phoneNumber).get()
                 .then(doc => {
                     if (doc.exists) {
@@ -340,6 +343,7 @@
             });
         }
         function openMapPicker() {
+            if(typeof google === 'undefined') { alert("System Initializing..."); return; } // Safety Check
             document.getElementById('mapModal').style.display = 'flex';
             if(!map) {
                 map = new google.maps.Map(document.getElementById('mapContainer'), { 
