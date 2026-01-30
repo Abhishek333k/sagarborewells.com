@@ -285,19 +285,53 @@
 
         function openProjectModal(index) {
             const data = projectsCache[index];
+            
+            // Helper for cleaner HTML
+            const val = (v) => v || '<span class="text-slate-600 italic">--</span>';
+
             const content = `
                 <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold text-white">Project Record</h2>
+                    <div class="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center text-3xl text-white mx-auto mb-4 shadow-lg shadow-emerald-500/50">
+                        <i class="ri-database-2-line"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white">Project Archive</h2>
                     <p class="text-slate-400 font-mono text-sm">ID: ${data.projectId}</p>
                 </div>
+
                 <div class="grid grid-cols-2 gap-4 mb-8 bg-slate-900/50 p-6 rounded-xl border border-slate-700">
-                    <div><span class="text-xs text-slate-500 uppercase">Customer</span><div class="text-white font-bold">${data.customerName}</div></div>
-                    <div><span class="text-xs text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono">${data.mobile}</div></div>
-                    <div><span class="text-xs text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div>
-                    <div><span class="text-xs text-slate-500 uppercase">Yield</span><div class="text-emerald-400 font-bold">${data.yield}</div></div>
-                    <div class="col-span-2 border-t border-slate-700 pt-2"><span class="text-xs text-slate-500 uppercase">Coords</span><div class="text-slate-300 font-mono text-xs">${data.gps}</div></div>
+                    <div><span class="text-xs text-slate-500 uppercase">Customer</span><div class="text-white font-bold">${val(data.customerName)}</div></div>
+                    <div><span class="text-xs text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono">${val(data.mobile)}</div></div>
+                    
+                    <div><span class="text-xs text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${val(data.depth)} ft</div></div>
+                    <div><span class="text-xs text-slate-500 uppercase">Yield</span><div class="text-emerald-400 font-bold">${val(data.yield)}</div></div>
+                    
+                    <div><span class="text-xs text-slate-500 uppercase">Casing</span><div class="text-white">${val(data.casing_depth)} ft</div></div>
+                    <div><span class="text-xs text-slate-500 uppercase">Type</span><div class="text-slate-300 text-sm">${val(data.casing_type)}</div></div>
+                    
+                    <div><span class="text-xs text-slate-500 uppercase">Rig</span><div class="text-white">${val(data.rigType)}</div></div>
+                    <div><span class="text-xs text-slate-500 uppercase">Motor</span><div class="text-white">${val(data.motor)}</div></div>
+
+                    <div class="col-span-2 border-t border-slate-700 pt-2 mt-2">
+                        <span class="text-xs text-slate-500 uppercase">GPS Coordinates</span>
+                        <div class="text-slate-300 font-mono text-xs flex items-center gap-2">
+                            <i class="ri-map-pin-line"></i> ${val(data.gps)}
+                        </div>
+                    </div>
                 </div>
-                <button onclick="downloadAdminCert('${encodeURIComponent(JSON.stringify(data))}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2"><i class="ri-file-download-line"></i> Download Certificate</button>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="editProject(${index})" class="bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition">
+                        <i class="ri-edit-line"></i> Edit
+                    </button>
+
+                    <button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition">
+                        <i class="ri-eye-line"></i> Preview
+                    </button>
+
+                    <button onclick="downloadAdminCert('${encodeURIComponent(JSON.stringify(data))}')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition shadow-[0_0_15px_rgba(16,185,129,0.4)]">
+                        <i class="ri-download-cloud-line"></i> PDF
+                    </button>
+                </div>
             `;
             document.getElementById('modalContent').innerHTML = content;
             document.getElementById('detailModal').classList.add('open');
@@ -347,7 +381,43 @@
             const el = document.createElement('div'); el.innerHTML = content; document.body.appendChild(el);
             html2pdf().from(el).save(`${data.projectId}.pdf`).then(() => document.body.removeChild(el));
         }
+        // --- NEW ACTIONS ---
+        function editProject(index) {
+            const data = projectsCache[index];
+            closeModal();
+            showSection('create'); // Go to form
+            
+            // Fill Form Data
+            document.getElementById('p_mobile').value = data.mobile.replace('+91', '');
+            document.getElementById('p_name').value = data.customerName;
+            document.getElementById('p_loc').value = data.location;
+            document.getElementById('p_gps').value = data.gps;
+            document.getElementById('p_depth').value = data.depth;
+            document.getElementById('p_yield').value = data.yield;
+            document.getElementById('p_casing').value = data.casing_depth;
+            document.getElementById('p_casingType').value = data.casing_type;
+            document.getElementById('p_rig').value = data.rigType;
+            document.getElementById('p_motor').value = data.motor;
+            // Parse Date format "12 Jan 2024" back to "2024-01-12" for input
+            // (Skipping complex date parsing for now, user can re-select date)
+            
+            alert("Record loaded into form. Edit and Save as new version.");
+        }
 
+        function previewCert(encoded) {
+            const data = JSON.parse(decodeURIComponent(encoded));
+            const certData = { 
+                id: data.projectId, name: data.customerName, loc: data.location, 
+                date: data.date, gps: data.gps, depth: data.depth, 
+                casing_depth: data.casing_depth, casing_type: data.casing_type, 
+                yield: data.yield, motor: data.motor, rigType: data.rigType 
+            };
+            
+            const content = getCertificateHTML(certData);
+            document.getElementById('previewContent').innerHTML = content;
+            currentPDFElement = content; // Store for potential download
+            document.getElementById('previewModal').classList.add('open');
+        }
         // --- MAPS ---
         let map;
         function initMapTools() {
