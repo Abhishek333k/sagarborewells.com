@@ -190,29 +190,34 @@
             }
         });
 
-        // 2. ZONE LOADING
-        let zoneData = []; let zoneRates = {};
+       // 2. ZONE LOADING
+        let zoneData = []; 
+        let zoneRates = {};
+        
         document.addEventListener("DOMContentLoaded", () => {
             db.collection('zones').get().then((snapshot) => {
                 const zoneSelect = document.getElementById('zoneInput');
                 zoneSelect.innerHTML = '<option value="" disabled selected>Select Soil Type / Zone</option>';
+                
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    zoneData.push({ id: doc.id, name: data.name, rate: data.rate || 90, keywords: data.keywords || [] });
+                    // Store Data
+                    zoneData.push({ 
+                        id: doc.id, 
+                        name: data.name, 
+                        rate: data.rate || 90, 
+                        keywords: data.keywords || [] 
+                    });
                     zoneRates[doc.id] = { name: data.name, rate: data.rate };
-                    const option = document.createElement('option');
-                    option.value = doc.id; // ... inside the snapshot loop ...
-                    const option = document.createElement('option');
-                    option.value = zoneId;
                     
-                    // OLD: option.innerText = `${data.name} (₹${data.rate}/ft)`;
-                    // NEW: Just the name (Clean & Professional)
-                    option.innerText = data.name; 
+                    // Create Dropdown Option
+                    const option = document.createElement('option');
+                    option.value = doc.id; 
+                    option.innerText = data.name; // Shows "Hard Rock" (Not price)
                     
                     zoneSelect.appendChild(option);
-
                 });
-            }).catch(e => console.log("Offline mode"));
+            }).catch(e => console.log("Offline mode or Firebase Error:", e));
         });
 
         // 3. OTP
