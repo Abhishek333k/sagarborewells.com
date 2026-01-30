@@ -15,6 +15,7 @@
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
+    <script src="assets/js/pdf_template.js"></script>
 
     <style>
         :root { --primary: #2563eb; --primary-dark: #1e40af; --text-main: #1e293b; --bg: #f8fafc; }
@@ -339,9 +340,42 @@
                 }, () => alert('GPS Denied'));
             }
         }
-        function downloadPDF() { const e = document.getElementById('invoice-capture'); document.querySelector('.no-print').style.display='none'; html2pdf().from(e).save().then(()=>document.querySelector('.no-print').style.display='grid'); }
+        // --- 4. EXTRAS ---
+        function downloadPDF() {
+            // 1. Prepare Data for the Template
+            const templateData = {
+                name: leadData.name || "Guest Customer",
+                mobile: leadData.mobile,
+                loc: leadData.loc,
+                total: leadData.total,
+                rows: document.getElementById('invBody').innerHTML // Reuse the table rows we already built
+            };
+        
+            // 2. Generate HTML from our external file
+            const content = getInvoiceHTML(templateData);
+        
+            // 3. Create a temporary container off-screen
+            const element = document.createElement('div');
+            element.innerHTML = content;
+            document.body.appendChild(element);
+        
+            // 4. Settings for high-quality PDF
+            const opt = {
+                margin: 0,
+                filename: `Sagar_Estimate_${leadData.name}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+        
+            // 5. Generate & Save
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Cleanup: Remove the temporary element
+                document.body.removeChild(element);
+            });
+        }
         function openWhatsAppChat() { window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=Booking ${leadData.name}`, '_blank'); }
-
+        
         const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`; s.async = true; s.defer = true; document.body.appendChild(s);
         slider.dispatchEvent(new Event('input'));
     </script>
