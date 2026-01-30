@@ -14,7 +14,6 @@
         .modal.active { opacity: 1; pointer-events: auto; }
         .modal-content { transform: translateY(20px); transition: transform 0.3s ease; }
         .modal.active .modal-content { transform: translateY(0); }
-        /* Map Styles */
         #miniMap { height: 250px; width: 100%; border-radius: 8px; }
     </style>
 </head>
@@ -182,15 +181,37 @@
 
         function updateUI() { document.getElementById('depthDisplay').innerText = document.getElementById('depthSlider').value; }
 
-        // --- GPS LOGIC ---
+        // --- GPS LOGIC (UPDATED: Now converts to ADDRESS) ---
         function detectGPS() {
             const btn = document.querySelector('button[title="Use GPS"]');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
-                    document.getElementById('locInput').value = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
-                    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                }, () => { alert('GPS Permission Denied'); btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>'; });
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    
+                    // 1. Initialize Geocoder if missing
+                    if(!geocoder) geocoder = new google.maps.Geocoder();
+                    
+                    // 2. Convert to Address
+                    const latlng = { lat: parseFloat(lat), lng: parseFloat(lng) };
+                    geocoder.geocode({ location: latlng }, (results, status) => {
+                        if (status === "OK" && results[0]) {
+                            // SUCCESS: Show the Address text
+                            document.getElementById('locInput').value = results[0].formatted_address;
+                            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                        } else {
+                            // FALLBACK: Show coords if address fails
+                            document.getElementById('locInput').value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                        }
+                    });
+
+                }, () => { 
+                    alert('GPS Permission Denied'); 
+                    btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>'; 
+                });
             }
         }
 
@@ -200,7 +221,6 @@
             container.classList.toggle('hidden');
             
             if(!container.classList.contains('hidden') && !map) {
-                // Init Map Only Once
                 initMap();
             }
         }
@@ -208,23 +228,21 @@
         function initMap() {
             if(window.google) {
                 geocoder = new google.maps.Geocoder();
-                // Default: Mangalagiri
-                const center = { lat: 16.4428, lng: 80.5645 }; 
+                const center = { lat: 16.4428, lng: 80.5645 }; // Default Mangalagiri
                 
                 map = new google.maps.Map(document.getElementById('miniMap'), {
                     center: center,
                     zoom: 15,
-                    disableDefaultUI: true, // Clean look
+                    disableDefaultUI: true,
                     zoomControl: true
                 });
 
                 // Listen for Drag End to find address
                 map.addListener('idle', () => {
                     const c = map.getCenter();
-                    // Reverse Geocode
                     geocoder.geocode({ location: c }, (results, status) => {
                         if (status === "OK" && results[0]) {
-                            // Update the "Confirm" button text optionally, or just store it
+                            // Store address temporarily
                             document.getElementById('locInput').dataset.mapAddr = results[0].formatted_address;
                         }
                     });
