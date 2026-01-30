@@ -9,6 +9,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script src="assets/js/config.js"></script>
@@ -19,128 +20,72 @@
     <div id="navbar-mount"></div>
 
     <main class="flex-grow container mx-auto px-4 py-8">
-        <h1 class="text-2xl font-bold text-slate-800 mb-6">Client Dashboard</h1>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-slate-800">My Dashboard</h1>
+            <button onclick="firebase.auth().signOut().then(()=>window.location='quote.html')" class="text-sm text-red-500 hover:underline">Sign Out</button>
+        </div>
 
         <div id="loader" class="text-center py-10">
             <i class="ri-loader-4-line ri-spin text-3xl text-blue-600"></i>
-            <p class="text-slate-500 mt-2">Loading your profile...</p>
         </div>
 
-        <div id="no-orders" class="hidden text-center py-10 bg-white rounded-xl shadow-sm">
-            <i class="ri-folder-open-line text-4xl text-slate-300"></i>
-            <p class="text-slate-500 mt-2">No active bookings found.</p>
-            <a href="quote.html" class="mt-4 inline-block text-blue-600 font-bold hover:underline">Get a Quote</a>
-        </div>
-
-        <div id="orders-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
-            </div>
+        <div id="orders-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden"></div>
+        <div id="no-orders" class="hidden text-center py-10"><p>No bookings found.</p></div>
     </main>
 
     <div id="footer-mount"></div>
 
     <script>
-        // Init Firebase
         if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        const db = firebase.firestore();
 
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                fetchData(user.phoneNumber);
+                // Fetch leads where userId matches OR mobile matches
+                // For simplicity, we filter by the user's phone number
+                const mobile = user.phoneNumber; 
+                
+                db.collection('leads')
+                  .where('mobile', '==', mobile) // IMPORTANT: You must create an index in Firebase Console for this to work perfectly, or it works by default for simple queries.
+                  .orderBy('timestamp', 'desc')
+                  .get()
+                  .then((snapshot) => {
+                      document.getElementById('loader').classList.add('hidden');
+                      if (snapshot.empty) {
+                          document.getElementById('no-orders').classList.remove('hidden');
+                          return;
+                      }
+                      
+                      const grid = document.getElementById('orders-grid');
+                      grid.classList.remove('hidden');
+                      
+                      snapshot.forEach(doc => {
+                          const order = doc.data();
+                          const date = order.timestamp ? new Date(order.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                          
+                          let statusColor = "bg-yellow-100 text-yellow-700";
+                          if(order.status === "Completed") statusColor = "bg-green-100 text-green-700";
+
+                          const card = `
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div><h3 class="font-bold text-lg text-slate-800">${order.loc}</h3><p class="text-xs text-slate-500">${date}</p></div>
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${statusColor}">${order.status}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 text-sm mb-6">
+                                    <div class="bg-slate-50 p-3 rounded"><span class="block text-slate-400 text-xs uppercase">Est. Depth</span><span class="font-bold text-slate-700">${order.depth} ft</span></div>
+                                    <div class="bg-slate-50 p-3 rounded"><span class="block text-slate-400 text-xs uppercase">Total</span><span class="font-bold text-slate-700">₹${parseInt(order.total).toLocaleString()}</span></div>
+                                </div>
+                                ${order.status === "Completed" ? `<button onclick="alert('Cert Download')" class="w-full py-2 border border-blue-600 text-blue-600 rounded-lg">Download Certificate</button>` : ''}
+                            </div>
+                          `;
+                          grid.innerHTML += card;
+                      });
+                  });
             } else {
-                // Not logged in? Send to login
                 window.location.href = "quote.html";
             }
         });
-
-        function fetchData(phone) {
-            fetch(CONTACT_INFO.database_url + "?action=getUserHistory&phone=" + encodeURIComponent(phone))
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('loader').classList.add('hidden');
-                    
-                    if (data.length === 0) {
-                        document.getElementById('no-orders').classList.remove('hidden');
-                        return;
-                    }
-
-                    const grid = document.getElementById('orders-grid');
-                    grid.classList.remove('hidden');
-                    
-                    data.forEach(order => {
-                        // Color code status
-                        let statusColor = "bg-yellow-100 text-yellow-700"; // Pending
-                        if(order.status.includes("Complete")) statusColor = "bg-green-100 text-green-700";
-                        if(order.status.includes("Drilling")) statusColor = "bg-blue-100 text-blue-700";
-
-                        const card = `
-                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 class="font-bold text-lg text-slate-800">${order.location}</h3>
-                                        <p class="text-xs text-slate-500">Booked on: ${order.date}</p>
-                                    </div>
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${statusColor}">
-                                        ${order.status}
-                                    </span>
-                                </div>
-                                
-                                <div class="grid grid-cols-2 gap-4 text-sm mb-6">
-                                    <div class="bg-slate-50 p-3 rounded">
-                                        <span class="block text-slate-400 text-xs uppercase">Est. Depth</span>
-                                        <span class="font-bold text-slate-700">${order.depth} ft</span>
-                                    </div>
-                                    <div class="bg-slate-50 p-3 rounded">
-                                        <span class="block text-slate-400 text-xs uppercase">Quote</span>
-                                        <span class="font-bold text-slate-700">₹${parseInt(order.price).toLocaleString()}</span>
-                                    </div>
-                                    
-                                    ${order.final_depth !== "N/A" ? `
-                                    <div class="bg-emerald-50 p-3 rounded border border-emerald-100 col-span-2">
-                                        <span class="block text-emerald-600 text-xs uppercase font-bold">Project Result</span>
-                                        <div class="flex justify-between font-bold text-emerald-800 mt-1">
-                                            <span>Depth: ${order.final_depth} ft</span>
-                                            <span>Yield: ${order.yield}</span>
-                                        </div>
-                                    </div>` : ''}
-                                </div>
-
-                                ${order.final_depth !== "N/A" ? `
-                                <button onclick="downloadCertificate('${order.location}', '${order.final_depth}', '${order.yield}')" class="w-full py-2 border border-blue-600 text-blue-600 rounded-lg font-bold hover:bg-blue-50 transition">
-                                    <i class="ri-file-download-line"></i> Download Digital Certificate
-                                </button>` : ''}
-                            </div>
-                        `;
-                        grid.innerHTML += card;
-                    });
-                });
-        }
-
-        // Logic to generate the PDF Certificate
-        function downloadCertificate(loc, depth, yieldVal) {
-            // Create a temporary element to render the certificate
-            const cert = document.createElement('div');
-            cert.innerHTML = `
-                <div style="padding:40px; border:10px solid #2563eb; text-align:center; font-family:sans-serif;">
-                    <h1 style="color:#2563eb; font-size:40px; margin-bottom:10px;">SAGAR BOREWELLS</h1>
-                    <h2 style="color:#1e293b; letter-spacing:4px; text-transform:uppercase;">Certificate of Yield</h2>
-                    <hr style="margin:20px 0; border:0; border-top:2px solid #ccc;">
-                    <p style="font-size:18px; line-height:1.6;">
-                        This is to certify that a borewell was successfully drilled at<br>
-                        <strong>${loc}</strong>
-                    </p>
-                    <table style="margin: 30px auto; width:80%; border-collapse:collapse; font-size:20px;">
-                        <tr style="background:#f1f5f9;"><td style="padding:15px; border:1px solid #ddd;">Total Depth</td><td style="padding:15px; border:1px solid #ddd; font-weight:bold;">${depth} Feet</td></tr>
-                        <tr><td style="padding:15px; border:1px solid #ddd;">Water Yield</td><td style="padding:15px; border:1px solid #ddd; font-weight:bold;">${yieldVal}</td></tr>
-                        <tr style="background:#f1f5f9;"><td style="padding:15px; border:1px solid #ddd;">Date</td><td style="padding:15px; border:1px solid #ddd;">${new Date().toLocaleDateString()}</td></tr>
-                    </table>
-                    <div style="margin-top:50px;">
-                        <img src="https://i.imgur.com/your-signature-placeholder.png" style="height:50px;">
-                        <p style="font-size:12px; color:#64748b;">Authorized Signatory</p>
-                    </div>
-                </div>
-            `;
-            
-            html2pdf().from(cert).save('Borewell_Certificate.pdf');
-        }
     </script>
 </body>
 </html>
