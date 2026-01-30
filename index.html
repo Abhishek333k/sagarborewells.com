@@ -147,12 +147,32 @@
         <p>&copy; 2026 Sagar Borewells. Built for Precision.</p>
     </footer>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            if(typeof CONTACT_INFO !== 'undefined') {
-                document.getElementById('navCallBtn').href = `tel:+${CONTACT_INFO.whatsapp_api}`;
-            }
-        });
-    </script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        console.log("Initializing Page...");
+
+        // 1. Check if Config Loaded
+        if(typeof CONTACT_INFO === 'undefined') {
+            console.error("CRITICAL: config.js not loaded! Check assets/js/ folder.");
+            alert("Error: Contact info missing. Please refresh.");
+            return;
+        }
+
+        // 2. Fix Call Button
+        const callBtn = document.getElementById('navCallBtn');
+        if(callBtn) {
+            // Update the link
+            callBtn.href = `tel:+${CONTACT_INFO.whatsapp_api}`;
+            console.log("Call Button Activated for:", CONTACT_INFO.whatsapp_api);
+            
+            // Add click listener just to be safe
+            callBtn.addEventListener('click', () => {
+                console.log("Calling...");
+            });
+        } else {
+            console.error("Error: Could not find button with id 'navCallBtn'");
+        }
+    });
+</script>
 </body>
 </html>
