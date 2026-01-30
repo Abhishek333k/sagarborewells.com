@@ -14,18 +14,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script src="assets/js/config.js"></script>
-    <script src="assets/js/pdf_template.js"></script> <script src="assets/js/certificate_template.js"></script> <style>
-        /* CYBER DARK THEME */
+    <script src="assets/js/pdf_template.js"></script>
+    <script src="assets/js/certificate_template.js"></script>
+
+    <style>
+        /* CYBER THEME */
         body { background-color: #0f172a; font-family: 'Inter', sans-serif; color: #e2e8f0; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         
         /* Glassmorphism */
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
         .glass-modal { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(59, 130, 246, 0.2); }
-
-        /* Neon Glows */
-        .glow-text { text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-        .glow-border:focus-within { border-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
 
         /* Navigation */
         .nav-item { display: flex; items-center; gap: 12px; padding: 12px 16px; color: #94a3b8; border-radius: 10px; transition: 0.3s; cursor: pointer; }
@@ -35,11 +34,11 @@
         .cyber-input { background: #1e293b; border: 1px solid #334155; color: white; padding: 12px; border-radius: 8px; width: 100%; outline: none; transition: 0.3s; }
         .cyber-input:focus { border-color: #3b82f6; background: #0f172a; }
         
-        /* Modal Transitions */
+        /* Modal Overlay */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
         .modal-overlay.open { display: flex; opacity: 1; }
         
-        /* Map Styles */
+        /* Map */
         .map-wrapper { position: relative; width: 100%; height: 300px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
         .center-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 1000; pointer-events: none; width: 40px; }
     </style>
@@ -54,13 +53,11 @@
                 <p class="text-xs text-emerald-500 font-mono uppercase tracking-widest">System Online</p>
             </div>
         </div>
-        
         <nav class="flex-grow p-6 space-y-2">
             <div onclick="showSection('leads')" id="nav-leads" class="nav-item active"><i class="ri-radar-line"></i> <span>Live Leads</span></div>
-            <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>BWBC Archives</span></div>
-            <div onclick="showSection('create')" id="nav-create" class="nav-item"><i class="ri-add-box-line"></i> <span>Issue BWBC</span></div>
+            <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>Archives</span></div>
+            <div onclick="showSection('create')" id="nav-create" class="nav-item"><i class="ri-add-box-line"></i> <span>Issue Cert</span></div>
         </nav>
-
         <div class="p-6 border-t border-slate-800">
             <button onclick="logout()" class="flex items-center gap-3 text-sm text-slate-400 hover:text-red-400 transition"><i class="ri-shut-down-line"></i> Terminate Session</button>
         </div>
@@ -68,9 +65,8 @@
 
     <main class="flex-grow overflow-y-auto p-10 relative bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
         
-        <div id="login-overlay" class="modal-overlay open">
+        <div id="login-overlay" class="modal-overlay open" style="z-index: 999;">
             <div class="glass-card p-10 w-96 text-center border-t-4 border-blue-600">
-                <div class="mb-6"><i class="ri-shield-keyhole-line text-5xl text-blue-500 animate-pulse"></i></div>
                 <h2 class="text-2xl font-bold text-white mb-2">RESTRICTED ACCESS</h2>
                 <div class="text-left mb-4 mt-6">
                     <label class="text-xs text-blue-400 font-bold uppercase block mb-1">ID Verification</label>
@@ -95,6 +91,7 @@
         </header>
 
         <div id="section-leads" class="content-section"><div id="leads-list" class="space-y-4"></div></div>
+
         <div id="section-projects" class="content-section hidden"><div id="projects-list" class="grid grid-cols-1 xl:grid-cols-2 gap-6"></div></div>
 
         <div id="section-create" class="content-section hidden max-w-5xl mx-auto">
@@ -169,7 +166,7 @@
         }
 
         // --- DATA ---
-        let leadsCache = [], projectsCache = []; // Cache to avoid re-fetching on modal open
+        let leadsCache = [], projectsCache = [];
 
         function loadLeads() {
             db.collection('leads').orderBy('timestamp','desc').limit(50).get().then(snap => {
@@ -177,16 +174,20 @@
                 leadsCache = [];
                 snap.forEach(d => {
                     const data = d.data();
-                    leadsCache.push(data); // Store for modal
+                    data.docId = d.id; // Store Doc ID for updating status
+                    leadsCache.push(data);
                     const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                    // Added onClick to open modal
+                    const statusColor = data.status === 'Closed' ? 'text-emerald-400' : 'text-yellow-400';
                     el.innerHTML += `
                         <div onclick="openLeadModal(${leadsCache.length - 1})" class="glass-card p-5 flex justify-between items-center hover:bg-slate-800/50 transition cursor-pointer group">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition"><i class="ri-user-search-line"></i></div>
                                 <div><div class="font-bold text-white">${data.name}</div><div class="text-xs text-slate-400 font-mono">${data.loc}</div></div>
                             </div>
-                            <div class="text-right"><div class="font-bold text-emerald-400 text-lg">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[10px] text-slate-500 font-mono">${date}</div></div>
+                            <div class="text-right">
+                                <div class="font-bold text-emerald-400 text-lg">₹${parseInt(data.total).toLocaleString()}</div>
+                                <div class="text-[10px] ${statusColor} font-mono">${data.status || 'Pending'}</div>
+                            </div>
                         </div>`;
                 });
             });
@@ -209,29 +210,38 @@
             });
         }
 
-        // --- MODALS (THE NEW FEATURE) ---
+        // --- INTERACTIVE MODALS ---
         function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
 
         function openLeadModal(index) {
             const data = leadsCache[index];
             const content = `
                 <div class="text-center mb-6">
-                    <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-3xl text-white mx-auto mb-4 shadow-lg shadow-blue-500/50"><i class="ri-file-list-3-line"></i></div>
                     <h2 class="text-2xl font-bold text-white">Lead Details</h2>
-                    <p class="text-slate-400 font-mono text-sm">Quote Generated on ${data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A'}</p>
+                    <p class="text-slate-400 font-mono text-sm">Quote: ${data.docId}</p>
                 </div>
-                <div class="grid grid-cols-2 gap-4 mb-8 bg-slate-900/50 p-6 rounded-xl border border-slate-700">
+                <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-6 rounded-xl border border-slate-700">
                     <div><span class="text-xs text-slate-500 uppercase">Customer</span><div class="text-white font-bold">${data.name}</div></div>
                     <div><span class="text-xs text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono">${data.mobile}</div></div>
                     <div class="col-span-2"><span class="text-xs text-slate-500 uppercase">Location</span><div class="text-white">${data.loc}</div></div>
-                    <div><span class="text-xs text-slate-500 uppercase">Est. Depth</span><div class="text-yellow-400 font-mono">${data.depth} ft</div></div>
-                    <div><span class="text-xs text-slate-500 uppercase">Zone Type</span><div class="text-white">${data.zone || 'Standard'}</div></div>
-                    <div class="col-span-2 border-t border-slate-700 pt-2 mt-2"><span class="text-xs text-slate-500 uppercase">Quoted Price</span><div class="text-2xl text-emerald-400 font-bold">₹${parseInt(data.total).toLocaleString()}</div></div>
+                    <div><span class="text-xs text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono">${data.depth} ft</div></div>
+                    <div><span class="text-xs text-slate-500 uppercase">Zone</span><div class="text-white">${data.zone || 'Standard'}</div></div>
                 </div>
-                <div class="flex gap-4">
-                    <a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="flex-1 bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2"><i class="ri-whatsapp-line"></i> WhatsApp</a>
-                    <a href="tel:${data.mobile}" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2"><i class="ri-phone-line"></i> Call</a>
-                    <button onclick="downloadAdminQuote('${encodeURIComponent(JSON.stringify(data))}')" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2"><i class="ri-file-download-line"></i> PDF</button>
+                
+                <div class="mb-6">
+                    <label class="text-xs text-slate-500 uppercase">Update Status</label>
+                    <div class="flex gap-2 mt-1">
+                        <button onclick="updateLeadStatus('${data.docId}', 'Contacted')" class="flex-1 py-2 rounded bg-yellow-900/50 text-yellow-400 border border-yellow-700 hover:bg-yellow-900 transition">Contacted</button>
+                        <button onclick="updateLeadStatus('${data.docId}', 'Site Visit')" class="flex-1 py-2 rounded bg-blue-900/50 text-blue-400 border border-blue-700 hover:bg-blue-900 transition">Site Visit</button>
+                        <button onclick="updateLeadStatus('${data.docId}', 'Closed')" class="flex-1 py-2 rounded bg-emerald-900/50 text-emerald-400 border border-emerald-700 hover:bg-emerald-900 transition">Closed</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2"><i class="ri-whatsapp-line"></i> Chat</a>
+                    <a href="tel:${data.mobile}" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2"><i class="ri-phone-line"></i> Call</a>
+                    <button onclick="downloadAdminQuote('${encodeURIComponent(JSON.stringify(data))}')" class="bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2"><i class="ri-file-download-line"></i> Estimate</button>
+                    <button onclick="convertToProject(${index})" class="bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 border border-purple-400 shadow-[0_0_15px_rgba(147,51,234,0.5)]"><i class="ri-magic-line"></i> Convert to Project</button>
                 </div>
             `;
             document.getElementById('modalContent').innerHTML = content;
@@ -242,31 +252,49 @@
             const data = projectsCache[index];
             const content = `
                 <div class="text-center mb-6">
-                    <div class="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center text-3xl text-white mx-auto mb-4 shadow-lg shadow-emerald-500/50"><i class="ri-checkbox-circle-line"></i></div>
-                    <h2 class="text-2xl font-bold text-white">Completed Project</h2>
+                    <h2 class="text-2xl font-bold text-white">Project Record</h2>
                     <p class="text-slate-400 font-mono text-sm">ID: ${data.projectId}</p>
                 </div>
                 <div class="grid grid-cols-2 gap-4 mb-8 bg-slate-900/50 p-6 rounded-xl border border-slate-700">
                     <div><span class="text-xs text-slate-500 uppercase">Customer</span><div class="text-white font-bold">${data.customerName}</div></div>
                     <div><span class="text-xs text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono">${data.mobile}</div></div>
-                    <div><span class="text-xs text-slate-500 uppercase">Final Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div>
-                    <div><span class="text-xs text-slate-500 uppercase">Water Yield</span><div class="text-emerald-400 font-bold">${data.yield}</div></div>
-                    <div><span class="text-xs text-slate-500 uppercase">Casing</span><div class="text-white">${data.casing_depth} ft (${data.casing_type})</div></div>
-                    <div><span class="text-xs text-slate-500 uppercase">Motor</span><div class="text-white">${data.motor}</div></div>
-                    <div class="col-span-2"><span class="text-xs text-slate-500 uppercase">Coordinates</span><div class="text-slate-300 font-mono text-xs">${data.gps}</div></div>
+                    <div><span class="text-xs text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div>
+                    <div><span class="text-xs text-slate-500 uppercase">Yield</span><div class="text-emerald-400 font-bold">${data.yield}</div></div>
+                    <div class="col-span-2 border-t border-slate-700 pt-2"><span class="text-xs text-slate-500 uppercase">Coords</span><div class="text-slate-300 font-mono text-xs">${data.gps}</div></div>
                 </div>
-                <div class="flex gap-4">
-                    <button onclick="downloadAdminCert('${encodeURIComponent(JSON.stringify(data))}')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2"><i class="ri-file-download-line"></i> Download Certificate</button>
-                </div>
+                <button onclick="downloadAdminCert('${encodeURIComponent(JSON.stringify(data))}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2"><i class="ri-file-download-line"></i> Download Birth Certificate</button>
             `;
             document.getElementById('modalContent').innerHTML = content;
             document.getElementById('detailModal').classList.add('open');
         }
 
+        // --- ACTIONS ---
+        function updateLeadStatus(docId, status) {
+            if(confirm(`Mark this lead as ${status}?`)) {
+                db.collection('leads').doc(docId).update({ status: status })
+                .then(() => { alert("Status Updated"); closeModal(); loadLeads(); })
+                .catch(e => alert("Error: " + e.message));
+            }
+        }
+
+        function convertToProject(index) {
+            const lead = leadsCache[index];
+            closeModal();
+            showSection('create');
+            // Auto-Fill Form
+            document.getElementById('p_mobile').value = lead.mobile.replace('+91', '');
+            document.getElementById('p_name').value = lead.name;
+            document.getElementById('p_loc').value = lead.loc;
+            document.getElementById('p_depth').value = lead.depth;
+            // Highlight
+            document.getElementById('projectForm').scrollIntoView({behavior: "smooth"});
+            document.getElementById('projectForm').classList.add('animate-pulse');
+            setTimeout(() => document.getElementById('projectForm').classList.remove('animate-pulse'), 1000);
+        }
+
         // --- PDF HELPERS ---
         function downloadAdminQuote(encoded) {
             const data = JSON.parse(decodeURIComponent(encoded));
-            // Simple Row Reconstruction for PDF
             let rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`;
             const content = getInvoiceHTML({ name: data.name, mobile: data.mobile, loc: data.loc, total: data.total, rows: rows });
             const el = document.createElement('div'); el.innerHTML = content; document.body.appendChild(el);
@@ -275,7 +303,6 @@
 
         function downloadAdminCert(encoded) {
             const data = JSON.parse(decodeURIComponent(encoded));
-            // Map keys correctly for template
             const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType };
             const content = getCertificateHTML(certData);
             const el = document.createElement('div'); el.innerHTML = content; document.body.appendChild(el);
