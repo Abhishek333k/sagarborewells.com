@@ -22,9 +22,16 @@
         .input-field { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; margin-top: 4px; }
         .input-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; }
         
-        /* Map Modal */
+        /* UBER STYLE MAP */
         #mapModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
-        #mapContainer { width: 100%; height: 400px; border-radius: 8px; margin-bottom: 10px; }
+        #mapWrapper { position: relative; width: 100%; height: 400px; border-radius: 8px; overflow: hidden; }
+        #mapContainer { width: 100%; height: 100%; }
+        #centerPin { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -100%); /* Point to center */
+            font-size: 40px; color: #ea4335; z-index: 10; pointer-events: none;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -87,19 +94,17 @@
 
         <div id="section-leads" class="content-section">
             <h2 class="text-2xl font-bold text-slate-800 mb-6">Incoming Quotations</h2>
-            <div id="leads-list" class="space-y-4">
-                <div class="text-center py-10"><i class="ri-loader-4-line ri-spin text-2xl text-blue-500"></i></div>
-            </div>
+            <div id="leads-list" class="space-y-4"></div>
         </div>
 
         <div id="section-projects" class="content-section hidden">
-            <h2 class="text-2xl font-bold text-slate-800 mb-6">Completed Projects (Birth Certificates)</h2>
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Completed Projects</h2>
             <div id="projects-list" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
         </div>
 
         <div id="section-create" class="content-section hidden max-w-4xl">
             <h2 class="text-2xl font-bold text-slate-800 mb-2">Issue New Birth Certificate</h2>
-            <p class="text-slate-500 mb-6">Enter technical details to generate the official record.</p>
+            <p class="text-slate-500 mb-6">Enter details. Map pin is center-fixed (Uber style).</p>
 
             <form id="projectForm" onsubmit="saveProject(event)" class="card p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="col-span-full border-b pb-2 mb-2"><h3 class="font-bold text-slate-900">1. Customer Details</h3></div>
@@ -121,14 +126,13 @@
                     <label class="input-label">GPS Coordinates</label>
                     <div class="flex gap-2 mt-1">
                         <input type="text" id="p_gps" class="input-field bg-slate-50" readonly placeholder="Lat, Lng">
-                        <button type="button" onclick="openMapPicker()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm">Map</button>
+                        <button type="button" onclick="openMapPicker()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm">Open Map</button>
                     </div>
                 </div>
 
                 <div class="col-span-full border-b pb-2 mb-2 mt-4"><h3 class="font-bold text-slate-900">2. Technical Specifications</h3></div>
-
                 <div><label class="input-label">Total Depth (ft)</label><input type="number" id="p_depth" class="input-field" required></div>
-                <div><label class="input-label">Yield</label><input type="text" id="p_yield" class="input-field" placeholder="e.g. 3.5 Inches" required></div>
+                <div><label class="input-label">Yield</label><input type="text" id="p_yield" class="input-field" required></div>
                 <div><label class="input-label">Casing Depth (ft)</label><input type="number" id="p_casing" class="input-field" required></div>
                 <div>
                     <label class="input-label">Casing Type</label>
@@ -136,17 +140,11 @@
                         <option>PVC 6Kg/cm²</option><option>PVC 10Kg/cm²</option><option>MS Iron</option>
                     </select>
                 </div>
-                <div>
-                    <label class="input-label">Rig Type</label>
-                    <select id="p_rig" class="input-field">
-                        <option>Sensor Robotic Hydraulic</option><option>Standard Hydraulic</option>
-                    </select>
-                </div>
+                <div><label class="input-label">Rig Type</label><select id="p_rig" class="input-field"><option>Sensor Robotic Hydraulic</option><option>Standard Hydraulic</option></select></div>
                 <div><label class="input-label">Motor Details</label><input type="text" id="p_motor" class="input-field"></div>
                 <div><label class="input-label">Drill Date</label><input type="date" id="p_date" class="input-field" required></div>
 
                 <div class="col-span-full pt-6 flex justify-end gap-4 border-t">
-                    <button type="button" onclick="showSection('leads')" class="px-4 py-2 text-slate-500 font-bold">Cancel</button>
                     <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-lg">Save Record</button>
                 </div>
             </form>
@@ -155,11 +153,13 @@
 
     <div id="mapModal">
         <div class="bg-white p-4 rounded-xl w-full max-w-2xl">
-            <h3 class="font-bold text-lg mb-2">Pick Location</h3>
-            <div id="mapContainer"></div>
-            <div class="flex justify-end gap-2">
-                <button onclick="document.getElementById('mapModal').style.display='none'" class="px-4 py-2 text-slate-500 font-bold">Close</button>
-                <button onclick="confirmLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg">Set Pin</button>
+            <h3 class="font-bold text-lg mb-2 text-center">Drag Map to Pin Location</h3>
+            <div id="mapWrapper">
+                <div id="mapContainer"></div>
+                <div id="centerPin"><i class="ri-map-pin-fill"></i></div> </div>
+            <div class="flex justify-center gap-2 mt-4">
+                <button onclick="document.getElementById('mapModal').style.display='none'" class="px-4 py-2 text-slate-500 font-bold">Cancel</button>
+                <button onclick="confirmLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-md">Confirm Location</button>
             </div>
         </div>
     </div>
@@ -170,9 +170,19 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
+        // 🟢 SECURITY: ALLOWLIST
+        // REPLACE THESE WITH YOUR ACTUAL NUMBERS!
+        const ALLOWED_ADMINS = ["+919652246869", "+919347008871", "+919876543210"]; 
+
         // 1. AUTH STATE
         auth.onAuthStateChanged(user => {
             if(user) {
+                // SECURITY CHECK
+                if (!ALLOWED_ADMINS.includes(user.phoneNumber)) {
+                    alert("ACCESS DENIED: Your number " + user.phoneNumber + " is not an admin.");
+                    auth.signOut();
+                    return;
+                }
                 document.getElementById('login-overlay').style.display = 'none';
                 loadLeads();
             } else {
@@ -180,11 +190,10 @@
             }
         });
 
-        // 2. PHONE LOGIN LOGIC
+        // 2. PHONE LOGIN
         function sendAdminOTP() {
             const phone = document.getElementById('adminPhone').value;
             if(phone.length !== 10) return alert("Enter 10 digit number");
-            
             const btn = document.getElementById('sendOtpBtn');
             btn.innerText = "Sending...";
             
@@ -205,7 +214,7 @@
         }
         function logout() { auth.signOut(); }
 
-        // 3. NAVIGATION
+        // 3. NAVIGATION & LOADING FUNCTIONS (Same as before)
         function showSection(id) {
             document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
             document.getElementById('section-' + id).classList.remove('hidden');
@@ -215,7 +224,6 @@
             if(id === 'projects') loadProjects();
         }
 
-        // 4. LOAD LEADS
         function loadLeads() {
             db.collection('leads').orderBy('timestamp', 'desc').limit(50).get().then(snap => {
                 const container = document.getElementById('leads-list');
@@ -225,22 +233,12 @@
                     const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
                     const div = document.createElement('div');
                     div.className = "card p-4 flex justify-between items-center";
-                    div.innerHTML = `
-                        <div>
-                            <div class="font-bold text-slate-800">${data.name} <span class="text-slate-400 font-normal">(${data.mobile})</span></div>
-                            <div class="text-sm text-slate-500">${data.loc} • ${data.depth}ft • ${data.zone || 'Zone?'}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-bold text-blue-600">₹${parseInt(data.total).toLocaleString()}</div>
-                            <div class="text-xs text-slate-400">${date}</div>
-                        </div>
-                    `;
+                    div.innerHTML = `<div><div class="font-bold text-slate-800">${data.name} <span class="text-slate-400">(${data.mobile})</span></div><div class="text-sm text-slate-500">${data.loc} • ${data.depth}ft</div></div><div class="text-right"><div class="font-bold text-blue-600">₹${parseInt(data.total).toLocaleString()}</div><div class="text-xs text-slate-400">${date}</div></div>`;
                     container.appendChild(div);
                 });
             });
         }
 
-        // 5. LOAD PROJECTS
         function loadProjects() {
             db.collection('projects').get().then(snap => {
                 const container = document.getElementById('projects-list');
@@ -249,50 +247,47 @@
                     const data = doc.data();
                     const div = document.createElement('div');
                     div.className = "card p-6 border-l-4 border-emerald-500";
-                    div.innerHTML = `
-                        <div class="flex justify-between mb-2">
-                            <h3 class="font-bold text-lg">${data.location}</h3>
-                            <span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded uppercase">Completed</span>
-                        </div>
-                        <p class="text-sm text-slate-600 mb-4">${data.customerName} • ${data.mobile}</p>
-                        <div class="text-xs text-slate-400 font-mono">ID: ${data.projectId}</div>
-                    `;
+                    div.innerHTML = `<div class="flex justify-between mb-2"><h3 class="font-bold text-lg">${data.location}</h3><span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded">COMPLETED</span></div><p class="text-sm text-slate-600 mb-4">${data.customerName} • ${data.mobile}</p><div class="text-xs text-slate-400 font-mono">ID: ${data.projectId}</div>`;
                     container.appendChild(div);
                 });
             });
         }
 
-        // 6. MAP TOOLS
-        let map, marker, selectedLat, selectedLng;
+        // 4. UBER-STYLE MAP TOOLS
+        let map, selectedLat, selectedLng;
+
         function initMapTools() {
             const input = document.getElementById('p_loc');
             const autocomplete = new google.maps.places.Autocomplete(input);
             autocomplete.addListener('place_changed', () => {
                 const place = autocomplete.getPlace();
                 if (place.geometry) {
-                    selectedLat = place.geometry.location.lat();
-                    selectedLng = place.geometry.location.lng();
-                    document.getElementById('p_gps').value = `${selectedLat.toFixed(6)}, ${selectedLng.toFixed(6)}`;
+                    // Just center map, don't set value yet (User must confirm visually)
+                    if(map) map.setCenter(place.geometry.location);
                 }
             });
         }
+
         function openMapPicker() {
             document.getElementById('mapModal').style.display = 'flex';
-            const center = (selectedLat && selectedLng) ? {lat: selectedLat, lng: selectedLng} : {lat: 16.4410, lng: 80.5520};
+            const center = {lat: 16.4410, lng: 80.5520}; // Default
             if(!map) {
-                map = new google.maps.Map(document.getElementById('mapContainer'), { center: center, zoom: 15 });
-                marker = new google.maps.Marker({ position: center, map: map, draggable: true });
-                map.addListener('click', (e) => marker.setPosition(e.latLng));
-            } else { map.setCenter(center); marker.setPosition(center); }
+                map = new google.maps.Map(document.getElementById('mapContainer'), { center: center, zoom: 16, disableDefaultUI: true });
+            } 
+            // Trigger resize so map renders correctly in modal
+            setTimeout(() => google.maps.event.trigger(map, 'resize'), 100);
         }
+
         function confirmLocation() {
-            const pos = marker.getPosition();
-            selectedLat = pos.lat(); selectedLng = pos.lng();
+            // Get center of the map (where the pin is pointing)
+            const center = map.getCenter();
+            selectedLat = center.lat();
+            selectedLng = center.lng();
             document.getElementById('p_gps').value = `${selectedLat.toFixed(6)}, ${selectedLng.toFixed(6)}`;
             document.getElementById('mapModal').style.display = 'none';
         }
 
-        // 7. SAVE PROJECT
+        // 5. SAVE PROJECT
         function saveProject(e) {
             e.preventDefault();
             const year = new Date().getFullYear();
