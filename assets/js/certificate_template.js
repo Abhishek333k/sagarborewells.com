@@ -1,74 +1,53 @@
 function getCertificateHTML(data) {
-    const certID = data.id || "SBR-GEN";
-    const drillDate = data.date || "N/A";
+    const year = new Date().getFullYear();
+    const certID = data.id || `SBW-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const drillDate = data.date || new Date().toLocaleDateString('en-IN', {day: 'numeric', month: 'long', year: 'numeric'});
+
+    // Helper to generate row only if value exists
+    const row = (label, value, extra = "") => {
+        if(!value || value === "undefined" || value === "") return "";
+        return `
+        <tr>
+            <td style="padding: 12px 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; color: #475569;">${label}</td>
+            <td style="padding: 12px 10px; border-bottom: 1px solid #e2e8f0; font-size: 15px; font-weight: 800; color: #0f172a; text-align: right;">${value} ${extra}</td>
+        </tr>`;
+    };
 
     return `
-    <div style="width: 800px; padding: 40px; margin: 0 auto; font-family: Helvetica, sans-serif; color: #333; position: relative;">
-        
-        <div style="text-align: center; border-bottom: 3px solid #1e40af; padding-bottom: 20px; margin-bottom: 30px;">
-            <h1 style="color: #1e40af; font-size: 32px; margin: 0; text-transform: uppercase;">Sagar Borewells</h1>
-            <p style="margin: 5px 0; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #666;">Advanced Geological Drilling Solutions</p>
-        </div>
+    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; background: #fff; color: #333; position: relative;">
+        <div style="position: absolute; inset: 0; opacity: 0.04; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\' viewBox=\'0 0 200 200\'><text x=\'50%\' y=\'50%\' font-size=\'20\' transform=\'rotate(-45 100 100)\' text-anchor=\'middle\'>SAGAR BOREWELLS</text></svg>'); pointer-events: none;"></div>
 
-        <div style="text-align: center; margin-bottom: 40px;">
-            <div style="display: inline-block; background: #f0f9ff; border: 1px solid #1e40af; color: #1e40af; font-weight: bold; padding: 10px 30px; border-radius: 50px; text-transform: uppercase;">
-                Official Birth Certificate
+        <div style="border: 4px double #1e40af; padding: 30px; height: 95%;">
+            <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px;">
+                <h1 style="color: #1e40af; font-size: 32px; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Sagar Borewells</h1>
+                <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 3px; color: #64748b;">Official Geological Record</p>
+            </div>
+
+            <div style="background: #f8fafc; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #1e40af; margin-bottom: 30px;">
+                <div><span style="font-size: 10px; color: #64748b; text-transform: uppercase; display: block;">Cert ID</span><strong style="font-size: 16px;">${certID}</strong></div>
+                <div style="text-align: right;"><span style="font-size: 10px; color: #64748b; text-transform: uppercase; display: block;">Date</span><strong>${drillDate}</strong></div>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <h2 style="font-size: 20px; margin: 0 0 5px 0;">${data.name}</h2>
+                <p style="margin: 0; color: #64748b; font-size: 12px;">${data.loc}</p>
+                <p style="margin: 0; color: #64748b; font-size: 10px; font-family: monospace;">GPS: ${data.gps || 'N/A'}</p>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse;">
+                <tbody>
+                    ${row("Total Depth", data.depth, "ft")}
+                    ${row("Water Yield", data.yield)}
+                    ${row("Casing Depth", data.casing_depth, "ft")}
+                    ${row("Casing Type", data.casing_type)}
+                    ${row("Rig Mechanism", data.rigType)}
+                    ${row("Motor Specs", data.motor)}
+                </tbody>
+            </table>
+
+            <div style="margin-top: 50px; text-align: center;">
+                <span style="border: 2px solid #16a34a; color: #16a34a; font-weight: bold; padding: 5px 15px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Digitally Verified</span>
             </div>
         </div>
-
-        <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-            <div>
-                <p style="font-size: 10px; color: #999; text-transform: uppercase; margin: 0;">Certificate ID</p>
-                <h3 style="margin: 0; font-size: 18px;">${certID}</h3>
-            </div>
-            <div style="text-align: right;">
-                <p style="font-size: 10px; color: #999; text-transform: uppercase; margin: 0;">Completion Date</p>
-                <h3 style="margin: 0; font-size: 16px;">${drillDate}</h3>
-            </div>
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px; border: 1px solid #ddd;">
-            <tr style="background: #f8fafc;">
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; font-weight: bold;">Customer Name</td>
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">${data.name}</td>
-            </tr>
-            <tr>
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; font-weight: bold;">Location</td>
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">${data.loc}</td>
-            </tr>
-            <tr style="background: #f8fafc;">
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; font-weight: bold;">GPS Coordinates</td>
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">${data.gps || "N/A"}</td>
-            </tr>
-            <tr>
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; font-weight: bold;">Total Depth</td>
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; font-size: 16px; color: #000;">${data.depth} Feet</td>
-            </tr>
-            <tr style="background: #f8fafc;">
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; font-weight: bold;">Water Yield</td>
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; color: green; font-weight: bold;">${data.yield}</td>
-            </tr>
-            <tr>
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; font-weight: bold;">Casing Details</td>
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">${data.casing_depth} ft (${data.casing_type})</td>
-            </tr>
-            <tr style="background: #f8fafc;">
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; font-weight: bold;">Rig Type</td>
-                <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">${data.rigType || "Hydraulic"}</td>
-            </tr>
-        </table>
-
-        <div style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; font-size: 10px; color: #777; display: flex; justify-content: space-between;">
-            <div style="width: 60%;">
-                This is a system-generated document from Sagar Borewells Cloud Database.<br>
-                For maintenance, reference ID: <strong>${certID}</strong>
-            </div>
-            <div style="text-align: center;">
-                <div style="font-weight: bold; color: #1e40af; border: 2px solid #1e40af; padding: 5px 10px; border-radius: 4px; display: inline-block;">
-                    DIGITALLY VERIFIED
-                </div>
-            </div>
-        </div>
-
     </div>`;
 }
