@@ -248,31 +248,32 @@
         }
 
         // 4. GENERATE CERTIFICATE PDF
-        function downloadCert(data) {
-            // FIX: Map customerName from DB to 'name' for template
-            const certData = {
-                id: data.projectId,
-                name: data.customerName || "Valued Customer", // 🟢 FIXED
+        function downloadCert(encodedData) {
+            const data = JSON.parse(decodeURIComponent(encodedData));
+            
+            // 🟢 ENSURE ID IS USED FOR FILENAME
+            const certID = data.projectId || `SBW-${new Date().getFullYear()}-GEN`;
+
+            const content = getCertificateHTML({
+                id: certID,
+                name: data.customerName || "Valued Customer",
                 loc: data.location,
                 date: data.date,
-                gps: data.gps,
+                gps: data.gps || "Unavailable", 
                 depth: data.depth,
                 casing_depth: data.casing_depth,
                 casing_type: data.casing_type,
                 yield: data.yield,
                 motor: data.motor,
-                rigType: data.rigType // 🟢 Added Rig Type
-            };
+                rigType: data.rigType
+            });
 
-            const content = getCertificateHTML(certData);
             const element = document.createElement('div');
             element.innerHTML = content;
             document.body.appendChild(element);
             
-            // 🟢 FIXED: Filename uses Project ID
-            const filename = `${data.projectId || 'Certificate'}.pdf`;
-
-            html2pdf().from(element).save(filename).then(() => document.body.removeChild(element));
+            // 🟢 SAVE AS PROJECT ID
+            html2pdf().from(element).save(`${certID}.pdf`).then(() => document.body.removeChild(element));
         }
     </script>
 </body>
