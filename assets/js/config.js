@@ -16,9 +16,9 @@ const CONTACT_INFO = {
     address_line1: "Gowtham Buddha Rd, beside UCO Bank, opp. Tenali Road, Mangalagiri, Andhra Pradesh 522503",
     address_line2: "India - 522503",
     
-    // The GPS coordinates for the Office Map (Change this to move the pin)
-    office_lat: 16.4428, 
-    office_lng: 80.5645,
+    // 🟢 NEW: Your Google Maps Business Link (For Directions)
+    // Go to your business on Google Maps -> Share -> Copy Link -> Paste here
+    map_link: "https://maps.app.goo.gl/VGqQCjRQCx729Qmd6",
 
     // --- SOCIAL LINKS ---
     social_instagram: "https://www.instagram.com/sagar_bore_wells/",
