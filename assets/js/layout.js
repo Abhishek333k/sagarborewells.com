@@ -21,14 +21,14 @@ document.addEventListener("DOMContentLoaded", function() {
     </nav>
     `;
 
-    // 2. DYNAMIC FOOTER (Direct Data Injection - No "Loading..." errors)
+    // 2. DYNAMIC FOOTER
     const footerHTML = `
     <footer class="bg-[#0f172a] pt-16 pb-8 border-t border-slate-800 text-slate-400 font-sans mt-auto">
         <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
             
             <div class="col-span-1 md:col-span-1">
                 <a href="index.html" class="text-xl font-extrabold text-white flex items-center gap-2 mb-4">
-                    SAGAR <span class="text-blue-500">OPS</span>
+                    SAGAR <span class="text-blue-500">BOREWELLS</span>
                 </a>
                 <p class="text-xs leading-relaxed mb-6">
                     Advanced geological sensor drilling. Delivering precision water solutions since 2010.
@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>
 
             <div>
-                <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Policies</h4>
+                <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Legal</h4>
                 <ul class="space-y-2 text-sm">
                     <li><a href="terms.html" class="hover:text-blue-400 transition">Terms & Conditions</a></li>
                     <li><a href="privacy.html" class="hover:text-blue-400 transition">Privacy Policy</a></li>
@@ -85,12 +85,12 @@ document.addEventListener("DOMContentLoaded", function() {
         </div>
 
         <div class="border-t border-slate-800 pt-8 text-center text-xs">
-            <p>&copy; 2026 Sagar Borewells. All rights reserved.</p>
+            <p>© 2026 Sagar Borewells. All rights reserved.</p>
         </div>
     </footer>
     `;
 
-    // Inject Content
+    // Inject
     const headerMount = document.getElementById('navbar-mount');
     const footerMount = document.getElementById('footer-mount');
 
