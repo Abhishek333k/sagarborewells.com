@@ -17,7 +17,6 @@
     <script src="assets/js/layout.js"></script>
 
     <style>
-        /* (Keep your existing CSS exactly as it was) */
         :root { --primary: #2563eb; --primary-dark: #1e40af; --text-main: #1e293b; --bg: #f8fafc; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text-main); }
         .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
@@ -28,7 +27,7 @@
         .custom-input, .custom-select { width: 100%; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; }
         .custom-input:focus { border-color: var(--primary); background: #fff; }
         .btn-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; font-weight: 700; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; }
-        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; } /* Disabled State */
+        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; } 
         .est-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95rem; }
         .est-table th { text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 0.8rem; text-transform: uppercase; }
         .est-table td { padding: 16px 12px; border-bottom: 1px solid #f1f5f9; font-weight: 600; }
@@ -64,7 +63,15 @@
                     <div>
                         <label class="form-label">Mobile Number</label>
                         <div class="relative">
-                            <input type="tel" id="custMobile" class="custom-input pr-24" placeholder="98765 43210">
+                            <input 
+                                type="tel" 
+                                id="custMobile" 
+                                class="custom-input pr-24" 
+                                placeholder="98765 43210" 
+                                maxlength="10" 
+                                inputmode="numeric" 
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            >
                             
                             <button id="sendOtpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-4 rounded-lg font-bold text-xs hover:bg-black transition">
                                 VERIFY
@@ -76,10 +83,8 @@
                         </div>
 
                         <div id="otpSection" class="otp-group">
-                            <input type="text" id="otpInput" class="custom-input" placeholder="Enter 6-digit OTP" style="letter-spacing: 4px; text-align: center;">
-                            <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold hover:bg-emerald-700">
-                                OK
-                            </button>
+                            <input type="text" id="otpInput" class="custom-input" placeholder="Enter 6-digit OTP" maxlength="6" style="letter-spacing: 4px; text-align: center;">
+                            <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold hover:bg-emerald-700">OK</button>
                         </div>
                         
                         <div id="recaptcha-container"></div>
@@ -91,9 +96,7 @@
                     <label class="form-label">Site Location</label>
                     <div class="relative">
                         <input type="text" id="locInput" class="custom-input pr-24" placeholder="Village / Area Name">
-                        <button onclick="detectGPS()" class="absolute right-2 top-2 bottom-2 bg-blue-100 text-blue-600 px-4 rounded-lg font-bold text-xs hover:bg-blue-200 transition">
-                            DETECT
-                        </button>
+                        <button onclick="detectGPS()" class="absolute right-2 top-2 bottom-2 bg-blue-100 text-blue-600 px-4 rounded-lg font-bold text-xs hover:bg-blue-200 transition">DETECT</button>
                     </div>
                 </div>
 
@@ -188,15 +191,13 @@
             const btn = document.getElementById('sendOtpBtn');
             const msg = document.getElementById('otpMsg');
 
-            if (phone.length < 10) { alert("Please enter valid mobile number"); return; }
+            if (phone.length < 10) { alert("Please enter valid 10-digit mobile number"); return; }
 
-            // Standardize format: +91XXXXXXXXXX
-            const formattedPhone = "+91" + phone.replace("+91", "").trim();
+            const formattedPhone = "+91" + phone;
 
             btn.disabled = true;
             btn.innerText = "Sending...";
 
-            // Setup Recaptcha (Invisible)
             if(!window.recaptchaVerifier) {
                 window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
                     'size': 'invisible'
@@ -206,8 +207,8 @@
             firebase.auth().signInWithPhoneNumber(formattedPhone, window.recaptchaVerifier)
                 .then((confirmationResult) => {
                     window.confirmationResult = confirmationResult;
-                    btn.style.display = 'none'; // Hide Verify button
-                    document.getElementById('otpSection').style.display = 'flex'; // Show OTP Input
+                    btn.style.display = 'none'; 
+                    document.getElementById('otpSection').style.display = 'flex'; 
                     msg.innerText = "OTP sent to " + formattedPhone;
                     msg.classList.add("text-emerald-600");
                 }).catch((error) => {
@@ -226,29 +227,24 @@
             if(!code) return;
 
             window.confirmationResult.confirm(code).then((result) => {
-                // Success
                 document.getElementById('otpSection').style.display = 'none';
                 document.getElementById('verifiedBadge').style.display = 'flex';
                 msg.innerText = "";
                 
-                // Enable Main Button
                 const genBtn = document.getElementById('generateBtn');
                 genBtn.disabled = false;
                 genBtn.innerHTML = `Generate Official Estimate <i class="ri-arrow-right-line"></i>`;
                 genBtn.classList.remove('bg-slate-300'); 
-                
             }).catch((error) => {
                 msg.innerText = "Invalid OTP. Try again.";
                 msg.classList.add("text-red-500");
             });
         }
 
-        // --- EXISTING LOGIC (Slider, Calc, Maps) ---
-        // (Paste your previous Slider, GPS, and Calculation logic here)
+        // --- CORE LOGIC ---
         let pricingConfig = { fixed_cost: 7000, slab_size: 50, slab_jump: 5, rates: { 'residential': 90, 'agriculture': 85, 'commercial': 110 } };
         let leadData = {};
 
-        // Slider
         const slider = document.getElementById('depthSlider');
         const displayVal = document.getElementById('display-val');
         const maxLabel = document.getElementById('maxLabel');
@@ -262,7 +258,6 @@
             this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${percent}%, #cbd5e1 ${percent}%, #cbd5e1 100%)`;
         });
 
-        // Navigation
         function goToStep2() {
             if(document.getElementById('generateBtn').disabled) return;
             const name = document.getElementById('custName').value;
@@ -283,7 +278,6 @@
             window.scrollTo(0,0);
         }
 
-        // Calc
         function calculateQuote() {
             const depth = parseInt(slider.value);
             const purpose = document.getElementById('purposeInput').value;
@@ -302,7 +296,6 @@
             leadData = { name: document.getElementById('custName').value, loc: document.getElementById('locInput').value, mobile: document.getElementById('custMobile').value, total: total };
         }
 
-        // GPS
         function detectGPS() {
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
@@ -318,7 +311,6 @@
         function downloadPDF() { const e = document.getElementById('invoice-capture'); document.querySelector('.no-print').style.display='none'; html2pdf().from(e).save().then(()=>document.querySelector('.no-print').style.display='grid'); }
         function openWhatsAppChat() { window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=Booking ${leadData.name}`, '_blank'); }
 
-        // Load API
         const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`; s.async = true; s.defer = true; document.body.appendChild(s);
         slider.dispatchEvent(new Event('input'));
     </script>
