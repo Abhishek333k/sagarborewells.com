@@ -24,71 +24,45 @@
         </div>
 
         <div class="max-w-6xl mx-auto px-4 py-12">
-            
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-                
-                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center hover:shadow-md transition">
-                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fa-solid fa-phone text-xl"></i>
-                    </div>
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fa-solid fa-phone text-xl"></i></div>
                     <h3 class="font-bold text-lg text-slate-900 mb-1">Call Us</h3>
-                    <p class="text-xs text-slate-500 mb-4">Response time: Immediate</p>
+                    <p class="text-xs text-slate-500 mb-4">Immediate Response</p>
                     <a href="#" id="displayPhone" class="text-xl font-bold text-blue-600 hover:underline">...</a>
                 </div>
-
-                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center hover:shadow-md transition">
-                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fa-brands fa-whatsapp text-xl"></i>
-                    </div>
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center">
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fa-brands fa-whatsapp text-xl"></i></div>
                     <h3 class="font-bold text-lg text-slate-900 mb-1">WhatsApp</h3>
                     <p class="text-xs text-slate-500 mb-4">Business & Emergency</p>
-                    <button onclick="openWA()" class="border border-emerald-500 text-emerald-600 px-6 py-2 rounded-full font-bold text-sm hover:bg-emerald-50 transition">
-                        Chat on WhatsApp
-                    </button>
+                    <button onclick="openWA()" class="border border-emerald-500 text-emerald-600 px-6 py-2 rounded-full font-bold text-sm hover:bg-emerald-50 transition">Chat on WhatsApp</button>
                 </div>
-
-                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center hover:shadow-md transition">
-                    <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fa-solid fa-envelope text-xl"></i>
-                    </div>
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center">
+                    <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fa-solid fa-envelope text-xl"></i></div>
                     <h3 class="font-bold text-lg text-slate-900 mb-1">Email</h3>
-                    <p class="text-xs text-slate-500 mb-4">Drop us a line anytime</p>
+                    <p class="text-xs text-slate-500 mb-4">Drop us a line</p>
                     <a href="#" id="displayEmail" class="text-sm font-bold text-slate-700 hover:text-purple-600">...</a>
                 </div>
             </div>
 
             <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-8 items-start">
-                
                 <div class="w-full md:w-1/3">
                     <h2 class="text-2xl font-bold text-slate-900 mb-4">Visit Our Office</h2>
                     <div class="flex items-start gap-4 mb-6">
                         <i class="fa-solid fa-location-dot text-blue-600 text-2xl mt-1"></i>
                         <div>
                             <span class="font-bold text-slate-800 block mb-1">Headquarters</span>
-                            <p class="text-slate-500 text-sm leading-relaxed" id="displayAddress">
-                                Loading Address...
-                            </p>
+                            <p class="text-slate-500 text-sm leading-relaxed" id="displayAddress">Loading...</p>
                         </div>
                     </div>
-                    
                     <button onclick="openDirections()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg flex items-center justify-center gap-2 transition">
                         <i class="fa-solid fa-diamond-turn-right"></i> Get Directions
                     </button>
                 </div>
-
                 <div class="w-full md:w-2/3 h-80 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shadow-inner">
-                    <iframe 
-                        id="mapFrame"
-                        width="100%" 
-                        height="100%" 
-                        style="border:0;" 
-                        allowfullscreen="" 
-                        loading="lazy" 
-                        referrerpolicy="no-referrer-when-downgrade">
-                    </iframe>
+                    <iframe id="mapFrame" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 </div>
             </div>
-
         </div>
     </main>
 
@@ -96,30 +70,19 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            // 1. Fill Text Data
             document.getElementById('displayPhone').innerText = CONTACT_INFO.phone_display;
             document.getElementById('displayPhone').href = `tel:+${CONTACT_INFO.whatsapp_api}`;
-            
             document.getElementById('displayEmail').innerText = CONTACT_INFO.email;
             document.getElementById('displayEmail').href = `mailto:${CONTACT_INFO.email}`;
-            
             document.getElementById('displayAddress').innerHTML = `${CONTACT_INFO.address_line1}<br>${CONTACT_INFO.address_line2}`;
-
-            // 2. Load Map Iframe from Config
+            
             if(CONTACT_INFO.map_embed_url) {
                 document.getElementById('mapFrame').src = CONTACT_INFO.map_embed_url;
             }
         });
 
-        function openWA() {
-            window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}`, '_blank');
-        }
-
-        function openDirections() {
-            // Opens the "Directions" link
-            window.open(CONTACT_INFO.map_link, '_blank');
-        }
+        function openWA() { window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}`, '_blank'); }
+        function openDirections() { window.open(CONTACT_INFO.map_link, '_blank'); }
     </script>
-
 </body>
 </html>
