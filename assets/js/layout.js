@@ -21,8 +21,9 @@ function renderNavbar() {
 
                 <div class="hidden md:flex items-center gap-8">
                     <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
-                    <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
                     
+                    <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
+                    <a href="blog.html" class="font-bold text-slate-600 hover:text-blue-600 transition">News Room</a>
                     <a href="admin.html" id="admin-link" class="hidden font-bold text-red-600 border border-red-200 bg-red-50 px-3 py-1 rounded-lg hover:bg-red-100 transition flex items-center gap-2">
                         <i class="ri-shield-user-line"></i> Admin
                     </a>
