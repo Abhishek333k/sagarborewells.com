@@ -273,4 +273,71 @@
             if(addr) {
                 document.getElementById('locInput').value = addr;
             } else {
-                document.getElementById('locInput').value = `${c.lat().toFixed(5)},
+                document.getElementById('locInput').value = `${c.lat().toFixed(5)}, ${c.lng().toFixed(5)}`;
+            }
+            
+            document.getElementById('mapContainer').classList.add('hidden');
+        }
+
+        // --- CALC LOGIC ---
+        function generatePreview() {
+            const name = document.getElementById('custName').value;
+            const loc = document.getElementById('locInput').value;
+            const depth = parseInt(document.getElementById('depthSlider').value);
+            const purpose = document.getElementById('purposeInput').value;
+
+            if(!name || !loc) { alert("Please enter Name and Location"); return; }
+
+            let remaining = depth;
+            let floor = 0;
+            let rate = pricingConfig.rates[purpose];
+            let drillTotal = 0;
+            let rows = "";
+
+            while(remaining > 0) {
+                let chunk = (remaining >= pricingConfig.slab_size) ? pricingConfig.slab_size : remaining;
+                let cost = chunk * rate;
+                drillTotal += cost;
+                rows += `<tr class="border-b border-slate-50"><td class="py-2">${floor}-${floor+chunk}ft @ ₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                remaining -= chunk;
+                floor += chunk;
+                rate += pricingConfig.slab_jump;
+            }
+
+            const total = drillTotal + pricingConfig.fixed_cost;
+            
+            document.getElementById('invName').innerText = name;
+            document.getElementById('invLoc').innerText = loc;
+            document.getElementById('invBody').innerHTML = rows;
+            document.getElementById('invTotal').innerText = "₹" + total.toLocaleString();
+
+            leadData = { name, loc, depth, total, mobile: document.getElementById('custMobile').value };
+            document.getElementById('previewModal').classList.add('active');
+        }
+
+        function closeModal() { document.getElementById('previewModal').classList.remove('active'); }
+
+        function sendWhatsApp() {
+            const formData = new FormData();
+            formData.append("name", leadData.name);
+            formData.append("mobile", leadData.mobile);
+            formData.append("location", leadData.loc);
+            formData.append("depth", leadData.depth);
+            formData.append("price", leadData.total);
+            formData.append("purpose", "Official Quote");
+
+            fetch(CONTACT_INFO.database_url, { method: "POST", body: formData, mode: "no-cors" });
+
+            const msg = `*OFFICIAL QUOTE REQUEST*%0A%0A👤 ${leadData.name}%0A📍 ${leadData.loc}%0A📞 ${leadData.mobile}%0A%0A📉 Depth: ${leadData.depth}ft%0A💰 *Est. Total: ₹${leadData.total.toLocaleString()}*%0A%0A(Includes Fixed Costs). Please schedule site visit.`;
+            window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${msg}`, '_blank');
+        }
+    </script>
+    
+    <script>
+        const s = document.createElement('script');
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`;
+        s.async = true; s.defer = true;
+        document.body.appendChild(s);
+    </script>
+</body>
+</html>
