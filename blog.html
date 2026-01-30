@@ -5,14 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>News Room | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
 
-    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }</style>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
+        
+        /* Reading Modal Styles */
+        .article-modal { 
+            position: fixed; inset: 0; z-index: 100; 
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s;
+        }
+        .article-modal.open { display: flex; opacity: 1; }
+        
+        .paper-card {
+            background: white; width: 100%; max-width: 800px; height: 90vh;
+            border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow-y: auto; position: relative;
+        }
+
+        /* HTML Content Styling */
+        .prose h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; color: #1e293b; }
+        .prose h2 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #334155; }
+        .prose p { margin-bottom: 1rem; line-height: 1.7; color: #475569; }
+        .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .prose b, .prose strong { color: #0f172a; font-weight: 700; }
+    </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
@@ -25,9 +49,38 @@
         </div>
 
         <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div class="col-span-full text-center py-20 text-slate-400">Loading articles...</div>
+            <div class="col-span-full text-center py-20">
+                <i class="ri-loader-4-line text-4xl text-blue-600 animate-spin"></i>
+            </div>
         </div>
     </main>
+
+    <div id="articleView" class="article-modal">
+        <div class="paper-card">
+            <button onclick="closeArticle()" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition z-10">
+                <i class="ri-close-line text-xl text-slate-600"></i>
+            </button>
+            
+            <div class="h-64 sm:h-80 w-full relative">
+                <img id="view-img" src="" class="w-full h-full object-cover">
+                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-8">
+                    <span id="view-date" class="text-xs font-bold text-white bg-blue-600 px-3 py-1 rounded-full"></span>
+                    <h1 id="view-title" class="text-2xl sm:text-3xl font-extrabold text-white mt-2 leading-tight shadow-black drop-shadow-md"></h1>
+                </div>
+            </div>
+
+            <div class="p-8 sm:p-12">
+                <div id="view-content" class="prose max-w-none">
+                    </div>
+                
+                <div class="mt-12 pt-8 border-t border-slate-100 text-center">
+                    <button onclick="closeArticle()" class="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition">
+                        Back to News
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="footer-mount"></div>
 
@@ -35,29 +88,64 @@
         if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
         const db = firebase.firestore();
 
+        let postsCache = [];
+
+        // 1. LOAD POSTS
         db.collection('posts').orderBy('timestamp', 'desc').get().then(snap => {
             const grid = document.getElementById('blog-grid');
-            if(snap.empty) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400">No articles published yet.</div>'; return; }
+            if(snap.empty) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400 py-12">No articles published yet.</div>'; return; }
             
             grid.innerHTML = "";
+            postsCache = [];
+
             snap.forEach(doc => {
                 const data = doc.data();
-                const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : data.date;
+                postsCache.push(data); // Store for modal
+                const index = postsCache.length - 1;
+                
+                // Truncate content for preview (Remove HTML tags for clean summary)
+                const plainText = data.content.replace(/<[^>]*>?/gm, ''); 
+                
                 grid.innerHTML += `
-                    <article class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition border border-slate-100 group">
+                    <article onclick="openArticle(${index})" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition border border-slate-100 group cursor-pointer h-full flex flex-col">
                         <div class="h-48 bg-slate-200 overflow-hidden relative">
                             <img src="${data.image || 'https://source.unsplash.com/random/800x600/?drilling'}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                            <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600">${date}</div>
+                            <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm">${data.date}</div>
                         </div>
-                        <div class="p-6">
-                            <h3 class="text-xl font-bold text-slate-900 mb-3 leading-tight">${data.title}</h3>
-                            <p class="text-slate-500 text-sm line-clamp-3 mb-4">${data.content}</p>
-                            <span class="text-blue-600 font-bold text-sm hover:underline cursor-pointer">Read Full Story →</span>
+                        <div class="p-6 flex flex-col flex-grow">
+                            <h3 class="text-xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-blue-600 transition">${data.title}</h3>
+                            <p class="text-slate-500 text-sm line-clamp-3 mb-4 flex-grow">${plainText}</p>
+                            <span class="text-blue-600 font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">Read Full Story <i class="ri-arrow-right-line"></i></span>
                         </div>
                     </article>
                 `;
             });
         });
+
+        // 2. OPEN ARTICLE (Renders HTML)
+        function openArticle(index) {
+            const data = postsCache[index];
+            const modal = document.getElementById('articleView');
+            
+            document.getElementById('view-img').src = data.image || 'https://source.unsplash.com/random/800x600/?technology';
+            document.getElementById('view-title').innerText = data.title;
+            document.getElementById('view-date').innerText = data.date;
+            
+            // 🟢 THIS LINE RENDERS YOUR HTML TAGS
+            document.getElementById('view-content').innerHTML = data.content; 
+            
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden'; // Stop background scrolling
+        }
+
+        // 3. CLOSE ARTICLE
+        function closeArticle() {
+            document.getElementById('articleView').classList.remove('open');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close on Escape Key
+        document.addEventListener('keydown', (e) => { if(e.key === "Escape") closeArticle(); });
     </script>
 </body>
 </html>
