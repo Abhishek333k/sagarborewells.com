@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function() {
             
             <div class="col-span-1 md:col-span-1">
                 <a href="index.html" class="text-xl font-extrabold text-white flex items-center gap-2 mb-4">
-                    SAGAR <span class="text-blue-500">OPS</span>
+                    SAGAR <span class="text-blue-500">BOREWELLS</span>
                 </a>
                 <p class="text-xs leading-relaxed mb-6">
                     Advanced geological sensor drilling. Delivering precision water solutions since 2010.
