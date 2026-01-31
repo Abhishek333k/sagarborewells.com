@@ -15,16 +15,19 @@
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
-    
+    <script src="assets/js/quote_constants.js"></script> 
+    <script src="assets/js/pdf_template.js"></script>
+
     <style>
-        /* CORE THEME */
+        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+        .reticle-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 15px 2px #ef4444; }
+        .reticle-ring { position: absolute; width: 50px; height: 50px; border: 2px dashed #2563eb; border-radius: 50%; animation: spin 8s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
         :root { --primary: #1e3a8a; --text-main: #1e293b; --bg: #f8fafc; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text-main); }
-        
         .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* INPUT CARD */
         .quote-card { background: #ffffff; border-radius: 24px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); padding: 40px; max-width: 800px; margin: 40px auto; }
         .form-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
         .custom-input, .custom-select { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; transition: 0.3s; }
@@ -33,39 +36,36 @@
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); }
         .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        /* ESTIMATE PREVIEW CARD (Go-Torq Style) */
-        .est-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px -10px rgba(0,0,0,0.15); margin-top: 20px; }
-        .est-header { background: #1e3a8a; padding: 30px; color: white; }
-        .est-brand h2 { font-size: 2rem; font-weight: 800; margin: 0; line-height: 1; }
-        .est-ref { font-size: 0.7rem; opacity: 0.7; letter-spacing: 1px; text-transform: uppercase; }
+        /* ESTIMATE CARD (Sagar Style) */
+        .est-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px -10px rgba(0,0,0,0.15); margin-top: 20px; border: 1px solid #e2e8f0; }
+        /* 🟢 CHANGED BRANDING HEADER */
+        .est-header { background: #ffffff; padding: 30px; border-bottom: 2px solid #1e3a8a; }
+        .est-brand h2 { font-size: 2rem; font-weight: 900; color: #1e3a8a; margin: 0; line-height: 1; text-transform: uppercase; }
+        .est-brand p { font-size: 0.75rem; color: #64748b; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
         .est-total-block { text-align: right; }
-        .est-label { font-size: 0.7rem; font-weight: 700; opacity: 0.8; letter-spacing: 1px; }
-        .est-amount { font-size: 2.2rem; font-weight: 800; color: #fbbf24; line-height: 1; margin-top: 5px; }
+        .est-label { font-size: 0.7rem; font-weight: 700; color: #64748b; letter-spacing: 1px; text-transform: uppercase; }
+        .est-amount { font-size: 2.2rem; font-weight: 800; color: #1e3a8a; line-height: 1; margin-top: 5px; }
         
-        .est-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
-        .est-meta-item strong { display: block; font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; margin-bottom: 2px; }
-        .est-meta-item span { font-size: 1rem; font-weight: 600; }
+        .est-meta { display: flex; justify-content: space-between; margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; }
+        .est-meta-item strong { display: block; font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
+        .est-meta-item span { font-size: 0.95rem; font-weight: 700; color: #334155; }
 
         .est-body { padding: 30px; }
-        .section-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: #1e3a8a; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; }
+        .section-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: #1e3a8a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
         .est-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 0.9rem; }
-        .est-table th { text-align: left; padding: 10px; background: #f1f5f9; color: #64748b; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
-        .est-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; font-weight: 500; color: #334155; }
-        .est-table tfoot td { border-top: 2px solid #e2e8f0; font-weight: 700; color: #1e3a8a; padding-top: 15px; font-size: 1rem; }
+        .est-table th { text-align: left; padding: 8px; color: #64748b; font-size: 0.7rem; text-transform: uppercase; font-weight: 700; }
+        .est-table td { padding: 10px 8px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; color: #334155; }
+        .est-table tfoot td { border-top: 2px solid #e2e8f0; font-weight: 800; color: #1e3a8a; padding-top: 15px; font-size: 1rem; border-bottom: none; }
         
-        /* Variable Materials Box */
-        .var-box { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 20px; position: relative; }
-        .var-title { font-size: 0.8rem; font-weight: 700; color: #1e293b; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        .var-box { background: #fff7ed; border: 1px dashed #fdba74; border-radius: 12px; padding: 20px; position: relative; }
+        .var-title { font-size: 0.8rem; font-weight: 800; color: #c2410c; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
         .var-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 30px; font-size: 0.85rem; }
-        .var-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed #e2e8f0; }
-        .var-badge { background: #dbeafe; color: #1e40af; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        .var-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed #ffedd5; }
+        .var-badge { background: #fff; color: #c2410c; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #fed7aa; }
 
-        /* Slider */
         .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; }
         .range-slider { width: 100%; height: 12px; border-radius: 6px; background: #cbd5e1; outline: none; -webkit-appearance: none; }
         .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: var(--primary); border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; }
-
-        /* Maps */
         .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); font-family: 'Plus Jakarta Sans', sans-serif; border: none; }
         .pac-item { padding: 10px 15px; border-top: 1px solid #f1f5f9; font-size: 14px; color: #64748b; }
         .pac-icon { display: none; }
@@ -81,7 +81,7 @@
             <div class="quote-card">
                 <div class="text-center mb-8">
                     <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Instant Quotation</h1>
-                    <p class="text-slate-500 font-medium">Smart pricing engine for precision drilling</p>
+                    <p class="text-slate-500 font-medium">Precision estimation engine</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -160,9 +160,8 @@
                 <div class="est-header">
                     <div class="flex justify-between items-start">
                         <div class="est-brand">
-                            <h2>SAGAR</h2>
-                            <p class="text-xs opacity-80 font-bold tracking-widest">BOREWELLS</p>
-                            <span class="est-ref mt-2 block">ESTIMATE #PREVIEW</span>
+                            <h2>SAGAR BOREWELLS</h2>
+                            <p>Advanced Geological Infrastructure</p>
                         </div>
                         <div class="est-total-block">
                             <div class="est-label">ESTIMATED TOTAL</div>
@@ -185,16 +184,17 @@
                         <tfoot><tr><td colspan="2">Drilling Subtotal</td><td class="text-right" id="drillSubtotal">₹0</td></tr></tfoot>
                     </table>
 
-                    <div class="section-title"><i class="ri-shield-check-line"></i> Fixed Operational Costs</div>
-                    <table class="est-table">
-                        <tbody id="opsBody">
-                            </tbody>
-                        <tfoot><tr><td style="font-weight:700;">Subtotal (Fixed)</td><td class="text-right" id="opsSubtotal">₹0</td></tr></tfoot>
-                    </table>
+                    <div id="opsSection">
+                        <div class="section-title"><i class="ri-shield-check-line"></i> Operational Costs</div>
+                        <table class="est-table">
+                            <tbody id="opsBody"></tbody>
+                            <tfoot><tr><td style="font-weight:700;">Subtotal (Fixed)</td><td class="text-right" id="opsSubtotal">₹0</td></tr></tfoot>
+                        </table>
+                    </div>
 
                     <div class="var-box mt-6">
-                        <div class="var-title"><i class="ri-information-fill text-orange-500"></i> Variable Materials (Charged on Actuals)</div>
-                        <p class="text-xs text-slate-500 mb-4">The following items are charged based on actual site consumption and are <strong>NOT included</strong> in the estimated total above.</p>
+                        <div class="var-title"><i class="ri-tools-line"></i> Material Estimates (Actuals)</div>
+                        <p class="text-xs text-slate-500 mb-4">The following prices are applied based on actual measurement at site.</p>
                         <div class="var-grid" id="materialsGrid">
                             </div>
                     </div>
@@ -247,17 +247,18 @@
         if(CONTACT_INFO.firebase_config && !firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
         const db = firebase.firestore();
 
-        // RATES CONFIG (Defaults)
-        let globalRates = {
-            base_rate: 90, slab_step: 10,
-            flushing: 8000, slotting: 200, transport: 1000, pipe_len: 20,
-            casing_7_med: 500, casing_7_heavy: 650, casing_10: 400,
-            welding: 500, collar: 350, holes: 130, water: 10
-        };
+        // 🟢 LOAD CONSTANTS FROM NEW FILE
+        const { OFFICE_LOCATION, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, FLUSHING_CHARGE, MATERIALS, DEFAULT_RATES } = QUOTE_CONFIG;
 
-        // 1. LOAD SETTINGS
+        let globalRates = DEFAULT_RATES;
+        let transportDist = 0;
+        let siteCoords = null;
+
         document.addEventListener("DOMContentLoaded", () => {
+            // Load Rates
             db.collection('settings').doc('rates').get().then(doc => { if(doc.exists) globalRates = { ...globalRates, ...doc.data() }; });
+            
+            // Load Zones
             db.collection('zones').get().then((snap) => {
                 const sel = document.getElementById('zoneInput');
                 sel.innerHTML = '<option value="" disabled selected>Select Soil Type / Zone</option>';
@@ -267,9 +268,20 @@
                     sel.appendChild(opt);
                 });
             });
+
+            // 🟢 LOAD MATERIALS GRID FROM ASSET FILE
+            const matGrid = document.getElementById('materialsGrid');
+            if(matGrid) {
+                matGrid.innerHTML = MATERIALS.map(m => `
+                    <div class="var-item">
+                        <span class="font-bold text-slate-700">${m.label}</span>
+                        <span class="var-badge">₹${m.price}${m.unit}</span>
+                    </div>
+                `).join('');
+            }
         });
 
-        // 2. AUTH
+        // AUTH & MAPS (Standard)
         firebase.auth().onAuthStateChanged((user) => {
             const btn = document.getElementById('generateBtn');
             if (user) {
@@ -282,14 +294,13 @@
         });
 
         // 3. MAPS & LOGIC
-        let siteCoords = null; let transportDist = 0;
-        
+        let autocomplete;
         function initMapTools() {
             const input = document.getElementById('locInput');
-            const autocomplete = new google.maps.places.Autocomplete(input, { types: ['geocode'] });
+            autocomplete = new google.maps.places.Autocomplete(input, { types: ['geocode'] });
             autocomplete.addListener('place_changed', () => {
                 const place = autocomplete.getPlace();
-                if(place.geometry) {
+                if (place.geometry) {
                     siteCoords = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
                     calcDistance();
                 }
@@ -297,17 +308,15 @@
         }
 
         function calcDistance() {
-            // Simplified Haversine for Transport check
             if(!siteCoords) return;
-            const office = { lat: 16.4410, lng: 80.5520 }; // Mangalagiri
             const R = 6371; 
-            const dLat = (siteCoords.lat - office.lat) * Math.PI/180;
-            const dLon = (siteCoords.lng - office.lng) * Math.PI/180;
-            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(office.lat*Math.PI/180)*Math.cos(siteCoords.lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+            const dLat = (siteCoords.lat - OFFICE_LOCATION.lat) * Math.PI/180;
+            const dLon = (siteCoords.lng - OFFICE_LOCATION.lng) * Math.PI/180;
+            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(siteCoords.lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
             transportDist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             
             const disp = document.getElementById('distDisplay');
-            if(transportDist > 30) {
+            if(transportDist > TRANSPORT_THRESHOLD_KM) {
                 disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Transport Charges Apply)`;
                 disp.classList.add('text-orange-600');
             } else {
@@ -336,7 +345,6 @@
             let currentDepth = 0;
             let currentRate = startRate;
 
-            // Slab 1: 0-100 (or first chunk)
             const firstChunk = Math.min(totalDepth, 100);
             if(firstChunk > 0) {
                 const cost = firstChunk * currentRate;
@@ -345,10 +353,9 @@
                 currentDepth += firstChunk;
             }
 
-            // Remaining Slabs
             while(currentDepth < totalDepth) {
                 currentRate += slabStep;
-                let nextChunk = Math.min(50, totalDepth - currentDepth); // 50ft jumps
+                let nextChunk = Math.min(50, totalDepth - currentDepth);
                 let cost = nextChunk * currentRate;
                 drillCost += cost;
                 const endDepth = currentDepth + nextChunk;
@@ -356,47 +363,36 @@
                 currentDepth += nextChunk;
             }
 
-            // B. FIXED OPS
+            // 🟢 B. CONDITIONAL OPERATIONAL COSTS
             let opsHtml = "";
             let opsCost = 0;
             
-            // Transport
-            const transCost = (transportDist > 30) ? globalRates.transport : 0;
-            opsHtml += `<tr><td>Transport Charge</td><td class="text-right">₹${transCost}</td></tr>`;
-            opsCost += transCost;
+            // Transport: (Total / 30) * Rate if > 30km
+            if (transportDist > TRANSPORT_THRESHOLD_KM) {
+                const multipliers = Math.ceil(transportDist / TRANSPORT_THRESHOLD_KM); // e.g. 64km / 30 = 3 units
+                const transCost = multipliers * TRANSPORT_BASE_RATE;
+                opsHtml += `<tr><td>Transport (${transportDist.toFixed(1)} km)</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
+                opsCost += transCost;
+            }
 
-            // Flushing (Fixed)
-            opsHtml += `<tr><td>Flushing Charge</td><td class="text-right">₹${globalRates.flushing.toLocaleString()}</td></tr>`;
-            opsCost += globalRates.flushing;
+            // Fixed Labour & Flushing
+            opsHtml += `<tr><td>Labour Charges</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
+            opsHtml += `<tr><td>Flushing Charges</td><td class="text-right">₹${FLUSHING_CHARGE.toLocaleString()}</td></tr>`;
+            opsCost += (LABOUR_CHARGE + FLUSHING_CHARGE);
 
-            // Setting/Slotting (Estimate 100ft casing)
-            const estCasing = 100; // Standard assumption for quote
-            const pipes = Math.ceil(estCasing / globalRates.pipe_len);
-            const slotCost = (pipes - 1) * globalRates.slotting; // Top pipe plain
-            opsHtml += `<tr><td>Slotting Charges (Est. ${pipes-1} pipes)</td><td class="text-right">₹${slotCost.toLocaleString()}</td></tr>`;
-            opsCost += slotCost;
+            // Hide Ops Section if Cost is 0 (Unlikely due to labour, but safe logic)
+            if (opsCost === 0) {
+                document.getElementById('opsSection').style.display = 'none';
+            } else {
+                document.getElementById('opsSection').style.display = 'block';
+                document.getElementById('opsBody').innerHTML = opsHtml;
+                document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
+            }
 
             const grandTotal = drillCost + opsCost;
 
-            // C. VARIABLE MATERIALS (List)
-            const matHtml = `
-                <div class="var-item"><span>10" PVC PIPE</span><span class="var-badge">₹${globalRates.casing_10}/ft</span></div>
-                <div class="var-item"><span>7" MS PIPE (Medium)</span><span class="var-badge">₹${globalRates.casing_7_med}/ft</span></div>
-                <div class="var-item"><span>7" MS PIPE (Heavy)</span><span class="var-badge">₹${globalRates.casing_7_heavy}/ft</span></div>
-                <div class="var-item"><span>WELDING</span><span class="var-badge">₹${globalRates.welding}/Joint</span></div>
-                <div class="var-item"><span>COLLAR & CAP</span><span class="var-badge">₹${globalRates.collar}/Set</span></div>
-                <div class="var-item"><span>HOLES (Slotting)</span><span class="var-badge">₹${globalRates.holes}/ft</span></div>
-                <div class="var-item"><span>WATER INJECTION</span><span class="var-badge">₹${globalRates.water}/ft</span></div>
-            `;
-
-            // D. RENDER
             document.getElementById('drillBody').innerHTML = drillHtml;
             document.getElementById('drillSubtotal').innerText = "₹" + drillCost.toLocaleString();
-            
-            document.getElementById('opsBody').innerHTML = opsHtml;
-            document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
-            
-            document.getElementById('materialsGrid').innerHTML = matHtml;
             document.getElementById('invTotal').innerText = "₹" + grandTotal.toLocaleString();
 
             document.getElementById('invLoc').innerText = loc;
@@ -441,7 +437,6 @@
             window.confirmationResult.confirm(document.getElementById('otpInput').value).then(() => document.getElementById('otpSection').classList.add('hidden')).catch(() => alert("Invalid OTP"));
         }
 
-        // Slider UI
         const slider = document.getElementById('depthSlider');
         slider.addEventListener('input', function() {
             document.getElementById('display-val').innerText = this.value;
@@ -449,7 +444,6 @@
             this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
         });
 
-        // PDF Generation
         function downloadPDF() {
             const el = document.getElementById('invoice-capture');
             const opt = { margin: 0.5, filename: `Estimate_${leadData.loc}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
