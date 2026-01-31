@@ -49,7 +49,7 @@ function loadRealZones() {
     });
 }
 
-// 🟢 NEW: ANALYZE LOCATION (SMALLEST AREA WINS)
+// 🟢 ANALYZE LOCATION (SMALLEST AREA WINS)
 function analyzeLocation(latLng) {
     let bestZone = null;
     let minArea = Infinity; // Start with infinitely large area
@@ -117,18 +117,14 @@ function checkWaterQuality() {
     rangeTxt.innerText = "...";
     noteTxt.innerText = "Querying Database...";
 
-    // 🟢 ADDED CONSOLE LOGS FOR DEBUGGING
-    console.log("Checking TDS for:", pincode);
-
+    // 🟢 REAL DB CALL
     sci_db.collection('water_quality').doc(String(pincode)).get()
     .then((doc) => {
         if (doc.exists) {
-            console.log("Data Found:", doc.data());
             const data = doc.data();
             rangeTxt.innerText = `${data.min} - ${data.max}`;
             noteTxt.innerHTML = `<span class="text-emerald-400">● ${data.type || 'Verified Record'}</span>`;
         } else {
-            console.log("No Document Found for ID:", pincode);
             rangeTxt.innerText = "No Record";
             noteTxt.innerText = `No data for ${pincode}. Call lab to update.`;
             noteTxt.className = "text-sm text-red-400";
@@ -137,13 +133,14 @@ function checkWaterQuality() {
     .catch((e) => {
         console.error("Firebase Error:", e);
         rangeTxt.innerText = "Error";
-        noteTxt.innerText = "Check Console for details.";
+        noteTxt.innerText = "Check internet or permissions.";
     });
 }
 
-// --- 4. MOTOR & RISK ENGINE (WITH SHOP LINK) ---
+// --- 4. MOTOR & RISK ENGINE (SEPARATE INPUTS) ---
+
 function calcMotor() {
-    const depth = parseInt(document.getElementById('sciDepth').value) || 0;
+    const depth = parseInt(document.getElementById('sciDepthPump').value) || 0;
     
     let hp = 1.0;
     let stg = "10 Stages";
@@ -154,7 +151,6 @@ function calcMotor() {
     if (depth > 800) { hp = 7.5; stg = "35 Stages"; }
     if (depth > 1000) { hp = 10.0; stg = "40+ Stages"; }
 
-    // Update Text
     document.getElementById('motorHP').innerText = hp + " HP";
     document.getElementById('motorStage').innerText = stg;
 
@@ -162,17 +158,15 @@ function calcMotor() {
     const shopBtn = document.getElementById('motorShopLink');
     if(depth > 0) {
         shopBtn.classList.remove('hidden');
-        // Search Query: "3hp submersible pump"
         const query = `${hp}hp submersible pump`; 
         shopBtn.href = `https://www.sagartraders.in/search?q=${encodeURIComponent(query)}`;
     } else {
         shopBtn.classList.add('hidden');
     }
-
-    calcRisk(depth);
 }
 
-function calcRisk(depth) {
+function calcRisk() {
+    const depth = parseInt(document.getElementById('sciDepthRisk').value) || 0;
     if(depth === 0) return;
 
     let risk = (depth / 1500) * 100;
