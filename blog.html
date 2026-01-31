@@ -16,28 +16,17 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
         
-        /* Reading Modal Styles */
-        .article-modal { 
-            position: fixed; inset: 0; z-index: 100; 
-            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px);
-            display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s;
-        }
+        /* Modal Styles */
+        .article-modal { position: fixed; inset: 0; z-index: 100; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .article-modal.open { display: flex; opacity: 1; }
+        .paper-card { background: white; width: 100%; max-width: 800px; height: 90vh; border-radius: 16px; overflow-y: auto; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         
-        .paper-card {
-            background: white; width: 100%; max-width: 800px; height: 90vh;
-            border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            overflow-y: auto; position: relative;
-        }
-
-        /* HTML Content Styling */
+        /* Content Styling */
         .prose { padding: 0 10px; color: #334155; line-height: 1.8; }
         .prose h1, .prose h2, .prose h3 { color: #0f172a; font-weight: 800; margin-top: 1.5em; margin-bottom: 0.5em; }
-        .prose h1 { font-size: 1.8em; } .prose h2 { font-size: 1.5em; }
         .prose p { margin-bottom: 1em; }
         .prose img { max-width: 100%; height: auto; border-radius: 8px; margin: 1em 0; }
         .prose ul { list-style: disc; padding-left: 1.5em; margin-bottom: 1em; }
-        .prose b, .prose strong { color: #0f172a; }
         .prose a { color: #2563eb; text-decoration: underline; }
     </style>
 </head>
@@ -61,24 +50,20 @@
 
     <div id="articleView" class="article-modal">
         <div class="paper-card">
-            <button onclick="closeArticle()" class="absolute top-4 right-4 bg-white/80 hover:bg-white p-2 rounded-full transition z-20 shadow-lg">
+            <button onclick="closeArticle()" class="absolute top-4 right-4 bg-white hover:bg-slate-100 p-2 rounded-full transition z-20 shadow-lg border border-slate-200">
                 <i class="ri-close-line text-xl text-slate-900"></i>
             </button>
-            
             <div class="h-64 sm:h-80 w-full relative">
                 <img id="view-img" src="" class="w-full h-full object-cover">
                 <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-8">
                     <span id="view-date" class="text-xs font-bold text-white bg-blue-600 px-3 py-1 rounded-full"></span>
-                    <h1 id="view-title" class="text-2xl sm:text-3xl font-extrabold text-white mt-2 leading-tight shadow-black drop-shadow-md"></h1>
+                    <h1 id="view-title" class="text-2xl sm:text-3xl font-extrabold text-white mt-2 leading-tight drop-shadow-md"></h1>
                 </div>
             </div>
-
             <div class="p-8 sm:p-12">
                 <div id="view-content" class="prose max-w-none"></div>
                 <div class="mt-12 pt-8 border-t border-slate-100 text-center">
-                    <button onclick="closeArticle()" class="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition">
-                        Back to News
-                    </button>
+                    <button onclick="closeArticle()" class="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition">Close Article</button>
                 </div>
             </div>
         </div>
@@ -87,108 +72,109 @@
     <div id="footer-mount"></div>
 
     <script>
-        // 🟢 CONFIGURATION
-        // Use 'buzz.blogger.com' for testing. Replace with your actual blog URL when ready.
-        // Format: https://YOUR-BLOG-NAME.blogspot.com
-        const BLOG_URL = 'https://buzz.blogger.com'; 
+        // 🟢 CONFIGURATION: USE THIS TEST URL FIRST!
+        // Do not add "/feeds/posts/..." - Just the main domain.
+       // const BLOG_BASE_URL = 'https://buzz.blogger.com'; 
+        
+        // 🔴 WHEN READY, SWAP WITH YOURS:
+         const BLOG_BASE_URL = 'https://sagarborewells-news.blogspot.com';
 
-        // GLOBAL STORAGE FOR POSTS
         let postsCache = [];
 
-        // 1. JSONP CALLBACK FUNCTION (Must be global)
+        // 1. JSONP CALLBACK (Must be global)
         function handleBloggerFeed(data) {
             const grid = document.getElementById('blog-grid');
             const posts = data.feed.entry;
 
             if (!posts || posts.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center text-slate-400">No articles found on the server.</div>';
+                grid.innerHTML = '<div class="col-span-full text-center text-slate-400">No news found.</div>';
                 return;
             }
 
             grid.innerHTML = ""; // Clear loader
-            postsCache = []; // Reset cache
+            postsCache = []; 
 
             posts.forEach((post, index) => {
-                // Extract Data securely
+                // Parse Data
                 const title = post.title.$t;
                 const content = post.content ? post.content.$t : (post.summary ? post.summary.$t : "");
-                
-                // Format Date
                 const dateObj = new Date(post.published.$t);
                 const dateStr = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
-                // Smart Image Extractor
-                // 1. Try Media Thumbnail (Blogger default)
-                // 2. Try parsing Content for first <img> tag
-                // 3. Fallback to placeholder
+                // Smart Image Finder
                 let imgUrl = 'https://source.unsplash.com/random/800x600/?drilling';
                 if (post.media$thumbnail) {
-                    imgUrl = post.media$thumbnail.url.replace('s72-c', 's800'); // Trick to get High-Res image
+                    imgUrl = post.media$thumbnail.url.replace('s72-c', 's800'); // Get High Res
                 } else {
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = content;
-                    const img = tempDiv.querySelector('img');
+                    // Try to find image in HTML content
+                    const div = document.createElement('div');
+                    div.innerHTML = content;
+                    const img = div.querySelector('img');
                     if (img) imgUrl = img.src;
                 }
 
-                // Clean Summary (Remove HTML tags, limit chars)
-                const cleanSummary = content.replace(/<[^>]*>?/gm, '').substring(0, 120) + "...";
+                // Plain Text Summary
+                const summary = content.replace(/<[^>]*>?/gm, '').substring(0, 120) + "...";
 
-                // Save to Cache for Modal
+                // Save to Cache
                 postsCache.push({ title, date: dateStr, img: imgUrl, content });
 
-                // Render Card
+                // Render
                 grid.innerHTML += `
-                    <article onclick="openArticle(${index})" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 border border-slate-100 group cursor-pointer h-full flex flex-col">
+                    <article onclick="openArticle(${index})" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition border border-slate-100 group cursor-pointer h-full flex flex-col">
                         <div class="h-56 bg-slate-200 overflow-hidden relative">
                             <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                            <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm border border-slate-200">${dateStr}</div>
+                            <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm">${dateStr}</div>
                         </div>
                         <div class="p-6 flex flex-col flex-grow">
                             <h3 class="text-xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-blue-600 transition">${title}</h3>
-                            <p class="text-slate-500 text-sm line-clamp-3 mb-4 flex-grow">${cleanSummary}</p>
-                            <div class="pt-4 border-t border-slate-100 mt-auto">
-                                <span class="text-blue-600 font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">Read Full Story <i class="ri-arrow-right-line"></i></span>
-                            </div>
+                            <p class="text-slate-500 text-sm line-clamp-3 mb-4 flex-grow">${summary}</p>
+                            <span class="text-blue-600 font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">Read Full Story <i class="ri-arrow-right-line"></i></span>
                         </div>
                     </article>
                 `;
             });
         }
 
-        // 2. TRIGGER THE FETCH (Inject Script Tag)
+        // 2. TRIGGER FETCH
         function initBlog() {
+            // Remove any old scripts
+            const oldScript = document.getElementById('blogger-jsonp');
+            if(oldScript) oldScript.remove();
+
             const script = document.createElement('script');
-            // 🟢 MAGIC: alt=json-in-script & callback=handleBloggerFeed
-            script.src = `${BLOG_URL}/feeds/posts/default?alt=json-in-script&callback=handleBloggerFeed&max-results=9`;
+            script.id = 'blogger-jsonp';
+            // 🟢 MAGIC URL: adds /feeds/posts/default and json-in-script
+            script.src = `${BLOG_BASE_URL}/feeds/posts/default?alt=json-in-script&callback=handleBloggerFeed&max-results=9`;
+            
             script.onerror = () => {
-                document.getElementById('blog-grid').innerHTML = '<div class="col-span-full text-center text-red-400">Connection Failed. Check URL.</div>';
+                document.getElementById('blog-grid').innerHTML = `
+                    <div class="col-span-full text-center py-10">
+                        <div class="text-red-500 font-bold mb-2">Connection Failed</div>
+                        <p class="text-sm text-slate-500">Could not connect to ${BLOG_BASE_URL}</p>
+                        <p class="text-xs text-slate-400 mt-2">Check if the blog is Public and URL is correct.</p>
+                    </div>`;
             };
             document.body.appendChild(script);
         }
 
-        // 3. OPEN ARTICLE MODAL
+        // 3. MODAL LOGIC
         function openArticle(index) {
             const data = postsCache[index];
             if(!data) return;
-
-            const modal = document.getElementById('articleView');
             document.getElementById('view-img').src = data.img;
             document.getElementById('view-title').innerText = data.title;
             document.getElementById('view-date').innerText = data.date;
-            document.getElementById('view-content').innerHTML = data.content; // Renders full HTML
-            
-            modal.classList.add('open');
-            document.body.style.overflow = 'hidden'; // Stop scrolling
+            document.getElementById('view-content').innerHTML = data.content;
+            document.getElementById('articleView').classList.add('open');
+            document.body.style.overflow = 'hidden';
         }
 
-        // 4. CLOSE MODAL
         function closeArticle() {
             document.getElementById('articleView').classList.remove('open');
             document.body.style.overflow = 'auto';
         }
 
-        // START
         document.addEventListener('DOMContentLoaded', initBlog);
         document.addEventListener('keydown', (e) => { if(e.key === "Escape") closeArticle(); });
     </script>
