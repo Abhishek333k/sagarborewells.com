@@ -56,7 +56,6 @@
             <div onclick="showSection('leads')" id="nav-leads" class="nav-item active"><i class="ri-radar-line"></i> <span>Live Leads</span></div>
             <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>BWBC Archives</span></div>
             <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
-            <div onclick="showSection('blog')" id="nav-blog" class="nav-item text-purple-400"><i class="ri-article-line"></i> <span>News Room</span></div>
         </nav>
         <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button></div>
     </aside>
@@ -105,41 +104,6 @@
 
         <div id="section-leads" class="content-section"><div id="leads-list" class="space-y-3"></div></div>
         <div id="section-projects" class="content-section hidden"><div id="projects-list" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div></div>
-
-        <div id="section-blog" class="content-section hidden max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <div class="glass-card p-8 lg:col-span-2">
-                <div class="flex justify-between items-center border-b border-slate-700 pb-4 mb-6">
-                    <h3 class="text-lg font-bold text-white">Editor Console</h3>
-                    <p class="text-[10px] text-slate-400 font-mono">NEW BROADCAST</p>
-                </div>
-                <form id="blogForm" onsubmit="publishPost(event)" class="space-y-4">
-                    <div>
-                        <label class="text-[10px] text-slate-400 uppercase block mb-1">Headline</label>
-                        <input type="text" id="blog-title" class="cyber-input" placeholder="Enter article title..." required>
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 uppercase block mb-1">Cover Image URL</label>
-                        <input type="text" id="blog-img" class="cyber-input" placeholder="https://example.com/image.jpg">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 uppercase block mb-1">Article Content (HTML Supported)</label>
-                        <textarea id="blog-content" class="cyber-input h-64 font-mono text-xs" placeholder="<p>Write your update here...</p>" required></textarea>
-                    </div>
-                    <div class="pt-4 flex justify-end gap-3">
-                        <button type="button" onclick="document.getElementById('blogForm').reset()" class="px-4 py-2 text-slate-500 hover:text-white text-xs font-bold transition">CLEAR</button>
-                        <button type="submit" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/50"><i class="ri-send-plane-fill"></i> PUBLISH LIVE</button>
-                    </div>
-                </form>
-            </div>
-
-            <div class="glass-card p-6 h-[600px] overflow-y-auto">
-                <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-widest border-b border-slate-700 pb-2">Published Wire</h3>
-                <div id="blog-list" class="space-y-3">
-                    <div class="text-center text-slate-500 text-xs py-10">Loading feed...</div>
-                </div>
-            </div>
-        </div>
 
         <div id="section-create" class="content-section hidden max-w-4xl mx-auto">
             <div class="glass-card p-8">
@@ -257,77 +221,6 @@
                 }
             }
         }
-
-        // --- 🟢 BLOG SYSTEM LOGIC ---
-        
-        // 1. PUBLISH FUNCTION
-        function publishPost(e) {
-            e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> PUBLISHING...';
-            btn.disabled = true;
-
-            const post = {
-                title: document.getElementById('blog-title').value,
-                image: document.getElementById('blog-img').value,
-                content: document.getElementById('blog-content').value,
-                date: new Date().toLocaleDateString(),
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            db.collection('posts').add(post).then(() => {
-                notify("✅ ARTICLE BROADCASTED SUCCESSFULLY");
-                document.getElementById('blogForm').reset();
-                loadBlogList(); // Refresh list immediately
-            }).catch(err => {
-                notify("❌ ERROR: " + err.message, "error");
-            }).finally(() => {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            });
-        }
-
-        // 2. LOAD LIST FUNCTION
-        function loadBlogList() {
-            const container = document.getElementById('blog-list');
-            if(!container) return; // Guard clause if section is hidden
-            
-            db.collection('posts').orderBy('timestamp', 'desc').limit(20).get().then(snap => {
-                container.innerHTML = "";
-                if(snap.empty) { container.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">No articles found.</div>'; return; }
-                
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    container.innerHTML += `
-                        <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700 hover:border-purple-500/50 transition group relative">
-                            <h4 class="text-white font-bold text-xs mb-1 line-clamp-1">${data.title}</h4>
-                            <p class="text-[10px] text-slate-500 font-mono">${data.date}</p>
-                            <button onclick="deletePost('${doc.id}')" class="absolute top-2 right-2 text-slate-600 hover:text-red-500 transition opacity-0 group-hover:opacity-100">
-                                <i class="ri-delete-bin-line"></i>
-                            </button>
-                        </div>
-                    `;
-                });
-            });
-        }
-
-        // 3. DELETE POST
-        function deletePost(docId) {
-            if(confirm("⚠ DELETE ARTICLE: This cannot be undone.")) {
-                db.collection('posts').doc(docId).delete().then(() => {
-                    notify("ARTICLE REMOVED");
-                    loadBlogList();
-                }).catch(err => notify("Error: " + err.message, "error"));
-            }
-        }
-
-        // 4. AUTO-LOAD ON NAV
-        // Update showSection to load blog list when tab is clicked
-        const originalShowSection = showSection; // Store ref if needed, or modify showSection directly:
-        
-        // MODIFY YOUR EXISTING showSection function to include this line:
-        // if(id === 'blog') loadBlogList();
 
         // --- DATA CACHE & FILTER ---
         let leadsCache = [], projectsCache = [];
