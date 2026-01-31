@@ -1,43 +1,18 @@
 // FILENAME: assets/js/science_engine.js
 
-// --- 1. CONFIG & DATA ---
-const KNOWN_ZONES = [
-    {
-        name: "Mangalagiri Hill Zone",
-        type: "Hard Rock",
-        color: "#ef4444", // Red
-        coords: [
-            { lat: 16.445, lng: 80.550 },
-            { lat: 16.448, lng: 80.560 },
-            { lat: 16.440, lng: 80.565 },
-            { lat: 16.435, lng: 80.555 }
-        ]
-    },
-    {
-        name: "Krishna River Basin",
-        type: "River Bed / Silt",
-        color: "#10b981", // Green
-        coords: [
-            { lat: 16.480, lng: 80.600 },
-            { lat: 16.490, lng: 80.620 },
-            { lat: 16.470, lng: 80.630 },
-            { lat: 16.460, lng: 80.610 }
-        ]
-    }
-];
+// --- 1. SETUP FIREBASE & CONFIG ---
+if(typeof firebase !== 'undefined' && !firebase.apps.length) {
+    firebase.initializeApp(CONTACT_INFO.firebase_config);
+}
+const sci_db = firebase.firestore();
 
-const MOCK_TDS_DATA = {
-    '522': { min: 400, max: 1200, type: "Hard / High Mineral" },
-    '520': { min: 200, max: 600, type: "Sweet / River Bed" },
-    'default': { min: 300, max: 900, type: "Standard Profile" }
-};
-
-// --- 2. MAP ENGINE ---
+// --- 2. MAP ENGINE (REAL-TIME FIREBASE DATA) ---
 let sciMap;
-let mapPolygons = [];
+let mapPolygons = []; // Stores the actual Google Maps Polygon objects
 
 function initSciMap() {
-    const startLoc = { lat: 16.4410, lng: 80.5520 }; 
+    const startLoc = { lat: 16.4410, lng: 80.5520 }; // Mangalagiri
+    
     sciMap = new google.maps.Map(document.getElementById('sciMap'), {
         center: startLoc,
         zoom: 12,
@@ -46,48 +21,92 @@ function initSciMap() {
         styles: [{ featureType: "poi", stylers: [{ visibility: "off" }] }]
     });
 
-    // Draw Polygons
-    KNOWN_ZONES.forEach(zone => {
-        const poly = new google.maps.Polygon({
-            paths: zone.coords,
-            strokeColor: zone.color,
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-            fillColor: zone.color,
-            fillOpacity: 0.35,
-            map: sciMap
-        });
-        poly.zoneData = zone;
-        mapPolygons.push(poly);
-    });
+    // 🟢 FETCH REAL ZONES FROM FIREBASE
+    loadRealZones();
 
-    // Click Listener
+    // Click Listener for Analysis
     sciMap.addListener('click', (e) => {
         analyzeLocation(e.latLng);
     });
 }
 
+function loadRealZones() {
+    sci_db.collection('geo_zones').get().then((snapshot) => {
+        if(snapshot.empty) console.log("No zones found in DB.");
+        
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            
+            // Draw Polygon on Map
+            const poly = new google.maps.Polygon({
+                paths: data.coords,
+                strokeColor: data.color,
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: data.color,
+                fillOpacity: 0.35, // Semi-transparent
+                map: sciMap
+            });
+
+            // Attach Data to the Polygon Object for easy retrieval
+            poly.zoneData = data; 
+            
+            // Add to our list so we can check it later
+            mapPolygons.push(poly);
+        });
+    });
+}
+
+// 🟢 ANALYZE LOCATION (HANDLES OVERLAPS)
 function analyzeLocation(latLng) {
     let foundZone = null;
+    
+    // Loop through all loaded polygons
+    // Note: If overlaps exist, this picks the *last* one added that matches.
+    // This allows you to draw a small "Red" zone on top of a big "Green" zone.
     for (let poly of mapPolygons) {
         if (google.maps.geometry.poly.containsLocation(latLng, poly)) {
             foundZone = poly.zoneData;
-            break;
+            // We don't 'break' here if we want the 'top-most' layer (last loaded)
+            // But if you want the first match, uncomment the line below:
+            // break; 
         }
     }
 
     const statusEl = document.getElementById('zoneStatus');
+    
+    // Clear previous markers
+    if(window.currentMarker) window.currentMarker.setMap(null);
+
     if (foundZone) {
-        statusEl.innerText = `${foundZone.name} (${foundZone.type})`;
-        statusEl.style.color = foundZone.color;
-        new google.maps.Marker({ position: latLng, map: sciMap, animation: google.maps.Animation.DROP });
+        statusEl.innerHTML = `<span style="color:${foundZone.color}">● ${foundZone.name}</span> <span class="text-white">(${foundZone.typeName})</span>`;
+        
+        // Add Marker
+        window.currentMarker = new google.maps.Marker({
+            position: latLng,
+            map: sciMap,
+            animation: google.maps.Animation.DROP,
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 5,
+                fillColor: foundZone.color,
+                fillOpacity: 1,
+                strokeWeight: 2,
+                strokeColor: "white"
+            }
+        });
     } else {
         statusEl.innerText = "Unknown Zone (Standard Rates Apply)";
-        statusEl.style.color = "#94a3b8";
+        statusEl.style.color = "#94a3b8"; // Slate color
+        
+        window.currentMarker = new google.maps.Marker({
+            position: latLng,
+            map: sciMap
+        });
     }
 }
 
-// --- 3. TDS CALCULATOR ---
+// --- 3. TDS CALCULATOR (REAL FIREBASE DATA) ---
 function checkWaterQuality() {
     const pincode = document.getElementById('sciPincode').value;
     const box = document.getElementById('tdsResult');
@@ -98,64 +117,69 @@ function checkWaterQuality() {
 
     box.classList.remove('hidden');
     rangeTxt.innerText = "...";
-    noteTxt.innerText = "Analyzing...";
+    noteTxt.innerText = "Querying Database...";
 
-    setTimeout(() => {
-        const prefix = pincode.substring(0, 3);
-        const data = MOCK_TDS_DATA[prefix] || MOCK_TDS_DATA['default'];
-        rangeTxt.innerText = `${data.min} - ${data.max}`;
-        noteTxt.innerHTML = `<span class="${data.min > 500 ? 'text-orange-400' : 'text-emerald-400'}">● ${data.type}</span>`;
-    }, 600);
+    // 🟢 REAL DB CALL
+    sci_db.collection('water_quality').doc(pincode).get().then((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            rangeTxt.innerText = `${data.min} - ${data.max}`;
+            noteTxt.innerHTML = `<span class="text-emerald-400">● ${data.type || 'Recorded Data'}</span>`;
+        } else {
+            // Fallback if Pincode not in DB yet
+            rangeTxt.innerText = "No Data";
+            noteTxt.innerText = "Local data not available yet.";
+        }
+    }).catch((e) => {
+        console.error(e);
+        rangeTxt.innerText = "Error";
+    });
 }
 
-// --- 4. MOTOR & RISK ENGINE ---
-function calcMotor() {
-    const depth = parseInt(document.getElementById('sciDepth').value) || 0;
-    
-    // Motor Logic
-    let hp = "1.0 HP";
-    let stg = "10 Stages";
-    if (depth > 150) { hp = "1.5 HP"; stg = "15 Stages"; }
-    if (depth > 300) { hp = "3.0 HP"; stg = "20 Stages"; }
-    if (depth > 500) { hp = "5.0 HP"; stg = "25 Stages"; }
-    if (depth > 800) { hp = "7.5 HP"; stg = "35 Stages"; }
-    if (depth > 1000) { hp = "10 HP"; stg = "40+ Stages"; }
+// --- 4. MOTOR & RISK ENGINE (Math Logic) ---
+// (This logic remains local as it's physics-based, no DB needed)
+const slider = document.getElementById('riskSlider');
+if(slider) {
+    slider.addEventListener('input', function() {
+        const depth = parseInt(this.value);
+        document.getElementById('depthLabel').innerText = depth;
+        
+        // Motor Logic
+        let hp = "1.0 HP";
+        let stg = "10 Stages";
+        if (depth > 150) { hp = "1.5 HP"; stg = "15 Stages"; }
+        if (depth > 300) { hp = "3.0 HP"; stg = "20 Stages"; }
+        if (depth > 500) { hp = "5.0 HP"; stg = "25 Stages"; }
+        if (depth > 800) { hp = "7.5 HP"; stg = "35 Stages"; }
+        if (depth > 1000) { hp = "10 HP"; stg = "40+ Stages"; }
 
-    document.getElementById('motorHP').innerText = hp;
-    document.getElementById('motorStage').innerText = stg;
+        document.getElementById('motorHP').innerText = hp;
+        document.getElementById('motorStage').innerText = stg;
 
-    // Risk Logic Trigger
-    calcRisk(depth);
-}
+        // Risk Logic
+        let risk = (depth / 1500) * 100;
+        if(depth < 150) risk += 10; 
+        if(depth > 900) risk += 20;
 
-function calcRisk(depth) {
-    if(depth === 0) return;
+        const bar = document.getElementById('riskBar');
+        const label = document.getElementById('riskLabel');
 
-    // Base Risk Curve
-    let risk = (depth / 1500) * 100;
-    if(depth < 150) risk += 10; // Shallow collapse
-    if(depth > 900) risk += 20; // Deep pressure
-
-    const bar = document.getElementById('riskBar');
-    const label = document.getElementById('riskLabel');
-    const desc = document.getElementById('riskDesc');
-
-    bar.style.width = Math.min(risk, 100) + "%";
-    
-    if(risk < 40) {
-        label.innerText = "LOW RISK";
-        label.className = "text-3xl font-black text-emerald-400 tracking-tight";
-        desc.innerText = "Standard drilling conditions expected.";
-        bar.className = "h-full meter-fill relative bg-emerald-500";
-    } else if(risk < 70) {
-        label.innerText = "MODERATE";
-        label.className = "text-3xl font-black text-yellow-400 tracking-tight";
-        desc.innerText = "Casing requirement likely. Silt/boulders possible.";
-        bar.className = "h-full meter-fill relative bg-yellow-500";
-    } else {
-        label.innerText = "HIGH RISK";
-        label.className = "text-3xl font-black text-red-500 tracking-tight animate-pulse";
-        desc.innerText = "Complex geology. Heavy duty rig recommended.";
-        bar.className = "h-full meter-fill relative bg-red-500";
-    }
+        bar.style.width = Math.min(risk, 100) + "%";
+        
+        if(risk < 40) {
+            label.innerText = "LOW";
+            label.className = "text-xl font-bold text-emerald-400";
+            bar.className = "h-full bg-emerald-500 transition-all duration-300";
+        } else if(risk < 70) {
+            label.innerText = "MODERATE";
+            label.className = "text-xl font-bold text-yellow-400";
+            bar.className = "h-full bg-yellow-500 transition-all duration-300";
+        } else {
+            label.innerText = "HIGH";
+            label.className = "text-xl font-bold text-red-500";
+            bar.className = "h-full bg-red-500 transition-all duration-300";
+        }
+    });
+    // Init Slider
+    slider.dispatchEvent(new Event('input'));
 }
