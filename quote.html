@@ -18,7 +18,6 @@
     <script src="assets/js/pdf_template.js"></script>
 
     <style>
-        /* MAP TARGET STYLES */
         .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none; display: flex; align-items: center; justify-content: center; }
         .reticle-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 15px 2px #ef4444; }
         .reticle-ring { position: absolute; width: 50px; height: 50px; border: 2px dashed #2563eb; border-radius: 50%; animation: spin 8s linear infinite; }
@@ -36,31 +35,23 @@
         .btn-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; font-weight: 700; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; }
         .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; opacity: 0.7; }
         
-        /* 🟢 CUSTOM GOOGLE MAPS AUTOCOMPLETE STYLING */
-        .pac-container { 
-            border-radius: 12px; margin-top: 5px; border: none; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-        }
-        .pac-item { padding: 10px 15px; border-top: 1px solid #f1f5f9; font-size: 14px; color: #64748b; cursor: pointer; }
-        .pac-item:hover { background-color: #eff6ff; }
-        .pac-item-query { font-size: 15px; color: #1e293b; font-weight: 700; }
-        .pac-icon { display: none; } /* Hide default ugly icon */
-
         .est-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95rem; }
         .est-table th { text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 0.8rem; text-transform: uppercase; }
         .est-table td { padding: 16px 12px; border-bottom: 1px solid #f1f5f9; font-weight: 600; }
-        
         .slider-container { background: #f1f5f9; border-radius: 20px; padding: 40px 30px; text-align: center; border: 1px solid #e2e8f0; }
-        
         #display-val { font-size: 8rem; font-weight: 800; color: var(--primary); line-height: 1; letter-spacing: -4px; }
         #display-unit { font-size: 2rem; font-weight: 700; color: #94a3b8; vertical-align: super; }
-
         .range-slider { width: 100%; height: 16px; border-radius: 8px; background: #cbd5e1; outline: none; cursor: pointer; -webkit-appearance: none; }
         .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 40px; height: 40px; border-radius: 50%; background: var(--primary); border: 6px solid #fff; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.5); cursor: pointer; }
         
         #recaptcha-container { margin-bottom: 10px; }
         .otp-group { display: flex; gap: 10px; margin-top: 10px; display: none; }
         .verified-badge { color: #10b981; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; display: none; align-items: center; gap: 5px; margin-top: 5px; }
+        
+        .pac-container { border-radius: 12px; margin-top: 5px; border: none; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); font-family: 'Plus Jakarta Sans', sans-serif; }
+        .pac-item { padding: 10px 15px; border-top: 1px solid #f1f5f9; font-size: 14px; color: #64748b; cursor: pointer; }
+        .pac-item:hover { background-color: #eff6ff; }
+        .pac-icon { display: none; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -72,7 +63,7 @@
             <div class="quote-card">
                 <div class="text-center mb-8">
                     <h1 class="gradient-text">Instant Quotation</h1>
-                    <p class="text-slate-500 font-medium">Smart pricing for precision drilling</p>
+                    <p class="text-slate-500 font-medium">Smart pricing engine with real-time zone analysis</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -99,15 +90,10 @@
                     <label class="form-label">Site Location</label>
                     <div class="relative flex gap-2">
                         <input type="text" id="locInput" class="custom-input pr-24" placeholder="Start typing address...">
-                        
-                        <button onclick="detectGPS()" class="absolute right-14 top-2 bottom-2 bg-blue-100 text-blue-600 px-3 rounded-lg font-bold text-xs hover:bg-blue-200 transition">
-                            DETECT
-                        </button>
-                        
-                        <button onclick="openMiniMap()" class="absolute right-2 top-2 bottom-2 bg-slate-100 text-slate-600 px-3 rounded-lg hover:bg-slate-200 transition" title="Pick on Map">
-                            <i class="ri-map-2-line text-lg"></i>
-                        </button>
+                        <button onclick="detectGPS()" class="absolute right-14 top-2 bottom-2 bg-blue-100 text-blue-600 px-3 rounded-lg font-bold text-xs hover:bg-blue-200 transition">DETECT</button>
+                        <button onclick="openMiniMap()" class="absolute right-2 top-2 bottom-2 bg-slate-100 text-slate-600 px-3 rounded-lg hover:bg-slate-200 transition" title="Pick on Map"><i class="ri-map-2-line text-lg"></i></button>
                     </div>
+                    <p id="distDisplay" class="text-xs text-right mt-1 text-slate-400 font-mono"></p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 mt-6">
@@ -118,11 +104,9 @@
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Purpose</label>
-                        <select id="purposeInput" class="custom-select cursor-pointer">
-                            <option value="residential">Residential Use</option>
-                            <option value="agriculture">Agriculture / Farm</option>
-                            <option value="commercial">Commercial / Industrial</option>
+                        <label class="form-label">Preferred Casing (Brand/Type)</label>
+                        <select id="casingInput" class="custom-select cursor-pointer">
+                            <option value="" disabled selected>Loading Inventory...</option>
                         </select>
                     </div>
                 </div>
@@ -131,8 +115,8 @@
                     <label class="form-label text-center mb-4">ESTIMATED DEPTH REQUIRED</label>
                     <div class="slider-container">
                         <div class="display-value-wrap"><span id="display-val">100</span><span id="display-unit">FT</span></div>
-                        <input type="range" id="depthSlider" class="range-slider" min="100" max="500" value="100" step="10">
-                        <div class="scale-labels"><span>100 FT</span><span id="maxLabel">500 FT</span></div>
+                        <input type="range" id="depthSlider" class="range-slider" min="100" max="1500" value="100" step="10">
+                        <div class="scale-labels"><span>100 FT</span><span id="maxLabel">1500 FT</span></div>
                     </div>
                 </div>
 
@@ -156,7 +140,7 @@
                 <table class="est-table">
                     <thead><tr><th>Description</th><th class="text-right">Amount</th></tr></thead>
                     <tbody id="invBody"></tbody>
-                    <tfoot><tr><td>Fixed Operational Costs</td><td class="text-right font-bold">₹7,000</td></tr></tfoot>
+                    <tfoot><tr><td>Operational Costs (Transport, Flushing, Slotting)</td><td class="text-right font-bold" id="fixedCosts">₹0</td></tr></tfoot>
                 </table>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 no-print">
                     <button onclick="goToStep1()" class="py-3 text-slate-500 font-bold border border-slate-200 rounded-xl">Edit</button>
@@ -187,10 +171,8 @@
             <div style="position: relative; width: 100%; height: 300px; background: #eee; border-radius: 10px; overflow: hidden;">
                 <div id="quoteMapContainer" style="width:100%; height:100%;"></div>
                 <div class="target-reticle">
-                    <div class="reticle-dot"></div>
-                    <div class="reticle-ring"></div>
-                    <div class="absolute w-[60px] h-[1px] bg-blue-500/20"></div>
-                    <div class="absolute h-[60px] w-[1px] bg-blue-500/20"></div>
+                    <div class="reticle-dot"></div><div class="reticle-ring"></div>
+                    <div class="absolute w-[60px] h-[1px] bg-blue-500/20"></div><div class="absolute h-[60px] w-[1px] bg-blue-500/20"></div>
                 </div>
             </div>
             <div class="flex justify-end gap-2 mt-4">
@@ -202,12 +184,64 @@
 
     <script>
         // INIT
-        if(CONTACT_INFO.firebase_config && !firebase.apps.length) {
-            firebase.initializeApp(CONTACT_INFO.firebase_config);
-        }
+        if(CONTACT_INFO.firebase_config && !firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
         const db = firebase.firestore();
 
-        // 1. AUTH CHECK
+        // 🟢 GLOBAL CONFIG
+        const OFFICE_COORDS = { lat: 16.4410, lng: 80.5520 }; // Mangalagiri
+        let transportDist = 0;
+        let siteCoords = null;
+
+        // 🟢 RATES CACHE (Default Fallbacks)
+        let globalRates = {
+            base_rate: 90, slab_step: 10,
+            flushing: 8000, slotting: 200, transport: 1000, pipe_len: 20
+        };
+
+        // 1. LOAD SETTINGS & INVENTORY
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            // A. Settings
+            db.collection('settings').doc('rates').get().then(doc => {
+                if(doc.exists) { globalRates = { ...globalRates, ...doc.data() }; }
+            });
+            
+            // B. Zones
+            db.collection('zones').get().then((snapshot) => {
+                const zoneSelect = document.getElementById('zoneInput');
+                zoneSelect.innerHTML = '<option value="" disabled selected>Select Soil Type / Zone</option>';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const opt = document.createElement('option');
+                    opt.value = doc.id;
+                    opt.innerText = data.name;
+                    opt.dataset.rate = data.rate || globalRates.base_rate;
+                    zoneSelect.appendChild(opt);
+                });
+            });
+
+            // C. Inventory (Casing Pipes)
+            db.collection('inventory').where('type', '==', 'casing').get().then((snapshot) => {
+                const casingSelect = document.getElementById('casingInput');
+                casingSelect.innerHTML = '<option value="" disabled selected>Select Casing Pipe</option>';
+                if(snapshot.empty) {
+                    // Fallback if no inventory
+                    casingSelect.innerHTML += `<option value="finolex_5" data-price="380">Finolex 5" (4Kg)</option>`;
+                    casingSelect.innerHTML += `<option value="supreme_7" data-price="650">Supreme 7" (6Kg)</option>`;
+                } else {
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const opt = document.createElement('option');
+                        opt.value = doc.id;
+                        opt.innerText = `${data.name} (₹${data.price}/ft)`;
+                        opt.dataset.price = data.price;
+                        casingSelect.appendChild(opt);
+                    });
+                }
+            });
+        });
+
+        // 2. AUTH & MAPS (Standard)
         firebase.auth().onAuthStateChanged((user) => {
             const genBtn = document.getElementById('generateBtn');
             if (user) {
@@ -215,79 +249,65 @@
                 document.getElementById('custMobile').disabled = true;
                 document.getElementById('sendOtpBtn').style.display = 'none';
                 document.getElementById('otpSection').style.display = 'none';
-                
-                const badge = document.getElementById('verifiedBadge');
-                badge.style.display = 'flex';
-                badge.innerHTML = `<i class="ri-user-follow-line"></i> Welcome Back`;
-                
+                document.getElementById('verifiedBadge').style.display = 'flex';
+                document.getElementById('verifiedBadge').innerHTML = `<i class="ri-user-follow-line"></i> Welcome Back`;
                 genBtn.disabled = false;
                 genBtn.innerHTML = `Generate Official Estimate <i class="ri-arrow-right-line"></i>`;
                 genBtn.classList.remove('bg-slate-300');
-            } else {
-                genBtn.disabled = true;
-            }
+            } else { genBtn.disabled = true; }
         });
 
-        // 2. LOAD DATA
-        let zoneData = []; let zoneRates = {};
-        document.addEventListener("DOMContentLoaded", () => {
-            db.collection('zones').get().then((snapshot) => {
-                const zoneSelect = document.getElementById('zoneInput');
-                zoneSelect.innerHTML = '<option value="" disabled selected>Select Soil Type / Zone</option>';
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    zoneData.push({ id: doc.id, name: data.name, rate: data.rate || 90, keywords: data.keywords || [] });
-                    zoneRates[doc.id] = { name: data.name, rate: data.rate };
-                    const option = document.createElement('option');
-                    option.value = doc.id; option.innerText = data.name;
-                    zoneSelect.appendChild(option);
-                });
-            });
-        });
-
-        // 3. MAPS & AUTOCOMPLETE
         let autocomplete;
         function initMapTools() {
             const input = document.getElementById('locInput');
-            // Autocomplete Setup
             autocomplete = new google.maps.places.Autocomplete(input, { types: ['geocode'] });
             autocomplete.addListener('place_changed', () => {
                 const place = autocomplete.getPlace();
                 if (place.geometry) {
-                    analyzeLocation(place.formatted_address, place.geometry.location.lat(), place.geometry.location.lng());
+                    siteCoords = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
+                    calcDistance();
+                    analyzeLocation(place.formatted_address, siteCoords.lat, siteCoords.lng);
                 }
             });
         }
 
-        // 4. LOGIC
+        // 3. DISTANCE CALCULATOR (Haversine)
+        function calcDistance() {
+            if(!siteCoords) return;
+            const R = 6371; // Radius of earth in km
+            const dLat = deg2rad(siteCoords.lat - OFFICE_COORDS.lat);
+            const dLon = deg2rad(siteCoords.lng - OFFICE_COORDS.lng);
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(deg2rad(OFFICE_COORDS.lat)) * Math.cos(deg2rad(siteCoords.lat)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            transportDist = R * c; // Distance in km
+            
+            const distDisp = document.getElementById('distDisplay');
+            if(transportDist > 30) {
+                distDisp.innerText = `Distance: ${transportDist.toFixed(1)} km (Transport Charges Apply)`;
+                distDisp.classList.add('text-orange-500');
+            } else {
+                distDisp.innerText = `Distance: ${transportDist.toFixed(1)} km (Free Transport)`;
+                distDisp.classList.remove('text-orange-500');
+            }
+        }
+        function deg2rad(deg) { return deg * (Math.PI/180); }
+
+        // 4. SLIDER & LOGIC
         const slider = document.getElementById('depthSlider');
         const displayVal = document.getElementById('display-val');
         slider.addEventListener('input', function() {
             let val = parseInt(this.value);
             displayVal.innerText = val;
-            let max = parseInt(this.max);
-            // Dynamic scale adjustment
-            if (val >= max - 20 && max < 1500) { this.max = max + 500; document.getElementById('maxLabel').innerText = this.max + " FT"; }
-            if (val < 400 && max > 500) { this.max = 500; document.getElementById('maxLabel').innerText = "500 FT"; }
-            
             const pct = ((val - this.min) / (this.max - this.min)) * 100;
             this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
         });
 
         function analyzeLocation(addr, lat, lng) {
-            // Zone Match
-            const lowerAddr = addr.toLowerCase();
-            const found = zoneData.find(z => z.keywords.some(k => lowerAddr.includes(k.toLowerCase())));
-            if(found) {
-                const sel = document.getElementById('zoneInput');
-                sel.value = found.id;
-                sel.classList.add('bg-green-50', 'border-green-500');
-            }
-            // Elevation Match (Guess Depth)
             new google.maps.ElevationService().getElevationForLocations({'locations': [{lat, lng}]}, (res, status) => {
                 if(status === 'OK' && res[0]) {
                     const el = res[0].elevation;
-                    let depth = 300; // Default guess
+                    let depth = 300; 
                     if(el > 100) depth = 900; else if(el > 50) depth = 600; else if(el < 15) depth = 200;
                     slider.value = depth;
                     slider.dispatchEvent(new Event('input'));
@@ -295,12 +315,11 @@
             });
         }
 
-        // 5. OTP & ACTIONS (Same as before)
+        // 5. OTP (Standard)
         function sendOTP() {
             const phone = document.getElementById('custMobile').value;
             if (phone.length !== 10) return alert("Enter 10 digit number");
-            const btn = document.getElementById('sendOtpBtn');
-            btn.innerText = "Sending...";
+            const btn = document.getElementById('sendOtpBtn'); btn.innerText = "Sending...";
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
             firebase.auth().signInWithPhoneNumber('+91' + phone, window.recaptchaVerifier).then((cr) => {
                 window.confirmationResult = cr; btn.style.display = 'none'; document.getElementById('otpSection').style.display = 'flex';
@@ -312,32 +331,84 @@
         }
 
         let leadData = {};
+        
+        // 🟢 6. CALCULATION ENGINE (UPDATED LOGIC)
         function goToStep2() {
             if(document.getElementById('generateBtn').disabled) return;
             const name = document.getElementById('custName').value;
             const loc = document.getElementById('locInput').value;
-            const zoneId = document.getElementById('zoneInput').value;
-            if(!name || !loc || !zoneId) { alert("Please fill Name, Location and Zone"); return; }
+            const zoneSelect = document.getElementById('zoneInput');
+            const casingSelect = document.getElementById('casingInput');
             
-            const depth = parseInt(slider.value);
-            const rate = zoneRates[zoneId].rate;
-            let total = 7000; 
-            let remaining = depth, floor = 0, currentRate = rate, slab_jump = 5, rows = "";
-            while(remaining > 0) {
-                let chunk = (remaining >= 50) ? 50 : remaining;
-                let cost = chunk * currentRate;
-                total += cost;
-                rows += `<tr><td>${floor}-${floor+chunk}ft @ ₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                remaining -= chunk; floor += chunk; currentRate += slab_jump;
+            if(!name || !loc || !zoneSelect.value || !casingSelect.value) { alert("Please fill all details including Zone & Casing Type"); return; }
+            
+            // A. Variables
+            const totalDepth = parseInt(slider.value);
+            const startRate = parseFloat(zoneSelect.options[zoneSelect.selectedIndex].dataset.rate) || globalRates.base_rate;
+            const casingPrice = parseFloat(casingSelect.options[casingSelect.selectedIndex].dataset.price) || 350;
+            const slabStep = globalRates.slab_step;
+            
+            // B. Drilling (Slab System)
+            let drillingCost = 0;
+            let currentDepth = 0;
+            let currentSlabRate = startRate;
+            let rows = "";
+            
+            // Slab 1: 0-100ft
+            const firstSlab = Math.min(totalDepth, 100);
+            if(firstSlab > 0) {
+                const cost = firstSlab * currentSlabRate;
+                drillingCost += cost;
+                rows += `<tr><td>Drilling 0-${firstSlab}ft @ ₹${currentSlabRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                currentDepth += firstSlab;
+            }
+            // Remaining Slabs (+50ft jumps)
+            while(currentDepth < totalDepth) {
+                currentSlabRate += slabStep;
+                let nextChunk = Math.min(50, totalDepth - currentDepth);
+                let cost = nextChunk * currentSlabRate;
+                drillingCost += cost;
+                rows += `<tr><td>Drilling ${currentDepth}-${currentDepth+nextChunk}ft @ ₹${currentSlabRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                currentDepth += nextChunk;
             }
 
+            // C. Casing Cost (Estimate 100ft for quote purpose)
+            const estCasingDepth = 100; 
+            const casingCost = estCasingDepth * casingPrice;
+            rows += `<tr><td>${casingSelect.options[casingSelect.selectedIndex].text} (Est. ${estCasingDepth}ft)</td><td class="text-right">₹${casingCost.toLocaleString()}</td></tr>`;
+
+            // D. Operational Costs (Fixed + Variable)
+            // Transport: If > 30km, charge. Else 0.
+            const transportCharge = (transportDist > 30) ? globalRates.transport : 0;
+            
+            // Slotting: Total Pipe Count - Top 1 Pipe (20ft)
+            // Pipe Len = 20ft
+            const totalPipes = Math.ceil(estCasingDepth / globalRates.pipe_len);
+            const slottedPipes = Math.max(0, totalPipes - 1); // Exclude top 1 pipe
+            const slottingCost = slottedPipes * globalRates.slotting;
+
+            // Flushing (Fixed)
+            const flushingCost = globalRates.flushing;
+
+            const fixedTotal = transportCharge + slottingCost + flushingCost;
+            
+            // E. Grand Total
+            const grandTotal = drillingCost + casingCost + fixedTotal;
+
+            // F. Render
             document.getElementById('invName').innerText = name;
             document.getElementById('invLoc').innerText = loc;
-            document.getElementById('invZone').innerText = zoneRates[zoneId].name;
+            document.getElementById('invZone').innerText = zoneSelect.options[zoneSelect.selectedIndex].text;
             document.getElementById('invBody').innerHTML = rows;
-            document.getElementById('invTotal').innerText = "₹" + total.toLocaleString();
+            document.getElementById('fixedCosts').innerHTML = `
+                Transport: ₹${transportCharge}<br>
+                Flushing: ₹${flushingCost}<br>
+                Slotting: ₹${slottingCost} <span class="text-xs text-slate-400 font-normal">(${slottedPipes} pipes)</span><br>
+                <span class="text-slate-900 border-t pt-1 mt-1 block">Total Ops: ₹${fixedTotal.toLocaleString()}</span>
+            `;
+            document.getElementById('invTotal').innerText = "₹" + grandTotal.toLocaleString();
             
-            leadData = { name, mobile: "+91"+document.getElementById('custMobile').value, loc, zone: zoneRates[zoneId].name, depth, total, status: "Pending Review" };
+            leadData = { name, mobile: "+91"+document.getElementById('custMobile').value, loc, zone: document.getElementById('invZone').innerText, depth: totalDepth, total: grandTotal, status: "Pending Review" };
             
             document.getElementById('step-1').style.display = 'none';
             document.getElementById('step-2').style.display = 'block';
@@ -361,7 +432,7 @@
         function downloadPDF() {
             const content = getInvoiceHTML({ ...leadData, rows: document.getElementById('invBody').innerHTML });
             const el = document.createElement('div'); el.innerHTML = content; document.body.appendChild(el);
-            html2pdf().from(el).save('Estimate.pdf').then(() => document.body.removeChild(el));
+            html2pdf().from(el).save(`Estimate_${leadData.loc}.pdf`).then(() => document.body.removeChild(el));
         }
 
         // MAPS
@@ -375,6 +446,9 @@
         }
         function confirmQuoteLocation() {
             const pos = qMap.getCenter(); 
+            siteCoords = { lat: pos.lat(), lng: pos.lng() }; // Update Coords
+            calcDistance(); // Recalc Distance
+            
             new google.maps.Geocoder().geocode({ location: pos }, (results, status) => {
                 if(status === 'OK' && results[0]) {
                     document.getElementById('locInput').value = results[0].formatted_address;
@@ -384,13 +458,14 @@
             document.getElementById('miniMapModal').style.display = 'none';
         }
         
-        // Use GPS
         function detectGPS() {
             if(navigator.geolocation) {
                 const btn = document.querySelector('button[onclick="detectGPS()"]'); btn.innerHTML = "...";
                 navigator.geolocation.getCurrentPosition(pos => {
                     if(typeof google !== 'undefined') {
-                        new google.maps.Geocoder().geocode({ location: {lat: pos.coords.latitude, lng: pos.coords.longitude} }, (res, status) => {
+                        siteCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        calcDistance(); // Recalc Distance
+                        new google.maps.Geocoder().geocode({ location: siteCoords }, (res, status) => {
                             if(status === 'OK') {
                                 document.getElementById('locInput').value = res[0].formatted_address;
                                 analyzeLocation(res[0].formatted_address, pos.coords.latitude, pos.coords.longitude);
@@ -402,7 +477,6 @@
             }
         }
 
-        // Load Maps API
         const s = document.createElement('script'); 
         s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
         s.async = true; s.defer = true; 
