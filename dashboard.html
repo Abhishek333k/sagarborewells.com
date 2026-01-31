@@ -15,14 +15,28 @@
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
-    <script src="assets/js/pdf_template.js"></script> <script src="assets/js/certificate_template.js"></script> <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+    <script src="assets/js/pdf_template.js"></script>
+    <script src="assets/js/certificate_template.js"></script>
+
+    <style>
+        /* 🟢 PREVENT FLICKER: Hide body initially */
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; opacity: 0; transition: opacity 0.5s ease-in; }
+        
+        .tab-btn { border-bottom: 2px solid transparent; transition: all 0.3s; }
         .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 700; }
-        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #2563eb; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
+        
+        /* Centered Loader for initial check */
+        #auth-loader { position: fixed; inset: 0; background: white; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
+
+    <div id="auth-loader">
+        <div class="spinner"></div>
+        <p class="text-slate-400 text-xs mt-3 font-bold tracking-widest uppercase">Secure Login...</p>
+    </div>
 
     <div id="navbar-mount"></div>
 
@@ -43,18 +57,18 @@
             <button onclick="switchTab('quotes')" id="tab-quotes" class="tab-btn px-6 py-3 text-slate-600 hover:text-slate-800 whitespace-nowrap">Price Quotations</button>
         </div>
 
-        <div id="global-loader" class="text-center py-12">
-            <div class="spinner"></div>
-            <p class="text-slate-400 text-sm mt-2">Syncing data...</p>
+        <div id="data-loader" class="text-center py-12 hidden">
+            <i class="ri-loader-4-line text-3xl text-blue-600 animate-spin"></i>
+            <p class="text-slate-400 text-sm mt-2">Syncing your records...</p>
         </div>
 
-        <div id="view-projects" class="tab-content hidden">
+        <div id="view-projects" class="tab-content">
             <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
             <div id="no-projects" class="hidden text-center py-12 bg-white rounded-xl border border-slate-100 shadow-sm">
                 <i class="ri-hammer-line text-4xl text-slate-300"></i>
                 <p class="text-slate-500 mt-2 font-medium">No completed projects found.</p>
                 <div class="mt-4 text-xs text-orange-600 bg-orange-50 inline-block px-3 py-2 rounded border border-orange-100">
-                    <strong>Note:</strong> Ensure your project in database has mobile: <span id="debugPhone" class="font-mono">...</span>
+                    <strong>Note:</strong> Records are linked to <span id="debugPhone" class="font-mono">...</span>
                 </div>
             </div>
         </div>
@@ -63,7 +77,7 @@
             <div id="quotes-grid" class="grid grid-cols-1 gap-4"></div>
             <div id="no-quotes" class="hidden text-center py-12">
                 <p class="text-slate-400">No active price quotations found.</p>
-                <a href="quote.html" class="text-blue-600 font-bold hover:underline text-sm">Get a Quote</a>
+                <a href="quote.html" class="text-blue-600 font-bold hover:underline text-sm mt-2 inline-block">Get a New Estimate →</a>
             </div>
         </div>
 
@@ -72,18 +86,26 @@
     <div id="footer-mount"></div>
 
     <script>
-        // INIT FIREBASE
         if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
         const db = firebase.firestore();
 
-        // 1. AUTH LISTENER
+        // 1. AUTH LISTENER (Eliminates Flicker)
         firebase.auth().onAuthStateChanged((user) => {
+            const loader = document.getElementById('auth-loader');
+            
             if (user) {
+                // USER FOUND: Reveal Page
                 document.getElementById('userPhone').innerText = user.phoneNumber;
                 document.getElementById('debugPhone').innerText = user.phoneNumber;
+                
+                // Hide loader, Fade in body
+                loader.style.display = 'none';
+                document.body.style.opacity = '1';
+                
                 loadClientData(user.uid, user.phoneNumber);
             } else {
-                window.location.href = "login.html";
+                // NO USER: Redirect Immediately (Replace history so back button works)
+                window.location.replace("login.html");
             }
         });
 
@@ -95,16 +117,14 @@
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             
-            const selectedView = document.getElementById('view-' + tabName);
-            if(selectedView) selectedView.classList.remove('hidden');
-            
-            const selectedTab = document.getElementById('tab-' + tabName);
-            if(selectedTab) selectedTab.classList.add('active');
+            document.getElementById('view-' + tabName).classList.remove('hidden');
+            document.getElementById('tab-' + tabName).classList.add('active');
         }
 
         // 2. DATA LOADING
        function loadClientData(uid, phone) {
-            const loader = document.getElementById('global-loader');
+            const dataLoader = document.getElementById('data-loader');
+            dataLoader.classList.remove('hidden'); // Show spinner
             
             // --- A. LOAD QUOTATIONS (Leads) ---
             db.collection('leads')
@@ -125,47 +145,28 @@
                       leads.forEach(data => {
                           const dateObj = data.timestamp ? new Date(data.timestamp.toDate()) : new Date();
                           const date = dateObj.toLocaleDateString();
-                          
-                          // Check Expiry (30 Days)
-                          const daysOld = (new Date() - dateObj) / (1000 * 60 * 60 * 24);
-                          const isExpired = daysOld > 30;
-                          
-                          // Safe Data for Button
+                          const isExpired = ((new Date() - dateObj) / (1000 * 60 * 60 * 24)) > 30;
                           const dataStr = encodeURIComponent(JSON.stringify(data));
+                          const recalcLink = `quote.html?recalc=1&loc=${encodeURIComponent(data.loc)}&depth=${data.depth}`;
 
-                          // Recalculate Link (Passes Params)
-                          const recalcLink = `quote.html?recalc=1&loc=${encodeURIComponent(data.loc)}&depth=${data.depth}&zone=${encodeURIComponent(data.zone)}`;
-
-                          const card = `
+                          grid.innerHTML += `
                             <div class="flex flex-col md:flex-row justify-between items-center p-5 bg-white border ${isExpired ? 'border-red-100 bg-red-50/10' : 'border-slate-200'} rounded-xl shadow-sm hover:shadow-md transition gap-4">
                                 <div class="flex-grow">
                                     <h4 class="font-bold text-slate-700 text-lg">${data.loc || "Location"}</h4>
                                     <p class="text-xs text-slate-400 mt-1"><i class="ri-calendar-line"></i> Quoted: ${date}</p>
-                                    <div class="mt-2 text-xs font-semibold text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded">
-                                        ${data.zone || 'Standard'} • ${data.depth} ft
-                                    </div>
+                                    <div class="mt-2 text-xs font-semibold text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded">${data.zone || 'Standard'} • ${data.depth} ft</div>
                                     ${isExpired ? '<span class="ml-2 text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded">EXPIRED</span>' : ''}
                                 </div>
                                 <div class="text-right flex flex-col items-end gap-2">
                                     <div class="font-extrabold text-xl text-slate-900">₹${parseInt(data.total).toLocaleString()}</div>
                                     <div class="flex gap-2">
-                                        <button onclick="downloadQuotePDF('${dataStr}')" class="px-3 py-2 text-xs font-bold text-blue-600 border border-blue-200 bg-blue-50 rounded hover:bg-blue-100">
-                                            <i class="ri-file-download-line"></i> PDF
-                                        </button>
-                                        ${isExpired ? 
-                                        `<a href="${recalcLink}" class="px-3 py-2 text-xs font-bold text-white bg-slate-400 rounded hover:bg-slate-500">Recalculate</a>` 
-                                        : 
-                                        `<button class="px-3 py-2 text-xs font-bold text-white bg-emerald-500 rounded cursor-default"><i class="ri-check-line"></i> Valid</button>`}
+                                        <button onclick="downloadQuotePDF('${dataStr}')" class="px-3 py-2 text-xs font-bold text-blue-600 border border-blue-200 bg-blue-50 rounded hover:bg-blue-100"><i class="ri-file-download-line"></i> PDF</button>
+                                        ${isExpired ? `<a href="${recalcLink}" class="px-3 py-2 text-xs font-bold text-white bg-slate-400 rounded hover:bg-slate-500">Recalculate</a>` : `<button class="px-3 py-2 text-xs font-bold text-white bg-emerald-500 rounded cursor-default"><i class="ri-check-line"></i> Valid</button>`}
                                     </div>
                                 </div>
-                            </div>
-                          `;
-                          grid.innerHTML += card;
+                            </div>`;
                       });
                   }
-                  
-                  if(loader) loader.style.display = 'none';
-                  switchTab('quotes'); 
               });
 
             // --- B. LOAD PROJECTS (Completed Borewells) ---
@@ -182,98 +183,51 @@
                       grid.innerHTML = "";
                       snap.forEach(doc => {
                           const data = doc.data();
-                          // Try to find name from user profile or fallback
-                          data.name = data.name || "Valued Client"; 
                           const dataStr = encodeURIComponent(JSON.stringify(data));
                           
-                          const card = `
-                            <div class="bg-white p-6 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden">
+                          grid.innerHTML += `
+                            <div class="bg-white p-6 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden group">
                                 <div class="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">COMPLETED</div>
                                 <h3 class="text-xl font-extrabold text-slate-800 mb-1">${data.location}</h3>
                                 <p class="text-xs text-slate-500 mb-4">Drilled on: ${data.date}</p>
-                                
                                 <div class="grid grid-cols-2 gap-2 text-sm bg-slate-50 p-4 rounded-lg mb-6">
                                     <div><span class="block text-[10px] text-slate-400 uppercase">Total Depth</span> <b class="text-slate-700">${data.depth} ft</b></div>
                                     <div><span class="block text-[10px] text-slate-400 uppercase">Yield</span> <b class="text-emerald-600">${data.yield}</b></div>
                                     <div><span class="block text-[10px] text-slate-400 uppercase">Motor</span> <b class="text-slate-700">${data.motor}</b></div>
                                     <div><span class="block text-[10px] text-slate-400 uppercase">Casing</span> <b class="text-slate-700">${data.casing_depth} ft</b></div>
                                 </div>
-
-                                <button onclick="downloadCert('${dataStr}')" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition flex items-center justify-center gap-2">
+                                <button onclick="downloadCert('${dataStr}')" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition flex items-center justify-center gap-2 shadow-lg group-hover:shadow-xl">
                                     <i class="ri-file-certificate-line text-yellow-400"></i> Download Birth Certificate
                                 </button>
-                            </div>
-                          `;
-                          grid.innerHTML += card;
+                            </div>`;
                       });
-                      switchTab('projects');
+                      switchTab('projects'); // Default view if projects exist
                   }
+                  dataLoader.classList.add('hidden'); // Hide loader when done
               });
         }
 
-        // 3. GENERATE QUOTE PDF (Re-Constructs the Table)
+        // PDF GENERATORS (Same Logic)
         function downloadQuotePDF(encodedData) {
             const data = JSON.parse(decodeURIComponent(encodedData));
-            
-            // Re-Generate Rows (Since we didn't save HTML)
-            let rows = "";
-            let remaining = parseInt(data.depth);
-            let floor = 0;
-            // Approximate rate reconstruction (assuming standard start)
-            // You can fetch real zone rates if needed, but this is a decent estimate for display
-            let currentRate = 90; // Default base
-            // If data has zone info, ideally we use that, but simple slab logic is fine for historical view
-            
+            let rows = "", remaining = parseInt(data.depth), floor = 0, currentRate = 90;
             while(remaining > 0) {
                 let chunk = (remaining >= 50) ? 50 : remaining;
                 let cost = chunk * currentRate;
                 rows += `<tr><td>${floor}-${floor+chunk}ft @ ₹${currentRate}</td><td style="text-align:right">₹${cost.toLocaleString()}</td></tr>`;
                 remaining -= chunk; floor += chunk; currentRate += 5;
             }
-
-            // Call Template
-            const content = getInvoiceHTML({
-                name: data.name || "Customer",
-                mobile: data.mobile,
-                loc: data.loc,
-                total: data.total,
-                rows: rows 
-            });
-
-            const element = document.createElement('div');
-            element.innerHTML = content;
-            document.body.appendChild(element);
-            
-            html2pdf().from(element).save(`Sagar_Estimate_${data.loc}.pdf`).then(() => document.body.removeChild(element));
+            const content = getInvoiceHTML({ name: data.name || "Customer", mobile: data.mobile, loc: data.loc, total: data.total, rows: rows });
+            const el = document.createElement('div'); el.innerHTML = content; document.body.appendChild(el);
+            html2pdf().from(el).save(`Sagar_Estimate_${data.loc}.pdf`).then(() => document.body.removeChild(el));
         }
 
-        // 4. GENERATE CERTIFICATE PDF
         function downloadCert(encodedData) {
             const data = JSON.parse(decodeURIComponent(encodedData));
-            
-            // 🟢 ENSURE ID IS USED FOR FILENAME
             const certID = data.projectId || `SBW-${new Date().getFullYear()}-GEN`;
-
-            const content = getCertificateHTML({
-                id: certID,
-                name: data.customerName || "Valued Customer",
-                loc: data.location,
-                date: data.date,
-                gps: data.gps || "Unavailable", 
-                depth: data.depth,
-                casing_depth: data.casing_depth,
-                casing_type: data.casing_type,
-                yield: data.yield,
-                motor: data.motor,
-                rigType: data.rigType
-            });
-
-            const element = document.createElement('div');
-            element.innerHTML = content;
-            document.body.appendChild(element);
-            
-            // 🟢 SAVE AS PROJECT ID
-            html2pdf().from(element).save(`${certID}.pdf`).then(() => document.body.removeChild(element));
+            const content = getCertificateHTML({ id: certID, name: data.customerName || "Valued Customer", loc: data.location, date: data.date, gps: data.gps || "Unavailable", depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType });
+            const el = document.createElement('div'); el.innerHTML = content; document.body.appendChild(el);
+            html2pdf().from(el).save(`${certID}.pdf`).then(() => document.body.removeChild(el));
         }
     </script>
 </body>
