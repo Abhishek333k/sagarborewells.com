@@ -1,69 +1,141 @@
 // FILENAME: assets/js/layout.js
 
-function renderNavbar() {
-    const mount = document.getElementById('navbar-mount');
-    if (!mount) return;
-
-    const nav = document.createElement('nav');
-    nav.className = "bg-white shadow-sm sticky top-0 z-50";
-    nav.innerHTML = `
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="flex justify-between h-20">
-                <div class="flex items-center">
-                    <a href="index.html" class="flex items-center gap-2">
-                        <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xl font-bold">S</div>
-                        <div>
-                            <span class="block text-xl font-extrabold text-slate-900 leading-none">SAGAR</span>
-                            <span class="block text-xs font-bold text-blue-600 tracking-widest">BOREWELLS</span>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="hidden md:flex items-center gap-8">
-                    <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
-                    <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
-                    <a href="blog.html" class="font-bold text-slate-600 hover:text-blue-600 transition">News Room</a>
+document.addEventListener("DOMContentLoaded", function() {
+    
+    // --- 1. RENDER HEADER ---
+    const headerMount = document.getElementById('navbar-mount');
+    if (headerMount) {
+        headerMount.innerHTML = `
+        <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between h-20">
                     
-                    <a href="admin.html" id="admin-link" class="hidden font-bold text-red-600 border border-red-200 bg-red-50 px-3 py-1 rounded-lg hover:bg-red-100 transition flex items-center gap-2">
-                        <i class="ri-shield-user-line"></i> Admin
-                    </a>
+                    <div class="flex items-center">
+                        <a href="index.html" class="flex items-center gap-2 group">
+                            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xl font-bold group-hover:scale-105 transition">S</div>
+                            <div>
+                                <span class="block text-xl font-extrabold text-slate-900 leading-none">SAGAR</span>
+                                <span class="block text-xs font-bold text-blue-600 tracking-widest">BOREWELLS</span>
+                            </div>
+                        </a>
+                    </div>
 
-                    <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
-                        <i class="ri-user-line"></i> Account
-                    </a>
+                    <div class="hidden md:flex items-center gap-8">
+                        <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
+                        <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
+                        <a href="blog.html" class="font-bold text-slate-600 hover:text-blue-600 transition">News Room</a>
+                        
+                        <a href="admin.html" id="admin-link" class="hidden font-bold text-red-600 border border-red-200 bg-red-50 px-3 py-1 rounded-lg hover:bg-red-100 transition flex items-center gap-2">
+                            <i class="ri-shield-user-line"></i> Admin
+                        </a>
 
-                    <a href="quote.html" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-lg shadow-blue-200">
-                        Get Quote
-                    </a>
-                </div>
+                        <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
+                            <i class="ri-user-line"></i> Account
+                        </a>
 
-                <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-btn" class="text-slate-600 text-2xl">
-                        <i class="ri-menu-line"></i>
-                    </button>
+                        <a href="quote.html" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-lg shadow-blue-200 flex items-center gap-2">
+                            <i class="ri-calculator-line"></i> Get Quote
+                        </a>
+                    </div>
+
+                    <div class="md:hidden flex items-center">
+                        <button id="mobile-menu-btn" class="text-slate-600 text-2xl p-2 rounded hover:bg-slate-100">
+                            <i class="ri-menu-line"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+            
+            <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 p-4 absolute w-full shadow-lg left-0">
+                <a href="index.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Home</a>
+                <a href="blog.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">News Room</a>
+                <a href="admin.html" id="mobile-admin-link" class="hidden block py-3 font-bold text-red-600 border-b border-slate-50">Admin Panel</a>
+                <a href="dashboard.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">My Account</a>
+                <a href="contact.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Contact</a>
+                <a href="quote.html" class="block py-3 mt-4 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md">Get Quote</a>
+            </div>
+        </nav>`;
+
+        // 🟢 RESTORE INTERACTIVITY
+        const btn = document.getElementById('mobile-menu-btn');
+        if(btn) btn.addEventListener('click', () => document.getElementById('mobile-menu').classList.toggle('hidden'));
         
-        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 p-4 absolute w-full shadow-lg">
-            <a href="index.html" class="block py-3 font-bold text-slate-600">Home</a>
-            <a href="blog.html" class="block py-3 font-bold text-slate-600">News Room</a>
-            <a href="admin.html" id="mobile-admin-link" class="hidden block py-3 font-bold text-red-600">Admin Panel</a>
-            <a href="dashboard.html" class="block py-3 font-bold text-slate-600">My Account</a>
-            <a href="contact.html" class="block py-3 font-bold text-slate-600">Contact</a>
-            <a href="quote.html" class="block py-3 mt-2 text-center bg-blue-600 text-white font-bold rounded-lg">Get Quote</a>
-        </div>
-    `;
-    mount.appendChild(nav);
+        checkAdminStatus();
+    }
 
-    // Event Listener for Mobile Menu
-    const btn = document.getElementById('mobile-menu-btn');
-    if(btn) btn.addEventListener('click', () => document.getElementById('mobile-menu').classList.toggle('hidden'));
+    // --- 2. RENDER FOOTER ---
+    const footerMount = document.getElementById('footer-mount');
+    if (footerMount) {
+        footerMount.innerHTML = `
+        <footer class="bg-[#0f172a] pt-16 pb-8 border-t border-slate-800 text-slate-400 font-sans mt-auto">
+            <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                
+                <div class="col-span-1 md:col-span-1">
+                    <a href="index.html" class="text-xl font-extrabold text-white flex items-center gap-2 mb-4">
+                        SAGAR <span class="text-blue-500">BOREWELLS</span>
+                    </a>
+                    <p class="text-xs leading-relaxed mb-6">
+                        Advanced geological sensor drilling. Delivering precision water solutions since 2010.
+                    </p>
+                    <div class="flex gap-3">
+                        <a href="https://wa.me/${CONTACT_INFO.whatsapp_api}" target="_blank" class="w-9 h-9 rounded bg-slate-800 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition">
+                            <i class="ri-whatsapp-line text-lg"></i>
+                        </a>
+                        <a href="${CONTACT_INFO.social_instagram}" target="_blank" class="w-9 h-9 rounded bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition">
+                            <i class="ri-instagram-line text-lg"></i>
+                        </a>
+                        <a href="${CONTACT_INFO.social_youtube}" target="_blank" class="w-9 h-9 rounded bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition">
+                            <i class="ri-youtube-fill text-lg"></i>
+                        </a>
+                    </div>
+                </div>
 
-    // Check Firebase Auth to show Admin Button
-    checkAdminStatus();
-}
+                <div>
+                    <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Quick Access</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="index.html" class="hover:text-blue-400 transition">Home</a></li>
+                        <li><a href="quote.html" class="hover:text-blue-400 transition">Get Estimate</a></li>
+                        <li><a href="contact.html" class="hover:text-blue-400 transition">Contact & Support</a></li>
+                        <li><a href="dashboard.html" class="hover:text-blue-400 transition">Client Login</a></li>
+                    </ul>
+                </div>
 
+                <div>
+                    <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Legal</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="terms.html" class="hover:text-blue-400 transition">Terms & Conditions</a></li>
+                        <li><a href="privacy.html" class="hover:text-blue-400 transition">Privacy Policy</a></li>
+                        <li><a href="refund.html" class="hover:text-blue-400 transition">Refund Policy</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Contact</h4>
+                    <ul class="space-y-3 text-sm">
+                        <li class="flex items-start gap-3">
+                            <i class="ri-map-pin-line mt-1 text-blue-500"></i>
+                            <span>${CONTACT_INFO.address_line1}<br>${CONTACT_INFO.address_line2}</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="ri-phone-line text-blue-500"></i>
+                            <a href="tel:+${CONTACT_INFO.whatsapp_api}" class="hover:text-white font-mono">${CONTACT_INFO.phone_display}</a>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="ri-mail-line text-blue-500"></i>
+                            <a href="mailto:${CONTACT_INFO.email}" class="hover:text-white">${CONTACT_INFO.email}</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-800 pt-8 text-center text-xs">
+                <p>© ${new Date().getFullYear()} Sagar Borewells. All rights reserved.</p>
+            </div>
+        </footer>`;
+    }
+});
+
+// --- HELPER: ADMIN CHECK ---
 function checkAdminStatus() {
     if(typeof firebase === 'undefined' || !firebase.auth) return;
     
@@ -82,60 +154,3 @@ function checkAdminStatus() {
         }
     });
 }
-
-function renderFooter() {
-    const mount = document.getElementById('footer-mount');
-    if (!mount) return;
-
-    const footer = document.createElement('footer');
-    footer.className = "bg-slate-900 text-white py-12 mt-auto";
-    
-    // 🟢 DYNAMICALLY INJECT CONFIG DATA HERE
-    footer.innerHTML = `
-        <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
-            <div>
-                <h4 class="text-lg font-bold text-white mb-4">Sagar Borewells</h4>
-                <p class="text-slate-400">Advanced geological drilling solutions using sensor-based technology and zone-specific pricing.</p>
-                <div class="flex gap-4 mt-4">
-                    <a href="${CONTACT_INFO.social_youtube}" target="_blank" class="text-slate-400 hover:text-red-500 text-xl"><i class="ri-youtube-fill"></i></a>
-                    <a href="${CONTACT_INFO.social_instagram}" target="_blank" class="text-slate-400 hover:text-pink-500 text-xl"><i class="ri-instagram-fill"></i></a>
-                </div>
-            </div>
-            
-            <div>
-                <h4 class="text-lg font-bold text-white mb-4">Quick Links</h4>
-                <ul class="space-y-2 text-slate-400">
-                    <li><a href="index.html" class="hover:text-blue-400">Home</a></li>
-                    <li><a href="quote.html" class="hover:text-blue-400">Get Estimate</a></li>
-                    <li><a href="blog.html" class="hover:text-blue-400">News Room</a></li>
-                    <li><a href="dashboard.html" class="hover:text-blue-400">Client Login</a></li>
-                </ul>
-            </div>
-            
-            <div>
-                <h4 class="text-lg font-bold text-white mb-4">Contact</h4>
-                <p class="text-slate-400 leading-relaxed">
-                    ${CONTACT_INFO.address_line1}<br>
-                    ${CONTACT_INFO.address_line2}
-                </p>
-                <p class="text-slate-400 mt-4 font-mono font-bold text-emerald-400">
-                    <i class="ri-whatsapp-line"></i> ${CONTACT_INFO.phone_display}
-                </p>
-                <p class="text-slate-500 text-xs mt-1">
-                    <a href="mailto:${CONTACT_INFO.email}" class="hover:text-white">${CONTACT_INFO.email}</a>
-                </p>
-            </div>
-        </div>
-        
-        <div class="text-center text-slate-600 text-xs mt-12 pt-8 border-t border-slate-800">
-            &copy; ${new Date().getFullYear()} Sagar Borewells. All rights reserved.
-        </div>
-    `;
-    mount.appendChild(footer);
-}
-
-// Init Layout
-document.addEventListener("DOMContentLoaded", () => {
-    renderNavbar();
-    renderFooter();
-});
