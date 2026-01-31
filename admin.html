@@ -450,11 +450,15 @@
 
         // 3. CRUD: SAVE ZONE
         function saveCurrentZone() {
-            const name = document.getElementById('newZoneName').value;
+            const nameRaw = document.getElementById('newZoneName').value;
             const type = document.getElementById('drawType').value;
             
-            if(!name) return notify("Please enter a zone name", "error");
+            if(!nameRaw) return notify("Please enter a zone name", "error");
             if(!currentPoly) return;
+
+            // 🟢 1. CREATE CUSTOM ID (Sanitize Name)
+            // Turns "Mangalagiri Hill" into "mangalagiri_hill" to use as ID
+            const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_');
 
             // Extract Coordinates
             const path = currentPoly.getPath();
@@ -465,8 +469,8 @@
             }
 
             const zoneData = {
-                name: name,
-                typeKey: type, // Store 'rock', 'water' etc
+                name: nameRaw,
+                typeKey: type,
                 typeName: ZONE_CONFIG[type].label,
                 color: ZONE_CONFIG[type].color,
                 coords: coords,
@@ -477,10 +481,14 @@
             const oldText = btn.innerText;
             btn.innerText = "SAVING...";
 
-            db.collection('geo_zones').add(zoneData).then(() => {
-                notify("ZONE SAVED");
-                discardCurrentZone(); // Clear UI
-                loadAdminZones(); // Refresh list & Map
+            // 🟢 2. USE .doc(docId).set() INSTEAD OF .add()
+            db.collection('geo_zones').doc(docId).set(zoneData).then(() => {
+                notify("ZONE SAVED: " + docId);
+                
+                // 🟢 3. CLEAR INPUT & MAP
+                document.getElementById('newZoneName').value = ""; // Clear Input
+                discardCurrentZone(); 
+                loadAdminZones(); 
                 btn.innerText = oldText;
             }).catch(e => notify("Error: " + e.message, "error"));
         }
