@@ -31,18 +31,27 @@
         .quote-card { background: #ffffff; border-radius: 24px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); padding: 40px; max-width: 800px; margin: 40px auto; }
         .gradient-text { background: linear-gradient(135deg, #1e293b 0%, #2563eb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 2.5rem; }
         .form-label { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: #64748b; margin-bottom: 8px; display: block; }
-        .custom-input, .custom-select { width: 100%; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; }
-        .custom-input:focus { border-color: var(--primary); background: #fff; }
+        .custom-input, .custom-select { width: 100%; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; transition: 0.3s; }
+        .custom-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
         .btn-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; font-weight: 700; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; }
         .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; opacity: 0.7; }
         
+        /* 🟢 CUSTOM GOOGLE MAPS AUTOCOMPLETE STYLING */
+        .pac-container { 
+            border-radius: 12px; margin-top: 5px; border: none; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+        }
+        .pac-item { padding: 10px 15px; border-top: 1px solid #f1f5f9; font-size: 14px; color: #64748b; cursor: pointer; }
+        .pac-item:hover { background-color: #eff6ff; }
+        .pac-item-query { font-size: 15px; color: #1e293b; font-weight: 700; }
+        .pac-icon { display: none; } /* Hide default ugly icon */
+
         .est-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95rem; }
         .est-table th { text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 0.8rem; text-transform: uppercase; }
         .est-table td { padding: 16px 12px; border-bottom: 1px solid #f1f5f9; font-weight: 600; }
         
         .slider-container { background: #f1f5f9; border-radius: 20px; padding: 40px 30px; text-align: center; border: 1px solid #e2e8f0; }
         
-        /* 🔴 UPDATED FONT SIZE FOR DEPTH */
         #display-val { font-size: 8rem; font-weight: 800; color: var(--primary); line-height: 1; letter-spacing: -4px; }
         #display-unit { font-size: 2rem; font-weight: 700; color: #94a3b8; vertical-align: super; }
 
@@ -83,26 +92,25 @@
                             <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold hover:bg-emerald-700">OK</button>
                         </div>
                         <div id="recaptcha-container"></div>
-                        <p id="otpMsg" class="text-xs mt-2 text-slate-500"></p>
                     </div>
                 </div>
 
                 <div>
-                        <label class="form-label">Site Location</label>
-                        <div class="relative flex gap-2">
-                            <input type="text" id="locInput" class="custom-input pr-24" placeholder="Village / Area Name">
-                            
-                            <button onclick="detectGPS()" class="absolute right-14 top-2 bottom-2 bg-blue-100 text-blue-600 px-3 rounded-lg font-bold text-xs hover:bg-blue-200 transition">
-                                DETECT
-                            </button>
-                            
-                            <button onclick="openMiniMap()" class="absolute right-2 top-2 bottom-2 bg-slate-100 text-slate-600 px-3 rounded-lg hover:bg-slate-200 transition" title="Pick on Map">
-                                <i class="ri-map-pin-2-fill"></i>
-                            </button>
-                        </div>
+                    <label class="form-label">Site Location</label>
+                    <div class="relative flex gap-2">
+                        <input type="text" id="locInput" class="custom-input pr-24" placeholder="Start typing address...">
+                        
+                        <button onclick="detectGPS()" class="absolute right-14 top-2 bottom-2 bg-blue-100 text-blue-600 px-3 rounded-lg font-bold text-xs hover:bg-blue-200 transition">
+                            DETECT
+                        </button>
+                        
+                        <button onclick="openMiniMap()" class="absolute right-2 top-2 bottom-2 bg-slate-100 text-slate-600 px-3 rounded-lg hover:bg-slate-200 transition" title="Pick on Map">
+                            <i class="ri-map-2-line text-lg"></i>
+                        </button>
                     </div>
+                </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 mt-6">
                     <div>
                         <label class="form-label">Soil / Zone Type</label>
                         <select id="zoneInput" class="custom-select cursor-pointer bg-blue-50 border-blue-200 text-blue-800 font-bold">
@@ -122,8 +130,8 @@
                 <div class="mb-10">
                     <label class="form-label text-center mb-4">ESTIMATED DEPTH REQUIRED</label>
                     <div class="slider-container">
-                        <div class="display-value-wrap"><span id="display-val">300</span><span id="display-unit">FT</span></div>
-                        <input type="range" id="depthSlider" class="range-slider" min="100" max="500" value="300" step="10">
+                        <div class="display-value-wrap"><span id="display-val">100</span><span id="display-unit">FT</span></div>
+                        <input type="range" id="depthSlider" class="range-slider" min="100" max="500" value="100" step="10">
                         <div class="scale-labels"><span>100 FT</span><span id="maxLabel">500 FT</span></div>
                     </div>
                 </div>
@@ -160,25 +168,24 @@
 
         <div id="step-3" class="container mx-auto px-4 fade-in-up" style="display: none;">
             <div class="quote-card text-center">
-                <i class="ri-checkbox-circle-fill success-icon"></i>
+                <i class="ri-checkbox-circle-fill text-6xl text-emerald-500 mb-4"></i>
                 <h1 class="text-4xl font-extrabold text-slate-900 mb-2">Booking Confirmed!</h1>
                 <p class="text-slate-500 mb-8">Data saved securely to your account.</p>
                 <div class="flex justify-center gap-4">
                     <a href="dashboard.html" class="py-3 px-8 bg-blue-600 text-white font-bold rounded-xl">Go to Dashboard</a>
-                    <button onclick="openWhatsAppChat()" class="py-3 px-8 bg-emerald-600 text-white font-bold rounded-xl">Chat Support</button>
+                    <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}`, '_blank')" class="py-3 px-8 bg-emerald-600 text-white font-bold rounded-xl">Chat Support</button>
                 </div>
             </div>
         </div>
     </main>
 
     <div id="footer-mount"></div>
-   <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
+
+    <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
         <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl">
             <h3 class="font-bold text-slate-800 mb-2 text-center">Pinpoint Location</h3>
-            
             <div style="position: relative; width: 100%; height: 300px; background: #eee; border-radius: 10px; overflow: hidden;">
                 <div id="quoteMapContainer" style="width:100%; height:100%;"></div>
-                
                 <div class="target-reticle">
                     <div class="reticle-dot"></div>
                     <div class="reticle-ring"></div>
@@ -186,13 +193,13 @@
                     <div class="absolute h-[60px] w-[1px] bg-blue-500/20"></div>
                 </div>
             </div>
-
             <div class="flex justify-end gap-2 mt-4">
                 <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-500">Cancel</button>
                 <button onclick="confirmQuoteLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg">Set Location</button>
             </div>
         </div>
     </div>
+
     <script>
         // INIT
         if(CONTACT_INFO.firebase_config && !firebase.apps.length) {
@@ -204,7 +211,6 @@
         firebase.auth().onAuthStateChanged((user) => {
             const genBtn = document.getElementById('generateBtn');
             if (user) {
-                // LOGGED IN: Unlock Button
                 document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
                 document.getElementById('custMobile').disabled = true;
                 document.getElementById('sendOtpBtn').style.display = 'none';
@@ -218,108 +224,58 @@
                 genBtn.innerHTML = `Generate Official Estimate <i class="ri-arrow-right-line"></i>`;
                 genBtn.classList.remove('bg-slate-300');
             } else {
-                // NOT LOGGED IN: Lock Button
                 genBtn.disabled = true;
             }
         });
 
-       // 2. ZONE LOADING
-        let zoneData = []; 
-        let zoneRates = {};
-        
+        // 2. LOAD DATA
+        let zoneData = []; let zoneRates = {};
         document.addEventListener("DOMContentLoaded", () => {
             db.collection('zones').get().then((snapshot) => {
                 const zoneSelect = document.getElementById('zoneInput');
                 zoneSelect.innerHTML = '<option value="" disabled selected>Select Soil Type / Zone</option>';
-                
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    // Store Data
-                    zoneData.push({ 
-                        id: doc.id, 
-                        name: data.name, 
-                        rate: data.rate || 90, 
-                        keywords: data.keywords || [] 
-                    });
+                    zoneData.push({ id: doc.id, name: data.name, rate: data.rate || 90, keywords: data.keywords || [] });
                     zoneRates[doc.id] = { name: data.name, rate: data.rate };
-                    
-                    // Create Dropdown Option
                     const option = document.createElement('option');
-                    option.value = doc.id; 
-                    option.innerText = data.name; // Shows "Hard Rock" (Not price)
-                    
+                    option.value = doc.id; option.innerText = data.name;
                     zoneSelect.appendChild(option);
                 });
-            }).catch(e => console.log("Offline mode or Firebase Error:", e));
+            });
         });
 
-        // 3. OTP
-        function sendOTP() {
-            const phone = document.getElementById('custMobile').value;
-            if (phone.length !== 10) return alert("Enter 10 digit number");
-            const btn = document.getElementById('sendOtpBtn');
-            btn.innerText = "Sending...";
-            
-            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
-            
-            firebase.auth().signInWithPhoneNumber('+91' + phone, window.recaptchaVerifier)
-                .then((cr) => {
-                    window.confirmationResult = cr;
-                    btn.style.display = 'none';
-                    document.getElementById('otpSection').style.display = 'flex';
-                }).catch((e) => { console.error(e); alert("SMS Failed. Enable Billing in Console."); btn.innerText="VERIFY"; });
+        // 3. MAPS & AUTOCOMPLETE
+        let autocomplete;
+        function initMapTools() {
+            const input = document.getElementById('locInput');
+            // Autocomplete Setup
+            autocomplete = new google.maps.places.Autocomplete(input, { types: ['geocode'] });
+            autocomplete.addListener('place_changed', () => {
+                const place = autocomplete.getPlace();
+                if (place.geometry) {
+                    analyzeLocation(place.formatted_address, place.geometry.location.lat(), place.geometry.location.lng());
+                }
+            });
         }
 
-        function verifyOTP() {
-            const code = document.getElementById('otpInput').value;
-            window.confirmationResult.confirm(code).then(() => {
-                document.getElementById('otpSection').style.display = 'none';
-                // Auth listener will handle button unlocking
-            }).catch(() => alert("Invalid OTP"));
-        }
-
-        // 4. CALC & SLIDER
+        // 4. LOGIC
         const slider = document.getElementById('depthSlider');
         const displayVal = document.getElementById('display-val');
         slider.addEventListener('input', function() {
             let val = parseInt(this.value);
             displayVal.innerText = val;
             let max = parseInt(this.max);
+            // Dynamic scale adjustment
             if (val >= max - 20 && max < 1500) { this.max = max + 500; document.getElementById('maxLabel').innerText = this.max + " FT"; }
             if (val < 400 && max > 500) { this.max = 500; document.getElementById('maxLabel').innerText = "500 FT"; }
+            
             const pct = ((val - this.min) / (this.max - this.min)) * 100;
             this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
         });
 
-        // 5. MANUAL TYPING & GPS
-        document.getElementById('locInput').addEventListener('change', function() {
-            if(this.value.length > 3 && typeof google !== 'undefined') {
-                new google.maps.Geocoder().geocode({'address': this.value}, (res, status) => {
-                    if(status === 'OK') analyzeLocation(this.value, res[0].geometry.location.lat(), res[0].geometry.location.lng());
-                });
-            }
-        });
-
-        function detectGPS() {
-            if(navigator.geolocation) {
-                const btn = document.querySelector('button[onclick="detectGPS()"]');
-                btn.innerHTML = "...";
-                navigator.geolocation.getCurrentPosition(pos => {
-                    if(typeof google !== 'undefined') {
-                        new google.maps.Geocoder().geocode({ location: {lat: pos.coords.latitude, lng: pos.coords.longitude} }, (res, status) => {
-                            if(status === 'OK') {
-                                document.getElementById('locInput').value = res[0].formatted_address;
-                                analyzeLocation(res[0].formatted_address, pos.coords.latitude, pos.coords.longitude);
-                                btn.innerHTML = "DETECT";
-                            }
-                        });
-                    }
-                });
-            }
-        }
-
         function analyzeLocation(addr, lat, lng) {
-            // Zone Logic
+            // Zone Match
             const lowerAddr = addr.toLowerCase();
             const found = zoneData.find(z => z.keywords.some(k => lowerAddr.includes(k.toLowerCase())));
             if(found) {
@@ -327,21 +283,34 @@
                 sel.value = found.id;
                 sel.classList.add('bg-green-50', 'border-green-500');
             }
-            // Elevation Logic
-            if(typeof google !== 'undefined') {
-                new google.maps.ElevationService().getElevationForLocations({'locations': [{lat, lng}]}, (res, status) => {
-                    if(status === 'OK' && res[0]) {
-                        const el = res[0].elevation;
-                        let depth = 300;
-                        if(el > 100) depth = 900; else if(el > 50) depth = 600; else if(el < 15) depth = 200;
-                        slider.value = depth;
-                        slider.dispatchEvent(new Event('input'));
-                    }
-                });
-            }
+            // Elevation Match (Guess Depth)
+            new google.maps.ElevationService().getElevationForLocations({'locations': [{lat, lng}]}, (res, status) => {
+                if(status === 'OK' && res[0]) {
+                    const el = res[0].elevation;
+                    let depth = 300; // Default guess
+                    if(el > 100) depth = 900; else if(el > 50) depth = 600; else if(el < 15) depth = 200;
+                    slider.value = depth;
+                    slider.dispatchEvent(new Event('input'));
+                }
+            });
         }
 
-        // 6. SUBMIT
+        // 5. OTP & ACTIONS (Same as before)
+        function sendOTP() {
+            const phone = document.getElementById('custMobile').value;
+            if (phone.length !== 10) return alert("Enter 10 digit number");
+            const btn = document.getElementById('sendOtpBtn');
+            btn.innerText = "Sending...";
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
+            firebase.auth().signInWithPhoneNumber('+91' + phone, window.recaptchaVerifier).then((cr) => {
+                window.confirmationResult = cr; btn.style.display = 'none'; document.getElementById('otpSection').style.display = 'flex';
+            }).catch((e) => { console.error(e); alert("SMS Error"); btn.innerText="VERIFY"; });
+        }
+        function verifyOTP() {
+            const code = document.getElementById('otpInput').value;
+            window.confirmationResult.confirm(code).then(() => { document.getElementById('otpSection').style.display = 'none'; }).catch(() => alert("Invalid OTP"));
+        }
+
         let leadData = {};
         function goToStep2() {
             if(document.getElementById('generateBtn').disabled) return;
@@ -352,8 +321,7 @@
             
             const depth = parseInt(slider.value);
             const rate = zoneRates[zoneId].rate;
-            let total = 7000; // Fixed
-            
+            let total = 7000; 
             let remaining = depth, floor = 0, currentRate = rate, slab_jump = 5, rows = "";
             while(remaining > 0) {
                 let chunk = (remaining >= 50) ? 50 : remaining;
@@ -379,24 +347,13 @@
         function goToStep1() { document.getElementById('step-2').style.display = 'none'; document.getElementById('step-1').style.display = 'block'; }
         
         function confirmBooking() {
-            // 🟢 GENERATE STRUCTURED ID FOR ADMIN
             const year = new Date().getFullYear();
             const rand = Math.floor(1000 + Math.random() * 9000);
             const leadId = `QT-${year}-${rand}`;
-
-            const finalData = { 
-                ...leadData, 
-                id: leadId, // Store formatted ID
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(), 
-                userId: firebase.auth().currentUser.uid 
-            };
-
-            // Use .doc(leadId).set() to use the custom ID as the document key
-            db.collection('leads').doc(leadId).set(finalData)
-            .then(() => {
+            const finalData = { ...leadData, id: leadId, timestamp: firebase.firestore.FieldValue.serverTimestamp(), userId: firebase.auth().currentUser.uid };
+            db.collection('leads').doc(leadId).set(finalData).then(() => {
                 document.getElementById('step-2').style.display = 'none';
                 document.getElementById('step-3').style.display = 'block';
-                // Send WhatsApp with Ref ID
                 const waText = `Hello Sagar Borewells, I have a booking. Ref: ${leadId}`;
                 window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${encodeURIComponent(waText)}`, '_blank');
             });
@@ -404,60 +361,21 @@
         function downloadPDF() {
             const content = getInvoiceHTML({ ...leadData, rows: document.getElementById('invBody').innerHTML });
             const el = document.createElement('div'); el.innerHTML = content; document.body.appendChild(el);
-            html2pdf().from(el).save().then(() => document.body.removeChild(el));
+            html2pdf().from(el).save('Estimate.pdf').then(() => document.body.removeChild(el));
         }
 
-        // Load Maps
-        const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`; s.async = true; s.defer = true; document.body.appendChild(s);
-        slider.dispatchEvent(new Event('input'));
-        
-        // 🟢 AUTO-FILL FOR RECALCULATION
-        window.addEventListener('load', () => {
-            const params = new URLSearchParams(window.location.search);
-            if(params.has('recalc')) {
-                // 1. Fill Location
-                if(params.has('loc')) {
-                    const loc = decodeURIComponent(params.get('loc'));
-                    document.getElementById('locInput').value = loc;
-                    // Trigger detection just to be safe
-                    if(typeof analyzeLocation === 'function') analyzeLocation(loc, 0, 0); 
-                }
-
-                // 2. Fill Depth Slider
-                if(params.has('depth')) {
-                    const depth = params.get('depth');
-                    const slider = document.getElementById('depthSlider');
-                    slider.value = depth;
-                    slider.dispatchEvent(new Event('input')); // Visual update
-                }
-
-                // 3. Scroll to form
-                document.getElementById('step-1').scrollIntoView({ behavior: 'smooth' });
-            }
-        });
-
+        // MAPS
         let qMap;
         function openMiniMap() {
-            if(typeof google === 'undefined') {
-                alert("Map is loading... please wait a moment.");
-                return;
-            } 
+            if(typeof google === 'undefined') { alert("Map loading..."); return; } 
             document.getElementById('miniMapModal').style.display = 'flex';
             const center = {lat: 16.4410, lng: 80.5520}; 
-            if(!qMap) {
-                // disableDefaultUI removes the zoom controls/street view for a cleaner "Uber" look
-                qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), { center: center, zoom: 15, disableDefaultUI: true });
-            }
-            // Trigger resize to prevent grey box
+            if(!qMap) qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), { center: center, zoom: 15, disableDefaultUI: true });
             setTimeout(() => google.maps.event.trigger(qMap, 'resize'), 100);
         }
-
         function confirmQuoteLocation() {
-            const pos = qMap.getCenter(); // GET CENTER, NOT MARKER
-            
-            // Reverse Geocode
-            const geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ location: pos }, (results, status) => {
+            const pos = qMap.getCenter(); 
+            new google.maps.Geocoder().geocode({ location: pos }, (results, status) => {
                 if(status === 'OK' && results[0]) {
                     document.getElementById('locInput').value = results[0].formatted_address;
                     analyzeLocation(results[0].formatted_address, pos.lat(), pos.lng());
@@ -465,6 +383,32 @@
             });
             document.getElementById('miniMapModal').style.display = 'none';
         }
+        
+        // Use GPS
+        function detectGPS() {
+            if(navigator.geolocation) {
+                const btn = document.querySelector('button[onclick="detectGPS()"]'); btn.innerHTML = "...";
+                navigator.geolocation.getCurrentPosition(pos => {
+                    if(typeof google !== 'undefined') {
+                        new google.maps.Geocoder().geocode({ location: {lat: pos.coords.latitude, lng: pos.coords.longitude} }, (res, status) => {
+                            if(status === 'OK') {
+                                document.getElementById('locInput').value = res[0].formatted_address;
+                                analyzeLocation(res[0].formatted_address, pos.coords.latitude, pos.coords.longitude);
+                                btn.innerHTML = "DETECT";
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        // Load Maps API
+        const s = document.createElement('script'); 
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
+        s.async = true; s.defer = true; 
+        document.body.appendChild(s);
+        
+        slider.dispatchEvent(new Event('input'));
     </script>
 </body>
 </html>
