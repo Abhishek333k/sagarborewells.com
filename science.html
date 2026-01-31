@@ -89,60 +89,64 @@
             </div>
         </div>
 
-       <div class="space-y-8">
+        <div class="sci-card">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="ri-drop-line text-blue-400"></i> Water Quality (TDS)</h2>
+            <div class="flex gap-2 mb-6">
+                <input type="text" id="sciPincode" class="sci-input" placeholder="Enter Pincode (e.g. 522503)">
+                <button onclick="checkWaterQuality()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-lg font-bold transition shadow-lg shadow-blue-900/50">CHECK</button>
+            </div>
             
-            <div class="sci-card">
-                <h2 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="ri-drop-line text-blue-400"></i> Water Quality (TDS)</h2>
-                <div class="flex gap-2 mb-6">
-                    <input type="text" id="sciPincode" class="sci-input" placeholder="Enter Pincode (e.g. 522503)">
-                    <button onclick="checkWaterQuality()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-lg font-bold transition shadow-lg shadow-blue-900/50">CHECK</button>
-                </div>
-                <div id="tdsResult" class="hidden p-6 bg-slate-800/50 rounded-xl border border-slate-700 text-center">
-                    <div class="text-xs text-slate-400 uppercase tracking-widest mb-1">Expected TDS (PPM)</div>
-                    <div class="text-4xl font-bold text-white mb-2" id="tdsRange">--</div>
-                    <div class="text-sm font-bold" id="tdsNote">--</div>
-                </div>
+            <div id="tdsResult" class="hidden p-6 bg-slate-800/50 rounded-xl border border-slate-700 text-center">
+                <div class="text-xs text-slate-400 uppercase tracking-widest mb-1">Expected TDS (PPM)</div>
+                <div class="text-4xl font-bold text-white mb-2" id="tdsRange">--</div>
+                <div class="text-sm font-bold" id="tdsNote">--</div>
             </div>
+        </div>
 
-            <div class="sci-card">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="ri-settings-4-line text-orange-400"></i> Pump Recommendation</h2>
-                <div class="mb-4">
-                    <label class="text-xs text-slate-400 block mb-2 font-bold uppercase">Target Depth (ft)</label>
-                    <input type="number" id="sciDepth" class="sci-input text-lg font-mono" placeholder="e.g. 400" onkeyup="calcMotor()">
-                </div>
-                <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700">
-                    <div class="flex justify-between items-end mb-4">
-                        <div>
-                            <div class="text-[10px] text-slate-400 uppercase tracking-widest">Power Required</div>
-                            <div class="text-3xl font-bold text-white" id="motorHP">--</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-[10px] text-slate-400 uppercase tracking-widest">Stages</div>
-                            <div class="text-xl font-bold text-slate-300" id="motorStage">--</div>
-                        </div>
-                    </div>
-                    <a id="motorShopLink" href="#" target="_blank" class="block w-full py-3 bg-orange-600 hover:bg-orange-500 text-white text-center font-bold rounded-lg transition shadow-lg hidden">
-                        <i class="ri-shopping-cart-2-line mr-1"></i> Check Price on Sagar Traders
-                    </a>
-                </div>
+        <div class="sci-card">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="ri-settings-4-line text-orange-400"></i> Pump Recommendation</h2>
+            <div class="mb-6">
+                <label class="text-xs text-slate-400 block mb-2 font-bold uppercase">Target Depth (ft)</label>
+                <input type="number" id="sciDepthPump" class="sci-input text-lg font-mono" placeholder="e.g. 400" onkeyup="calcMotor()">
             </div>
-
-            <div class="sci-card">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="ri-dashboard-3-line text-red-400"></i> Geological Risk</h2>
-                <div class="relative h-4 bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner mb-4">
-                    <div id="riskBar" class="h-full w-0 meter-fill relative"></div>
-                </div>
-                <div class="flex justify-between items-center">
+            <div id="motorResult" class="p-6 bg-slate-800/50 rounded-xl border border-slate-700">
+                <div class="flex justify-between items-end mb-4">
                     <div>
-                        <div class="text-[10px] text-slate-500 uppercase tracking-widest">Risk Level</div>
-                        <div id="riskLabel" class="text-2xl font-bold text-slate-300">--</div>
+                        <div class="text-[10px] text-slate-400 uppercase tracking-widest">Power Required</div>
+                        <div class="text-3xl font-bold text-white" id="motorHP">--</div>
                     </div>
-                    <div class="text-right max-w-[50%]">
-                        <p class="text-xs text-slate-400 leading-tight" id="riskDesc">Enter depth to calculate.</p>
+                    <div class="text-right">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-widest">Pump Stages</div>
+                        <div class="text-2xl font-bold text-white" id="motorStage">--</div>
                     </div>
                 </div>
+                 <a id="motorShopLink" href="#" target="_blank" class="block w-full py-3 bg-orange-600 hover:bg-orange-500 text-white text-center font-bold rounded-lg transition shadow-lg hidden">
+                    <i class="ri-shopping-cart-2-line mr-1"></i> Check Price on Sagar Traders
+                </a>
+            </div>
+        </div>
+
+        <div class="sci-card">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="ri-dashboard-3-line text-red-400"></i> Geological Risk</h2>
+            
+            <div class="mb-6">
+                <label class="text-xs text-slate-400 block mb-2 font-bold uppercase">Target Depth (ft)</label>
+                <input type="number" id="sciDepthRisk" class="sci-input text-lg font-mono" placeholder="e.g. 400" onkeyup="calcRisk()">
             </div>
 
+            <div class="relative h-4 bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner mb-4">
+                <div id="riskBar" class="h-full w-0 meter-fill relative"></div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-widest">Risk Level</div>
+                    <div id="riskLabel" class="text-lg font-bold text-slate-300">--</div>
+                </div>
+                <div class="text-right">
+                     <p class="text-xs text-slate-400 leading-tight" id="riskDesc">Enter depth to calculate.</p>
+                </div>
+            </div>
         </div>
 
     </main>
