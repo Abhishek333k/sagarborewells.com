@@ -1,163 +1,179 @@
 // FILENAME: assets/js/science_engine.js
 
 // --- 1. CONFIG & DATA ---
-// Fallback data if Firebase is empty (The "Vague Local Knowledge")
+
+// 🟢 DATA: Define your Polygons here.
+// You can use tools like geojson.io to draw shapes and copy the coordinates.
+const KNOWN_ZONES = [
+    {
+        name: "Mangalagiri Hill Zone",
+        type: "Hard Rock",
+        color: "#ef4444", // Red
+        coords: [
+            { lat: 16.445, lng: 80.550 },
+            { lat: 16.448, lng: 80.560 },
+            { lat: 16.440, lng: 80.565 },
+            { lat: 16.435, lng: 80.555 }
+        ]
+    },
+    {
+        name: "Krishna River Basin",
+        type: "River Bed / Silt",
+        color: "#10b981", // Green
+        coords: [
+            { lat: 16.480, lng: 80.600 },
+            { lat: 16.490, lng: 80.620 },
+            { lat: 16.470, lng: 80.630 },
+            { lat: 16.460, lng: 80.610 }
+        ]
+    }
+];
+
 const MOCK_TDS_DATA = {
-    '522': { min: 400, max: 900, type: "Hard / High Mineral" }, // Guntur/Mangalagiri Region
-    '520': { min: 200, max: 600, type: "Sweet / River Bed" },   // Vijayawada Region
-    'default': { min: 300, max: 800, type: "Standard Profile" }
+    '522': { min: 400, max: 1200, type: "Hard / High Mineral" },
+    '520': { min: 200, max: 600, type: "Sweet / River Bed" },
+    'default': { min: 300, max: 900, type: "Standard Profile" }
 };
 
-// --- 2. TDS CALCULATOR (Robust) ---
+// --- 2. MAP ENGINE (POLYGON LOGIC) ---
+let sciMap;
+let mapPolygons = [];
+
+function initSciMap() {
+    const startLoc = { lat: 16.4410, lng: 80.5520 }; // Mangalagiri
+    
+    sciMap = new google.maps.Map(document.getElementById('sciMap'), {
+        center: startLoc,
+        zoom: 12,
+        mapTypeId: 'hybrid', // Hybrid looks more "Satellite Science"
+        disableDefaultUI: true,
+        styles: [
+            { featureType: "poi", stylers: [{ visibility: "off" }] } // Clean map
+        ]
+    });
+
+    // 🟢 DRAW POLYGONS
+    KNOWN_ZONES.forEach(zone => {
+        const poly = new google.maps.Polygon({
+            paths: zone.coords,
+            strokeColor: zone.color,
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: zone.color,
+            fillOpacity: 0.35,
+            map: sciMap
+        });
+        
+        // Attach data to the object for retrieval later
+        poly.zoneData = zone; 
+        mapPolygons.push(poly);
+    });
+
+    // 🟢 CLICK LISTENER
+    sciMap.addListener('click', (e) => {
+        analyzeLocation(e.latLng);
+    });
+}
+
+function analyzeLocation(latLng) {
+    let foundZone = null;
+
+    // Check every polygon
+    for (let poly of mapPolygons) {
+        if (google.maps.geometry.poly.containsLocation(latLng, poly)) {
+            foundZone = poly.zoneData;
+            break;
+        }
+    }
+
+    const statusEl = document.getElementById('zoneStatus');
+    
+    if (foundZone) {
+        statusEl.innerText = `${foundZone.name} (${foundZone.type})`;
+        statusEl.style.color = foundZone.color;
+        
+        // Add a marker to show where they clicked
+        new google.maps.Marker({
+            position: latLng,
+            map: sciMap,
+            animation: google.maps.Animation.DROP
+        });
+    } else {
+        statusEl.innerText = "Unknown Zone (Standard Rates Apply)";
+        statusEl.style.color = "#94a3b8"; // Slate-400
+    }
+}
+
+// --- 3. TDS CALCULATOR ---
 function checkWaterQuality() {
     const pincode = document.getElementById('sciPincode').value;
-    const box = document.getElementById('tdsBox');
-    const valText = document.getElementById('tdsVal');
-    const msgText = document.getElementById('tdsMsg');
+    const box = document.getElementById('tdsResult');
+    const rangeTxt = document.getElementById('tdsRange');
+    const noteTxt = document.getElementById('tdsNote');
 
     if(pincode.length !== 6) return alert("Enter valid 6-digit Pincode");
 
-    // UI Animation
+    // UI Reset
     box.classList.remove('hidden');
-    valText.innerText = "Scanning...";
-    msgText.innerText = "Querying Hydro-Database...";
-    box.classList.add('animate-pulse');
-
-    // Simulate "Processing Delay" for effect
+    rangeTxt.innerText = "...";
+    noteTxt.innerText = "Analyzing Aquifer Data...";
+    
+    // Simulate API Call
     setTimeout(() => {
-        box.classList.remove('animate-pulse');
-        
-        // Logic: Check Mock Data based on first 3 digits
         const prefix = pincode.substring(0, 3);
         const data = MOCK_TDS_DATA[prefix] || MOCK_TDS_DATA['default'];
 
-        // Inject Result
-        valText.innerText = `${data.min} - ${data.max} PPM`;
-        msgText.innerHTML = `<span class="${data.min > 500 ? 'text-orange-400' : 'text-emerald-400'}">● ${data.type}</span>`;
-    }, 800);
+        rangeTxt.innerText = `${data.min} - ${data.max}`;
+        noteTxt.innerHTML = `<span class="${data.min > 500 ? 'text-orange-400' : 'text-emerald-400'}">● ${data.type}</span>`;
+    }, 600);
 }
 
-// --- 3. RISK & MOTOR ENGINE (Optimized) ---
+// --- 4. RISK & MOTOR ENGINE ---
 const slider = document.getElementById('riskSlider');
 if(slider) {
     slider.addEventListener('input', function() {
         const depth = parseInt(this.value);
         document.getElementById('depthLabel').innerText = depth;
-        updateRiskAndMotor(depth);
+        
+        // Motor Logic
+        let hp = "1.0 HP";
+        let stg = "10 Stages";
+        if (depth > 150) { hp = "1.5 HP"; stg = "15 Stages"; }
+        if (depth > 300) { hp = "3.0 HP"; stg = "20 Stages"; }
+        if (depth > 500) { hp = "5.0 HP"; stg = "25 Stages"; }
+        if (depth > 800) { hp = "7.5 HP"; stg = "35 Stages"; }
+        if (depth > 1000) { hp = "10 HP"; stg = "40+ Stages"; }
+
+        document.getElementById('motorHP').innerText = hp;
+        document.getElementById('motorStage').innerText = stg;
+
+        // Risk Logic
+        let risk = (depth / 1500) * 100;
+        if(depth < 150) risk += 10; // Shallow collapse risk
+        if(depth > 900) risk += 20; // Deep pressure risk
+
+        const bar = document.getElementById('riskBar');
+        const label = document.getElementById('riskLabel');
+
+        bar.style.width = Math.min(risk, 100) + "%";
+        
+        if(risk < 40) {
+            label.innerText = "LOW";
+            label.className = "text-xl font-bold text-emerald-400";
+            bar.className = "h-full bg-emerald-500 transition-all duration-300";
+        } else if(risk < 70) {
+            label.innerText = "MODERATE";
+            label.className = "text-xl font-bold text-yellow-400";
+            bar.className = "h-full bg-yellow-500 transition-all duration-300";
+        } else {
+            label.innerText = "HIGH";
+            label.className = "text-xl font-bold text-red-500";
+            bar.className = "h-full bg-red-500 transition-all duration-300";
+        }
     });
 }
 
-function updateRiskAndMotor(depth) {
-    // A. MOTOR LOGIC (Physics Estimate)
-    let hp = "1.0 HP";
-    if (depth > 150) hp = "1.5 HP";
-    if (depth > 250) hp = "3.0 HP";
-    if (depth > 400) hp = "5.0 HP";
-    if (depth > 600) hp = "7.5 HP";
-    if (depth > 900) hp = "10 HP+";
-    
-    document.getElementById('recMotor').innerText = hp;
-
-    // B. RISK LOGIC
-    // Base Risk increases with depth
-    let risk = (depth / 1500) * 100; 
-    
-    // Add "Vague Knowledge" Curve:
-    // Drilling 300-500ft is usually safest. Very shallow or very deep is risky.
-    if(depth < 200) risk += 10; // Silt collapse risk
-    if(depth > 800) risk += 20; // Boulder risk
-
-    // Clamp 0-100
-    risk = Math.min(100, Math.max(10, risk));
-
-    // UI Update
-    const bar = document.getElementById('riskBar');
-    const label = document.getElementById('riskText');
-
-    bar.style.width = risk + "%";
-
-    // Dynamic Color
-    bar.className = `h-full meter-fill relative transition-all duration-300 ${
-        risk < 40 ? 'bg-emerald-500' : 
-        risk < 70 ? 'bg-yellow-500' : 'bg-red-500'
-    }`;
-
-    // Text Label
-    if(risk < 40) {
-        label.innerText = "SAFE";
-        label.className = "text-xl font-bold text-emerald-400";
-    } else if(risk < 70) {
-        label.innerText = "MODERATE";
-        label.className = "text-xl font-bold text-yellow-400";
-    } else {
-        label.innerText = "HIGH RISK";
-        label.className = "text-xl font-bold text-red-500 animate-pulse";
-    }
+// Init
+if(document.getElementById('depthLabel')) {
+    slider.dispatchEvent(new Event('input'));
 }
-
-// --- 4. MAP INTELLIGENCE (The "Vague Data" Layer) ---
-let sciMap;
-function initSciMap() {
-    const startLoc = { lat: 16.4410, lng: 80.5520 }; // Mangalagiri
-    sciMap = new google.maps.Map(document.getElementById('sciMap'), {
-        center: startLoc,
-        zoom: 12,
-        mapTypeId: 'satellite',
-        disableDefaultUI: true,
-        zoomControl: true
-    });
-
-    // Draw a "Reference Circle" (e.g., The known rocky zone)
-    new google.maps.Circle({
-        strokeColor: "#ef4444",
-        strokeOpacity: 0.8,
-        strokeWeight: 1,
-        fillColor: "#ef4444",
-        fillOpacity: 0.15,
-        map: sciMap,
-        center: startLoc,
-        radius: 3000 // 3km radius around office is "Rocky" (Hypothetically)
-    });
-
-    // Click Event to Simulate Analysis
-    sciMap.addListener('click', (e) => {
-        analyzePoint(e.latLng);
-    });
-}
-
-function analyzePoint(latLng) {
-    // 1. Calculate distance from "Rocky Center" (Mangalagiri)
-    const office = new google.maps.LatLng(16.4410, 80.5520);
-    const dist = google.maps.geometry.spherical.computeDistanceBetween(latLng, office);
-
-    // 2. "Vague Knowledge" Logic
-    let terrain = "Alluvial Soil";
-    let water = "High (150ft)";
-    let rock = "Soft / Medium";
-
-    if(dist < 3000) { // Within 3km of Mangalagiri
-        terrain = "Rocky / Hilly";
-        water = "Moderate (400ft+)";
-        rock = "Hard Granite";
-    } else if (dist > 10000) { // Far away (Towards Vijayawada river)
-        terrain = "River Basin";
-        water = "Very High (80ft)";
-        rock = "Silt / Clay";
-    }
-
-    // 3. Update UI
-    document.getElementById('mapTerrain').innerText = terrain;
-    document.getElementById('mapWater').innerText = water;
-    document.getElementById('mapRock').innerText = rock;
-
-    // Visual Marker
-    new google.maps.Marker({
-        position: latLng,
-        map: sciMap,
-        animation: google.maps.Animation.DROP,
-        icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-    });
-}
-
-// Initial Run
-updateRiskAndMotor(300);
