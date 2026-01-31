@@ -56,6 +56,7 @@
             <div onclick="showSection('leads')" id="nav-leads" class="nav-item active"><i class="ri-radar-line"></i> <span>Live Leads</span></div>
             <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>BWBC Archives</span></div>
             <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
+            <div onclick="showSection('maproom')" id="nav-maproom" class="nav-item text-purple-400"><i class="ri-map-2-line"></i> <span>Geo-Map Room</span></div>
         </nav>
         <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button></div>
     </aside>
@@ -105,6 +106,24 @@
         <div id="section-leads" class="content-section"><div id="leads-list" class="space-y-3"></div></div>
         <div id="section-projects" class="content-section hidden"><div id="projects-list" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div></div>
 
+        <div id="section-maproom" class="content-section hidden max-w-6xl mx-auto">
+            <div class="glass-card p-6 h-[75vh] flex flex-col">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+                    <div>
+                        <h3 class="text-lg font-bold text-white"><i class="ri-map-pin-add-line text-purple-400"></i> Map Intelligence Room</h3>
+                        <p class="text-[10px] text-slate-400 font-mono">DRAW & SAVE GEOLOGICAL ZONES</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="startDrawing('rock')" class="bg-red-500/20 text-red-400 border border-red-500/50 px-3 py-1 rounded text-xs font-bold hover:bg-red-500 hover:text-white transition">Draw Rocky Zone</button>
+                        <button onclick="startDrawing('water')" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-3 py-1 rounded text-xs font-bold hover:bg-emerald-500 hover:text-white transition">Draw High Yield</button>
+                        <button onclick="saveCurrentZone()" id="saveZoneBtn" class="bg-blue-600 text-white px-4 py-1 rounded text-xs font-bold hover:bg-blue-500 hidden">SAVE ZONE</button>
+                    </div>
+                </div>
+                <div id="adminMap" class="flex-grow rounded-xl overflow-hidden border border-slate-600 relative"></div>
+                <p class="text-[10px] text-slate-500 mt-2 text-center">Click points on map to form a shape. Double click to finish.</p>
+            </div>
+        </div>
+
         <div id="section-create" class="content-section hidden max-w-4xl mx-auto">
             <div class="glass-card p-8">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-4 mb-6"><div><h3 class="text-lg font-bold text-white">Certificate Manager</h3><p class="text-[10px] text-slate-400 font-mono mt-0.5" id="form-mode-text">CREATING NEW RECORD</p></div><div class="flex items-center gap-2"><span class="text-[10px] text-slate-500 font-bold uppercase">ID:</span><input type="text" id="p_id" class="bg-slate-900 border border-slate-700 text-emerald-400 font-mono font-bold px-2 py-1 rounded w-40 text-center text-xs" readonly></div></div>
@@ -142,7 +161,7 @@
                     if (doc.exists) {
                         document.getElementById('login-overlay').classList.remove('open');
                         showSection('leads'); 
-                        loadAnalytics(); // 🟢 LOAD DASHBOARD STATS
+                        loadAnalytics(); 
                     } else { notify("UNAUTHORIZED ACCESS", "error"); auth.signOut(); }
                 }).catch(e => notify("System Error", "error"));
             } else {
@@ -174,46 +193,38 @@
             const filterBar = document.getElementById('filter-bar');
             const dashboard = document.getElementById('ceo-dashboard');
             
-            // 🟢 UPDATED LOGIC
             if(id === 'leads' || id === 'projects') {
                 filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
                 dashboard.classList.remove('hidden');
                 if(id==='leads') loadLeads(); 
                 if(id==='projects') loadProjects();
-            } else if(id === 'blog') {
-                // 🟢 LOAD BLOGS
+            } else if(id === 'maproom') {
+                // 🟢 MAP ROOM LOGIC
                 filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
                 dashboard.classList.add('hidden');
-                loadBlogList(); 
+                initAdminMap(); // Initialize Map when section is shown
             } else {
-                // Create section
                 filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
                 dashboard.classList.add('hidden');
             }
         }
         function startNewCertificate() { showSection('create'); resetForm(); }
 
-        // --- 🟢 ANALYTICS ENGINE (CEO DASHBOARD) ---
+        // --- ANALYTICS ---
         function loadAnalytics() {
-            let totalDepth = 0;
-            let totalRevenue = 0;
-            let leadCount = 0;
-            let projectCount = 0;
-
+            let totalDepth = 0; let totalRevenue = 0; let leadCount = 0; let projectCount = 0;
             db.collection('projects').get().then(snap => {
                 projectCount = snap.size;
                 snap.forEach(doc => { totalDepth += parseInt(doc.data().depth || 0); });
                 document.getElementById('stat-depth').innerText = totalDepth.toLocaleString() + " ft";
                 updateConversion();
             });
-
             db.collection('leads').get().then(snap => {
                 leadCount = snap.size;
                 snap.forEach(doc => { totalRevenue += parseInt(doc.data().total || 0); });
                 document.getElementById('stat-revenue').innerText = "₹" + (totalRevenue/100000).toFixed(1) + "L";
                 updateConversion();
             });
-
             function updateConversion() {
                 if(leadCount > 0) {
                     const rate = ((projectCount / leadCount) * 100).toFixed(1);
@@ -222,7 +233,7 @@
             }
         }
 
-        // --- DATA CACHE & FILTER ---
+        // --- DATA LOADERS (Leads/Projects) ---
         let leadsCache = [], projectsCache = [];
         let currentView = 'leads';
 
@@ -254,7 +265,6 @@
         function renderLeads(list) {
             const el = document.getElementById('leads-list'); el.innerHTML = "";
             list.forEach(data => {
-                const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
                 const statusColor = data.status === 'Closed' ? 'text-emerald-400' : (data.status === 'Site Visit' ? 'text-blue-400' : 'text-yellow-400');
                 el.innerHTML += `<div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 flex justify-between items-center hover:bg-slate-800/50 transition cursor-pointer group border border-slate-800/50 hover:border-blue-500/30"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition"><i class="ri-user-search-line"></i></div><div><div class="font-bold text-white text-sm">${data.name}</div><div class="text-[10px] text-slate-400 font-mono">${data.loc}</div></div></div><div class="text-right"><div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[9px] ${statusColor} font-mono font-bold uppercase">${data.status || 'Pending'}</div></div></div>`;
             });
@@ -290,7 +300,7 @@
             const notes = data.adminNotes || "";
             const content = `
                 <div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Lead Details</h2><p class="text-slate-400 font-mono text-xs">Quote: ${data.docId}</p></div>
-                <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.name}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.loc}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div><div><span class="text-[10px] text-slate-500 uppercase">Zone</span><div class="text-white text-sm">${data.zone || 'Standard'}</div></div></div>
+                <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.name}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.loc}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div></div>
                 <div class="mb-6 grid grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Status</label><select class="cyber-input cyber-select w-full text-xs" onchange="updateLeadStatus('${data.docId}', this.value)"><option ${data.status==='Pending'?'selected':''}>Pending</option><option ${data.status==='Contacted'?'selected':''}>Contacted</option><option ${data.status==='Site Visit'?'selected':''}>Site Visit</option><option ${data.status==='Closed'?'selected':''}>Closed</option></select></div><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Mission Log</label><div class="flex gap-2"><textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Notes...">${notes}</textarea><button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-2 rounded text-white"><i class="ri-save-line"></i></button></div></div></div>
                 <div class="grid grid-cols-2 gap-3 mb-4"><a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="btn-pro bg-green-600 hover:bg-green-500 text-white"><i class="ri-whatsapp-line"></i> Chat</a><a href="tel:${data.mobile}" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-phone-line"></i> Call</a><button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-eye-line"></i> View</button><button onclick="convertToProject('${data.docId}')" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white border border-purple-400/30"><i class="ri-magic-line"></i> Convert</button></div>
                 <div class="text-center pt-2"><button onclick="deleteRecord('leads', '${data.docId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE LEAD</button></div>`;
@@ -310,7 +320,92 @@
             document.getElementById('detailModal').classList.add('open');
         }
 
-        // --- CORE FUNCTIONS ---
+        // --- 🟢 MAP ROOM LOGIC ---
+        let adminMap, drawingManager, currentPoly;
+        let drawingType = null; // 'rock' or 'water'
+
+        function initAdminMap() {
+            if(adminMap) return; // Already loaded
+            
+            const startLoc = { lat: 16.4410, lng: 80.5520 }; // Mangalagiri
+            adminMap = new google.maps.Map(document.getElementById('adminMap'), {
+                center: startLoc,
+                zoom: 12,
+                mapTypeId: 'hybrid',
+                disableDefaultUI: true
+            });
+
+            drawingManager = new google.maps.drawing.DrawingManager({
+                drawingMode: null, // Start disabled
+                drawingControl: false,
+                polygonOptions: {
+                    fillOpacity: 0.3,
+                    strokeWeight: 2,
+                    editable: true
+                }
+            });
+            drawingManager.setMap(adminMap);
+
+            // Listener for completion
+            google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) {
+                // Remove old poly if exists (we only save one at a time for simplicity in this demo)
+                if(currentPoly) currentPoly.setMap(null);
+                
+                currentPoly = poly;
+                document.getElementById('saveZoneBtn').classList.remove('hidden');
+                drawingManager.setDrawingMode(null); // Stop drawing
+            });
+        }
+
+        function startDrawing(type) {
+            if(!adminMap) initAdminMap();
+            drawingType = type;
+            const color = (type === 'rock') ? '#ef4444' : '#10b981';
+            
+            drawingManager.setOptions({
+                drawingMode: google.maps.drawing.OverlayType.POLYGON,
+                polygonOptions: {
+                    fillColor: color,
+                    strokeColor: color,
+                    fillOpacity: 0.3,
+                    strokeWeight: 2,
+                    editable: true
+                }
+            });
+            notify(`Drawing Mode: ${type.toUpperCase()}`);
+        }
+
+        function saveCurrentZone() {
+            if(!currentPoly) return;
+            
+            // Extract Coords
+            const path = currentPoly.getPath();
+            let coords = [];
+            for (let i = 0; i < path.getLength(); i++) {
+                const xy = path.getAt(i);
+                coords.push({ lat: xy.lat(), lng: xy.lng() });
+            }
+
+            const zoneName = prompt("Name this Zone (e.g., Mangalagiri Hill):");
+            if(!zoneName) return;
+
+            // Save to Firebase
+            const zoneData = {
+                name: zoneName,
+                type: (drawingType === 'rock') ? "Hard Rock" : "High Yield",
+                color: (drawingType === 'rock') ? "#ef4444" : "#10b981",
+                coords: coords,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            db.collection('geo_zones').add(zoneData).then(() => {
+                notify("ZONE SAVED SUCCESSFULLY");
+                currentPoly.setMap(null); // Clear map
+                document.getElementById('saveZoneBtn').classList.add('hidden');
+            });
+        }
+
+        // --- CORE FUNCTIONS (Create/Edit/PDF) ---
         function resetForm() {
             document.getElementById('projectForm').reset();
             isEditing = false;
@@ -418,7 +513,8 @@
         function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
 
         const s = document.createElement('script');
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`;
+        // 🟢 LOAD DRAWING LIBRARY HERE
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`;
         s.async = true; s.defer = true;
         document.body.appendChild(s);
     </script>
