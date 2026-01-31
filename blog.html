@@ -19,7 +19,7 @@
         /* Reading Modal Styles */
         .article-modal { 
             position: fixed; inset: 0; z-index: 100; 
-            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px);
             display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s;
         }
         .article-modal.open { display: flex; opacity: 1; }
@@ -31,11 +31,14 @@
         }
 
         /* HTML Content Styling */
-        .prose h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; color: #1e293b; }
-        .prose h2 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #334155; }
-        .prose p { margin-bottom: 1rem; line-height: 1.7; color: #475569; }
-        .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
-        .prose b, .prose strong { color: #0f172a; font-weight: 700; }
+        .prose { padding: 0 10px; color: #334155; line-height: 1.8; }
+        .prose h1, .prose h2, .prose h3 { color: #0f172a; font-weight: 800; margin-top: 1.5em; margin-bottom: 0.5em; }
+        .prose h1 { font-size: 1.8em; } .prose h2 { font-size: 1.5em; }
+        .prose p { margin-bottom: 1em; }
+        .prose img { max-width: 100%; height: auto; border-radius: 8px; margin: 1em 0; }
+        .prose ul { list-style: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .prose b, .prose strong { color: #0f172a; }
+        .prose a { color: #2563eb; text-decoration: underline; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -51,28 +54,27 @@
         <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div class="col-span-full text-center py-20">
                 <i class="ri-loader-4-line text-4xl text-blue-600 animate-spin"></i>
+                <p class="text-slate-400 mt-2 text-sm">Connecting to Satellite Feed...</p>
             </div>
         </div>
     </main>
 
     <div id="articleView" class="article-modal">
         <div class="paper-card">
-            <button onclick="closeArticle()" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition z-10">
-                <i class="ri-close-line text-xl text-slate-600"></i>
+            <button onclick="closeArticle()" class="absolute top-4 right-4 bg-white/80 hover:bg-white p-2 rounded-full transition z-20 shadow-lg">
+                <i class="ri-close-line text-xl text-slate-900"></i>
             </button>
             
             <div class="h-64 sm:h-80 w-full relative">
                 <img id="view-img" src="" class="w-full h-full object-cover">
-                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-8">
+                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-8">
                     <span id="view-date" class="text-xs font-bold text-white bg-blue-600 px-3 py-1 rounded-full"></span>
                     <h1 id="view-title" class="text-2xl sm:text-3xl font-extrabold text-white mt-2 leading-tight shadow-black drop-shadow-md"></h1>
                 </div>
             </div>
 
             <div class="p-8 sm:p-12">
-                <div id="view-content" class="prose max-w-none">
-                    </div>
-                
+                <div id="view-content" class="prose max-w-none"></div>
                 <div class="mt-12 pt-8 border-t border-slate-100 text-center">
                     <button onclick="closeArticle()" class="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition">
                         Back to News
@@ -85,103 +87,109 @@
     <div id="footer-mount"></div>
 
     <script>
-        // 🟢 CONFIGURATION: Your Blogger URL
-        // Replace this with your actual blog ID or URL later
-        const BLOG_ID = 'YOUR_BLOG_ID_HERE'; // Or we use the Feed URL directly
-        // 🟢 TEST URL (Use this to see if the code works):
-        const BLOG_FEED_URL = 'https://googleblog.blogspot.com/feeds/posts/default?alt=json';
-        
-        // 🔴 ONCE IT WORKS, PUT YOUR REAL BLOG URL HERE:
-        // const BLOG_FEED_URL = 'https://YOUR-ACTUAL-BLOG-NAME.blogspot.com/feeds/posts/default?alt=json';        
+        // 🟢 CONFIGURATION
+        // Use 'buzz.blogger.com' for testing. Replace with your actual blog URL when ready.
+        // Format: https://YOUR-BLOG-NAME.blogspot.com
+        const BLOG_URL = 'https://buzz.blogger.com'; 
 
+        // GLOBAL STORAGE FOR POSTS
+        let postsCache = [];
 
-        
-        // 1. FETCH POSTS FROM BLOGGER
-        async function loadBlogPosts() {
+        // 1. JSONP CALLBACK FUNCTION (Must be global)
+        function handleBloggerFeed(data) {
             const grid = document.getElementById('blog-grid');
-            grid.innerHTML = '<div class="col-span-full text-center py-20"><i class="ri-loader-4-line text-4xl text-blue-600 animate-spin"></i></div>';
+            const posts = data.feed.entry;
 
-            try {
-                const response = await fetch(BLOG_FEED_URL);
-                const data = await response.json();
-                const posts = data.feed.entry;
+            if (!posts || posts.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center text-slate-400">No articles found on the server.</div>';
+                return;
+            }
 
-                if (!posts || posts.length === 0) {
-                    grid.innerHTML = '<div class="col-span-full text-center text-slate-400">No articles found.</div>';
-                    return;
+            grid.innerHTML = ""; // Clear loader
+            postsCache = []; // Reset cache
+
+            posts.forEach((post, index) => {
+                // Extract Data securely
+                const title = post.title.$t;
+                const content = post.content ? post.content.$t : (post.summary ? post.summary.$t : "");
+                
+                // Format Date
+                const dateObj = new Date(post.published.$t);
+                const dateStr = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+                // Smart Image Extractor
+                // 1. Try Media Thumbnail (Blogger default)
+                // 2. Try parsing Content for first <img> tag
+                // 3. Fallback to placeholder
+                let imgUrl = 'https://source.unsplash.com/random/800x600/?drilling';
+                if (post.media$thumbnail) {
+                    imgUrl = post.media$thumbnail.url.replace('s72-c', 's800'); // Trick to get High-Res image
+                } else {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = content;
+                    const img = tempDiv.querySelector('img');
+                    if (img) imgUrl = img.src;
                 }
 
-                grid.innerHTML = ""; // Clear loader
-                
-                posts.forEach((post, index) => {
-                    // EXTRACT DATA FROM GOOGLE JSON STRUCTURE
-                    const title = post.title.$t;
-                    const content = post.content ? post.content.$t : (post.summary ? post.summary.$t : "");
-                    
-                    // Extract Date
-                    const dateObj = new Date(post.published.$t);
-                    const dateStr = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+                // Clean Summary (Remove HTML tags, limit chars)
+                const cleanSummary = content.replace(/<[^>]*>?/gm, '').substring(0, 120) + "...";
 
-                    // Extract First Image (Blogger stores images in content HTML)
-                    const imgDiv = document.createElement('div');
-                    imgDiv.innerHTML = content;
-                    const imgTag = imgDiv.querySelector('img');
-                    const imgUrl = imgTag ? imgTag.src : 'https://source.unsplash.com/random/800x600/?drilling'; // Fallback
+                // Save to Cache for Modal
+                postsCache.push({ title, date: dateStr, img: imgUrl, content });
 
-                    // Create Clean Summary (No HTML tags)
-                    const cleanSummary = content.replace(/<[^>]*>?/gm, '').substring(0, 150) + "...";
-
-                    // Store full content for Modal
-                    // We attach it to the DOM element directly to avoid global variable issues
-                    
-                    const articleHTML = `
-                        <article onclick="openArticle(this)" data-title="${encodeURIComponent(title)}" data-date="${dateStr}" data-img="${imgUrl}" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition border border-slate-100 group cursor-pointer h-full flex flex-col">
-                            <div class="h-48 bg-slate-200 overflow-hidden relative">
-                                <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                                <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm">${dateStr}</div>
-                            </div>
-                            <div class="p-6 flex flex-col flex-grow">
-                                <h3 class="text-xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-blue-600 transition">${title}</h3>
-                                <p class="text-slate-500 text-sm line-clamp-3 mb-4 flex-grow">${cleanSummary}</p>
+                // Render Card
+                grid.innerHTML += `
+                    <article onclick="openArticle(${index})" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 border border-slate-100 group cursor-pointer h-full flex flex-col">
+                        <div class="h-56 bg-slate-200 overflow-hidden relative">
+                            <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm border border-slate-200">${dateStr}</div>
+                        </div>
+                        <div class="p-6 flex flex-col flex-grow">
+                            <h3 class="text-xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-blue-600 transition">${title}</h3>
+                            <p class="text-slate-500 text-sm line-clamp-3 mb-4 flex-grow">${cleanSummary}</p>
+                            <div class="pt-4 border-t border-slate-100 mt-auto">
                                 <span class="text-blue-600 font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">Read Full Story <i class="ri-arrow-right-line"></i></span>
                             </div>
-                            <div class="hidden full-content">${content}</div>
-                        </article>
-                    `;
-                    grid.innerHTML += articleHTML;
-                });
-
-            } catch (error) {
-                console.error("Blogger Fetch Error:", error);
-                grid.innerHTML = `<div class="col-span-full text-center text-red-400">Failed to load news. (${error.message})</div>`;
-            }
+                        </div>
+                    </article>
+                `;
+            });
         }
 
-        // 2. OPEN ARTICLE MODAL
-        function openArticle(element) {
-            const modal = document.getElementById('articleView');
-            const title = decodeURIComponent(element.getAttribute('data-title'));
-            const date = element.getAttribute('data-date');
-            const img = element.getAttribute('data-img');
-            const content = element.querySelector('.full-content').innerHTML;
+        // 2. TRIGGER THE FETCH (Inject Script Tag)
+        function initBlog() {
+            const script = document.createElement('script');
+            // 🟢 MAGIC: alt=json-in-script & callback=handleBloggerFeed
+            script.src = `${BLOG_URL}/feeds/posts/default?alt=json-in-script&callback=handleBloggerFeed&max-results=9`;
+            script.onerror = () => {
+                document.getElementById('blog-grid').innerHTML = '<div class="col-span-full text-center text-red-400">Connection Failed. Check URL.</div>';
+            };
+            document.body.appendChild(script);
+        }
 
-            document.getElementById('view-img').src = img;
-            document.getElementById('view-title').innerText = title;
-            document.getElementById('view-date').innerText = date;
-            document.getElementById('view-content').innerHTML = content;
+        // 3. OPEN ARTICLE MODAL
+        function openArticle(index) {
+            const data = postsCache[index];
+            if(!data) return;
+
+            const modal = document.getElementById('articleView');
+            document.getElementById('view-img').src = data.img;
+            document.getElementById('view-title').innerText = data.title;
+            document.getElementById('view-date').innerText = data.date;
+            document.getElementById('view-content').innerHTML = data.content; // Renders full HTML
             
             modal.classList.add('open');
-            document.body.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden'; // Stop scrolling
         }
 
-        // 3. CLOSE MODAL
+        // 4. CLOSE MODAL
         function closeArticle() {
             document.getElementById('articleView').classList.remove('open');
             document.body.style.overflow = 'auto';
         }
 
-        // INIT
-        document.addEventListener('DOMContentLoaded', loadBlogPosts);
+        // START
+        document.addEventListener('DOMContentLoaded', initBlog);
         document.addEventListener('keydown', (e) => { if(e.key === "Escape") closeArticle(); });
     </script>
 </body>
