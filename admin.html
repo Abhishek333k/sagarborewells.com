@@ -106,21 +106,52 @@
         <div id="section-leads" class="content-section"><div id="leads-list" class="space-y-3"></div></div>
         <div id="section-projects" class="content-section hidden"><div id="projects-list" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div></div>
 
-        <div id="section-maproom" class="content-section hidden max-w-6xl mx-auto">
-            <div class="glass-card p-6 h-[75vh] flex flex-col">
-                <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
-                    <div>
-                        <h3 class="text-lg font-bold text-white"><i class="ri-map-pin-add-line text-purple-400"></i> Map Intelligence Room</h3>
-                        <p class="text-[10px] text-slate-400 font-mono">DRAW & SAVE GEOLOGICAL ZONES</p>
+        <div id="section-maproom" class="content-section hidden max-w-7xl mx-auto h-[85vh]">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+                
+                <div class="lg:col-span-3 glass-card flex flex-col relative overflow-hidden">
+                    <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
+                        <div class="bg-slate-900/90 backdrop-blur border border-slate-700 p-2 rounded-lg shadow-xl">
+                            <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Zone Type</label>
+                            <select id="drawType" class="bg-slate-800 text-white text-xs p-1 rounded w-32 outline-none border border-slate-600 mb-2">
+                                <option value="rock">Hard Rock (Red)</option>
+                                <option value="water">High Yield (Green)</option>
+                                <option value="moderate">Moderate (Yellow)</option>
+                                <option value="saline">Saline/Salty (Blue)</option>
+                                <option value="silt">Loose Silt (Orange)</option>
+                            </select>
+                            <button onclick="enableDrawing()" id="btnDraw" class="w-full bg-white text-slate-900 font-bold text-xs py-2 rounded hover:bg-slate-200 flex items-center justify-center gap-1">
+                                <i class="ri-pencil-line"></i> DRAW SHAPE
+                            </button>
+                            <button onclick="cancelDrawing()" id="btnCancel" class="hidden w-full bg-red-500 text-white font-bold text-xs py-2 rounded hover:bg-red-600 mt-1">
+                                CANCEL
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="startDrawing('rock')" class="bg-red-500/20 text-red-400 border border-red-500/50 px-3 py-1 rounded text-xs font-bold hover:bg-red-500 hover:text-white transition">Draw Rocky Zone</button>
-                        <button onclick="startDrawing('water')" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-3 py-1 rounded text-xs font-bold hover:bg-emerald-500 hover:text-white transition">Draw High Yield</button>
-                        <button onclick="saveCurrentZone()" id="saveZoneBtn" class="bg-blue-600 text-white px-4 py-1 rounded text-xs font-bold hover:bg-blue-500 hidden">SAVE ZONE</button>
+
+                    <div id="adminMap" class="w-full h-full bg-slate-900"></div>
+
+                    <div id="saveZonePanel" class="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900/95 border border-emerald-500 p-4 rounded-xl shadow-2xl z-20 w-80">
+                        <h4 class="text-white text-sm font-bold mb-2">Save New Zone</h4>
+                        <input type="text" id="newZoneName" class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-xs mb-2" placeholder="Zone Name (e.g. Mangalagiri North)">
+                        <div class="flex gap-2">
+                            <button onclick="saveCurrentZone()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded">CONFIRM SAVE</button>
+                            <button onclick="discardCurrentZone()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded"><i class="ri-delete-bin-line"></i></button>
+                        </div>
                     </div>
                 </div>
-                <div id="adminMap" class="flex-grow rounded-xl overflow-hidden border border-slate-600 relative"></div>
-                <p class="text-[10px] text-slate-500 mt-2 text-center">Click points on map to form a shape. Double click to finish.</p>
+
+                <div class="glass-card p-4 flex flex-col h-full">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-3">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Saved Zones</h3>
+                        <button onclick="loadAdminZones()" class="text-xs text-blue-400 hover:text-white"><i class="ri-refresh-line"></i></button>
+                    </div>
+                    
+                    <div id="zonesList" class="flex-grow overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                        <div class="text-center text-slate-500 text-xs mt-10">Loading database...</div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -320,65 +351,112 @@
             document.getElementById('detailModal').classList.add('open');
         }
 
-        // --- 🟢 MAP ROOM LOGIC ---
+        // --- 🟢 ADVANCED MAP ROOM LOGIC ---
         let adminMap, drawingManager, currentPoly;
-        let drawingType = null; // 'rock' or 'water'
+        let mapPolygons = []; // Store references to objects on map
+
+        // 1. CONFIG: Zone Types & Colors
+        const ZONE_CONFIG = {
+            rock: { color: '#ef4444', label: 'Hard Rock' },      // Red
+            water: { color: '#10b981', label: 'High Yield' },    // Green
+            moderate: { color: '#eab308', label: 'Moderate' },   // Yellow
+            saline: { color: '#3b82f6', label: 'Saline' },       // Blue
+            silt: { color: '#f97316', label: 'Loose Silt' }      // Orange
+        };
 
         function initAdminMap() {
-            if(adminMap) return; // Already loaded
+            if(adminMap) { loadAdminZones(); return; } // Just refresh data if map exists
             
             const startLoc = { lat: 16.4410, lng: 80.5520 }; // Mangalagiri
             adminMap = new google.maps.Map(document.getElementById('adminMap'), {
                 center: startLoc,
-                zoom: 12,
+                zoom: 13,
                 mapTypeId: 'hybrid',
-                disableDefaultUI: true
+                disableDefaultUI: true,
+                zoomControl: true
             });
 
+            // Initialize Drawing Manager
             drawingManager = new google.maps.drawing.DrawingManager({
-                drawingMode: null, // Start disabled
-                drawingControl: false,
+                drawingMode: null,
+                drawingControl: false, // We use custom buttons
                 polygonOptions: {
-                    fillOpacity: 0.3,
                     strokeWeight: 2,
-                    editable: true
+                    fillOpacity: 0.35,
+                    editable: true,
+                    draggable: false
                 }
             });
             drawingManager.setMap(adminMap);
 
-            // Listener for completion
+            // Event: When shape is drawn
             google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) {
-                // Remove old poly if exists (we only save one at a time for simplicity in this demo)
-                if(currentPoly) currentPoly.setMap(null);
+                // If there's already a pending polygon, remove it (One at a time)
+                if(currentPoly) { currentPoly.setMap(null); }
                 
                 currentPoly = poly;
-                document.getElementById('saveZoneBtn').classList.remove('hidden');
-                drawingManager.setDrawingMode(null); // Stop drawing
+                document.getElementById('saveZonePanel').classList.remove('hidden');
+                document.getElementById('newZoneName').focus();
+                
+                // Exit drawing mode
+                drawingManager.setDrawingMode(null);
+                toggleDrawButtons(false);
             });
+
+            loadAdminZones(); // Load existing data
         }
 
-        function startDrawing(type) {
-            if(!adminMap) initAdminMap();
-            drawingType = type;
-            const color = (type === 'rock') ? '#ef4444' : '#10b981';
-            
+        // 2. DRAWING CONTROLS
+        function enableDrawing() {
+            const type = document.getElementById('drawType').value;
+            const color = ZONE_CONFIG[type].color;
+
             drawingManager.setOptions({
                 drawingMode: google.maps.drawing.OverlayType.POLYGON,
                 polygonOptions: {
                     fillColor: color,
                     strokeColor: color,
-                    fillOpacity: 0.3,
+                    fillOpacity: 0.35,
                     strokeWeight: 2,
                     editable: true
                 }
             });
-            notify(`Drawing Mode: ${type.toUpperCase()}`);
+            toggleDrawButtons(true);
+            notify(`Draw Mode: ${ZONE_CONFIG[type].label}`);
         }
 
+        function cancelDrawing() {
+            drawingManager.setDrawingMode(null);
+            if(currentPoly) { currentPoly.setMap(null); currentPoly = null; }
+            document.getElementById('saveZonePanel').classList.add('hidden');
+            toggleDrawButtons(false);
+        }
+
+        function toggleDrawButtons(isDrawing) {
+            if(isDrawing) {
+                document.getElementById('btnDraw').classList.add('hidden');
+                document.getElementById('btnCancel').classList.remove('hidden');
+            } else {
+                document.getElementById('btnDraw').classList.remove('hidden');
+                document.getElementById('btnCancel').classList.add('hidden');
+            }
+        }
+
+        function discardCurrentZone() {
+            if(currentPoly) currentPoly.setMap(null);
+            currentPoly = null;
+            document.getElementById('saveZonePanel').classList.add('hidden');
+        }
+
+        // 3. CRUD: SAVE ZONE
         function saveCurrentZone() {
-            if(!currentPoly) return;
+            const name = document.getElementById('newZoneName').value;
+            const type = document.getElementById('drawType').value;
             
-            // Extract Coords
+            if(!name) return notify("Please enter a zone name", "error");
+            if(!currentPoly) return;
+
+            // Extract Coordinates
             const path = currentPoly.getPath();
             let coords = [];
             for (let i = 0; i < path.getLength(); i++) {
@@ -386,22 +464,109 @@
                 coords.push({ lat: xy.lat(), lng: xy.lng() });
             }
 
-            const zoneName = prompt("Name this Zone (e.g., Mangalagiri Hill):");
-            if(!zoneName) return;
-
-            // Save to Firebase
             const zoneData = {
-                name: zoneName,
-                type: (drawingType === 'rock') ? "Hard Rock" : "High Yield",
-                color: (drawingType === 'rock') ? "#ef4444" : "#10b981",
+                name: name,
+                typeKey: type, // Store 'rock', 'water' etc
+                typeName: ZONE_CONFIG[type].label,
+                color: ZONE_CONFIG[type].color,
                 coords: coords,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
+            const btn = document.querySelector('#saveZonePanel button');
+            const oldText = btn.innerText;
+            btn.innerText = "SAVING...";
+
             db.collection('geo_zones').add(zoneData).then(() => {
-                notify("ZONE SAVED SUCCESSFULLY");
-                currentPoly.setMap(null); // Clear map
-                document.getElementById('saveZoneBtn').classList.add('hidden');
+                notify("ZONE SAVED");
+                discardCurrentZone(); // Clear UI
+                loadAdminZones(); // Refresh list & Map
+                btn.innerText = oldText;
+            }).catch(e => notify("Error: " + e.message, "error"));
+        }
+
+        // 4. CRUD: READ & DELETE
+        function loadAdminZones() {
+            const listEl = document.getElementById('zonesList');
+            
+            // Clear existing map polygons
+            mapPolygons.forEach(p => p.setMap(null));
+            mapPolygons = [];
+
+            db.collection('geo_zones').orderBy('timestamp', 'desc').get().then(snap => {
+                listEl.innerHTML = "";
+                if(snap.empty) {
+                    listEl.innerHTML = `<div class="text-center text-slate-500 text-xs mt-10">No zones defined.<br>Start drawing on the map.</div>`;
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const docId = doc.id;
+
+                    // A. Render to Map
+                    const poly = new google.maps.Polygon({
+                        paths: data.coords,
+                        strokeColor: data.color,
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        fillColor: data.color,
+                        fillOpacity: 0.2, // Lighter for saved ones
+                        map: adminMap,
+                        clickable: true
+                    });
+                    
+                    // Add click listener to select in list
+                    poly.addListener('click', () => {
+                        notify(`Selected: ${data.name}`);
+                    });
+
+                    mapPolygons.push(poly);
+
+                    // B. Render to List
+                    const item = document.createElement('div');
+                    item.className = "bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer";
+                    item.innerHTML = `
+                        <div onclick="zoomToZone('${docId}')">
+                            <div class="text-xs font-bold text-white">${data.name}</div>
+                            <div class="text-[10px]" style="color:${data.color}">● ${data.typeName}</div>
+                        </div>
+                        <button onclick="deleteZone('${docId}')" class="text-slate-600 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    `;
+                    // Store coordinates on the DOM element for easy zooming
+                    item.dataset.centerLat = data.coords[0].lat;
+                    item.dataset.centerLng = data.coords[0].lng;
+                    listEl.appendChild(item);
+                });
+            });
+        }
+
+        function deleteZone(docId) {
+            if(confirm("Are you sure you want to delete this zone?")) {
+                db.collection('geo_zones').doc(docId).delete().then(() => {
+                    notify("Zone Deleted");
+                    loadAdminZones();
+                });
+            }
+        }
+
+        function zoomToZone(docId) {
+            // Find the polygon in our data (we could optimize this, but loop is fine for <100 zones)
+            // Actually, we can just grab coords from the list logic above if we stored them,
+            // or just re-fetch. Simplest is to grab from the list HTML dataset we added.
+            // But let's keep it simple: Find based on simple center approximation
+            // For now, let's just cycle the mapPolygons or re-query.
+            // Better: Re-query is safest.
+            
+            db.collection('geo_zones').doc(docId).get().then(doc => {
+                if(doc.exists) {
+                    const data = doc.data();
+                    const bounds = new google.maps.LatLngBounds();
+                    data.coords.forEach(c => bounds.extend(c));
+                    adminMap.fitBounds(bounds);
+                }
             });
         }
 
