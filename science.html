@@ -16,22 +16,36 @@
 
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: white; }
-        .sci-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 16px; padding: 24px; transition: 0.3s; }
+        
+        /* Glass Cards */
+        .sci-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(12px); border-radius: 16px; padding: 24px; transition: 0.3s; }
         .sci-card:hover { border-color: rgba(56, 189, 248, 0.4); box-shadow: 0 0 20px rgba(56, 189, 248, 0.1); }
-        .h-map { height: 400px; width: 100%; border-radius: 12px; }
+        
+        /* Map Container */
+        .h-map { height: 500px; width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; }
         .neon-text { color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
         
-        /* Input Styling */
+        /* Floating Map Panel */
+        .map-overlay-panel {
+            position: absolute; top: 12px; right: 12px; 
+            background: rgba(15, 23, 42, 0.95); 
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 12px;
+            padding: 16px; width: 220px;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Inputs */
         .sci-input { background: #1e293b; border: 1px solid #334155; color: white; padding: 10px 16px; border-radius: 8px; width: 100%; outline: none; transition: 0.3s; }
         .sci-input:focus { border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
-        
-        /* Risk Bar Animation */
         .meter-fill { transition: width 1s cubic-bezier(0.4, 0, 0.2, 1), background-color 1s; }
     </style>
 </head>
 <body class="min-h-screen p-6">
 
-    <header class="max-w-6xl mx-auto mb-10 flex justify-between items-end border-b border-slate-800 pb-6">
+    <header class="max-w-7xl mx-auto mb-10 flex justify-between items-end border-b border-slate-800 pb-6">
         <div>
             <h1 class="text-4xl font-extrabold text-white tracking-tight">SAGAR BOREWELLS</h1>
             <p class="text-lg font-bold text-blue-400 mt-1 flex items-center gap-2">
@@ -43,17 +57,35 @@
         </a>
     </header>
 
-    <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
 
         <div class="sci-card md:col-span-2">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold flex items-center gap-2"><i class="ri-earth-line text-emerald-400"></i> Groundwater Potential Heatmap</h2>
-                <span id="zoneStatus" class="text-sm font-mono text-slate-400">Select a Location on Map</span>
+                <h2 class="text-xl font-bold flex items-center gap-2"><i class="ri-earth-line text-emerald-400"></i> Groundwater Intelligence Map</h2>
+                <span class="text-xs font-mono text-slate-500 hidden md:block">LIVE DATA STREAM: ENABLED</span>
             </div>
-            <div id="sciMap" class="h-map bg-slate-800"></div>
+            
+            <div class="h-map bg-slate-900 relative">
+                <div id="sciMap" class="w-full h-full"></div>
+                
+                <div class="map-overlay-panel">
+                    <h4 class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-2">SCANNER RESULT</h4>
+                    <div id="scanStatus">
+                        <div class="text-2xl font-bold text-white mb-1">Ready</div>
+                        <p class="text-xs text-slate-400 leading-relaxed">Click any location on the map to analyze soil & water profile.</p>
+                    </div>
+                    <div id="scanData" class="hidden mt-3 pt-3 border-t border-slate-800">
+                        <div class="flex justify-between text-xs mb-1"><span class="text-slate-500">Type</span><span class="text-white font-bold" id="zoneType">--</span></div>
+                        <div class="flex justify-between text-xs"><span class="text-slate-500">Drilling Difficulty</span><span class="text-white font-bold" id="zoneDiff">--</span></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex justify-center gap-6 mt-4 text-xs font-mono">
                 <span class="flex items-center gap-2"><div class="w-3 h-3 bg-green-500 rounded-full"></div> High Yield</span>
-                <span class="flex items-center gap-2"><div class="w-3 h-3 bg-red-500 rounded-full"></div> Rocky / Low Yield</span>
+                <span class="flex items-center gap-2"><div class="w-3 h-3 bg-red-500 rounded-full"></div> Rocky / Hard</span>
+                <span class="flex items-center gap-2"><div class="w-3 h-3 bg-blue-500 rounded-full"></div> Saline</span>
+                <span class="flex items-center gap-2"><div class="w-3 h-3 bg-slate-500 border border-slate-400 rounded-full"></div> Uncharted</span>
             </div>
         </div>
 
@@ -72,48 +104,24 @@
         </div>
 
         <div class="sci-card">
-            <h2 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="ri-settings-4-line text-orange-400"></i> Pump Recommendation</h2>
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="ri-settings-4-line text-orange-400"></i> Pump & Risk Engine</h2>
             <div class="mb-6">
                 <label class="text-xs text-slate-400 block mb-2 font-bold uppercase">Target Depth (ft)</label>
                 <input type="number" id="sciDepth" class="sci-input text-lg font-mono" placeholder="e.g. 400" onkeyup="calcMotor()">
             </div>
-            <div id="motorResult" class="p-6 bg-slate-800/50 rounded-xl border border-slate-700 flex justify-between items-center">
+            
+            <div class="relative h-4 bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner mb-4">
+                <div id="riskBar" class="h-full w-0 meter-fill relative"></div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <div class="text-3xl font-bold text-white" id="motorHP">-- HP</div>
-                    <div class="text-[10px] text-slate-400 uppercase tracking-widest">Power Required</div>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-widest">Risk Level</div>
+                    <div id="riskLabel" class="text-lg font-bold text-slate-300">--</div>
                 </div>
                 <div class="text-right">
-                    <div class="text-2xl font-bold text-white" id="motorStage">--</div>
-                    <div class="text-[10px] text-slate-400 uppercase tracking-widest">Pump Stages</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="sci-card md:col-span-2">
-            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="ri-dashboard-3-line text-red-400"></i> Geological Risk Assessment</h2>
-            
-            <div class="relative pt-8 pb-4">
-                <div class="h-6 bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner relative">
-                    <div id="riskBar" class="h-full w-0 meter-fill relative">
-                        <div class="absolute right-0 top-0 bottom-0 w-[1px] bg-white/50 shadow-[0_0_8px_white]"></div>
-                    </div>
-                    
-                    <div class="absolute inset-0 flex justify-between px-1">
-                        <div class="w-px h-full bg-slate-800"></div>
-                        <div class="w-px h-full bg-slate-800"></div>
-                        <div class="w-px h-full bg-slate-800"></div>
-                    </div>
-                </div>
-
-                <div class="flex justify-between text-[10px] text-slate-500 mt-2 font-mono uppercase tracking-widest">
-                    <span>Safe Zone</span>
-                    <span>Cautionary</span>
-                    <span>High Risk</span>
-                </div>
-
-                <div class="text-center mt-6">
-                    <span id="riskLabel" class="text-3xl font-black text-white tracking-tight">--</span>
-                    <p class="text-sm text-slate-400 mt-1" id="riskDesc">Enter depth above to calculate structural risk.</p>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-widest">Rec. Motor</div>
+                    <div id="motorHP" class="text-lg font-bold text-white">--</div>
                 </div>
             </div>
         </div>
@@ -123,7 +131,7 @@
     <script src="assets/js/science_engine.js"></script>
     
     <script>
-        // Load Maps with Geometry Lib
+        // Load Maps with Geometry Lib (Crucial for Polygon Logic)
         const s = document.createElement('script');
         s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=geometry&callback=initSciMap`;
         s.async = true; s.defer = true;
