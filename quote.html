@@ -38,7 +38,6 @@
 
         /* ESTIMATE CARD (Sagar Style) */
         .est-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px -10px rgba(0,0,0,0.15); margin-top: 20px; border: 1px solid #e2e8f0; }
-        /* 🟢 CHANGED BRANDING HEADER */
         .est-header { background: #ffffff; padding: 30px; border-bottom: 2px solid #1e3a8a; }
         .est-brand h2 { font-size: 2rem; font-weight: 900; color: #1e3a8a; margin: 0; line-height: 1; text-transform: uppercase; }
         .est-brand p { font-size: 0.75rem; color: #64748b; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
@@ -57,11 +56,12 @@
         .est-table td { padding: 10px 8px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; color: #334155; }
         .est-table tfoot td { border-top: 2px solid #e2e8f0; font-weight: 800; color: #1e3a8a; padding-top: 15px; font-size: 1rem; border-bottom: none; }
         
-        .var-box { background: #fff7ed; border: 1px dashed #fdba74; border-radius: 12px; padding: 20px; position: relative; }
-        .var-title { font-size: 0.8rem; font-weight: 800; color: #c2410c; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        /* 🔵 VARIABLE MATERIALS BOX - UPDATED TO BLUE THEME */
+        .var-box { background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 12px; padding: 20px; position: relative; }
+        .var-title { font-size: 0.8rem; font-weight: 800; color: #1e40af; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
         .var-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 30px; font-size: 0.85rem; }
-        .var-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed #ffedd5; }
-        .var-badge { background: #fff; color: #c2410c; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #fed7aa; }
+        .var-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed #dbeafe; }
+        .var-badge { background: #fff; color: #1e40af; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #bfdbfe; }
 
         .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; }
         .range-slider { width: 100%; height: 12px; border-radius: 6px; background: #cbd5e1; outline: none; -webkit-appearance: none; }
@@ -194,7 +194,7 @@
 
                     <div class="var-box mt-6">
                         <div class="var-title"><i class="ri-tools-line"></i> Material Estimates (Actuals)</div>
-                        <p class="text-xs text-slate-500 mb-4">The following prices are applied based on actual measurement at site.</p>
+                        <p class="text-xs text-slate-500 mb-4">Prices apply based on actual measurements at site.</p>
                         <div class="var-grid" id="materialsGrid">
                             </div>
                     </div>
@@ -247,8 +247,8 @@
         if(CONTACT_INFO.firebase_config && !firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
         const db = firebase.firestore();
 
-        // 🟢 LOAD CONSTANTS FROM NEW FILE
-        const { OFFICE_LOCATION, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, FLUSHING_CHARGE, MATERIALS, DEFAULT_RATES } = QUOTE_CONFIG;
+        // 🟢 LOAD CONSTANTS
+        const { OFFICE_LOCATION, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, MATERIALS, DEFAULT_RATES } = QUOTE_CONFIG;
 
         let globalRates = DEFAULT_RATES;
         let transportDist = 0;
@@ -269,9 +269,11 @@
                 });
             });
 
-            // 🟢 LOAD MATERIALS GRID FROM ASSET FILE
+            // 🟢 LOAD MATERIALS GRID (FROM ASSET FILE)
             const matGrid = document.getElementById('materialsGrid');
             if(matGrid) {
+                // Filter out 'water' and 'flushing' if needed, or keep all
+                // Based on your previous logic, you removed flushing from calculation but kept materials
                 matGrid.innerHTML = MATERIALS.map(m => `
                     <div class="var-item">
                         <span class="font-bold text-slate-700">${m.label}</span>
@@ -293,7 +295,7 @@
             } else { btn.disabled = true; }
         });
 
-        // 3. MAPS & LOGIC
+        // MAPS & LOGIC
         let autocomplete;
         function initMapTools() {
             const input = document.getElementById('locInput');
@@ -325,7 +327,7 @@
             }
         }
 
-        // 4. CALCULATION ENGINE
+        // CALCULATION ENGINE
         let leadData = {};
 
         function goToStep2() {
@@ -363,24 +365,39 @@
                 currentDepth += nextChunk;
             }
 
-            // 🟢 B. CONDITIONAL OPERATIONAL COSTS
+            // 🟢 B. OPERATIONAL COSTS (Updated Logic)
             let opsHtml = "";
             let opsCost = 0;
             
-            // Transport: (Total / 30) * Rate if > 30km
+            // Transport: Only if > Threshold
             if (transportDist > TRANSPORT_THRESHOLD_KM) {
-                const multipliers = Math.ceil(transportDist / TRANSPORT_THRESHOLD_KM); // e.g. 64km / 30 = 3 units
-                const transCost = multipliers * TRANSPORT_BASE_RATE;
+                // Logic: (Distance / Threshold) * Base Rate? Or just Base Rate?
+                // Request: "total distance / 30 * transport charges"
+                const multiplier = transportDist / TRANSPORT_THRESHOLD_KM;
+                const transCost = Math.round(multiplier * TRANSPORT_BASE_RATE); 
                 opsHtml += `<tr><td>Transport (${transportDist.toFixed(1)} km)</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
                 opsCost += transCost;
             }
 
-            // Fixed Labour & Flushing
+            // Labour (Always applies now per request)
             opsHtml += `<tr><td>Labour Charges</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
-            opsHtml += `<tr><td>Flushing Charges</td><td class="text-right">₹${FLUSHING_CHARGE.toLocaleString()}</td></tr>`;
-            opsCost += (LABOUR_CHARGE + FLUSHING_CHARGE);
+            opsCost += LABOUR_CHARGE;
 
-            // Hide Ops Section if Cost is 0 (Unlikely due to labour, but safe logic)
+            // Slotting Logic (Removed Flushing as per previous prompt)
+            // Est. 100ft casing = 5 pipes. 1 plain, 4 slotted.
+            const estCasing = 100;
+            const pipes = Math.ceil(estCasing / 20); // 20ft pipes
+            const slottedPipes = Math.max(0, pipes - 1);
+            
+            // Find slotting price from MATERIALS array
+            const slotItem = MATERIALS.find(m => m.id === 'holes');
+            const slotRate = slotItem ? slotItem.price : 200;
+            
+            const slotCost = slottedPipes * slotRate;
+            opsHtml += `<tr><td>Slotting Charges (Est. ${slottedPipes} pipes)</td><td class="text-right">₹${slotCost.toLocaleString()}</td></tr>`;
+            opsCost += slotCost;
+
+            // Hide/Show Ops Section
             if (opsCost === 0) {
                 document.getElementById('opsSection').style.display = 'none';
             } else {
