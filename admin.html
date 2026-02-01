@@ -453,20 +453,35 @@
 
         function loadAdminZones() {
             const listEl = document.getElementById('zonesList');
-            mapPolygons.forEach(p => p.setMap(null));
+            
+            // 1. Clear Map & Memory to free up RAM
+            if(mapPolygons) {
+                mapPolygons.forEach(p => p.setMap(null));
+            }
             mapPolygons = [];
+            listEl.innerHTML = '<div class="text-center text-slate-500 text-xs mt-4">Loading recent data...</div>';
 
-            db.collection('geo_zones').orderBy('timestamp', 'desc').get().then(snap => {
+            // 🟢 SAFETY FIX: Added .limit(50) to prevent browser crash & save costs
+            db.collection('geo_zones')
+              .orderBy('timestamp', 'desc')
+              .limit(50) 
+              .get()
+              .then(snap => {
                 listEl.innerHTML = "";
+                
                 if(snap.empty) {
-                    listEl.innerHTML = `<div class="text-center text-slate-500 text-xs mt-10">No zones defined.</div>`;
+                    listEl.innerHTML = `<div class="text-center text-slate-500 text-xs mt-10">No zones found.</div>`;
                     return;
                 }
+
+                // Add a warning if there are many items
+                listEl.innerHTML = `<div class="text-[10px] text-orange-400 text-center mb-2 border-b border-slate-700 pb-2">Showing last 50 entries to save memory.</div>`;
 
                 snap.forEach(doc => {
                     const data = doc.data();
                     const docId = doc.id;
 
+                    // Draw Polygon (Only for these 50)
                     const poly = new google.maps.Polygon({
                         paths: data.coords,
                         strokeColor: data.color,
@@ -483,22 +498,27 @@
                     poly.addListener('click', () => initEditZone(docId));
                     mapPolygons.push(poly);
 
-                    listEl.innerHTML += `
-                        <div class="bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer mb-2">
-                            <div onclick="initEditZone('${docId}')" class="flex-grow">
-                                <div class="text-xs font-bold text-white">${data.name}</div>
-                                <div class="text-[10px]" style="color:${data.color}">● ${data.typeName}</div>
-                            </div>
-                            <div class="flex gap-1">
-                                 <button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>
-                                 <button onclick="deleteZone('${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button>
-                            </div>
+                    // Add to Sidebar List
+                    const item = document.createElement('div');
+                    item.className = "bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer mb-2";
+                    item.innerHTML = `
+                        <div onclick="initEditZone('${docId}')" class="flex-grow">
+                            <div class="text-xs font-bold text-white truncate w-32" title="${data.name}">${data.name}</div>
+                            <div class="text-[10px]" style="color:${data.color}">● ${data.typeName}</div>
+                        </div>
+                        <div class="flex gap-1">
+                             <button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>
+                             <button onclick="deleteZone('${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button>
                         </div>
                     `;
+                    listEl.appendChild(item);
                 });
+            })
+            .catch(err => {
+                console.error("Load Error:", err);
+                listEl.innerHTML = `<div class="text-center text-red-500 text-xs mt-4">Error loading data.</div>`;
             });
         }
-
         function jumpToCoords() {
             const lat = parseFloat(document.getElementById('manualLat').value);
             const lng = parseFloat(document.getElementById('manualLng').value);
