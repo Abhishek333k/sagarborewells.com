@@ -26,8 +26,9 @@ function initSciMap() {
         styles: [{ featureType: "poi", stylers: [{ visibility: "off" }] }]
     });
 
-    // Load Default Layer
+    // Load Default Layers (Zones AND Stations)
     loadLayer('geo_zones', 'manual');
+    toggleLayer('lithologs'); // Auto-load stations
 
     sciMap.addListener('click', (e) => { analyzeLocation(e.latLng); });
 }
