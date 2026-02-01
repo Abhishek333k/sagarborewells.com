@@ -462,134 +462,127 @@
             loadAdminZones();
         }
 
-        function deleteZone(docId) {
-            if(confirm("Delete this zone permanently?")) {
-                db.collection('geo_zones').doc(docId).delete().then(() => {
-                    notify("Zone Deleted");
-                    if(currentPoly && currentPoly.docId === docId) resetActivePoly(); 
-                    loadAdminZones();
-                });
+      // --- 🟢 UPGRADED DELETE FUNCTION (Handles Any Collection) ---
+        function deleteZone(collectionName, docId) {
+            if(confirm(`PERMANENT DELETE from ${collectionName}?\n\nThis cannot be undone.`)) {
+                db.collection(collectionName).doc(docId).delete().then(() => {
+                    notify("Object Deleted");
+                    // Remove from map immediately for speed
+                    const targetIdx = mapPolygons.findIndex(p => p.docId === docId);
+                    if(targetIdx > -1) {
+                        mapPolygons[targetIdx].setMap(null);
+                        mapPolygons.splice(targetIdx, 1);
+                    }
+                    loadAdminZones(); // Refresh list
+                }).catch(e => notify("Delete Failed: " + e.message, "error"));
             }
         }
 
-		function loadAdminZones() {
+        // --- 🟢 UPGRADED VIEWER (The "God View") ---
+        function loadAdminZones() {
             const listEl = document.getElementById('zonesList');
             
-            // Clear existing map objects
-            if(mapPolygons) {
-                mapPolygons.forEach(p => p.setMap(null));
-            }
-            mapPolygons = []; // This array will now hold Polygons AND Markers
+            // 1. Clear Map
+            if(mapPolygons) mapPolygons.forEach(p => p.setMap(null));
+            mapPolygons = [];
             
-            listEl.innerHTML = '<div class="text-center text-slate-500 text-xs mt-4">Scanning all layers...</div>';
+            listEl.innerHTML = '<div class="text-center text-slate-500 text-xs mt-4 animate-pulse">Scanning all layers...</div>';
 
-            // Define the layers we want to see in Admin Mode
+            // 2. Define All Layers to Scan
             const layers = [
-                { name: 'geo_zones', label: 'Manual Zone' },
-                { name: 'risk_map', label: 'Risk Zone' },
-                { name: 'layer_lithologs', label: 'Station/Log' }
+                { id: 'geo_zones', label: 'Zone' },
+                { id: 'risk_map', label: 'Risk' },
+                { id: 'layer_lithologs', label: 'Station' },
+                { id: 'layer_waterbodies', label: 'Water' },
+                { id: 'layer_aquifers', label: 'Aquifer' }
             ];
 
-            // Create a promise for each layer fetch
-            const promises = layers.map(layer => 
-                db.collection(layer.name).orderBy('timestamp', 'desc').limit(50).get()
-                .then(snap => ({ layerName: layer.name, docs: snap.docs }))
+            // 3. Fetch All Parallelly
+            const promises = layers.map(l => 
+                db.collection(l.id).orderBy('timestamp', 'desc').limit(50).get()
+                .then(snap => ({ id: l.id, label: l.label, docs: snap.docs }))
             );
 
             Promise.all(promises).then(results => {
                 listEl.innerHTML = "";
-                let totalItems = 0;
+                let count = 0;
 
-                results.forEach(result => {
-                    result.docs.forEach(doc => {
+                results.forEach(res => {
+                    res.docs.forEach(doc => {
                         const data = doc.data();
                         const docId = doc.id;
-                        totalItems++;
+                        const collection = res.id;
+                        count++;
 
                         let mapObj = null;
-                        let icon = "ri-shape-line"; // Default icon for list
+                        let icon = "ri-shape-line";
 
-                        // --- RENDER LOGIC ---
-                        
-                        // CASE A: It is a Point (Station/Litholog)
+                        // RENDER LOGIC
                         if (data.lat && data.lng) {
+                            // POINT (Stations/Lithologs)
                             icon = "ri-map-pin-line";
                             mapObj = new google.maps.Circle({
                                 strokeColor: data.color || '#06b6d4',
-                                strokeOpacity: 0.8,
-                                strokeWeight: 2,
-                                fillColor: data.color || '#06b6d4',
-                                fillOpacity: 0.5,
+                                strokeOpacity: 0.9, strokeWeight: 2,
+                                fillColor: data.color || '#06b6d4', fillOpacity: 0.6,
                                 map: adminMap,
                                 center: { lat: data.lat, lng: data.lng },
-                                radius: 100, // 100 meter radius
-                                clickable: true
+                                radius: 150, // Visible size
+                                clickable: true,
+                                zIndex: 99
                             });
-                            // Add a center dot for precision
+                            // Center dot
                             new google.maps.Marker({
                                 position: { lat: data.lat, lng: data.lng },
                                 map: adminMap,
-                                icon: {
-                                    path: google.maps.SymbolPath.CIRCLE,
-                                    scale: 2,
-                                    fillColor: "#FFFFFF",
-                                    fillOpacity: 1,
-                                    strokeWeight: 0
-                                }
+                                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 3, fillColor: "white", fillOpacity: 1, strokeWeight: 0 }
                             });
-                        } 
-                        // CASE B: It is a Polygon (Zone/Risk Map)
-                        else if (data.coords) {
+                        } else if (data.coords) {
+                            // POLYGON (Zones)
                             mapObj = new google.maps.Polygon({
                                 paths: data.coords,
-                                strokeColor: data.color,
-                                strokeOpacity: 0.8,
-                                strokeWeight: 2,
-                                fillColor: data.color,
-                                fillOpacity: 0.2,
-                                map: adminMap,
-                                clickable: true
+                                strokeColor: data.color, strokeOpacity: 0.8, strokeWeight: 2,
+                                fillColor: data.color, fillOpacity: 0.2,
+                                map: adminMap, clickable: true
                             });
                         }
 
-                        if (mapObj) {
+                        if(mapObj) {
                             mapObj.docId = docId;
-                            mapObj.zoneData = data;
-                            mapObj.collection = result.layerName; // Remember where it came from
-                            
-                            // Click Listener for Info
                             mapObj.addListener('click', () => {
                                 notify(`${data.name} \n ${data.typeName}`);
-                                initEditZone(docId); // Optional: Select in list
+                                initEditZone(docId);
                             });
-                            
                             mapPolygons.push(mapObj);
 
-                            // Add to Sidebar List
-                            listEl.innerHTML += `
-                                <div onclick="initEditZone('${docId}')" class="bg-slate-800 p-2 mb-2 rounded border border-slate-700 cursor-pointer hover:border-blue-500 flex justify-between items-center group">
-                                    <div>
-                                        <div class="text-xs font-bold text-white truncate w-32" title="${data.name}">${data.name}</div>
-                                        <div class="text-[10px]" style="color:${data.color}">● ${data.typeName}</div>
+                            // LIST ITEM (With Correct Delete Link)
+                            const item = document.createElement('div');
+                            item.className = "bg-slate-800 p-3 mb-2 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer";
+                            item.innerHTML = `
+                                <div onclick="adminMap.panTo({lat:${data.lat || data.coords[0].lat}, lng:${data.lng || data.coords[0].lng}}); adminMap.setZoom(14);">
+                                    <div class="text-xs font-bold text-white truncate w-32" title="${data.name}">${data.name}</div>
+                                    <div class="text-[9px] flex gap-2">
+                                        <span style="color:${data.color}">● ${data.typeName}</span>
+                                        <span class="text-slate-600">[${res.label}]</span>
                                     </div>
-                                    <div class="text-slate-600 group-hover:text-white"><i class="${icon}"></i></div>
-                                </div>`;
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="deleteZone('${collection}', '${docId}')" class="text-slate-500 hover:text-red-500 transition"><i class="ri-delete-bin-line"></i></button>
+                                </div>
+                            `;
+                            listEl.appendChild(item);
                         }
                     });
                 });
 
-                if (totalItems === 0) {
-                    listEl.innerHTML = `<div class="text-center text-slate-500 text-xs mt-10">Database Empty</div>`;
-                } else {
-                    listEl.insertAdjacentHTML('afterbegin', `<div class="text-[10px] text-blue-400 text-center mb-2 border-b border-slate-700 pb-2">Loaded ${totalItems} objects from all layers.</div>`);
-                }
+                if(count === 0) listEl.innerHTML = '<div class="text-center text-slate-600 text-xs mt-10">No Data Found</div>';
 
-            }).catch(err => {
-                console.error("Layer Load Error:", err);
-                notify("Error loading map layers.", "error");
+            }).catch(e => {
+                console.error(e);
+                listEl.innerHTML = '<div class="text-red-500 text-xs text-center">Layer Error</div>';
             });
         }
-
+	  
         function jumpToCoords() {
             const lat = parseFloat(document.getElementById('manualLat').value);
             const lng = parseFloat(document.getElementById('manualLng').value);
