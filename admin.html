@@ -167,7 +167,6 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // 🟢 TOAST NOTIFICATION HELPER
         function notify(msg, type='success') {
             Toastify({
                 text: msg, duration: 3000, gravity: "top", position: "right",
@@ -175,7 +174,7 @@
             }).showToast();
         }
 
-        // --- AUTH ---
+        // --- AUTH & SETUP ---
         auth.onAuthStateChanged(user => {
             if(user) {
                 db.collection('admins').doc(user.phoneNumber).get().then(doc => {
@@ -204,16 +203,14 @@
         function verifyAdminOTP() { window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => notify("INVALID CODE", "error")); }
         function logout() { auth.signOut(); window.location.reload(); }
 
-        // --- NAV & UI ---
         function showSection(id) {
             document.querySelectorAll('.content-section').forEach(e => e.classList.add('hidden'));
             document.getElementById('section-'+id).classList.remove('hidden');
-            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-            document.getElementById('nav-'+id).classList.add('active');
             
             const filterBar = document.getElementById('filter-bar');
             const dashboard = document.getElementById('ceo-dashboard');
             
+            // Toggle UI elements
             if(id === 'leads' || id === 'projects') {
                 filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
                 dashboard.classList.remove('hidden');
@@ -227,10 +224,288 @@
                 filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
                 dashboard.classList.add('hidden');
             }
+            
+            // Update Nav Highlighting
+            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+            document.getElementById('nav-'+id).classList.add('active');
         }
-        function startNewCertificate() { showSection('create'); resetForm(); }
 
-        // --- ANALYTICS ---
+        // --- 🟢 FIXED MAP ROOM LOGIC ---
+        let adminMap, drawingManager, currentPoly;
+        let mapPolygons = []; 
+
+        const ZONE_CONFIG = {
+            rock: { color: '#ef4444', label: 'Hard Rock' },
+            water: { color: '#10b981', label: 'High Yield' },
+            moderate: { color: '#eab308', label: 'Moderate' },
+            saline: { color: '#3b82f6', label: 'Saline' },
+            silt: { color: '#f97316', label: 'Loose Silt' }
+        };
+
+        function initAdminMap() {
+            if(adminMap) { loadAdminZones(); return; }
+            
+            const startLoc = { lat: 16.4410, lng: 80.5520 }; 
+            adminMap = new google.maps.Map(document.getElementById('adminMap'), {
+                center: startLoc,
+                zoom: 13,
+                mapTypeId: 'hybrid',
+                disableDefaultUI: true,
+                zoomControl: true
+            });
+
+            drawingManager = new google.maps.drawing.DrawingManager({
+                drawingMode: null,
+                drawingControl: false,
+                polygonOptions: { strokeWeight: 2, fillOpacity: 0.35, editable: true, draggable: false }
+            });
+            drawingManager.setMap(adminMap);
+
+            google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) {
+                // If we were editing something else, close it safely
+                if(currentPoly) discardCurrentZone();
+                
+                currentPoly = poly;
+                enableEditorUI("Save New Zone", "CONFIRM SAVE");
+                drawingManager.setDrawingMode(null);
+                toggleDrawButtons(false);
+            });
+
+            loadAdminZones();
+        }
+
+        function enableDrawing() {
+            // Safe reset
+            discardCurrentZone();
+            
+            const type = document.getElementById('drawType').value;
+            const color = ZONE_CONFIG[type].color;
+            drawingManager.setOptions({
+                drawingMode: google.maps.drawing.OverlayType.POLYGON,
+                polygonOptions: { fillColor: color, strokeColor: color, fillOpacity: 0.35, strokeWeight: 2, editable: true }
+            });
+            toggleDrawButtons(true);
+            notify(`Draw Mode: ${ZONE_CONFIG[type].label}`);
+        }
+
+        function cancelDrawing() {
+            drawingManager.setDrawingMode(null);
+            discardCurrentZone();
+            toggleDrawButtons(false);
+        }
+
+        // 🟢 THE FIX: Smart Discard
+        // This stops the logic from deleting existing zones when you just want to cancel editing
+        function discardCurrentZone() {
+            document.getElementById('saveZonePanel').classList.add('hidden');
+            document.getElementById('editDocId').value = "";
+            document.getElementById('newZoneName').value = "";
+
+            if (currentPoly) {
+                // If it has NO ID, it's a new unsaved drawing -> Remove it
+                if (!currentPoly.docId) {
+                    currentPoly.setMap(null);
+                } else {
+                    // If it HAS an ID, it's an existing zone -> Just stop editing mode
+                    currentPoly.setEditable(false);
+                    currentPoly.setDraggable(false);
+                    currentPoly.setOptions({ strokeOpacity: 0.8, fillOpacity: 0.2 });
+                }
+                currentPoly = null;
+            }
+        }
+
+        // 🟢 THE FIX: Edit Init
+        function initEditZone(docId) {
+            // 1. Close any other open edit panel first
+            discardCurrentZone();
+
+            // 2. Find the object in memory
+            const targetPoly = mapPolygons.find(p => p.docId === docId);
+            
+            if(!targetPoly) {
+                console.error("Polygon not found for ID:", docId);
+                return notify("Error: Map data sync issue. Refresh page.", "error");
+            }
+
+            // 3. Enable Editing on Map
+            targetPoly.setEditable(true);
+            targetPoly.setDraggable(false);
+            targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); // Highlight
+
+            currentPoly = targetPoly; // Set as active
+
+            // 4. Fill Data
+            const data = targetPoly.zoneData;
+            document.getElementById('newZoneName').value = data.name;
+            document.getElementById('drawType').value = data.typeKey || 'rock';
+            document.getElementById('editDocId').value = docId;
+            
+            // 5. UI
+            enableEditorUI("Edit Existing Zone", "UPDATE SHAPE");
+            
+            // 6. Zoom
+            const bounds = new google.maps.LatLngBounds();
+            targetPoly.getPath().forEach(xy => bounds.extend(xy));
+            adminMap.fitBounds(bounds);
+
+            notify("Edit Mode Active");
+        }
+
+        function saveCurrentZone() {
+            const nameRaw = document.getElementById('newZoneName').value;
+            const type = document.getElementById('drawType').value;
+            const editId = document.getElementById('editDocId').value;
+            
+            if(!nameRaw) return notify("Enter Name", "error");
+            if(!currentPoly) return notify("No shape active", "error");
+
+            // Extract Geometry
+            const path = currentPoly.getPath();
+            let coords = [];
+            for (let i = 0; i < path.getLength(); i++) {
+                const xy = path.getAt(i);
+                coords.push({ lat: xy.lat(), lng: xy.lng() });
+            }
+
+            const zoneData = {
+                name: nameRaw,
+                typeKey: type,
+                typeName: ZONE_CONFIG[type].label,
+                color: ZONE_CONFIG[type].color,
+                coords: coords, 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            const btn = document.getElementById('btnSaveZone');
+            const oldText = btn.innerText;
+            btn.innerText = "SAVING...";
+
+            if(editId) {
+                // UPDATE
+                db.collection('geo_zones').doc(editId).update(zoneData).then(() => {
+                    notify("Zone Updated");
+                    finalizeSave(btn, oldText);
+                });
+            } else {
+                // CREATE
+                const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                db.collection('geo_zones').doc(docId).set(zoneData).then(() => {
+                    notify("New Zone Created");
+                    finalizeSave(btn, oldText);
+                });
+            }
+        }
+
+        function finalizeSave(btn, oldText) {
+            btn.innerText = oldText;
+            
+            // Force a full clean reset and reload to ensure data consistency
+            // We set currentPoly to null manually so discardCurrentZone doesn't try to remove it from map
+            // (loadAdminZones will handle the full redraw)
+            if(currentPoly) currentPoly = null;
+            
+            document.getElementById('saveZonePanel').classList.add('hidden');
+            document.getElementById('editDocId').value = "";
+            document.getElementById('newZoneName').value = "";
+            loadAdminZones();
+        }
+
+        function loadAdminZones() {
+            const listEl = document.getElementById('zonesList');
+            
+            // Clean Map
+            mapPolygons.forEach(p => p.setMap(null));
+            mapPolygons = [];
+
+            db.collection('geo_zones').orderBy('timestamp', 'desc').get().then(snap => {
+                listEl.innerHTML = "";
+                if(snap.empty) {
+                    listEl.innerHTML = `<div class="text-center text-slate-500 text-xs mt-10">No zones defined.</div>`;
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const docId = doc.id;
+
+                    // Draw Polygon
+                    const poly = new google.maps.Polygon({
+                        paths: data.coords,
+                        strokeColor: data.color,
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        fillColor: data.color,
+                        fillOpacity: 0.2,
+                        map: adminMap,
+                        clickable: true
+                    });
+                    
+                    poly.docId = docId;
+                    poly.zoneData = data;
+                    
+                    // Click Map -> Edit
+                    poly.addListener('click', () => initEditZone(docId));
+
+                    mapPolygons.push(poly);
+
+                    // Add to Sidebar List
+                    const item = document.createElement('div');
+                    item.className = "bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer mb-2";
+                    item.innerHTML = `
+                        <div onclick="initEditZone('${docId}')" class="flex-grow">
+                            <div class="text-xs font-bold text-white">${data.name}</div>
+                            <div class="text-[10px]" style="color:${data.color}">● ${data.typeName}</div>
+                        </div>
+                        <div class="flex gap-1">
+                             <button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>
+                             <button onclick="deleteZone('${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                    `;
+                    listEl.appendChild(item);
+                });
+            });
+        }
+
+        function deleteZone(docId) {
+            if(confirm("Delete this zone permanently?")) {
+                db.collection('geo_zones').doc(docId).delete().then(() => {
+                    notify("Zone Deleted");
+                    // If we were editing this exact zone, clear the panel
+                    if(currentPoly && currentPoly.docId === docId) {
+                        currentPoly = null; 
+                        discardCurrentZone();
+                    }
+                    loadAdminZones();
+                });
+            }
+        }
+
+        // --- UTILS ---
+        function toggleDrawButtons(isDrawing) {
+            document.getElementById('btnDraw').classList.toggle('hidden', isDrawing);
+            document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing);
+        }
+
+        function enableEditorUI(title, btnText) {
+            document.getElementById('saveZonePanel').classList.remove('hidden');
+            document.getElementById('zonePanelTitle').innerText = title;
+            document.getElementById('btnSaveZone').innerText = btnText;
+        }
+
+        function jumpToCoords() {
+            const lat = parseFloat(document.getElementById('manualLat').value);
+            const lng = parseFloat(document.getElementById('manualLng').value);
+            if(!isNaN(lat) && !isNaN(lng)) {
+                adminMap.setCenter({lat, lng});
+                adminMap.setZoom(16);
+                new google.maps.Marker({ position: {lat, lng}, map: adminMap, title: "Target" });
+            } else {
+                notify("Invalid Coordinates", "error");
+            }
+        }
+
+        // --- STANDARD APP FUNCTIONS (Leads, Projects, Etc) ---
         function loadAnalytics() {
             let totalDepth = 0; let totalRevenue = 0; let leadCount = 0; let projectCount = 0;
             db.collection('projects').get().then(snap => {
@@ -253,7 +528,6 @@
             }
         }
 
-        // --- DATA LOADERS ---
         let leadsCache = [], projectsCache = [];
         let currentView = 'leads';
 
@@ -304,273 +578,7 @@
             });
         }
 
-        // --- MODALS ---
-        function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
-        function deleteRecord(collection, docId) {
-            if(confirm("⚠ PERMANENT DELETE: Are you sure?")) {
-                db.collection(collection).doc(docId).delete().then(() => {
-                    notify("RECORD DELETED", "error"); closeModal();
-                    if(collection==='leads') loadLeads(); else loadProjects();
-                });
-            }
-        }
-        function openLeadModal(docId) {
-            const data = leadsCache.find(l => l.docId === docId);
-            const notes = data.adminNotes || "";
-            const content = `
-                <div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Lead Details</h2><p class="text-slate-400 font-mono text-xs">Quote: ${data.docId}</p></div>
-                <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.name}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.loc}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div></div>
-                <div class="mb-6 grid grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Status</label><select class="cyber-input cyber-select w-full text-xs" onchange="updateLeadStatus('${data.docId}', this.value)"><option ${data.status==='Pending'?'selected':''}>Pending</option><option ${data.status==='Contacted'?'selected':''}>Contacted</option><option ${data.status==='Site Visit'?'selected':''}>Site Visit</option><option ${data.status==='Closed'?'selected':''}>Closed</option></select></div><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Mission Log</label><div class="flex gap-2"><textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Notes...">${notes}</textarea><button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-2 rounded text-white"><i class="ri-save-line"></i></button></div></div></div>
-                <div class="grid grid-cols-2 gap-3 mb-4"><a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="btn-pro bg-green-600 hover:bg-green-500 text-white"><i class="ri-whatsapp-line"></i> Chat</a><a href="tel:${data.mobile}" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-phone-line"></i> Call</a><button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-eye-line"></i> View</button><button onclick="convertToProject('${data.docId}')" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white border border-purple-400/30"><i class="ri-magic-line"></i> Convert</button></div>
-                <div class="text-center pt-2"><button onclick="deleteRecord('leads', '${data.docId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE LEAD</button></div>`;
-            document.getElementById('modalContent').innerHTML = content;
-            document.getElementById('detailModal').classList.add('open');
-        }
-        function openProjectModal(projectId) {
-            const data = projectsCache.find(p => p.projectId === projectId);
-            const val = (v) => v || '<span class="text-slate-600 italic">--</span>';
-            const content = `
-                <div class="text-center mb-6"><div class="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-2xl text-white mx-auto mb-3 shadow-lg shadow-emerald-500/30"><i class="ri-database-2-line"></i></div><h2 class="text-xl font-bold text-white">Project Archive</h2><p class="text-slate-400 font-mono text-xs">ID: ${data.projectId}</p></div>
-                <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${val(data.customerName)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${val(data.mobile)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${val(data.depth)} ft</div></div><div><span class="text-[10px] text-slate-500 uppercase">Yield</span><div class="text-emerald-400 font-bold">${val(data.yield)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Casing</span><div class="text-white text-sm">${val(data.casing_depth)} ft</div></div><div><span class="text-[10px] text-slate-500 uppercase">Type</span><div class="text-slate-300 text-xs">${val(data.casing_type)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Rig</span><div class="text-white text-sm">${val(data.rigType)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Motor</span><div class="text-white text-sm">${val(data.motor)}</div></div><div class="col-span-2 border-t border-slate-700 pt-2 mt-2"><span class="text-[10px] text-slate-500 uppercase">GPS</span><div class="text-slate-300 font-mono text-xs flex items-center gap-2"><i class="ri-map-pin-line"></i> ${val(data.gps)}</div></div></div>
-                <div class="grid grid-cols-3 gap-2 mb-4"><button onclick="editProject('${data.projectId}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-edit-line"></i> Edit</button><button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-eye-line"></i> View</button><button onclick="downloadAdminCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg"><i class="ri-download-cloud-line"></i> PDF</button></div>
-                <div class="text-center pt-2"><button onclick="deleteRecord('projects', '${data.projectId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE RECORD</button></div>`;
-            document.getElementById('modalContent').innerHTML = content;
-            document.getElementById('detailModal').classList.add('open');
-        }
-
-        // --- 🟢 FIXED MAP ROOM LOGIC ---
-        let adminMap, drawingManager, currentPoly;
-        let mapPolygons = []; 
-
-        const ZONE_CONFIG = {
-            rock: { color: '#ef4444', label: 'Hard Rock' },
-            water: { color: '#10b981', label: 'High Yield' },
-            moderate: { color: '#eab308', label: 'Moderate' },
-            saline: { color: '#3b82f6', label: 'Saline' },
-            silt: { color: '#f97316', label: 'Loose Silt' }
-        };
-
-        function initAdminMap() {
-            if(adminMap) { loadAdminZones(); return; }
-            
-            const startLoc = { lat: 16.4410, lng: 80.5520 }; 
-            adminMap = new google.maps.Map(document.getElementById('adminMap'), {
-                center: startLoc,
-                zoom: 13,
-                mapTypeId: 'hybrid',
-                disableDefaultUI: true,
-                zoomControl: true
-            });
-
-            drawingManager = new google.maps.drawing.DrawingManager({
-                drawingMode: null,
-                drawingControl: false,
-                polygonOptions: { strokeWeight: 2, fillOpacity: 0.35, editable: true, draggable: false }
-            });
-            drawingManager.setMap(adminMap);
-
-            google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) {
-                if(currentPoly) discardCurrentZone(); 
-                currentPoly = poly;
-                enableEditorUI("Save New Zone", "CONFIRM SAVE");
-                drawingManager.setDrawingMode(null);
-                toggleDrawButtons(false);
-            });
-
-            loadAdminZones();
-        }
-
-        function enableDrawing() {
-            const type = document.getElementById('drawType').value;
-            const color = ZONE_CONFIG[type].color;
-            drawingManager.setOptions({
-                drawingMode: google.maps.drawing.OverlayType.POLYGON,
-                polygonOptions: { fillColor: color, strokeColor: color, fillOpacity: 0.35, strokeWeight: 2, editable: true }
-            });
-            toggleDrawButtons(true);
-            notify(`Draw Mode: ${ZONE_CONFIG[type].label}`);
-        }
-
-        function cancelDrawing() {
-            drawingManager.setDrawingMode(null);
-            discardCurrentZone();
-            toggleDrawButtons(false);
-        }
-
-        // 🟢 FIX: Smart Reset that doesn't delete existing data
-        function discardCurrentZone() {
-            document.getElementById('saveZonePanel').classList.add('hidden');
-            document.getElementById('editDocId').value = "";
-            document.getElementById('newZoneName').value = "";
-
-            if (currentPoly) {
-                // Only remove from map if it was a NEW drawing (no ID)
-                if (!currentPoly.docId) {
-                    currentPoly.setMap(null);
-                } else {
-                    // If existing, just stop editing
-                    currentPoly.setEditable(false);
-                    currentPoly.setDraggable(false);
-                    currentPoly.setOptions({ strokeOpacity: 0.8, fillOpacity: 0.2 });
-                }
-                currentPoly = null;
-            }
-        }
-
-        function initEditZone(docId) {
-            discardCurrentZone(); // Clear UI first
-
-            const targetPoly = mapPolygons.find(p => p.docId === docId);
-            if(!targetPoly) return notify("Error locating zone on map", "error");
-
-            // Make Editable
-            targetPoly.setEditable(true);
-            targetPoly.setDraggable(false);
-            targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); // Highlight
-
-            currentPoly = targetPoly; // Set as active
-
-            // Fill Data
-            const data = targetPoly.zoneData;
-            document.getElementById('newZoneName').value = data.name;
-            document.getElementById('drawType').value = data.typeKey;
-            document.getElementById('editDocId').value = docId;
-            
-            enableEditorUI("Edit Existing Zone", "UPDATE SHAPE");
-            
-            // Zoom to zone
-            const bounds = new google.maps.LatLngBounds();
-            targetPoly.getPath().forEach(xy => bounds.extend(xy));
-            adminMap.fitBounds(bounds);
-        }
-
-        function saveCurrentZone() {
-            const name = document.getElementById('newZoneName').value;
-            const type = document.getElementById('drawType').value;
-            const editId = document.getElementById('editDocId').value;
-            
-            if(!name || !currentPoly) return notify("Invalid Data", "error");
-
-            const path = currentPoly.getPath();
-            let coords = [];
-            for (let i = 0; i < path.getLength(); i++) {
-                const xy = path.getAt(i);
-                coords.push({ lat: xy.lat(), lng: xy.lng() });
-            }
-
-            const data = {
-                name: name, typeKey: type, typeName: ZONE_CONFIG[type].label,
-                color: ZONE_CONFIG[type].color, coords: coords, 
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            const btn = document.getElementById('btnSaveZone');
-            const oldText = btn.innerText;
-            btn.innerText = "SAVING...";
-
-            if(editId) {
-                // UPDATE
-                db.collection('geo_zones').doc(editId).update(data).then(() => {
-                    notify("Zone Updated");
-                    finalizeSave(btn, oldText);
-                });
-            } else {
-                // CREATE
-                const docId = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                db.collection('geo_zones').doc(docId).set(data).then(() => {
-                    notify("New Zone Created");
-                    finalizeSave(btn, oldText);
-                });
-            }
-        }
-
-        function finalizeSave(btn, oldText) {
-            btn.innerText = "CONFIRM SAVE";
-            document.getElementById('saveZonePanel').classList.add('hidden');
-            document.getElementById('editDocId').value = "";
-            document.getElementById('newZoneName').value = "";
-            discardCurrentZone(); // Reset edit state properly
-            loadAdminZones(); // Refresh map data to lock it in
-        }
-
-        function deleteZone(docId) {
-            if(confirm("Delete zone?")) {
-                db.collection('geo_zones').doc(docId).delete().then(() => {
-                    notify("Deleted");
-                    if(currentPoly && currentPoly.docId === docId) discardCurrentZone();
-                    loadAdminZones();
-                });
-            }
-        }
-
-        function loadAdminZones() {
-            const listEl = document.getElementById('zonesList');
-            mapPolygons.forEach(p => p.setMap(null));
-            mapPolygons = [];
-
-            db.collection('geo_zones').orderBy('timestamp', 'desc').get().then(snap => {
-                listEl.innerHTML = "";
-                if(snap.empty) {
-                    listEl.innerHTML = `<div class="text-center text-slate-500 text-xs mt-10">No zones defined.</div>`;
-                    return;
-                }
-
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const docId = doc.id;
-
-                    const poly = new google.maps.Polygon({
-                        paths: data.coords,
-                        strokeColor: data.color,
-                        strokeOpacity: 0.8,
-                        strokeWeight: 2,
-                        fillColor: data.color,
-                        fillOpacity: 0.2,
-                        map: adminMap,
-                        clickable: true
-                    });
-                    
-                    poly.docId = docId;
-                    poly.zoneData = data;
-                    poly.addListener('click', () => initEditZone(docId));
-                    mapPolygons.push(poly);
-
-                    listEl.innerHTML += `
-                        <div class="bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center mb-2">
-                            <div onclick="initEditZone('${docId}')" class="cursor-pointer">
-                                <div class="text-xs font-bold text-white">${data.name}</div>
-                                <div class="text-[10px]" style="color:${data.color}">● ${data.typeName}</div>
-                            </div>
-                            <div class="flex gap-1">
-                                <button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>
-                                <button onclick="deleteZone('${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button>
-                            </div>
-                        </div>`;
-                });
-            });
-        }
-
-        function jumpToCoords() {
-            const lat = parseFloat(document.getElementById('manualLat').value);
-            const lng = parseFloat(document.getElementById('manualLng').value);
-            if(!isNaN(lat)) { 
-                adminMap.setCenter({lat,lng}); 
-                adminMap.setZoom(16); 
-                new google.maps.Marker({ position: {lat,lng}, map: adminMap });
-            } else { notify("Invalid Coords", "error"); }
-        }
-
-        function toggleDrawButtons(isDrawing) {
-            document.getElementById('btnDraw').classList.toggle('hidden', isDrawing);
-            document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing);
-        }
-        function enableEditorUI(title, btnText) {
-            document.getElementById('saveZonePanel').classList.remove('hidden');
-            document.getElementById('zonePanelTitle').innerText = title;
-            document.getElementById('btnSaveZone').innerText = btnText;
-        }
-
-        // --- CORE HELPERS ---
+        function startNewCertificate() { showSection('create'); resetForm(); }
         function resetForm() {
             document.getElementById('projectForm').reset();
             isEditing = false;
@@ -652,13 +660,65 @@
             });
         }
 
+        let currentPDFElement;
+        function previewQuote(encoded) {
+            const data = JSON.parse(decodeURIComponent(encoded));
+            let rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`;
+            const content = getInvoiceHTML({ name: data.name, mobile: data.mobile, loc: data.loc, total: data.total, rows: rows });
+            document.getElementById('previewContent').innerHTML = content;
+            currentPDFElement = content; document.getElementById('previewModal').classList.add('open');
+        }
+        function previewCert(encoded) {
+            const data = JSON.parse(decodeURIComponent(encoded));
+            const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType };
+            const content = getCertificateHTML(certData);
+            document.getElementById('previewContent').innerHTML = content;
+            currentPDFElement = content; document.getElementById('previewModal').classList.add('open');
+        }
         function confirmDownloadPDF() { const el = document.createElement('div'); el.innerHTML = currentPDFElement; document.body.appendChild(el); html2pdf().from(el).save('Document.pdf').then(() => document.body.removeChild(el)); }
         function downloadAdminCert(encoded) { previewCert(encoded); }
+        function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
+        function deleteRecord(collection, docId) {
+            if(confirm("⚠ PERMANENT DELETE: Are you sure?")) {
+                db.collection(collection).doc(docId).delete().then(() => {
+                    notify("RECORD DELETED", "error"); closeModal();
+                    if(collection==='leads') loadLeads(); else loadProjects();
+                });
+            }
+        }
+        function openLeadModal(docId) {
+            const data = leadsCache.find(l => l.docId === docId);
+            const notes = data.adminNotes || "";
+            const content = `
+                <div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Lead Details</h2><p class="text-slate-400 font-mono text-xs">Quote: ${data.docId}</p></div>
+                <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.name}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.loc}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div></div>
+                <div class="mb-6 grid grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Status</label><select class="cyber-input cyber-select w-full text-xs" onchange="updateLeadStatus('${data.docId}', this.value)"><option ${data.status==='Pending'?'selected':''}>Pending</option><option ${data.status==='Contacted'?'selected':''}>Contacted</option><option ${data.status==='Site Visit'?'selected':''}>Site Visit</option><option ${data.status==='Closed'?'selected':''}>Closed</option></select></div><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Mission Log</label><div class="flex gap-2"><textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Notes...">${notes}</textarea><button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-2 rounded text-white"><i class="ri-save-line"></i></button></div></div></div>
+                <div class="grid grid-cols-2 gap-3 mb-4"><a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="btn-pro bg-green-600 hover:bg-green-500 text-white"><i class="ri-whatsapp-line"></i> Chat</a><a href="tel:${data.mobile}" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-phone-line"></i> Call</a><button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-eye-line"></i> View</button><button onclick="convertToProject('${data.docId}')" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white border border-purple-400/30"><i class="ri-magic-line"></i> Convert</button></div>
+                <div class="text-center pt-2"><button onclick="deleteRecord('leads', '${data.docId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE LEAD</button></div>`;
+            document.getElementById('modalContent').innerHTML = content;
+            document.getElementById('detailModal').classList.add('open');
+        }
+        function openProjectModal(projectId) {
+            const data = projectsCache.find(p => p.projectId === projectId);
+            const val = (v) => v || '<span class="text-slate-600 italic">--</span>';
+            const content = `
+                <div class="text-center mb-6"><div class="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-2xl text-white mx-auto mb-3 shadow-lg shadow-emerald-500/30"><i class="ri-database-2-line"></i></div><h2 class="text-xl font-bold text-white">Project Archive</h2><p class="text-slate-400 font-mono text-xs">ID: ${data.projectId}</p></div>
+                <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${val(data.customerName)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${val(data.mobile)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${val(data.depth)} ft</div></div><div><span class="text-[10px] text-slate-500 uppercase">Yield</span><div class="text-emerald-400 font-bold">${val(data.yield)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Casing</span><div class="text-white text-sm">${val(data.casing_depth)} ft</div></div><div><span class="text-[10px] text-slate-500 uppercase">Type</span><div class="text-slate-300 text-xs">${val(data.casing_type)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Rig</span><div class="text-white text-sm">${val(data.rigType)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Motor</span><div class="text-white text-sm">${val(data.motor)}</div></div><div class="col-span-2 border-t border-slate-700 pt-2 mt-2"><span class="text-[10px] text-slate-500 uppercase">GPS</span><div class="text-slate-300 font-mono text-xs flex items-center gap-2"><i class="ri-map-pin-line"></i> ${val(data.gps)}</div></div></div>
+                <div class="grid grid-cols-3 gap-2 mb-4"><button onclick="editProject('${data.projectId}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-edit-line"></i> Edit</button><button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-eye-line"></i> View</button><button onclick="downloadAdminCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg"><i class="ri-download-cloud-line"></i> PDF</button></div>
+                <div class="text-center pt-2"><button onclick="deleteRecord('projects', '${data.projectId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE RECORD</button></div>`;
+            document.getElementById('modalContent').innerHTML = content;
+            document.getElementById('detailModal').classList.add('open');
+        }
         function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }); }
         function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
 
-        let map;
-        function initMapTools() { const input = document.getElementById('p_loc'); const ac = new google.maps.places.Autocomplete(input); ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); }
+        function initMapTools() { 
+            const input = document.getElementById('p_loc'); 
+            if(input) {
+                const ac = new google.maps.places.Autocomplete(input); 
+                ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); 
+            }
+        }
         function openMapPicker() { if(typeof google === 'undefined') { notify("System Initializing...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
         function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
 
@@ -666,6 +726,82 @@
         s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`;
         s.async = true; s.defer = true;
         document.body.appendChild(s);
+
+        // --- 🟢 DATA OPS ENGINE (AUTOMATION) ---
+        function addRiskRegion() {
+            const region = document.getElementById('riskRegion').value;
+            const status = document.getElementById('riskLevel').value;
+            if(!region) return notify("Enter Region Name", "error");
+            const riskData = { region: region.toLowerCase(), status: status, source: "CGWB Assessment", timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+            db.collection('risk_map').doc(region.toLowerCase()).set(riskData).then(() => {
+                const con = document.getElementById('riskConsole');
+                con.innerHTML += `<div class="text-green-400">✓ Mapped: ${region} -> ${status}</div>`;
+                notify("Risk Region Added");
+            });
+        }
+
+        function processJsonFile() {
+            const fileInput = document.getElementById('jsonUpload');
+            const file = fileInput.files[0];
+            if(!file) return notify("Select a JSON file first", "error");
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const rawData = JSON.parse(e.target.result);
+                    let count = 0;
+                    const batch = db.batch(); 
+                    rawData.forEach((item, index) => {
+                        const docRef = db.collection('geo_zones').doc(`govt_stn_${index}`);
+                        let type = 'moderate';
+                        let color = '#eab308';
+                        const level = parseFloat(item.water_level); 
+                        if(level < 15) { type = 'water'; color = '#10b981'; } 
+                        else if(level > 60) { type = 'rock'; color = '#ef4444'; } 
+                        const lat = parseFloat(item.latitude);
+                        const lng = parseFloat(item.longitude);
+                        const coords = [
+                            { lat: lat + 0.002, lng: lng - 0.002 },
+                            { lat: lat + 0.002, lng: lng + 0.002 },
+                            { lat: lat - 0.002, lng: lng + 0.002 },
+                            { lat: lat - 0.002, lng: lng - 0.002 }
+                        ];
+                        batch.set(docRef, {
+                            name: `WRIS Stn: ${item.station_name}`,
+                            typeKey: type,
+                            typeName: `Govt Data (${level}m)`,
+                            color: color,
+                            coords: coords,
+                            source: "Govt WRIS",
+                            waterLevel: level,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        count++;
+                    });
+                    batch.commit().then(() => {
+                        notify(`SUCCESS: Imported ${count} Govt Stations!`);
+                        loadAdminZones(); 
+                    });
+                } catch(err) {
+                    console.error(err);
+                    notify("Invalid JSON Format", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function fetchWrisApi() {
+            const url = document.getElementById('wrisApiUrl').value;
+            notify("Attempting connection...", "info");
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log("API Data:", data);
+                notify("Connection Successful! Check Console.");
+            } catch(err) {
+                console.error(err);
+                notify("Connection Failed (CORS Blocked). Use JSON Upload method.", "error");
+            }
+        }
     </script>
 </body>
 </html>
