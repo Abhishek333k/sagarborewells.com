@@ -405,8 +405,7 @@
                 if(currentPoly) { currentPoly.setMap(null); }
                 
                 currentPoly = poly;
-                document.getElementById('saveZonePanel').classList.remove('hidden');
-                document.getElementById('newZoneName').focus();
+                enableEditorUI("Save New Zone", "CONFIRM SAVE");
                 
                 // Exit drawing mode
                 drawingManager.setDrawingMode(null);
@@ -437,7 +436,9 @@
 
         function cancelDrawing() {
             drawingManager.setDrawingMode(null);
-            if(currentPoly) { currentPoly.setMap(null); currentPoly = null; }
+            if(currentPoly && !currentPoly.docId) currentPoly.setMap(null); // Only remove if new
+            if(currentPoly && currentPoly.docId) { loadAdminZones(); } // Revert edit
+            currentPoly = null;
             document.getElementById('saveZonePanel').classList.add('hidden');
             toggleDrawButtons(false);
         }
@@ -452,22 +453,49 @@
             }
         }
 
-        function discardCurrentZone() {
-            if(currentPoly) currentPoly.setMap(null);
-            currentPoly = null;
-            document.getElementById('saveZonePanel').classList.add('hidden');
+        function enableEditorUI(title, btnText) {
+            document.getElementById('saveZonePanel').classList.remove('hidden');
+            document.getElementById('zonePanelTitle').innerText = title;
+            document.getElementById('btnSaveZone').innerText = btnText;
         }
 
-        // 3. CRUD: SAVE ZONE
+        function discardCurrentZone() {
+            // If new, delete. If editing, just reload to revert.
+            if(currentPoly && !currentPoly.docId) currentPoly.setMap(null);
+            loadAdminZones();
+            document.getElementById('saveZonePanel').classList.add('hidden');
+            document.getElementById('editDocId').value = ""; // Clear edit ID
+            document.getElementById('newZoneName').value = "";
+        }
+
+        // 3. CRUD: SAVE ZONE (UPDATED FOR EDIT)
         function saveCurrentZone() {
             const nameRaw = document.getElementById('newZoneName').value;
             const type = document.getElementById('drawType').value;
+            const editId = document.getElementById('editDocId').value;
             
             if(!nameRaw) return notify("Please enter a zone name", "error");
+            
+            // Logic for Update (Edit) vs New
+            if(editId) {
+                // Update Metadata Only (Geometry editing requires redraw in simple mode, or complex update logic)
+                // Here we update Name/Type. 
+                db.collection('geo_zones').doc(editId).update({
+                    name: nameRaw,
+                    typeKey: type,
+                    typeName: ZONE_CONFIG[type].label,
+                    color: ZONE_CONFIG[type].color
+                }).then(() => {
+                    notify("Zone Updated");
+                    discardCurrentZone();
+                    loadAdminZones();
+                });
+                return;
+            }
+
             if(!currentPoly) return;
 
             // 🟢 1. CREATE CUSTOM ID (Sanitize Name)
-            // Turns "Mangalagiri Hill" into "mangalagiri_hill" to use as ID
             const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_');
 
             // Extract Coordinates
@@ -487,27 +515,28 @@
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            const btn = document.querySelector('#saveZonePanel button');
+            const btn = document.getElementById('btnSaveZone');
             const oldText = btn.innerText;
             btn.innerText = "SAVING...";
 
-            // 🟢 2. USE .doc(docId).set() INSTEAD OF .add()
+            // 🟢 2. USE .doc(docId).set()
             db.collection('geo_zones').doc(docId).set(zoneData).then(() => {
                 notify("ZONE SAVED: " + docId);
-                
-                // 🟢 3. CLEAR INPUT & MAP
-                document.getElementById('newZoneName').value = ""; // Clear Input
-                discardCurrentZone(); 
-                loadAdminZones(); 
-                btn.innerText = oldText;
+                finalizeSave(btn, oldText);
             }).catch(e => notify("Error: " + e.message, "error"));
         }
 
-        // 4. CRUD: READ & DELETE
+        function finalizeSave(btn, oldText) {
+            btn.innerText = oldText;
+            document.getElementById('saveZonePanel').classList.add('hidden');
+            document.getElementById('editDocId').value = "";
+            document.getElementById('newZoneName').value = "";
+            loadAdminZones(); // Reloads map (removes edit handles)
+        }
+
+        // 4. CRUD: READ & DELETE & EDIT SETUP
         function loadAdminZones() {
             const listEl = document.getElementById('zonesList');
-            
-            // Clear existing map polygons
             mapPolygons.forEach(p => p.setMap(null));
             mapPolygons = [];
 
@@ -522,7 +551,6 @@
                     const data = doc.data();
                     const docId = doc.id;
 
-                    // A. Render to Map
                     const poly = new google.maps.Polygon({
                         paths: data.coords,
                         strokeColor: data.color,
@@ -534,9 +562,13 @@
                         clickable: true
                     });
                     
-                    // Add click listener to select in list
+                    // Attach ID for reference
+                    poly.docId = docId;
+                    poly.zoneData = data;
+
+                    // Click to Select for Edit
                     poly.addListener('click', () => {
-                        notify(`Selected: ${data.name}`);
+                        initEditZone(docId);
                     });
 
                     mapPolygons.push(poly);
@@ -545,20 +577,49 @@
                     const item = document.createElement('div');
                     item.className = "bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer";
                     item.innerHTML = `
-                        <div onclick="zoomToZone('${docId}')">
+                        <div onclick="initEditZone('${docId}')">
                             <div class="text-xs font-bold text-white">${data.name}</div>
                             <div class="text-[10px]" style="color:${data.color}">● ${data.typeName}</div>
                         </div>
-                        <button onclick="deleteZone('${docId}')" class="text-slate-600 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition">
-                            <i class="ri-delete-bin-line"></i>
-                        </button>
+                        <div class="flex gap-1">
+                             <button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>
+                             <button onclick="deleteZone('${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button>
+                        </div>
                     `;
-                    // Store coordinates on the DOM element for easy zooming
-                    item.dataset.centerLat = data.coords[0].lat;
-                    item.dataset.centerLng = data.coords[0].lng;
                     listEl.appendChild(item);
                 });
             });
+        }
+
+        // 🟢 TRIGGER EDIT MODE
+        function initEditZone(docId) {
+            discardCurrentZone(); // Reset any current activity
+
+            const targetPoly = mapPolygons.find(p => p.docId === docId);
+            if(!targetPoly) return;
+
+            // Make it Editable
+            targetPoly.setEditable(true);
+            targetPoly.setDraggable(false);
+            targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); // Highlight
+
+            currentPoly = targetPoly; // Set as active for saving
+
+            // Fill Form
+            const data = targetPoly.zoneData;
+            document.getElementById('newZoneName').value = data.name;
+            document.getElementById('drawType').value = data.typeKey;
+            document.getElementById('editDocId').value = docId;
+            
+            // Show UI
+            enableEditorUI("Edit Existing Zone", "UPDATE SHAPE");
+            
+            // Zoom to it
+            const bounds = new google.maps.LatLngBounds();
+            targetPoly.getPath().forEach(xy => bounds.extend(xy));
+            adminMap.fitBounds(bounds);
+
+            notify("Edit Mode: Drag points to reshape. Right-click point to delete.", "info");
         }
 
         function deleteZone(docId) {
@@ -569,8 +630,7 @@
                 });
             }
         }
-        // --- UPDATED MAP FUNCTIONS FOR EDITING ---
-        
+
         function jumpToCoords() {
             const lat = parseFloat(document.getElementById('manualLat').value);
             const lng = parseFloat(document.getElementById('manualLng').value);
@@ -581,162 +641,6 @@
             } else {
                 notify("Invalid Coordinates", "error");
             }
-        }
-
-        // Modified loadAdminZones to support selection for editing
-        function loadAdminZones() {
-            const listEl = document.getElementById('zonesList');
-            mapPolygons.forEach(p => p.setMap(null));
-            mapPolygons = [];
-
-            db.collection('geo_zones').orderBy('timestamp', 'desc').get().then(snap => {
-                listEl.innerHTML = "";
-                if(snap.empty) {
-                    listEl.innerHTML = `<div class="text-center text-slate-500 text-xs mt-10">No zones defined.<br>Start drawing on the map.</div>`;
-                    return;
-                }
-
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const docId = doc.id;
-
-                    const poly = new google.maps.Polygon({
-                        paths: data.coords,
-                        strokeColor: data.color,
-                        strokeOpacity: 0.8,
-                        strokeWeight: 2,
-                        fillColor: data.color,
-                        fillOpacity: 0.2,
-                        map: adminMap,
-                        clickable: true
-                    });
-                    
-                    // Click to Edit
-                    poly.addListener('click', () => {
-                        selectZoneForEdit(docId, data, poly);
-                    });
-
-                    mapPolygons.push(poly);
-
-                    const item = document.createElement('div');
-                    item.className = "bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer";
-                    item.innerHTML = `
-                        <div onclick="zoomToZone('${docId}')">
-                            <div class="text-xs font-bold text-white">${data.name}</div>
-                            <div class="text-[10px]" style="color:${data.color}">● ${data.typeName}</div>
-                        </div>
-                        <div class="flex gap-1">
-                             <button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>
-                             <button onclick="deleteZone('${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button>
-                        </div>
-                    `;
-                    item.dataset.centerLat = data.coords[0].lat;
-                    item.dataset.centerLng = data.coords[0].lng;
-                    listEl.appendChild(item);
-                });
-            });
-        }
-
-        function initEditZone(docId) {
-             // Fetch data again to be safe
-             db.collection('geo_zones').doc(docId).get().then(doc => {
-                 if(doc.exists) {
-                     const data = doc.data();
-                     // Populate Edit Panel
-                     document.getElementById('saveZonePanel').classList.remove('hidden');
-                     document.getElementById('zonePanelTitle').innerText = "Edit Zone";
-                     document.getElementById('newZoneName').value = data.name;
-                     document.getElementById('drawType').value = data.typeKey;
-                     document.getElementById('editDocId').value = docId;
-                     document.getElementById('btnSaveZone').innerText = "UPDATE ZONE";
-                     
-                     // Find and highlight polygon (Optional visualization step)
-                     zoomToZone(docId);
-                 }
-             });
-        }
-
-        // Updated Save Function to handle Edit vs Create
-        function saveCurrentZone() {
-            const nameRaw = document.getElementById('newZoneName').value;
-            const type = document.getElementById('drawType').value;
-            const editId = document.getElementById('editDocId').value;
-            
-            if(!nameRaw) return notify("Please enter a zone name", "error");
-            
-            // Logic for Update (Edit) vs New
-            if(editId) {
-                // Update Metadata Only (Geometry editing is complex, usually easier to redraw)
-                // If you want to update geometry, we'd need to check if 'currentPoly' is a NEW drawing or the existing one.
-                // For simplicity: This edits Name/Type. To change shape, delete and redraw is standard for simple GIS.
-                
-                db.collection('geo_zones').doc(editId).update({
-                    name: nameRaw,
-                    typeKey: type,
-                    typeName: ZONE_CONFIG[type].label,
-                    color: ZONE_CONFIG[type].color
-                }).then(() => {
-                    notify("Zone Updated");
-                    discardCurrentZone();
-                    loadAdminZones();
-                });
-                return;
-            }
-
-            // ... (Rest of existing Save logic for NEW zones) ...
-            if(!currentPoly) return; 
-            
-            const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_');
-            const path = currentPoly.getPath();
-            let coords = [];
-            for (let i = 0; i < path.getLength(); i++) {
-                const xy = path.getAt(i);
-                coords.push({ lat: xy.lat(), lng: xy.lng() });
-            }
-
-            const zoneData = {
-                name: nameRaw,
-                typeKey: type,
-                typeName: ZONE_CONFIG[type].label,
-                color: ZONE_CONFIG[type].color,
-                coords: coords,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            db.collection('geo_zones').doc(docId).set(zoneData).then(() => {
-                notify("ZONE SAVED: " + docId);
-                document.getElementById('newZoneName').value = ""; 
-                discardCurrentZone(); 
-                loadAdminZones(); 
-            }).catch(e => notify("Error: " + e.message, "error"));
-        }
-
-        function discardCurrentZone() {
-            if(currentPoly) currentPoly.setMap(null);
-            currentPoly = null;
-            document.getElementById('saveZonePanel').classList.add('hidden');
-            document.getElementById('editDocId').value = ""; // Clear edit ID
-            document.getElementById('zonePanelTitle').innerText = "Save New Zone";
-            document.getElementById('btnSaveZone').innerText = "CONFIRM SAVE";
-            document.getElementById('newZoneName').value = "";
-        }
-
-        function zoomToZone(docId) {
-            // Find the polygon in our data (we could optimize this, but loop is fine for <100 zones)
-            // Actually, we can just grab coords from the list logic above if we stored them,
-            // or just re-fetch. Simplest is to grab from the list HTML dataset we added.
-            // But let's keep it simple: Find based on simple center approximation
-            // For now, let's just cycle the mapPolygons or re-query.
-            // Better: Re-query is safest.
-            
-            db.collection('geo_zones').doc(docId).get().then(doc => {
-                if(doc.exists) {
-                    const data = doc.data();
-                    const bounds = new google.maps.LatLngBounds();
-                    data.coords.forEach(c => bounds.extend(c));
-                    adminMap.fitBounds(bounds);
-                }
-            });
         }
 
         // --- CORE FUNCTIONS (Create/Edit/PDF) ---
