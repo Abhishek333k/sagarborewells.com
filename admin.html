@@ -361,6 +361,27 @@
             document.getElementById('detailModal').classList.add('open');
         }
 
+        
+        // --- CORE FUNCTIONS (Create/Edit/PDF) ---
+        function resetForm() {
+            document.getElementById('projectForm').reset();
+            isEditing = false;
+            document.getElementById('form-mode-text').innerText = "CREATING NEW RECORD";
+            document.getElementById('save-btn-text').innerText = "SAVE RECORD";
+            document.getElementById('p_id').value = "Calculating...";
+            const year = new Date().getFullYear();
+            db.collection('projects').orderBy('projectId', 'desc').limit(1).get().then(snap => {
+                let nextNo = 1001;
+                if (!snap.empty) {
+                    const lastId = snap.docs[0].data().projectId;
+                    const parts = lastId.split('-');
+                    if(parts.length === 3 && !isNaN(parts[2])) nextNo = parseInt(parts[2]) + 1;
+                }
+                document.getElementById('p_id').value = `SBW-${year}-${nextNo}`;
+            });
+        }
+
+
         // --- 🟢 ADVANCED MAP ROOM LOGIC ---
         let adminMap, drawingManager, currentPoly;
         let mapPolygons = []; // Store references to objects on map
@@ -642,26 +663,7 @@
                 notify("Invalid Coordinates", "error");
             }
         }
-
-        // --- CORE FUNCTIONS (Create/Edit/PDF) ---
-        function resetForm() {
-            document.getElementById('projectForm').reset();
-            isEditing = false;
-            document.getElementById('form-mode-text').innerText = "CREATING NEW RECORD";
-            document.getElementById('save-btn-text').innerText = "SAVE RECORD";
-            document.getElementById('p_id').value = "Calculating...";
-            const year = new Date().getFullYear();
-            db.collection('projects').orderBy('projectId', 'desc').limit(1).get().then(snap => {
-                let nextNo = 1001;
-                if (!snap.empty) {
-                    const lastId = snap.docs[0].data().projectId;
-                    const parts = lastId.split('-');
-                    if(parts.length === 3 && !isNaN(parts[2])) nextNo = parseInt(parts[2]) + 1;
-                }
-                document.getElementById('p_id').value = `SBW-${year}-${nextNo}`;
-            });
-        }
-
+        
         function editProject(projectId) {
             const data = projectsCache.find(p => p.projectId === projectId);
             closeModal();
