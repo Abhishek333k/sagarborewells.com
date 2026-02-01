@@ -47,6 +47,25 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
+		/* FORCE A4 PAPER LOOK IN PREVIEW */
+		#previewContent {
+			background-color: #525659; /* Adobe Reader Dark Gray */
+			display: flex;
+			justify-content: center;
+			padding: 40px;
+			overflow-y: auto;
+		}
+
+		#previewContent > div {
+			/* Exact A4 Dimensions */
+			width: 210mm;
+			min-height: 297mm;
+			background: white;
+			box-shadow: 0 0 15px rgba(0,0,0,0.5);
+			/* Ensure content doesn't bleed */
+			box-sizing: border-box; 
+			overflow: hidden; 
+		}
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-sm bg-[#0f172a]"> 
