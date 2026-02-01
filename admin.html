@@ -563,163 +563,143 @@
             });
         }
 
-       // 🟢 SMART DATA IMPORTER (Handles Lithologs, Waterbodies, & Aquifers)
+       // 🟢 SMART DATA IMPORTER (With India Coordinate Fixer)
         function processJsonFile() {
             const fileInput = document.getElementById('jsonUpload');
             const file = fileInput.files[0];
             if(!file) return notify("Select a file first", "error");
 
             const reader = new FileReader();
-            
-            notify("Reading file... (Large files may take 10s)", "info");
+            notify("Parsing Geometry... (This may take a moment)", "info");
 
             reader.onload = function(e) {
                 try {
                     const rawData = JSON.parse(e.target.result);
                     const batch = db.batch(); 
                     let count = 0;
-                    let fileType = "Unknown";
-
-                    // 1. DETERMINE DATA SOURCE & EXTRACT FEATURES
+                    
+                    // 1. Detect Features Array
                     let features = [];
-                    if(Array.isArray(rawData)) {
-                        features = rawData; // Standard JSON List
-                    } else if(rawData.type === "FeatureCollection" && Array.isArray(rawData.features)) {
-                        features = rawData.features; // GeoJSON Format (Govt Data)
-                    } else {
-                        throw new Error("Unknown File Format. Must be JSON Array or GeoJSON.");
-                    }
+                    if(Array.isArray(rawData)) features = rawData;
+                    else if(rawData.type === "FeatureCollection" && Array.isArray(rawData.features)) features = rawData.features;
+                    else throw new Error("Invalid Format");
 
-                    // 2. LOOP THROUGH DATA
-                    // Limit to 450 items per batch (Firebase limit is 500)
-                    // For huge files, we only take the first 450 for safety in this demo.
-                    const safeLimit = features.slice(0, 450); 
+                    // 2. Safety Limit (Prevent browser crash on massive files)
+                    // We process first 600 items. For full state data, split files or run multiple times.
+                    const safeFeatures = features.slice(0, 600);
 
-                    safeLimit.forEach((item, index) => {
-                        const props = item.properties || item; // GeoJSON puts data in 'properties'
-                        const geom = item.geometry;            // GeoJSON puts coords in 'geometry'
-                        
-                        // ID Generation
-                        const docId = `govt_import_${Date.now()}_${index}`;
+                    safeFeatures.forEach((item, index) => {
+                        const props = item.properties || item;
+                        const geom = item.geometry;
+                        const docId = `govt_data_${Date.now()}_${index}`;
                         const docRef = db.collection('geo_zones').doc(docId);
 
-                        // --- AUTO-DETECT TYPE LOGIC ---
-                        let zoneData = {
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        let zoneData = { timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+                        let isValid = false;
+
+                        // 🔍 HELPER: INDIA COORDINATE FIXER
+                        // Fixes the "Greenland" bug by ensuring Lat/Lng fall within India's box
+                        const fixPoint = (arr) => {
+                            let lon = arr[0];
+                            let lat = arr[1];
+                            
+                            // India is roughly Lat: 8-37, Lon: 68-98
+                            // If Lat is huge (e.g. 80), it's actually Longitude. Swap them.
+                            if(lat > 40 && lon < 40) {
+                                return { lat: lon, lng: lat }; // It was swapped
+                            }
+                            // Standard GeoJSON [Lon, Lat] -> Google [Lat, Lon]
+                            // If lat is already roughly India (8-40), use it as lat.
+                            if(lat > 5 && lat < 40) {
+                                return { lat: lat, lng: lon };
+                            }
+                            // Fallback: If Lon is > 60, treat it as Longitude
+                            if(lon > 60) {
+                                return { lat: lat, lng: lon };
+                            }
+                            
+                            // Default Swap (Fixes the CGWB Greenland issue)
+                            return { lat: lon, lng: lat }; 
                         };
 
-                        // A. LITHOLOGS (Drilling Data Points)
-                        if(props.hasOwnProperty('Depth_of_Drill__m_') || props.hasOwnProperty('Lithology_Code')) {
-                            fileType = "Lithologs";
+                        // A. LITHOLOGS (Points)
+                        if(props.Depth_of_Drill__m_ || props.Major_Lithology) {
+                            const p = fixPoint(geom.coordinates);
                             
-                            // Determine Color based on Lithology
-                            const rockType = (props.Major_Lithology || "").toLowerCase();
-                            let color = '#eab308'; // Default Yellow
-                            let typeKey = 'moderate';
+                            // Color Logic
+                            const rock = (props.Major_Lithology || "").toLowerCase();
+                            let color = '#eab308'; // Yellow
+                            let type = 'moderate';
+                            if(rock.includes('granite') || rock.includes('basalt')) { color = '#ef4444'; type = 'rock'; }
+                            if(rock.includes('alluvium') || rock.includes('sand')) { color = '#10b981'; type = 'water'; }
 
-                            if(rockType.includes('granite') || rockType.includes('basalt') || rockType.includes('gneiss')) {
-                                color = '#ef4444'; typeKey = 'rock';
-                            } else if(rockType.includes('alluvium') || rockType.includes('sandstone')) {
-                                color = '#10b981'; typeKey = 'water';
-                            }
-
-                            // Extract Point Geometry [Lon, Lat]
-                            const lon = geom.coordinates[0];
-                            const lat = geom.coordinates[1];
-
-                            // Create a small box around the point so it works as a "Zone"
-                            const boxSize = 0.001; // approx 100m
+                            // Make a tiny box around the point so it renders as a "Zone"
+                            const size = 0.0005; // 50 meters
                             zoneData = {
-                                name: `Log: ${props.Location || props.Village || 'Unknown'}`,
+                                name: `Log: ${props.Location || props.Village}`,
                                 typeName: `${props.Major_Lithology} (${props.Depth_of_Drill__m_}m)`,
-                                typeKey: typeKey,
+                                typeKey: type,
                                 color: color,
-                                source: "CGWB Litholog",
+                                source: "Govt of India (WRIS)",
+                                waterLevel: props.Static_Water_Level__mbgl_ || 0,
                                 coords: [
-                                    { lat: lat + boxSize, lng: lon - boxSize },
-                                    { lat: lat + boxSize, lng: lon + boxSize },
-                                    { lat: lat - boxSize, lng: lon + boxSize },
-                                    { lat: lat - boxSize, lng: lon - boxSize }
+                                    { lat: p.lat + size, lng: p.lng - size },
+                                    { lat: p.lat + size, lng: p.lng + size },
+                                    { lat: p.lat - size, lng: p.lng + size },
+                                    { lat: p.lat - size, lng: p.lng - size }
                                 ]
                             };
-                        }
-                        
-                        // B. WATERBODIES (Polygons)
-                        else if(props.hasOwnProperty('waterbody_') || props.hasOwnProperty('wb_name')) {
-                            fileType = "Waterbodies";
-                            
-                            // Extract Polygon Coords
-                            // GeoJSON Polygons are nested arrays: [[[lon, lat], [lon, lat]]]
-                            // We take the outer boundary (index 0)
-                            let rawCoords = [];
-                            if(geom.type === 'MultiPolygon') rawCoords = geom.coordinates[0][0];
-                            else if(geom.type === 'Polygon') rawCoords = geom.coordinates[0];
-
-                            // Convert [Lon, Lat] Array to {lat, lng} Object
-                            const googleCoords = rawCoords.map(p => ({ lat: p[1], lng: p[0] }));
-
-                            zoneData = {
-                                name: props.waterbody_ || props.wb_name || "Water Body",
-                                typeName: "Surface Water Source",
-                                typeKey: "water",
-                                color: "#3b82f6", // Blue
-                                source: "AP Waterbodies",
-                                coords: googleCoords
-                            };
+                            isValid = true;
                         }
 
-                        // C. AQUIFER MATERIAL (Geology Zones)
-                        else if(props.hasOwnProperty('Aquifer_Ma') || props.hasOwnProperty('Material')) {
-                            fileType = "Aquifer Map";
+                        // B. WATERBODIES / AQUIFERS (Polygons)
+                        else if(geom.type === 'Polygon' || geom.type === 'MultiPolygon') {
+                            // Extract main ring
+                            let rawRing = (geom.type === 'MultiPolygon') ? geom.coordinates[0][0] : geom.coordinates[0];
                             
-                            const material = (props.Aquifer_Ma || props.Material || "").toLowerCase();
-                            let color = '#f97316'; // Silt/Default
-                            let typeKey = 'silt';
+                            // Fix every point in the polygon
+                            const googleCoords = rawRing.map(pt => fixPoint(pt));
 
-                            if(material.includes('granite') || material.includes('charnockite')) {
-                                color = '#ef4444'; typeKey = 'rock';
-                            } else if(material.includes('sand') || material.includes('alluvium')) {
-                                color = '#10b981'; typeKey = 'water';
+                            let name = props.waterbody_ || props.wb_name || props.Aquifer_Ma || "Geo Zone";
+                            let color = '#3b82f6'; // Blue
+                            let type = 'water';
+
+                            // If it's Aquifer Map
+                            if(props.Aquifer_Ma) {
+                                name = "Aquifer: " + props.Aquifer_Ma;
+                                if(props.Aquifer_Ma.toLowerCase().includes('granite')) { color = '#ef4444'; type = 'rock'; }
+                                else { color = '#10b981'; type = 'water'; }
                             }
 
-                            // Extract Polygon
-                            let rawCoords = [];
-                            if(geom.type === 'MultiPolygon') rawCoords = geom.coordinates[0][0];
-                            else if(geom.type === 'Polygon') rawCoords = geom.coordinates[0];
-
-                            const googleCoords = rawCoords.map(p => ({ lat: p[1], lng: p[0] }));
-
                             zoneData = {
-                                name: `Geology: ${props.Aquifer_Ma || 'Zone'}`,
-                                typeName: material.toUpperCase(),
-                                typeKey: typeKey,
+                                name: name,
+                                typeName: "Govt Verified Zone",
+                                typeKey: type,
                                 color: color,
-                                source: "CGWB Aquifer Map",
+                                source: "Govt of India (WRIS)",
                                 coords: googleCoords
                             };
+                            isValid = true;
                         }
 
-                        // If valid data found, add to batch
-                        if(zoneData.coords && zoneData.coords.length > 0) {
-                            batch.set(docRef, Object.assign(zoneData, { timestamp: firebase.firestore.FieldValue.serverTimestamp() }));
+                        if(isValid) {
+                            batch.set(docRef, zoneData);
                             count++;
                         }
                     });
 
-                    // 3. EXECUTE UPLOAD
                     if(count > 0) {
-                        notify(`Detected ${fileType}. Uploading ${count} Zones...`);
                         batch.commit().then(() => {
-                            notify("SUCCESS: Data Import Complete!");
+                            notify(`Success! Mapped ${count} Indian Locations.`);
                             loadAdminZones();
-                        }).catch(e => notify("Firebase Batch Error: " + e.message, "error"));
+                        });
                     } else {
-                        notify("No recognizable data found in file.", "error");
+                        notify("No valid data found.", "error");
                     }
 
-                } catch(err) {
-                    console.error(err);
-                    notify("Format Error: File must be valid GeoJSON.", "error");
+                } catch(e) {
+                    console.error(e);
+                    notify("File Error: " + e.message, "error");
                 }
             };
             reader.readAsText(file);
