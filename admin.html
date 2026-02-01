@@ -785,16 +785,31 @@
         }
 
         async function fetchWrisApi() {
-            const url = document.getElementById('wrisApiUrl').value;
-            notify("Attempting connection...", "info");
+            const targetUrl = document.getElementById('wrisApiUrl').value;
+            // We use 'allorigins' as a proxy to bypass the Government CORS block
+            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl);
+
+            notify("Attempting connection via Proxy...", "info");
+            
             try {
-                const response = await fetch(url);
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+                
                 const data = await response.json();
-                console.log("API Data:", data);
-                notify("Connection Successful! Check Console.");
+                console.log("API Data Received:", data);
+                notify(`Success! Received ${Array.isArray(data) ? data.length : 'data'} records.`);
+                
+                // AUTOMATICALLY PROCESS THE DATA (Simulate file upload)
+                // We wrap the data in a fake file structure to reuse your powerful readFileData logic
+                const fakeFile = new Blob([JSON.stringify(data)], {type: "application/json"});
+                fakeFile.name = "API_Fetch_" + new Date().toISOString() + ".json";
+                
+                // Reuse the logic we just fixed!
+                readFileData(fakeFile, fakeFile.name);
+
             } catch(err) {
                 console.error(err);
-                notify("Connection Failed (CORS Blocked). Use JSON Upload method.", "error");
+                notify("Proxy Connection Failed: " + err.message, "error");
             }
         }
 
