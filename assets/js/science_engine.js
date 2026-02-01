@@ -52,15 +52,11 @@ function loadRealZones() {
 // 🟢 ANALYZE LOCATION (SMALLEST AREA WINS)
 function analyzeLocation(latLng) {
     let bestZone = null;
-    let minArea = Infinity; // Start with infinitely large area
+    let minArea = Infinity; 
     
     for (let poly of mapPolygons) {
         if (google.maps.geometry.poly.containsLocation(latLng, poly)) {
-            // Calculate Area to determine specificity
             const area = google.maps.geometry.spherical.computeArea(poly.getPath());
-            
-            // If this zone is smaller than the previous best, pick this one
-            // This ensures "Red Rock Zone" (Small) beats "Mangalagiri City" (Big)
             if (area < minArea) {
                 minArea = area;
                 bestZone = poly.zoneData;
@@ -79,12 +75,25 @@ function analyzeLocation(latLng) {
     });
 
     if (bestZone) {
-        // 🔒 PRIVACY FIX: Don't show 'bestZone.name' (Admin Name). Show 'bestZone.typeName'.
+        // --- 🟢 FIX: LOGIC INSIDE THE BLOCK ---
+        
+        // 1. Govt Badge Check
+        let badge = "";
+        if(bestZone.source === "Govt of India (WRIS)" || bestZone.source === "Govt WRIS") {
+            badge = `<div class="mt-2 bg-blue-900/50 border border-blue-500/30 p-2 rounded text-[10px] text-blue-200">
+                <i class="ri-government-line"></i> Verified by Central Ground Water Board
+                <br>Sensor Depth: ${bestZone.waterLevel} meters
+            </div>`;
+        }
+
+        // 2. Update Status Box
         statusBox.innerHTML = `
             <div class="text-2xl font-bold mb-1" style="color:${bestZone.color}">${bestZone.typeName}</div>
             <p class="text-xs text-white">Geological Profile Verified.</p>
+            ${badge}
         `;
         
+        // 3. Update Sidebar Details
         document.getElementById('zoneType').innerText = "Confirmed Scan";
         document.getElementById('zoneType').style.color = bestZone.color;
         
@@ -96,31 +105,16 @@ function analyzeLocation(latLng) {
 
         dataBox.classList.remove('hidden');
     } else {
+        // --- NO ZONE FOUND ---
         statusBox.innerHTML = `
             <div class="text-xl font-bold text-slate-300 mb-1">Uncharted Zone</div>
             <p class="text-xs text-slate-500">No specific data. Standard rates apply.</p>
         `;
         dataBox.classList.add('hidden');
     }
-
-    // NEW: Add Government Verification Badge
-        let badge = "";
-        if(bestZone.source === "Govt of India (WRIS)") {
-            badge = `<div class="mt-2 bg-blue-900/50 border border-blue-500/30 p-2 rounded text-[10px] text-blue-200">
-                <i class="ri-government-line"></i> Verified by Central Ground Water Board
-                <br>Sensor Depth: ${bestZone.waterLevel} meters
-            </div>`;
-        }
-
-        statusBox.innerHTML = `
-            <div class="text-2xl font-bold mb-1" style="color:${bestZone.color}">${bestZone.typeName}</div>
-            <p class="text-xs text-white">Geological Profile Verified.</p>
-            ${badge}
-        `;
 }
 
-
-// --- 3. TDS CALCULATOR (DEBUGGED) ---
+// --- 3. TDS CALCULATOR ---
 function checkWaterQuality() {
     const pincode = document.getElementById('sciPincode').value;
     const rangeTxt = document.getElementById('tdsRange');
@@ -136,7 +130,7 @@ function checkWaterQuality() {
     sci_db.collection('water_quality').doc(String(pincode)).get().then((doc) => {
         if (doc.exists) {
             const data = doc.data();
-            // FIXED VARIABLES HERE
+            // Using min_tds / max_tds as per your database
             rangeTxt.innerText = `${data.min_tds} - ${data.max_tds}`;
             noteTxt.innerHTML = `<span class="text-emerald-400">● ${data.type || 'Verified Record'}</span>`;
         } else {
@@ -150,8 +144,7 @@ function checkWaterQuality() {
     });
 }
 
-// --- 4. MOTOR & RISK ENGINE (SEPARATE INPUTS) ---
-
+// --- 4. MOTOR & RISK ENGINE ---
 function calcMotor() {
     const depth = parseInt(document.getElementById('sciDepthPump').value) || 0;
     
