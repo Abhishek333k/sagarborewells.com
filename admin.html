@@ -180,7 +180,7 @@
                         <div class="bg-slate-900 p-4 rounded border border-slate-700">
                             <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 2: JSON/CSV Upload (Reliable)</label>
                             <p class="text-xs text-slate-400 mb-2">Download data from WRIS website, save as JSON, and upload here.</p>
-                            <input type="file" id="jsonUpload" accept=".json" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-600"/>
+                            <input type="file" id="jsonUpload" accept=".json,.geojson" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-600"/>
                             <button onclick="processJsonFile()" class="mt-3 w-full btn-pro bg-emerald-600 hover:bg-emerald-500 text-white">PROCESS & UPLOAD TO FIREBASE</button>
                         </div>
                     </div>
@@ -543,57 +543,163 @@
             });
         }
 
+       // 🟢 SMART DATA IMPORTER (Handles Lithologs, Waterbodies, & Aquifers)
         function processJsonFile() {
             const fileInput = document.getElementById('jsonUpload');
             const file = fileInput.files[0];
-            if(!file) return notify("Select a JSON file first", "error");
+            if(!file) return notify("Select a file first", "error");
 
             const reader = new FileReader();
+            
+            notify("Reading file... (Large files may take 10s)", "info");
+
             reader.onload = function(e) {
                 try {
                     const rawData = JSON.parse(e.target.result);
-                    let count = 0;
                     const batch = db.batch(); 
-                    
-                    rawData.forEach((item, index) => {
-                        const docRef = db.collection('geo_zones').doc(`govt_stn_${index}`);
-                        let type = 'moderate';
-                        let color = '#eab308';
-                        const level = parseFloat(item.water_level); 
+                    let count = 0;
+                    let fileType = "Unknown";
 
-                        if(level < 15) { type = 'water'; color = '#10b981'; } 
-                        else if(level > 60) { type = 'rock'; color = '#ef4444'; } 
+                    // 1. DETERMINE DATA SOURCE & EXTRACT FEATURES
+                    let features = [];
+                    if(Array.isArray(rawData)) {
+                        features = rawData; // Standard JSON List
+                    } else if(rawData.type === "FeatureCollection" && Array.isArray(rawData.features)) {
+                        features = rawData.features; // GeoJSON Format (Govt Data)
+                    } else {
+                        throw new Error("Unknown File Format. Must be JSON Array or GeoJSON.");
+                    }
 
-                        const lat = parseFloat(item.latitude);
-                        const lng = parseFloat(item.longitude);
-                        const coords = [
-                            { lat: lat + 0.002, lng: lng - 0.002 },
-                            { lat: lat + 0.002, lng: lng + 0.002 },
-                            { lat: lat - 0.002, lng: lng + 0.002 },
-                            { lat: lat - 0.002, lng: lng - 0.002 }
-                        ];
+                    // 2. LOOP THROUGH DATA
+                    // Limit to 450 items per batch (Firebase limit is 500)
+                    // For huge files, we only take the first 450 for safety in this demo.
+                    const safeLimit = features.slice(0, 450); 
 
-                        batch.set(docRef, {
-                            name: `WRIS Stn: ${item.station_name}`,
-                            typeKey: type,
-                            typeName: `Govt Data (${level}m)`,
-                            color: color,
-                            coords: coords,
-                            source: "Govt WRIS",
-                            waterLevel: level,
+                    safeLimit.forEach((item, index) => {
+                        const props = item.properties || item; // GeoJSON puts data in 'properties'
+                        const geom = item.geometry;            // GeoJSON puts coords in 'geometry'
+                        
+                        // ID Generation
+                        const docId = `govt_import_${Date.now()}_${index}`;
+                        const docRef = db.collection('geo_zones').doc(docId);
+
+                        // --- AUTO-DETECT TYPE LOGIC ---
+                        let zoneData = {
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        count++;
+                        };
+
+                        // A. LITHOLOGS (Drilling Data Points)
+                        if(props.hasOwnProperty('Depth_of_Drill__m_') || props.hasOwnProperty('Lithology_Code')) {
+                            fileType = "Lithologs";
+                            
+                            // Determine Color based on Lithology
+                            const rockType = (props.Major_Lithology || "").toLowerCase();
+                            let color = '#eab308'; // Default Yellow
+                            let typeKey = 'moderate';
+
+                            if(rockType.includes('granite') || rockType.includes('basalt') || rockType.includes('gneiss')) {
+                                color = '#ef4444'; typeKey = 'rock';
+                            } else if(rockType.includes('alluvium') || rockType.includes('sandstone')) {
+                                color = '#10b981'; typeKey = 'water';
+                            }
+
+                            // Extract Point Geometry [Lon, Lat]
+                            const lon = geom.coordinates[0];
+                            const lat = geom.coordinates[1];
+
+                            // Create a small box around the point so it works as a "Zone"
+                            const boxSize = 0.001; // approx 100m
+                            zoneData = {
+                                name: `Log: ${props.Location || props.Village || 'Unknown'}`,
+                                typeName: `${props.Major_Lithology} (${props.Depth_of_Drill__m_}m)`,
+                                typeKey: typeKey,
+                                color: color,
+                                source: "CGWB Litholog",
+                                coords: [
+                                    { lat: lat + boxSize, lng: lon - boxSize },
+                                    { lat: lat + boxSize, lng: lon + boxSize },
+                                    { lat: lat - boxSize, lng: lon + boxSize },
+                                    { lat: lat - boxSize, lng: lon - boxSize }
+                                ]
+                            };
+                        }
+                        
+                        // B. WATERBODIES (Polygons)
+                        else if(props.hasOwnProperty('waterbody_') || props.hasOwnProperty('wb_name')) {
+                            fileType = "Waterbodies";
+                            
+                            // Extract Polygon Coords
+                            // GeoJSON Polygons are nested arrays: [[[lon, lat], [lon, lat]]]
+                            // We take the outer boundary (index 0)
+                            let rawCoords = [];
+                            if(geom.type === 'MultiPolygon') rawCoords = geom.coordinates[0][0];
+                            else if(geom.type === 'Polygon') rawCoords = geom.coordinates[0];
+
+                            // Convert [Lon, Lat] Array to {lat, lng} Object
+                            const googleCoords = rawCoords.map(p => ({ lat: p[1], lng: p[0] }));
+
+                            zoneData = {
+                                name: props.waterbody_ || props.wb_name || "Water Body",
+                                typeName: "Surface Water Source",
+                                typeKey: "water",
+                                color: "#3b82f6", // Blue
+                                source: "AP Waterbodies",
+                                coords: googleCoords
+                            };
+                        }
+
+                        // C. AQUIFER MATERIAL (Geology Zones)
+                        else if(props.hasOwnProperty('Aquifer_Ma') || props.hasOwnProperty('Material')) {
+                            fileType = "Aquifer Map";
+                            
+                            const material = (props.Aquifer_Ma || props.Material || "").toLowerCase();
+                            let color = '#f97316'; // Silt/Default
+                            let typeKey = 'silt';
+
+                            if(material.includes('granite') || material.includes('charnockite')) {
+                                color = '#ef4444'; typeKey = 'rock';
+                            } else if(material.includes('sand') || material.includes('alluvium')) {
+                                color = '#10b981'; typeKey = 'water';
+                            }
+
+                            // Extract Polygon
+                            let rawCoords = [];
+                            if(geom.type === 'MultiPolygon') rawCoords = geom.coordinates[0][0];
+                            else if(geom.type === 'Polygon') rawCoords = geom.coordinates[0];
+
+                            const googleCoords = rawCoords.map(p => ({ lat: p[1], lng: p[0] }));
+
+                            zoneData = {
+                                name: `Geology: ${props.Aquifer_Ma || 'Zone'}`,
+                                typeName: material.toUpperCase(),
+                                typeKey: typeKey,
+                                color: color,
+                                source: "CGWB Aquifer Map",
+                                coords: googleCoords
+                            };
+                        }
+
+                        // If valid data found, add to batch
+                        if(zoneData.coords && zoneData.coords.length > 0) {
+                            batch.set(docRef, Object.assign(zoneData, { timestamp: firebase.firestore.FieldValue.serverTimestamp() }));
+                            count++;
+                        }
                     });
 
-                    batch.commit().then(() => {
-                        notify(`SUCCESS: Imported ${count} Govt Stations!`);
-                        loadAdminZones(); 
-                    });
+                    // 3. EXECUTE UPLOAD
+                    if(count > 0) {
+                        notify(`Detected ${fileType}. Uploading ${count} Zones...`);
+                        batch.commit().then(() => {
+                            notify("SUCCESS: Data Import Complete!");
+                            loadAdminZones();
+                        }).catch(e => notify("Firebase Batch Error: " + e.message, "error"));
+                    } else {
+                        notify("No recognizable data found in file.", "error");
+                    }
 
                 } catch(err) {
                     console.error(err);
-                    notify("Invalid JSON Format", "error");
+                    notify("Format Error: File must be valid GeoJSON.", "error");
                 }
             };
             reader.readAsText(file);
