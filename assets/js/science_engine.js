@@ -107,33 +107,30 @@ function analyzeLocation(latLng) {
 // --- 3. TDS CALCULATOR (DEBUGGED) ---
 function checkWaterQuality() {
     const pincode = document.getElementById('sciPincode').value;
-    const box = document.getElementById('tdsResult');
     const rangeTxt = document.getElementById('tdsRange');
     const noteTxt = document.getElementById('tdsNote');
+    const box = document.getElementById('tdsResult');
 
-    if(pincode.length !== 6) return alert("Enter valid 6-digit Pincode");
+    if(pincode.length !== 6) return alert("Enter valid Pincode");
 
     box.classList.remove('hidden');
     rangeTxt.innerText = "...";
-    noteTxt.innerText = "Querying Database...";
+    noteTxt.innerText = "Scanning...";
 
-    // 🟢 REAL DB CALL
-    sci_db.collection('water_quality').doc(String(pincode)).get()
-    .then((doc) => {
+    sci_db.collection('water_quality').doc(String(pincode)).get().then((doc) => {
         if (doc.exists) {
             const data = doc.data();
+            // FIXED VARIABLES HERE
             rangeTxt.innerText = `${data.min_tds} - ${data.max_tds}`;
             noteTxt.innerHTML = `<span class="text-emerald-400">● ${data.type || 'Verified Record'}</span>`;
         } else {
-            rangeTxt.innerText = "No Record";
-            noteTxt.innerText = `No data for ${pincode}. Call lab to update.`;
-            noteTxt.className = "text-sm text-red-400";
+            rangeTxt.innerText = "No Data";
+            noteTxt.innerText = "No data for this area.";
         }
-    })
-    .catch((e) => {
-        console.error("Firebase Error:", e);
+    }).catch((e) => {
+        console.error(e);
         rangeTxt.innerText = "Error";
-        noteTxt.innerText = "Check internet or permissions.";
+        noteTxt.innerText = "Connection Failed";
     });
 }
 
