@@ -597,7 +597,8 @@
             });
         }
 
-        function readFileData(file, fileId) {
+
+		function readFileData(file, fileId) {
             const reader = new FileReader();
             notify("Reading file... please wait.", "info");
 
@@ -606,6 +607,7 @@
                     const rawData = JSON.parse(e.target.result);
                     let features = [];
                     
+                    // Handle both GeoJSON and Raw Arrays
                     if(Array.isArray(rawData)) features = rawData;
                     else if(rawData.type === "FeatureCollection") features = rawData.features;
                     else throw new Error("Invalid Format");
@@ -618,74 +620,90 @@
                     
                     features.forEach((item, index) => {
                         const props = item.properties || item;
-                        const geom = item.geometry;
-                        if(!geom) return;
+                        
+                        // 🟢 GEOMETRY ENGINE: Supports both GeoJSON and Raw Lat/Lng
+                        let geomType = "Unknown";
+                        let coords = null; // For Polygons
+                        let point = null;  // For Points
+
+                        if (item.geometry) {
+                            // Standard GeoJSON
+                            if(item.geometry.type.includes("Polygon")) {
+                                geomType = "Polygon";
+                                coords = parsePolygon(item.geometry);
+                            } else if(item.geometry.type === "Point") {
+                                geomType = "Point";
+                                point = fixPoint(item.geometry.coordinates);
+                            }
+                        } else if (item.latitude && item.longitude) {
+                            // Raw JSON (Your new file)
+                            geomType = "Point";
+                            point = { lat: parseFloat(item.latitude), lng: parseFloat(item.longitude) };
+                        }
+
+                        if(geomType === "Unknown") return; // Skip invalid rows
 
                         let zoneData = null;
 
-                        // 1. LITHOLOGS (Rock Type)
-                        if(props.Depth_of_Drill__m_ || props.Major_Lithology) {
+                        // --- 1. GROUNDWATER MONITORING STATIONS (New Feature) ---
+                        // Matches keys: 'stationCode', 'dataValue', 'wellAquiferType'
+                        if(props.stationCode || (props.stationName && props.dataValue !== undefined)) {
+                            targetCollection = "layer_lithologs"; // We can reuse this or make a new 'layer_stations'
+                            
+                            const level = parseFloat(props.dataValue || 0);
+                            const depth = parseFloat(props.wellDepth || 0);
+                            const aquifer = props.wellAquiferType || "Unknown";
+                            
+                            // Color Logic for Water Level
+                            let color = '#06b6d4'; // Cyan (Normal)
+                            if(level < 0 && Math.abs(level) > 20) color = '#eab308'; // Warning (>20m deep)
+                            if(level < 0 && Math.abs(level) > 50) color = '#ef4444'; // Danger (>50m deep)
+
+                            zoneData = {
+                                name: `Station: ${props.stationName || props.stationCode}`,
+                                typeName: `Water Lvl: ${Math.abs(level).toFixed(2)}m (${aquifer})`,
+                                color: color,
+                                waterLevel: level,
+                                wellDepth: depth,
+                                lat: point.lat, lng: point.lng
+                            };
+                        }
+
+                        // --- 2. LITHOLOGS (Old Logic) ---
+                        else if(props.Depth_of_Drill__m_ || props.Major_Lithology) {
                             targetCollection = "layer_lithologs";
-                            const p = fixPoint(geom.coordinates);
                             const rock = (props.Major_Lithology || "").toLowerCase();
                             let color = '#eab308'; 
                             if(rock.includes('granite') || rock.includes('basalt')) color = '#ef4444';
                             if(rock.includes('alluvium') || rock.includes('sand')) color = '#10b981';
 
-                            zoneData = {
-                                name: `Log: ${props.Location || props.Village}`,
-                                typeName: `${props.Major_Lithology} (${props.Depth_of_Drill__m_}m)`,
-                                color: color,
-                                waterLevel: props.Static_Water_Level__mbgl_ || 0,
-                                lat: p.lat, lng: p.lng
-                            };
-                        }
-                        // 2. WATERBODIES
-                        else if(props.waterbody_ || props.wb_name) {
-                            targetCollection = "layer_waterbodies";
-                            const googleCoords = parsePolygon(geom);
-                            zoneData = {
-                                name: props.waterbody_ || "Water Body",
-                                typeName: "Surface Water",
-                                color: "#3b82f6",
-                                coords: googleCoords
-                            };
-                        }
-                        // 3. AQUIFERS
-                        else if(props.Aquifer_Ma || props.Material) {
-                            targetCollection = "layer_aquifers";
-                            const googleCoords = parsePolygon(geom);
-                            const mat = (props.Aquifer_Ma || "").toLowerCase();
-                            let color = '#f97316';
-                            if(mat.includes('granite')) color = '#ef4444';
-                            else if(mat.includes('alluvium')) color = '#10b981';
-
-                            zoneData = {
-                                name: `Aquifer: ${props.Aquifer_Ma}`,
-                                typeName: mat.toUpperCase(),
-                                color: color,
-                                coords: googleCoords
-                            };
+                            if(point) { // Lithologs must be points
+                                zoneData = {
+                                    name: `Log: ${props.Location || props.Village}`,
+                                    typeName: `${props.Major_Lithology} (${props.Depth_of_Drill__m_}m)`,
+                                    color: color,
+                                    waterLevel: props.Static_Water_Level__mbgl_ || 0,
+                                    lat: point.lat, lng: point.lng
+                                };
+                            }
                         }
 
-                        // 4. GROUNDWATER RESOURCE (RISK MAP) - [UPDATED FOR 2020 DATASET]
-                        // Checks for various keys including the raw percentage 'Stage_of_development____'
-                        else if(props.Category || props.Categorization || props['Stage of GW extraction (%)'] || props.Stage_of_development____) {
+                        // --- 3. RISK MAPS & ZONES (Polygons) ---
+                        else if(
+                            (props.Category || props.Categorization || props['Stage of GW extraction (%)'] !== undefined || props.Stage_of_development____ !== undefined) 
+                            && geomType === "Polygon"
+                        ) {
                             targetCollection = "risk_map";
-                            const googleCoords = parsePolygon(geom);
                             
-                            // 1. Identify Risk Percentage
                             let percentage = 0;
-                            if(props.Stage_of_development____) percentage = parseFloat(props.Stage_of_development____);
-                            else if(props['Stage of GW extraction (%)']) percentage = parseFloat(props['Stage of GW extraction (%)']);
+                            if(props.Stage_of_development____ !== undefined) percentage = parseFloat(props.Stage_of_development____);
+                            else if(props['Stage of GW extraction (%)'] !== undefined) percentage = parseFloat(props['Stage of GW extraction (%)']);
 
-                            // 2. Determine Status Label & Color
                             let rawStatus = props.Category || props.Categorization || "Unknown";
-                            let color = '#10b981'; // Default Green (Safe)
+                            let color = '#10b981'; 
                             let riskLabel = "Safe";
 
-                            // If text label is missing/unknown, calculate from percentage
-                            if((rawStatus === "Unknown" || !rawStatus) && percentage > 0) {
+                            if((rawStatus === "Unknown" || !rawStatus)) {
                                 if(percentage <= 70) rawStatus = "Safe";
                                 else if(percentage <= 90) rawStatus = "Semi-Critical";
                                 else if(percentage <= 100) rawStatus = "Critical";
@@ -693,21 +711,11 @@
                             }
 
                             const status = rawStatus.toLowerCase();
+                            if(status.includes('critical') && !status.includes('semi')) { color = '#ef4444'; riskLabel = "Critical"; }
+                            else if(status.includes('semi')) { color = '#eab308'; riskLabel = "Semi-Critical"; }
+                            else if(status.includes('over')) { color = '#7f1d1d'; riskLabel = "Over-Exploited"; }
+                            else if(status.includes('saline')) { color = '#3b82f6'; riskLabel = "Saline"; }
 
-                            if(status.includes('critical') && !status.includes('semi')) { 
-                                color = '#ef4444'; riskLabel = "Critical"; 
-                            }
-                            else if(status.includes('semi')) { 
-                                color = '#eab308'; riskLabel = "Semi-Critical"; 
-                            }
-                            else if(status.includes('over')) { 
-                                color = '#7f1d1d'; riskLabel = "Over-Exploited"; 
-                            }
-                            else if(status.includes('saline')) {
-                                color = '#3b82f6'; riskLabel = "Saline";
-                            }
-
-                            // Handle various Name keys
                             const districtName = props.District || props['Name of District'] || props.Name_of_District || 'District';
                             
                             zoneData = {
@@ -716,7 +724,7 @@
                                 color: color,
                                 typeKey: "risk_zone",
                                 status: riskLabel,
-                                coords: googleCoords
+                                coords: coords
                             };
                         }
                         
@@ -739,7 +747,6 @@
             reader.readAsText(file);
         }
 
-        
         function uploadInChunks(data, collectionName, fileId, startIndex = 0) {
             const BATCH_SIZE = 400;
             const batch = db.batch();
