@@ -1,6 +1,18 @@
 // FILENAME: assets/js/layout.js
 
 document.addEventListener("DOMContentLoaded", function() {
+
+    // --- 0. GLOBAL ASSETS INJECTION (Favicon & Meta) ---
+    const head = document.getElementsByTagName('head')[0];
+    
+    // Inject Favicon if missing
+    if (!document.querySelector("link[rel*='icon']")) {
+        const link = document.createElement('link');
+        link.type = 'image/png';
+        link.rel = 'shortcut icon';
+        link.href = 'assets/img/favicon.png'; 
+        head.appendChild(link);
+    }
     
     // --- 1. RENDER HEADER ---
     const headerMount = document.getElementById('navbar-mount');
