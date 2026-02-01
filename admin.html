@@ -46,6 +46,7 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-sm">
@@ -60,6 +61,7 @@
             <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>BWBC Archives</span></div>
             <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
             <div onclick="showSection('maproom')" id="nav-maproom" class="nav-item text-purple-400"><i class="ri-map-2-line"></i> <span>Geo-Map Room</span></div>
+            <div onclick="showSection('dataops')" id="nav-dataops" class="nav-item text-orange-400"><i class="ri-database-line"></i> <span>Govt Data Sync</span></div>
         </nav>
         <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button></div>
     </aside>
@@ -83,9 +85,21 @@
         </header>
 
         <div id="ceo-dashboard" class="grid grid-cols-3 gap-4 mb-6 hidden">
-            <div class="glass-card p-4 border-l-4 border-blue-500"><p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Pipeline</p><h3 class="text-2xl font-bold text-white" id="stat-revenue">₹0</h3><p class="text-[10px] text-blue-400 mt-1">Active Leads Value</p></div>
-            <div class="glass-card p-4 border-l-4 border-emerald-500"><p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Drilled Depth</p><h3 class="text-2xl font-bold text-white" id="stat-depth">0 ft</h3><p class="text-[10px] text-emerald-400 mt-1">All Time Total</p></div>
-            <div class="glass-card p-4 border-l-4 border-purple-500"><p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Conversion</p><h3 class="text-2xl font-bold text-white" id="stat-conversion">0%</h3><p class="text-[10px] text-purple-400 mt-1">Win Rate</p></div>
+            <div class="glass-card p-4 border-l-4 border-blue-500">
+                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Pipeline</p>
+                <h3 class="text-2xl font-bold text-white" id="stat-revenue">₹0</h3>
+                <p class="text-[10px] text-blue-400 mt-1">Active Leads Value</p>
+            </div>
+            <div class="glass-card p-4 border-l-4 border-emerald-500">
+                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Drilled Depth</p>
+                <h3 class="text-2xl font-bold text-white" id="stat-depth">0 ft</h3>
+                <p class="text-[10px] text-emerald-400 mt-1">All Time Total</p>
+            </div>
+            <div class="glass-card p-4 border-l-4 border-purple-500">
+                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Conversion</p>
+                <h3 class="text-2xl font-bold text-white" id="stat-conversion">0%</h3>
+                <p class="text-[10px] text-purple-400 mt-1">Win Rate</p>
+            </div>
         </div>
 
         <div id="filter-bar" class="mb-6 flex flex-wrap gap-3 hidden items-end bg-slate-900/50 p-3 rounded-xl border border-slate-800">
@@ -110,8 +124,12 @@
                                 <option value="saline">Saline/Salty (Blue)</option>
                                 <option value="silt">Loose Silt (Orange)</option>
                             </select>
-                            <button onclick="enableDrawing()" id="btnDraw" class="w-full bg-white text-slate-900 font-bold text-xs py-2 rounded hover:bg-slate-200 flex items-center justify-center gap-1"><i class="ri-pencil-line"></i> DRAW SHAPE</button>
-                            <button onclick="cancelDrawing()" id="btnCancel" class="hidden w-full bg-red-500 text-white font-bold text-xs py-2 rounded hover:bg-red-600 mt-1">CANCEL</button>
+                            <button onclick="enableDrawing()" id="btnDraw" class="w-full bg-white text-slate-900 font-bold text-xs py-2 rounded hover:bg-slate-200 flex items-center justify-center gap-1">
+                                <i class="ri-pencil-line"></i> DRAW SHAPE
+                            </button>
+                            <button onclick="cancelDrawing()" id="btnCancel" class="hidden w-full bg-red-500 text-white font-bold text-xs py-2 rounded hover:bg-red-600 mt-1">
+                                CANCEL
+                            </button>
                         </div>
                         <div class="bg-slate-900/90 backdrop-blur border border-slate-700 p-2 rounded-lg shadow-xl mt-2">
                              <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Jump to Coords</label>
@@ -138,8 +156,47 @@
                         <h3 class="text-sm font-bold text-white uppercase tracking-wider">Saved Zones</h3>
                         <button onclick="loadAdminZones()" class="text-xs text-blue-400 hover:text-white"><i class="ri-refresh-line"></i></button>
                     </div>
-                    <div id="zonesList" class="flex-grow overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                        <div class="text-center text-slate-500 text-xs mt-10">Loading database...</div>
+                    <div id="zonesList" class="flex-grow overflow-y-auto space-y-2 pr-1 custom-scrollbar"><div class="text-center text-slate-500 text-xs mt-10">Loading database...</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-dataops" class="content-section hidden max-w-5xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-3 bg-blue-900/30 rounded-lg text-blue-400"><i class="ri-cloud-windy-line text-xl"></i></div>
+                        <div><h3 class="text-lg font-bold text-white">WRIS Data Ingestion</h3><p class="text-xs text-slate-400">Import Groundwater Levels from Govt API/JSON</p></div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                            <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 1: Direct API (Experimental)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="wrisApiUrl" class="cyber-input text-xs" placeholder="https://indiawris.gov.in/api/..." value="https://indiawris.gov.in/api/groundwater/stations">
+                                <button onclick="fetchWrisApi()" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white text-xs">FETCH</button>
+                            </div>
+                            <p class="text-[10px] text-red-400 mt-2 italic">*Likely to fail due to Govt CORS security.</p>
+                        </div>
+                        <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                            <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 2: JSON/CSV Upload (Reliable)</label>
+                            <p class="text-xs text-slate-400 mb-2">Download data from WRIS website, save as JSON, and upload here.</p>
+                            <input type="file" id="jsonUpload" accept=".json" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-600"/>
+                            <button onclick="processJsonFile()" class="mt-3 w-full btn-pro bg-emerald-600 hover:bg-emerald-500 text-white">PROCESS & UPLOAD TO FIREBASE</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-3 bg-red-900/30 rounded-lg text-red-400"><i class="ri-alert-line text-xl"></i></div>
+                        <div><h3 class="text-lg font-bold text-white">Regional Risk Mapper</h3><p class="text-xs text-slate-400">Map Districts/Mandals to CGWB Risk Scores</p></div>
+                    </div>
+                    <div class="bg-slate-900 p-4 rounded border border-slate-700 h-64 overflow-y-auto custom-scrollbar" id="riskConsole">
+                        <div class="text-[10px] font-mono text-slate-500">System Ready...</div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <input type="text" id="riskRegion" class="cyber-input" placeholder="Region (e.g. Guntur)">
+                        <select id="riskLevel" class="cyber-input w-32"><option value="Safe">Safe</option><option value="Semi-Critical">Semi-Critical</option><option value="Critical">Critical</option><option value="Over-Exploited">Over-Exploited</option></select>
+                        <button onclick="addRiskRegion()" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white"><i class="ri-add-line"></i></button>
                     </div>
                 </div>
             </div>
@@ -206,11 +263,12 @@
         function showSection(id) {
             document.querySelectorAll('.content-section').forEach(e => e.classList.add('hidden'));
             document.getElementById('section-'+id).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+            document.getElementById('nav-'+id).classList.add('active');
             
             const filterBar = document.getElementById('filter-bar');
             const dashboard = document.getElementById('ceo-dashboard');
             
-            // Toggle UI elements
             if(id === 'leads' || id === 'projects') {
                 filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
                 dashboard.classList.remove('hidden');
@@ -220,14 +278,13 @@
                 filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
                 dashboard.classList.add('hidden');
                 initAdminMap();
+            } else if(id === 'dataops') {
+                filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
+                dashboard.classList.add('hidden');
             } else {
                 filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
                 dashboard.classList.add('hidden');
             }
-            
-            // Update Nav Highlighting
-            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-            document.getElementById('nav-'+id).classList.add('active');
         }
 
         // --- 🟢 FIXED MAP ROOM LOGIC ---
@@ -262,9 +319,7 @@
             drawingManager.setMap(adminMap);
 
             google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) {
-                // If we were editing something else, close it safely
                 if(currentPoly) discardCurrentZone();
-                
                 currentPoly = poly;
                 enableEditorUI("Save New Zone", "CONFIRM SAVE");
                 drawingManager.setDrawingMode(null);
@@ -275,9 +330,7 @@
         }
 
         function enableDrawing() {
-            // Safe reset
             discardCurrentZone();
-            
             const type = document.getElementById('drawType').value;
             const color = ZONE_CONFIG[type].color;
             drawingManager.setOptions({
@@ -294,19 +347,15 @@
             toggleDrawButtons(false);
         }
 
-        // 🟢 THE FIX: Smart Discard
-        // This stops the logic from deleting existing zones when you just want to cancel editing
         function discardCurrentZone() {
             document.getElementById('saveZonePanel').classList.add('hidden');
             document.getElementById('editDocId').value = "";
             document.getElementById('newZoneName').value = "";
 
             if (currentPoly) {
-                // If it has NO ID, it's a new unsaved drawing -> Remove it
                 if (!currentPoly.docId) {
                     currentPoly.setMap(null);
                 } else {
-                    // If it HAS an ID, it's an existing zone -> Just stop editing mode
                     currentPoly.setEditable(false);
                     currentPoly.setDraggable(false);
                     currentPoly.setOptions({ strokeOpacity: 0.8, fillOpacity: 0.2 });
@@ -315,41 +364,26 @@
             }
         }
 
-        // 🟢 THE FIX: Edit Init
         function initEditZone(docId) {
-            // 1. Close any other open edit panel first
-            discardCurrentZone();
+            discardCurrentZone(); 
 
-            // 2. Find the object in memory
             const targetPoly = mapPolygons.find(p => p.docId === docId);
-            
-            if(!targetPoly) {
-                console.error("Polygon not found for ID:", docId);
-                return notify("Error: Map data sync issue. Refresh page.", "error");
-            }
+            if(!targetPoly) return notify("Error: Zone data not synced. Refresh page.", "error");
 
-            // 3. Enable Editing on Map
             targetPoly.setEditable(true);
-            targetPoly.setDraggable(false);
-            targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); // Highlight
+            targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); 
+            currentPoly = targetPoly; 
 
-            currentPoly = targetPoly; // Set as active
-
-            // 4. Fill Data
             const data = targetPoly.zoneData;
             document.getElementById('newZoneName').value = data.name;
-            document.getElementById('drawType').value = data.typeKey || 'rock';
+            document.getElementById('drawType').value = data.typeKey;
             document.getElementById('editDocId').value = docId;
             
-            // 5. UI
             enableEditorUI("Edit Existing Zone", "UPDATE SHAPE");
             
-            // 6. Zoom
             const bounds = new google.maps.LatLngBounds();
             targetPoly.getPath().forEach(xy => bounds.extend(xy));
             adminMap.fitBounds(bounds);
-
-            notify("Edit Mode Active");
         }
 
         function saveCurrentZone() {
@@ -360,7 +394,6 @@
             if(!nameRaw) return notify("Enter Name", "error");
             if(!currentPoly) return notify("No shape active", "error");
 
-            // Extract Geometry
             const path = currentPoly.getPath();
             let coords = [];
             for (let i = 0; i < path.getLength(); i++) {
@@ -382,13 +415,11 @@
             btn.innerText = "SAVING...";
 
             if(editId) {
-                // UPDATE
                 db.collection('geo_zones').doc(editId).update(zoneData).then(() => {
                     notify("Zone Updated");
                     finalizeSave(btn, oldText);
                 });
             } else {
-                // CREATE
                 const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_');
                 db.collection('geo_zones').doc(docId).set(zoneData).then(() => {
                     notify("New Zone Created");
@@ -400,9 +431,8 @@
         function finalizeSave(btn, oldText) {
             btn.innerText = oldText;
             
-            // Force a full clean reset and reload to ensure data consistency
-            // We set currentPoly to null manually so discardCurrentZone doesn't try to remove it from map
-            // (loadAdminZones will handle the full redraw)
+            // Force reset currentPoly to prevent discardCurrentZone from hiding map object
+            // because loadAdminZones will redraw everything fresh
             if(currentPoly) currentPoly = null;
             
             document.getElementById('saveZonePanel').classList.add('hidden');
@@ -411,10 +441,18 @@
             loadAdminZones();
         }
 
+        function deleteZone(docId) {
+            if(confirm("Delete this zone permanently?")) {
+                db.collection('geo_zones').doc(docId).delete().then(() => {
+                    notify("Zone Deleted");
+                    if(currentPoly && currentPoly.docId === docId) resetActivePoly(); // Fix reference
+                    loadAdminZones();
+                });
+            }
+        }
+
         function loadAdminZones() {
             const listEl = document.getElementById('zonesList');
-            
-            // Clean Map
             mapPolygons.forEach(p => p.setMap(null));
             mapPolygons = [];
 
@@ -429,7 +467,6 @@
                     const data = doc.data();
                     const docId = doc.id;
 
-                    // Draw Polygon
                     const poly = new google.maps.Polygon({
                         paths: data.coords,
                         strokeColor: data.color,
@@ -443,54 +480,23 @@
                     
                     poly.docId = docId;
                     poly.zoneData = data;
-                    
-                    // Click Map -> Edit
                     poly.addListener('click', () => initEditZone(docId));
-
                     mapPolygons.push(poly);
 
-                    // Add to Sidebar List
-                    const item = document.createElement('div');
-                    item.className = "bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer mb-2";
-                    item.innerHTML = `
-                        <div onclick="initEditZone('${docId}')" class="flex-grow">
-                            <div class="text-xs font-bold text-white">${data.name}</div>
-                            <div class="text-[10px]" style="color:${data.color}">● ${data.typeName}</div>
-                        </div>
-                        <div class="flex gap-1">
-                             <button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>
-                             <button onclick="deleteZone('${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button>
+                    listEl.innerHTML += `
+                        <div class="bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer mb-2">
+                            <div onclick="initEditZone('${docId}')" class="flex-grow">
+                                <div class="text-xs font-bold text-white">${data.name}</div>
+                                <div class="text-[10px]" style="color:${data.color}">● ${data.typeName}</div>
+                            </div>
+                            <div class="flex gap-1">
+                                 <button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>
+                                 <button onclick="deleteZone('${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button>
+                            </div>
                         </div>
                     `;
-                    listEl.appendChild(item);
                 });
             });
-        }
-
-        function deleteZone(docId) {
-            if(confirm("Delete this zone permanently?")) {
-                db.collection('geo_zones').doc(docId).delete().then(() => {
-                    notify("Zone Deleted");
-                    // If we were editing this exact zone, clear the panel
-                    if(currentPoly && currentPoly.docId === docId) {
-                        currentPoly = null; 
-                        discardCurrentZone();
-                    }
-                    loadAdminZones();
-                });
-            }
-        }
-
-        // --- UTILS ---
-        function toggleDrawButtons(isDrawing) {
-            document.getElementById('btnDraw').classList.toggle('hidden', isDrawing);
-            document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing);
-        }
-
-        function enableEditorUI(title, btnText) {
-            document.getElementById('saveZonePanel').classList.remove('hidden');
-            document.getElementById('zonePanelTitle').innerText = title;
-            document.getElementById('btnSaveZone').innerText = btnText;
         }
 
         function jumpToCoords() {
@@ -505,7 +511,109 @@
             }
         }
 
-        // --- STANDARD APP FUNCTIONS (Leads, Projects, Etc) ---
+        function toggleDrawButtons(isDrawing) {
+            document.getElementById('btnDraw').classList.toggle('hidden', isDrawing);
+            document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing);
+        }
+
+        function enableEditorUI(title, btnText) {
+            document.getElementById('saveZonePanel').classList.remove('hidden');
+            document.getElementById('zonePanelTitle').innerText = title;
+            document.getElementById('btnSaveZone').innerText = btnText;
+        }
+
+        // --- 🟢 DATA OPS LOGIC (RESTORED) ---
+        function addRiskRegion() {
+            const region = document.getElementById('riskRegion').value;
+            const status = document.getElementById('riskLevel').value;
+            
+            if(!region) return notify("Enter Region Name", "error");
+
+            const riskData = {
+                region: region.toLowerCase(), 
+                status: status,
+                source: "CGWB Assessment",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            db.collection('risk_map').doc(region.toLowerCase()).set(riskData).then(() => {
+                const con = document.getElementById('riskConsole');
+                con.innerHTML += `<div class="text-green-400">✓ Mapped: ${region} -> ${status}</div>`;
+                notify("Risk Region Added");
+            });
+        }
+
+        function processJsonFile() {
+            const fileInput = document.getElementById('jsonUpload');
+            const file = fileInput.files[0];
+            if(!file) return notify("Select a JSON file first", "error");
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const rawData = JSON.parse(e.target.result);
+                    let count = 0;
+                    const batch = db.batch(); 
+                    
+                    rawData.forEach((item, index) => {
+                        const docRef = db.collection('geo_zones').doc(`govt_stn_${index}`);
+                        let type = 'moderate';
+                        let color = '#eab308';
+                        const level = parseFloat(item.water_level); 
+
+                        if(level < 15) { type = 'water'; color = '#10b981'; } 
+                        else if(level > 60) { type = 'rock'; color = '#ef4444'; } 
+
+                        const lat = parseFloat(item.latitude);
+                        const lng = parseFloat(item.longitude);
+                        const coords = [
+                            { lat: lat + 0.002, lng: lng - 0.002 },
+                            { lat: lat + 0.002, lng: lng + 0.002 },
+                            { lat: lat - 0.002, lng: lng + 0.002 },
+                            { lat: lat - 0.002, lng: lng - 0.002 }
+                        ];
+
+                        batch.set(docRef, {
+                            name: `WRIS Stn: ${item.station_name}`,
+                            typeKey: type,
+                            typeName: `Govt Data (${level}m)`,
+                            color: color,
+                            coords: coords,
+                            source: "Govt WRIS",
+                            waterLevel: level,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        count++;
+                    });
+
+                    batch.commit().then(() => {
+                        notify(`SUCCESS: Imported ${count} Govt Stations!`);
+                        loadAdminZones(); 
+                    });
+
+                } catch(err) {
+                    console.error(err);
+                    notify("Invalid JSON Format", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function fetchWrisApi() {
+            const url = document.getElementById('wrisApiUrl').value;
+            notify("Attempting connection...", "info");
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log("API Data:", data);
+                notify("Connection Successful! Check Console.");
+            } catch(err) {
+                console.error(err);
+                notify("Connection Failed (CORS Blocked). Use JSON Upload method.", "error");
+            }
+        }
+
+        // --- STANDARD UTILS ---
         function loadAnalytics() {
             let totalDepth = 0; let totalRevenue = 0; let leadCount = 0; let projectCount = 0;
             db.collection('projects').get().then(snap => {
@@ -578,7 +686,6 @@
             });
         }
 
-        function startNewCertificate() { showSection('create'); resetForm(); }
         function resetForm() {
             document.getElementById('projectForm').reset();
             isEditing = false;
@@ -726,82 +833,6 @@
         s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`;
         s.async = true; s.defer = true;
         document.body.appendChild(s);
-
-        // --- 🟢 DATA OPS ENGINE (AUTOMATION) ---
-        function addRiskRegion() {
-            const region = document.getElementById('riskRegion').value;
-            const status = document.getElementById('riskLevel').value;
-            if(!region) return notify("Enter Region Name", "error");
-            const riskData = { region: region.toLowerCase(), status: status, source: "CGWB Assessment", timestamp: firebase.firestore.FieldValue.serverTimestamp() };
-            db.collection('risk_map').doc(region.toLowerCase()).set(riskData).then(() => {
-                const con = document.getElementById('riskConsole');
-                con.innerHTML += `<div class="text-green-400">✓ Mapped: ${region} -> ${status}</div>`;
-                notify("Risk Region Added");
-            });
-        }
-
-        function processJsonFile() {
-            const fileInput = document.getElementById('jsonUpload');
-            const file = fileInput.files[0];
-            if(!file) return notify("Select a JSON file first", "error");
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const rawData = JSON.parse(e.target.result);
-                    let count = 0;
-                    const batch = db.batch(); 
-                    rawData.forEach((item, index) => {
-                        const docRef = db.collection('geo_zones').doc(`govt_stn_${index}`);
-                        let type = 'moderate';
-                        let color = '#eab308';
-                        const level = parseFloat(item.water_level); 
-                        if(level < 15) { type = 'water'; color = '#10b981'; } 
-                        else if(level > 60) { type = 'rock'; color = '#ef4444'; } 
-                        const lat = parseFloat(item.latitude);
-                        const lng = parseFloat(item.longitude);
-                        const coords = [
-                            { lat: lat + 0.002, lng: lng - 0.002 },
-                            { lat: lat + 0.002, lng: lng + 0.002 },
-                            { lat: lat - 0.002, lng: lng + 0.002 },
-                            { lat: lat - 0.002, lng: lng - 0.002 }
-                        ];
-                        batch.set(docRef, {
-                            name: `WRIS Stn: ${item.station_name}`,
-                            typeKey: type,
-                            typeName: `Govt Data (${level}m)`,
-                            color: color,
-                            coords: coords,
-                            source: "Govt WRIS",
-                            waterLevel: level,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        count++;
-                    });
-                    batch.commit().then(() => {
-                        notify(`SUCCESS: Imported ${count} Govt Stations!`);
-                        loadAdminZones(); 
-                    });
-                } catch(err) {
-                    console.error(err);
-                    notify("Invalid JSON Format", "error");
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        async function fetchWrisApi() {
-            const url = document.getElementById('wrisApiUrl').value;
-            notify("Attempting connection...", "info");
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                console.log("API Data:", data);
-                notify("Connection Successful! Check Console.");
-            } catch(err) {
-                console.error(err);
-                notify("Connection Failed (CORS Blocked). Use JSON Upload method.", "error");
-            }
-        }
     </script>
 </body>
 </html>
