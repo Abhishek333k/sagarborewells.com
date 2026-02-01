@@ -65,6 +65,26 @@
                 <span class="text-xs font-mono text-slate-500 hidden md:block">LIVE DATA STREAM: ENABLED</span>
             </div>
             
+            <div class="flex flex-wrap gap-2 mb-3 p-2 bg-slate-900 rounded border border-slate-700">
+                <label class="text-[10px] text-slate-400 font-bold uppercase mr-2 pt-1">LAYERS:</label>
+                
+                <button onclick="toggleLayer('manual')" id="btn-manual" class="px-3 py-1 text-xs font-bold rounded bg-blue-600 text-white border border-blue-500">
+                    Sagar Zones (Manual)
+                </button>
+                
+                <button onclick="toggleLayer('lithologs')" id="btn-lithologs" class="px-3 py-1 text-xs font-bold rounded bg-slate-800 text-slate-400 border border-slate-600 hover:bg-slate-700">
+                    Lithologs (Points)
+                </button>
+                
+                <button onclick="toggleLayer('waterbodies')" id="btn-waterbodies" class="px-3 py-1 text-xs font-bold rounded bg-slate-800 text-slate-400 border border-slate-600 hover:bg-slate-700">
+                    Water Bodies
+                </button>
+                
+                <button onclick="toggleLayer('aquifers')" id="btn-aquifers" class="px-3 py-1 text-xs font-bold rounded bg-slate-800 text-slate-400 border border-slate-600 hover:bg-slate-700">
+                    Aquifer Map
+                </button>
+            </div>
+            
             <div class="h-map bg-slate-900 relative">
                 <div id="sciMap" class="w-full h-full"></div>
                 
