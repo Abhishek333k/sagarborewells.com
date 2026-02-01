@@ -462,23 +462,27 @@
             loadAdminZones();
         }
 
-      // --- 🟢 UPGRADED DELETE FUNCTION (Handles Any Collection) ---
+		// --- 🟢 UPGRADED DELETE FUNCTION (Handles Any Collection) ---
         function deleteZone(collectionName, docId) {
-            if(confirm(`PERMANENT DELETE from ${collectionName}?\n\nThis cannot be undone.`)) {
-                db.collection(collectionName).doc(docId).delete().then(() => {
-                    notify("Object Deleted");
-                    // Remove from map immediately for speed
-                    const targetIdx = mapPolygons.findIndex(p => p.docId === docId);
-                    if(targetIdx > -1) {
-                        mapPolygons[targetIdx].setMap(null);
-                        mapPolygons.splice(targetIdx, 1);
-                    }
-                    loadAdminZones(); // Refresh list
-                }).catch(e => notify("Delete Failed: " + e.message, "error"));
-            }
+            // Confirm deletion
+            if(!confirm(`PERMANENT DELETE from ${collectionName}?\n\nThis cannot be undone.`)) return;
+
+            db.collection(collectionName).doc(docId).delete().then(() => {
+                notify("Object Deleted");
+                
+                // Remove from map immediately (Visual feedback)
+                const targetIdx = mapPolygons.findIndex(p => p.docId === docId);
+                if(targetIdx > -1) {
+                    mapPolygons[targetIdx].setMap(null);
+                    mapPolygons.splice(targetIdx, 1);
+                }
+                
+                // Refresh the list to remove the item from sidebar
+                loadAdminZones(); 
+            }).catch(e => notify("Delete Failed: " + e.message, "error"));
         }
 
-        // --- 🟢 UPGRADED VIEWER (The "God View") ---
+        // --- 🟢 UPGRADED VIEWER ("God Mode" - Sees All Layers) ---
         function loadAdminZones() {
             const listEl = document.getElementById('zonesList');
             
@@ -490,14 +494,14 @@
 
             // 2. Define All Layers to Scan
             const layers = [
-                { id: 'geo_zones', label: 'Zone' },
-                { id: 'risk_map', label: 'Risk' },
+                { id: 'geo_zones', label: 'Manual' },
+                { id: 'risk_map', label: 'Risk Zone' },
                 { id: 'layer_lithologs', label: 'Station' },
                 { id: 'layer_waterbodies', label: 'Water' },
                 { id: 'layer_aquifers', label: 'Aquifer' }
             ];
 
-            // 3. Fetch All Parallelly
+            // 3. Fetch All Collections Parallelly
             const promises = layers.map(l => 
                 db.collection(l.id).orderBy('timestamp', 'desc').limit(50).get()
                 .then(snap => ({ id: l.id, label: l.label, docs: snap.docs }))
@@ -519,55 +523,75 @@
 
                         // RENDER LOGIC
                         if (data.lat && data.lng) {
-                            // POINT (Stations/Lithologs)
+                            // TYPE A: POINT (Stations/Lithologs)
                             icon = "ri-map-pin-line";
+                            
+                            // The Circle (Visual)
                             mapObj = new google.maps.Circle({
                                 strokeColor: data.color || '#06b6d4',
                                 strokeOpacity: 0.9, strokeWeight: 2,
                                 fillColor: data.color || '#06b6d4', fillOpacity: 0.6,
                                 map: adminMap,
                                 center: { lat: data.lat, lng: data.lng },
-                                radius: 150, // Visible size
+                                radius: 150, // Visible size on map
                                 clickable: true,
                                 zIndex: 99
                             });
-                            // Center dot
-                            new google.maps.Marker({
+                            
+                            // The Center Dot (Precision)
+                            const dot = new google.maps.Marker({
                                 position: { lat: data.lat, lng: data.lng },
                                 map: adminMap,
                                 icon: { path: google.maps.SymbolPath.CIRCLE, scale: 3, fillColor: "white", fillOpacity: 1, strokeWeight: 0 }
                             });
+                            // Link dot to circle so we can delete both if needed (advanced)
+                            mapObj.relatedMarker = dot; 
+
                         } else if (data.coords) {
-                            // POLYGON (Zones)
+                            // TYPE B: POLYGON (Zones/Risk Maps)
                             mapObj = new google.maps.Polygon({
                                 paths: data.coords,
                                 strokeColor: data.color, strokeOpacity: 0.8, strokeWeight: 2,
                                 fillColor: data.color, fillOpacity: 0.2,
-                                map: adminMap, clickable: true
+                                map: adminMap, clickable: true, editable: false // Disabled by default until Edit clicked
                             });
                         }
 
                         if(mapObj) {
                             mapObj.docId = docId;
+                            mapObj.collection = collection; // Store collection name for deleting
+                            mapObj.zoneData = data;
+
+                            // Map Click -> Select in List
                             mapObj.addListener('click', () => {
                                 notify(`${data.name} \n ${data.typeName}`);
-                                initEditZone(docId);
+                                // Pan to it
+                                if(mapObj.getCenter) adminMap.panTo(mapObj.getCenter());
+                                // Highlight list item logic could go here
                             });
+                            
                             mapPolygons.push(mapObj);
 
-                            // LIST ITEM (With Correct Delete Link)
+                            // LIST ITEM GENERATOR (With Edit & Delete Buttons)
                             const item = document.createElement('div');
                             item.className = "bg-slate-800 p-3 mb-2 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer";
+                            
+                            // Determine center for "Fly To" click
+                            let centerFunc = "";
+                            if(data.lat) centerFunc = `adminMap.panTo({lat:${data.lat}, lng:${data.lng}}); adminMap.setZoom(14);`;
+                            else if(data.coords && data.coords[0]) centerFunc = `adminMap.panTo({lat:${data.coords[0].lat}, lng:${data.coords[0].lng}}); adminMap.setZoom(13);`;
+
                             item.innerHTML = `
-                                <div onclick="adminMap.panTo({lat:${data.lat || data.coords[0].lat}, lng:${data.lng || data.coords[0].lng}}); adminMap.setZoom(14);">
+                                <div onclick="${centerFunc}" class="flex-grow">
                                     <div class="text-xs font-bold text-white truncate w-32" title="${data.name}">${data.name}</div>
-                                    <div class="text-[9px] flex gap-2">
+                                    <div class="text-[9px] flex gap-2 items-center">
                                         <span style="color:${data.color}">● ${data.typeName}</span>
-                                        <span class="text-slate-600">[${res.label}]</span>
+                                        <span class="text-slate-500 bg-slate-900 px-1 rounded border border-slate-700">${res.label}</span>
                                     </div>
                                 </div>
-                                <div class="flex gap-2">
-                                    <button onclick="deleteZone('${collection}', '${docId}')" class="text-slate-500 hover:text-red-500 transition"><i class="ri-delete-bin-line"></i></button>
+                                <div class="flex gap-1">
+                                    ${collection === 'geo_zones' ? `<button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1" title="Edit Shape"><i class="ri-edit-line"></i></button>` : ''}
+                                    <button onclick="deleteZone('${collection}', '${docId}')" class="text-slate-500 hover:text-red-500 p-1" title="Delete"><i class="ri-delete-bin-line"></i></button>
                                 </div>
                             `;
                             listEl.appendChild(item);
