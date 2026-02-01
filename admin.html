@@ -786,10 +786,11 @@
 
         async function fetchWrisApi() {
             const targetUrl = document.getElementById('wrisApiUrl').value;
-            // We use 'allorigins' as a proxy to bypass the Government CORS block
-            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl);
+            
+            // ATTEMPT 2: Use corsproxy.io (More reliable for Gov sites)
+            const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
 
-            notify("Attempting connection via Proxy...", "info");
+            notify("Connecting via Secure Tunnel...", "info");
             
             try {
                 const response = await fetch(proxyUrl);
@@ -799,17 +800,1054 @@
                 console.log("API Data Received:", data);
                 notify(`Success! Received ${Array.isArray(data) ? data.length : 'data'} records.`);
                 
-                // AUTOMATICALLY PROCESS THE DATA (Simulate file upload)
-                // We wrap the data in a fake file structure to reuse your powerful readFileData logic
+                // AUTOMATICALLY PROCESS
                 const fakeFile = new Blob([JSON.stringify(data)], {type: "application/json"});
                 fakeFile.name = "API_Fetch_" + new Date().toISOString() + ".json";
                 
-                // Reuse the logic we just fixed!
                 readFileData(fakeFile, fakeFile.name);
 
             } catch(err) {
                 console.error(err);
-                notify("Proxy Connection Failed: " + err.message, "error");
+                // If this fails, the User MUST use Method 2
+                notify("Govt Firewall Blocked API. Use Method 2 (Upload JSON).", "error");
+            }
+        }
+
+        // --- STANDARD UTILS ---
+        function loadAnalytics() {
+            let totalDepth = 0; let totalRevenue = 0; let leadCount = 0; let projectCount = 0;
+            db.collection('projects').get().then(snap => {
+                projectCount = snap.size;
+                snap.forEach(doc => { totalDepth += parseInt(doc.data().depth || 0); });
+                document.getElementById('stat-depth').innerText = totalDepth.toLocaleString() + " ft";
+                updateConversion();
+            });
+            db.collection('leads').get().then(snap => {
+                leadCount = snap.size;
+                snap.forEach(doc => { totalRevenue += parseInt(doc.data().total || 0); });
+                document.getElementById('stat-revenue').innerText = "₹" + (totalRevenue/100000).toFixed(1) + "L";
+                updateConversion();
+            });
+            function updateConversion() {
+                if(leadCount > 0) {
+                    const rate = ((projectCount / leadCount) * 100).toFixed(1);
+                    document.getElementById('stat-conversion').innerText = rate + "%";
+                }
+            }
+        }
+
+        let leadsCache = [], projectsCache = [];
+        let currentView = 'leads';
+
+        function filterData() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const dateStart = document.getElementById('dateStart').value;
+            const dateEnd = document.getElementById('dateEnd').value;
+            const list = currentView === 'leads' ? leadsCache : projectsCache;
+            const filtered = list.filter(item => {
+                const searchStr = (item.name + item.mobile + item.loc + (item.projectId || '') + (item.docId || '')).toLowerCase();
+                const matchText = searchStr.includes(term);
+                let matchDate = true;
+                const itemDateStr = item.date || (item.timestamp ? new Date(item.timestamp.toDate()).toISOString().split('T')[0] : '');
+                if (dateStart && itemDateStr < dateStart) matchDate = false;
+                if (dateEnd && itemDateStr > dateEnd) matchDate = false;
+                return matchText && matchDate;
+            });
+            if(currentView === 'leads') renderLeads(filtered); else renderProjects(filtered);
+        }
+        function clearFilters() { document.getElementById('searchInput').value = ""; document.getElementById('dateStart').value = ""; document.getElementById('dateEnd').value = ""; filterData(); }
+
+        function loadLeads() {
+            currentView = 'leads';
+            db.collection('leads').orderBy('timestamp','desc').limit(100).get().then(snap => {
+                leadsCache = []; snap.forEach(d => { let data = d.data(); data.docId = d.id; leadsCache.push(data); });
+                renderLeads(leadsCache);
+            });
+        }
+        function renderLeads(list) {
+            const el = document.getElementById('leads-list'); el.innerHTML = "";
+            list.forEach(data => {
+                const statusColor = data.status === 'Closed' ? 'text-emerald-400' : (data.status === 'Site Visit' ? 'text-blue-400' : 'text-yellow-400');
+                el.innerHTML += `<div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 flex justify-between items-center hover:bg-slate-800/50 transition cursor-pointer group border border-slate-800/50 hover:border-blue-500/30"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition"><i class="ri-user-search-line"></i></div><div><div class="font-bold text-white text-sm">${data.name}</div><div class="text-[10px] text-slate-400 font-mono">${data.loc}</div></div></div><div class="text-right"><div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[9px] ${statusColor} font-mono font-bold uppercase">${data.status || 'Pending'}</div></div></div>`;
+            });
+        }
+
+        function loadProjects() {
+            currentView = 'projects';
+            db.collection('projects').orderBy('projectId', 'desc').get().then(snap => {
+                projectsCache = []; snap.forEach(d => { let data = d.data(); projectsCache.push(data); });
+                renderProjects(projectsCache);
+            });
+        }
+        function renderProjects(list) {
+            const el = document.getElementById('projects-list'); el.innerHTML = "";
+            list.forEach(data => {
+                el.innerHTML += `<div onclick="openProjectModal('${data.projectId}')" class="glass-card p-5 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition border-y border-r border-slate-800/50"><div class="absolute top-2 right-2 text-slate-600 text-[9px] font-mono">${data.date}</div><h3 class="font-bold text-base text-white mb-1">${data.location}</h3><p class="text-xs text-slate-400 mb-3 font-mono">${data.customerName}</p><div class="text-[10px] text-emerald-500 font-mono tracking-widest bg-emerald-900/20 inline-block px-2 py-0.5 rounded border border-emerald-900/50">${data.projectId}</div></div>`;
+            });
+        }
+
+        function startNewCertificate() {
+            showSection('create');
+            resetForm();
+        }
+        
+       function resetForm() {
+            document.getElementById('projectForm').reset();
+            isEditing = false;
+            document.getElementById('form-mode-text').innerText = "CREATING NEW RECORD";
+            document.getElementById('save-btn-text').innerText = "SAVE RECORD";
+            
+            // NEW LOGIC: Time-Based ID (Format: SBW-YYMM-RAND)
+            // Example: SBW-2602-X92B
+            const now = new Date();
+            const yy = now.getFullYear().toString().substr(-2);
+            const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+            const rand = Math.random().toString(36).substr(2, 4).toUpperCase();
+            
+            document.getElementById('p_id').value = `SBW-${yy}${mm}-${rand}`;
+        }
+
+        function editProject(projectId) {
+            const data = projectsCache.find(p => p.projectId === projectId);
+            closeModal();
+            showSection('create');
+            isEditing = true;
+            document.getElementById('form-mode-text').innerText = "EDITING RECORD: " + projectId;
+            document.getElementById('save-btn-text').innerText = "UPDATE RECORD";
+            document.getElementById('p_id').value = data.projectId;
+            document.getElementById('p_mobile').value = data.mobile.replace('+91','');
+            document.getElementById('p_name').value = data.customerName;
+            document.getElementById('p_loc').value = data.location;
+            document.getElementById('p_gps').value = data.gps;
+            document.getElementById('p_depth').value = data.depth;
+            document.getElementById('p_yield').value = data.yield;
+            document.getElementById('p_casing').value = data.casing_depth;
+            document.getElementById('p_casingType').value = data.casing_type;
+            document.getElementById('p_rig').value = data.rigType;
+            document.getElementById('p_motor').value = data.motor;
+            document.getElementById('p_date').value = data.date ? new Date(data.date).toISOString().split('T')[0] : '';
+        }
+
+        function convertToProject(docId) {
+            const lead = leadsCache.find(l => l.docId === docId);
+            startNewCertificate();
+            closeModal();
+            document.getElementById('p_mobile').value = lead.mobile.replace('+91', '');
+            document.getElementById('p_name').value = lead.name;
+            document.getElementById('p_loc').value = lead.loc;
+            document.getElementById('p_depth').value = lead.depth;
+            document.getElementById('projectForm').scrollIntoView({behavior: "smooth"});
+        }
+
+        function saveProject(e) {
+            e.preventDefault();
+            const id = document.getElementById('p_id').value;
+            const data = {
+                projectId: id,
+                mobile: "+91" + document.getElementById('p_mobile').value,
+                customerName: document.getElementById('p_name').value,
+                location: document.getElementById('p_loc').value,
+                gps: document.getElementById('p_gps').value,
+                depth: document.getElementById('p_depth').value,
+                yield: document.getElementById('p_yield').value,
+                casing_depth: document.getElementById('p_casing').value,
+                casing_type: document.getElementById('p_casingType').value,
+                rigType: document.getElementById('p_rig').value,
+                motor: document.getElementById('p_motor').value,
+                date: document.getElementById('p_date').value,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            const docRef = db.collection('projects').doc(id);
+            docRef.get().then(doc => {
+                if(doc.exists && !isEditing) {
+                    notify("ERROR: ID Exists. Generating new...", "error"); resetForm();
+                } else {
+                    docRef.set(data, { merge: true }).then(() => {
+                        notify(isEditing ? "RECORD UPDATED" : "CERTIFICATE ISSUED");
+                        resetForm(); showSection('projects');
+                    });
+                }
+            });
+        }
+
+        let currentPDFElement;
+        function previewQuote(encoded) {
+            const data = JSON.parse(decodeURIComponent(encoded));
+            let rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`;
+            const content = getInvoiceHTML({ name: data.name, mobile: data.mobile, loc: data.loc, total: data.total, rows: rows });
+            document.getElementById('previewContent').innerHTML = content;
+            currentPDFElement = content; document.getElementById('previewModal').classList.add('open');
+        }
+        function previewCert(encoded) {
+            const data = JSON.parse(decodeURIComponent(encoded));
+            const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType };
+            const content = getCertificateHTML(certData);
+            document.getElementById('previewContent').innerHTML = content;
+            currentPDFElement = content; document.getElementById('previewModal').classList.add('open');
+        }
+        function confirmDownloadPDF() { const el = document.createElement('div'); el.innerHTML = currentPDFElement; document.body.appendChild(el); html2pdf().from(el).save('Document.pdf').then(() => document.body.removeChild(el)); }
+        function downloadAdminCert(encoded) { previewCert(encoded); }
+        function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
+        function deleteRecord(collection, docId) {
+            if(confirm("⚠ PERMANENT DELETE: Are you sure?")) {
+                db.collection(collection).doc(docId).delete().then(() => {
+                    notify("RECORD DELETED", "error"); closeModal();
+                    if(collection==='leads') loadLeads(); else loadProjects();
+                });
+            }
+        }
+        function openLeadModal(docId) {
+            const data = leadsCache.find(l => l.docId === docId);
+            const notes = data.adminNotes || "";
+            const content = `
+                <div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Lead Details</h2><p class="text-slate-400 font-mono text-xs">Quote: ${data.docId}</p></div>
+                <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.name}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.loc}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div></div>
+                <div class="mb-6 grid grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Status</label><select class="cyber-input cyber-select w-full text-xs" onchange="updateLeadStatus('${data.docId}', this.value)"><option ${data.status==='Pending'?'selected':''}>Pending</option><option ${data.status==='Contacted'?'selected':''}>Contacted</option><option ${data.status==='Site Visit'?'selected':''}>Site Visit</option><option ${data.status==='Closed'?'selected':''}>Closed</option></select></div><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Mission Log</label><div class="flex gap-2"><textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Notes...">${notes}</textarea><button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-2 rounded text-white"><i class="ri-save-line"></i></button></div></div></div>
+                <div class="grid grid-cols-2 gap-3 mb-4"><a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="btn-pro bg-green-600 hover:bg-green-500 text-white"><i class="ri-whatsapp-line"></i> Chat</a><a href="tel:${data.mobile}" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-phone-line"></i> Call</a><button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-eye-line"></i> View</button><button onclick="convertToProject('${data.docId}')" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white border border-purple-400/30"><i class="ri-magic-line"></i> Convert</button></div>
+                <div class="text-center pt-2"><button onclick="deleteRecord('leads', '${data.docId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE LEAD</button></div>`;
+            document.getElementById('modalContent').innerHTML = content;
+            document.getElementById('detailModal').classList.add('open');
+        }
+        function openProjectModal(projectId) {
+            const data = projectsCache.find(p => p.projectId === projectId);
+            const val = (v) => v || '<span class="text-slate-600 italic">--</span>';
+            const content = `
+                <div class="text-center mb-6"><div class="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-2xl text-white mx-auto mb-3 shadow-lg shadow-emerald-500/30"><i class="ri-database-2-line"></i></div><h2 class="text-xl font-bold text-white">Project Archive</h2><p class="text-slate-400 font-mono text-xs">ID: ${data.projectId}</p></div>
+                <div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${val(data.customerName)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${val(data.mobile)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${val(data.depth)} ft</div></div><div><span class="text-[10px] text-slate-500 uppercase">Yield</span><div class="text-emerald-400 font-bold">${val(data.yield)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Casing</span><div class="text-white text-sm">${val(data.casing_depth)} ft</div></div><div><span class="text-[10px] text-slate-500 uppercase">Type</span><div class="text-slate-300 text-xs">${val(data.casing_type)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Rig</span><div class="text-white text-sm">${val(data.rigType)}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Motor</span><div class="text-white text-sm">${val(data.motor)}</div></div><div class="col-span-2 border-t border-slate-700 pt-2 mt-2"><span class="text-[10px] text-slate-500 uppercase">GPS</span><div class="text-slate-300 font-mono text-xs flex items-center gap-2"><i class="ri-map-pin-line"></i> ${val(data.gps)}</div></div></div>
+                <div class="grid grid-cols-3 gap-2 mb-4"><button onclick="editProject('${data.projectId}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-edit-line"></i> Edit</button><button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-eye-line"></i> View</button><button onclick="downloadAdminCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg"><i class="ri-download-cloud-line"></i> PDF</button></div>
+                <div class="text-center pt-2"><button onclick="deleteRecord('projects', '${data.projectId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE RECORD</button></div>`;
+            document.getElementById('modalContent').innerHTML = content;
+            document.getElementById('detailModal').classList.add('open');
+        }
+        function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }); }
+        function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
+
+        function initMapTools() { 
+            const input = document.getElementById('p_loc'); 
+            if(input) {
+                const ac = new google.maps.places.Autocomplete(input); 
+                ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); 
+            }
+        }
+        function openMapPicker() { if(typeof google === 'undefined') { notify("System Initializing...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
+        function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
+
+        const s = document.createElement('script');
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`;
+        s.async = true; s.defer = true;
+        document.body.appendChild(s);
+    </script><!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sagar Admin | Command OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/pdf_template.js"></script>
+    <script src="assets/js/certificate_template.js"></script>
+
+    <style>
+        /* CYBER THEME */
+        body { background-color: #0f172a; font-family: 'Inter', sans-serif; color: #e2e8f0; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Glassmorphism & Utils */
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
+        .glass-modal { background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(20px); border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        .nav-item { display: flex; items-center; gap: 12px; padding: 10px 14px; color: #94a3b8; border-radius: 8px; transition: 0.2s; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+        .nav-item:hover, .nav-item.active { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-left: 3px solid #3b82f6; }
+        .cyber-input { background: #1e293b; border: 1px solid #334155; color: white; padding: 8px 12px; border-radius: 6px; width: 100%; outline: none; font-size: 0.9rem; transition: 0.3s; }
+        .cyber-input:focus { border-color: #3b82f6; background: #0f172a; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        .cyber-select { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%233b82f6%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right .7rem top 50%; background-size: .65rem auto; }
+        .btn-pro { padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background: #2563eb; color: white; } .btn-primary:hover { background: #1d4ed8; }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; } .btn-danger:hover { background: #ef4444; color: white; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
+        .modal-overlay.open { display: flex; opacity: 1; }
+        .map-wrapper { position: relative; width: 100%; height: 350px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
+        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+        .reticle-dot { width: 6px; height: 6px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 10px 2px #ef4444; z-index: 2; }
+        .reticle-ring { position: absolute; width: 60px; height: 60px; border: 2px dashed #0ea5e9; border-radius: 50%; box-shadow: 0 0 20px rgba(14, 165, 233, 0.3); animation: reticleSpin 10s linear infinite; }
+        @keyframes reticleSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-sm bg-[#0f172a]"> 
+    
+    <div id="system-loader" class="fixed inset-0 z-[1000] bg-[#0f172a] flex flex-col items-center justify-center text-white">
+        <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div class="font-mono text-xs tracking-widest animate-pulse text-blue-400">INITIALIZING SAGAR OS...</div>
+    </div>
+
+    <aside class="w-64 bg-[#0B1120] border-r border-slate-800 flex flex-col flex-shrink-0 z-20">
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-xl font-black tracking-tight text-white">SAGAR<span class="text-blue-500 glow-text">OS</span></h1>
+            <div class="flex items-center gap-2 mt-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><p class="text-[10px] text-emerald-500 font-mono uppercase tracking-widest">v3.0 ONLINE</p></div>
+        </div>
+        <nav class="flex-grow p-4 space-y-1">
+            <div onclick="showSection('leads')" id="nav-leads" class="nav-item active"><i class="ri-radar-line"></i> <span>Live Leads</span></div>
+            <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>BWBC Archives</span></div>
+            <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
+            <div onclick="showSection('maproom')" id="nav-maproom" class="nav-item text-purple-400"><i class="ri-map-2-line"></i> <span>Geo-Map Room</span></div>
+            <div onclick="showSection('dataops')" id="nav-dataops" class="nav-item text-orange-400"><i class="ri-database-line"></i> <span>Govt Data Sync</span></div>
+        </nav>
+        <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button></div>
+    </aside>
+
+    <main class="flex-grow overflow-y-auto p-8 relative bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
+        
+        <div id="login-overlay" class="modal-overlay" style="z-index: 999;">
+            <div class="glass-card p-8 w-80 text-center border-t-4 border-blue-600">
+                <h2 class="text-xl font-bold text-white mb-6">SECURE ACCESS</h2>
+                <div class="text-left mb-4"><label class="text-[10px] text-blue-400 font-bold uppercase block mb-1">ID Verification</label><div class="flex bg-slate-900 border border-slate-700 rounded overflow-hidden"><span class="px-3 py-2 text-slate-500 border-r border-slate-700 font-mono text-xs">+91</span><input type="tel" id="adminPhone" class="w-full bg-transparent px-3 py-2 text-white outline-none font-mono font-bold text-sm" placeholder="ACCESS ID" maxlength="10"></div></div>
+                <div id="otp-group" class="hidden text-left mb-6"><label class="text-[10px] text-emerald-400 font-bold uppercase block mb-1">Security Code</label><input type="tel" id="adminOtp" class="cyber-input text-center tracking-[0.5em] font-bold text-lg" placeholder="••••••" maxlength="6"></div>
+                <div id="recaptcha-container" class="mb-4 flex justify-center"></div>
+                <button id="sendOtpBtn" onclick="sendAdminOTP()" class="w-full btn-pro btn-primary">Authenticate</button>
+                <button id="verifyOtpBtn" onclick="verifyAdminOTP()" class="hidden w-full btn-pro bg-emerald-600 hover:bg-emerald-500 text-white">Unlock System</button>
+            </div>
+        </div>
+
+        <header class="flex justify-between items-center mb-6">
+            <div><h2 class="text-2xl font-bold text-white">Command Center</h2><p class="text-slate-500 text-xs mt-1">Real-time Data Stream</p></div>
+            <div class="glass-card px-3 py-1.5 flex items-center gap-2 border border-emerald-500/20"><i class="ri-server-line text-emerald-400 text-xs"></i><span class="text-[10px] font-mono text-emerald-400 font-bold">DB: CONNECTED</span></div>
+        </header>
+
+        <div id="ceo-dashboard" class="grid grid-cols-3 gap-4 mb-6 hidden">
+            <div class="glass-card p-4 border-l-4 border-blue-500">
+                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Pipeline</p>
+                <h3 class="text-2xl font-bold text-white" id="stat-revenue">₹0</h3>
+                <p class="text-[10px] text-blue-400 mt-1">Active Leads Value</p>
+            </div>
+            <div class="glass-card p-4 border-l-4 border-emerald-500">
+                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Drilled Depth</p>
+                <h3 class="text-2xl font-bold text-white" id="stat-depth">0 ft</h3>
+                <p class="text-[10px] text-emerald-400 mt-1">All Time Total</p>
+            </div>
+            <div class="glass-card p-4 border-l-4 border-purple-500">
+                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Conversion</p>
+                <h3 class="text-2xl font-bold text-white" id="stat-conversion">0%</h3>
+                <p class="text-[10px] text-purple-400 mt-1">Win Rate</p>
+            </div>
+        </div>
+
+        <div id="filter-bar" class="mb-6 flex flex-wrap gap-3 hidden items-end bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+            <div class="flex-grow"><label class="text-[10px] text-slate-500 uppercase font-bold ml-1 mb-1 block">Global Search</label><div class="relative"><i class="ri-search-line absolute left-3 top-2.5 text-slate-500"></i><input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input pl-9" placeholder="Search ID, Name, Mobile..."></div></div>
+            <div><label class="text-[10px] text-slate-500 uppercase font-bold ml-1 mb-1 block">Date Range</label><div class="flex items-center gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700"><input type="date" id="dateStart" onchange="filterData()" class="bg-transparent text-white text-xs outline-none px-2 py-1 w-28"><span class="text-slate-500 text-xs">to</span><input type="date" id="dateEnd" onchange="filterData()" class="bg-transparent text-white text-xs outline-none px-2 py-1 w-28"></div></div>
+            <button onclick="clearFilters()" class="h-[38px] px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700"><i class="ri-filter-off-line"></i></button>
+        </div>
+
+        <div id="section-leads" class="content-section"><div id="leads-list" class="space-y-3"></div></div>
+        <div id="section-projects" class="content-section hidden"><div id="projects-list" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div></div>
+
+        <div id="section-maproom" class="content-section hidden max-w-7xl mx-auto h-[85vh]">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+                <div class="lg:col-span-3 glass-card flex flex-col relative overflow-hidden">
+                    <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
+                        <div class="bg-slate-900/90 backdrop-blur border border-slate-700 p-2 rounded-lg shadow-xl">
+                            <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Zone Type</label>
+                            <select id="drawType" class="bg-slate-800 text-white text-xs p-1 rounded w-32 outline-none border border-slate-600 mb-2">
+                                <option value="rock">Hard Rock (Red)</option>
+                                <option value="water">High Yield (Green)</option>
+                                <option value="moderate">Moderate (Yellow)</option>
+                                <option value="saline">Saline/Salty (Blue)</option>
+                                <option value="silt">Loose Silt (Orange)</option>
+                            </select>
+                            <button onclick="enableDrawing()" id="btnDraw" class="w-full bg-white text-slate-900 font-bold text-xs py-2 rounded hover:bg-slate-200 flex items-center justify-center gap-1">
+                                <i class="ri-pencil-line"></i> DRAW SHAPE
+                            </button>
+                            <button onclick="cancelDrawing()" id="btnCancel" class="hidden w-full bg-red-500 text-white font-bold text-xs py-2 rounded hover:bg-red-600 mt-1">
+                                CANCEL
+                            </button>
+                        </div>
+                        <div class="bg-slate-900/90 backdrop-blur border border-slate-700 p-2 rounded-lg shadow-xl mt-2">
+                             <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Jump to Coords</label>
+                             <div class="flex gap-1">
+                                 <input type="text" id="manualLat" placeholder="Lat" class="w-16 bg-slate-800 text-white text-xs p-1 rounded border border-slate-600">
+                                 <input type="text" id="manualLng" placeholder="Lng" class="w-16 bg-slate-800 text-white text-xs p-1 rounded border border-slate-600">
+                                 <button onclick="jumpToCoords()" class="bg-blue-600 text-white p-1 rounded hover:bg-blue-500"><i class="ri-flight-takeoff-line"></i></button>
+                             </div>
+                        </div>
+                    </div>
+                    <div id="adminMap" class="w-full h-full bg-slate-900"></div>
+                    <div id="saveZonePanel" class="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900/95 border border-emerald-500 p-4 rounded-xl shadow-2xl z-20 w-80">
+                        <h4 class="text-white text-sm font-bold mb-2" id="zonePanelTitle">Save New Zone</h4>
+                        <input type="hidden" id="editDocId">
+                        <input type="text" id="newZoneName" class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-xs mb-2" placeholder="Zone Name (e.g. Mangalagiri North)">
+                        <div class="flex gap-2">
+                            <button onclick="saveCurrentZone()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded" id="btnSaveZone">CONFIRM SAVE</button>
+                            <button onclick="discardCurrentZone()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded"><i class="ri-close-line"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-4 flex flex-col h-full">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-3">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Saved Zones</h3>
+                        <button onclick="loadAdminZones()" class="text-xs text-blue-400 hover:text-white"><i class="ri-refresh-line"></i></button>
+                    </div>
+                    <div id="zonesList" class="flex-grow overflow-y-auto space-y-2 pr-1 custom-scrollbar"><div class="text-center text-slate-500 text-xs mt-10">Loading database...</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-dataops" class="content-section hidden max-w-5xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-3 bg-blue-900/30 rounded-lg text-blue-400"><i class="ri-cloud-windy-line text-xl"></i></div>
+                        <div><h3 class="text-lg font-bold text-white">WRIS Data Ingestion</h3><p class="text-xs text-slate-400">Import Groundwater Levels from Govt API/JSON</p></div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                            <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 1: Direct API (Experimental)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="wrisApiUrl" class="cyber-input text-xs" placeholder="https://indiawris.gov.in/api/..." value="https://indiawris.gov.in/api/groundwater/stations">
+                                <button onclick="fetchWrisApi()" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white text-xs">FETCH</button>
+                            </div>
+                            <p class="text-[10px] text-red-400 mt-2 italic">*Likely to fail due to Govt CORS security.</p>
+                        </div>
+                        <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                            <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 2: JSON/CSV Upload (Reliable)</label>
+                            <p class="text-xs text-slate-400 mb-2">Download data from WRIS website, save as JSON, and upload here.</p>
+                            <input type="file" id="jsonUpload" accept=".json,.geojson" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-600"/>
+                            <button onclick="processJsonFile()" class="mt-3 w-full btn-pro bg-emerald-600 hover:bg-emerald-500 text-white">PROCESS & UPLOAD TO FIREBASE</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-3 bg-red-900/30 rounded-lg text-red-400"><i class="ri-alert-line text-xl"></i></div>
+                        <div><h3 class="text-lg font-bold text-white">Regional Risk Mapper</h3><p class="text-xs text-slate-400">Map Districts/Mandals to CGWB Risk Scores</p></div>
+                    </div>
+                    <div class="bg-slate-900 p-4 rounded border border-slate-700 h-64 overflow-y-auto custom-scrollbar" id="riskConsole">
+                        <div class="text-[10px] font-mono text-slate-500">System Ready...</div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <input type="text" id="riskRegion" class="cyber-input" placeholder="Region (e.g. Guntur)">
+                        <select id="riskLevel" class="cyber-input w-32"><option value="Safe">Safe</option><option value="Semi-Critical">Semi-Critical</option><option value="Critical">Critical</option><option value="Over-Exploited">Over-Exploited</option></select>
+                        <button onclick="addRiskRegion()" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white"><i class="ri-add-line"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-create" class="content-section hidden max-w-4xl mx-auto">
+            <div class="glass-card p-8">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-4 mb-6"><div><h3 class="text-lg font-bold text-white">Certificate Manager</h3><p class="text-[10px] text-slate-400 font-mono mt-0.5" id="form-mode-text">CREATING NEW RECORD</p></div><div class="flex items-center gap-2"><span class="text-[10px] text-slate-500 font-bold uppercase">ID:</span><input type="text" id="p_id" class="bg-slate-900 border border-slate-700 text-emerald-400 font-mono font-bold px-2 py-1 rounded w-40 text-center text-xs" readonly></div></div>
+                <form id="projectForm" onsubmit="saveProject(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="col-span-full"><h4 class="text-[10px] text-blue-400 font-bold uppercase mb-2">Identity</h4><div class="grid md:grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-400 block mb-1">Mobile</label><div class="flex bg-slate-800 border border-slate-600 rounded"><span class="px-3 py-2 text-slate-400 border-r border-slate-600 font-mono text-xs">+91</span><input type="tel" id="p_mobile" class="w-full bg-transparent px-3 text-white outline-none text-sm" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"></div></div><div><label class="text-[10px] text-slate-400 block mb-1">Name</label><input type="text" id="p_name" class="cyber-input" required></div></div></div>
+                    <div class="col-span-full border-t border-slate-700 pt-4"><h4 class="text-[10px] text-purple-400 font-bold uppercase mb-2">Location</h4><div class="grid md:grid-cols-2 gap-4"><div class="col-span-full"><input type="text" id="p_loc" class="cyber-input" placeholder="Address..." required></div><div class="col-span-full flex gap-2"><input type="text" id="p_gps" class="cyber-input bg-slate-800 font-mono text-xs" readonly><button type="button" onclick="openMapPicker('p')" class="bg-purple-600 hover:bg-purple-500 text-white px-4 rounded font-bold text-xs flex items-center gap-1"><i class="ri-map-pin-line"></i> MAP</button></div></div></div>
+                    <div class="col-span-full border-t border-slate-700 pt-4"><h4 class="text-[10px] text-orange-400 font-bold uppercase mb-2">Technical</h4><div class="grid grid-cols-2 md:grid-cols-4 gap-3"><div><label class="text-[9px] text-slate-500 uppercase">Depth</label><input type="number" id="p_depth" class="cyber-input" required></div><div><label class="text-[9px] text-slate-500 uppercase">Yield</label><input type="text" id="p_yield" class="cyber-input" required></div><div><label class="text-[9px] text-slate-500 uppercase">Casing</label><input type="number" id="p_casing" class="cyber-input" required></div><div><label class="text-[9px] text-slate-500 uppercase">Type</label><select id="p_casingType" class="cyber-input"><option>PVC 6Kg</option><option>PVC 10Kg</option><option>MS Iron</option></select></div><div class="col-span-2"><label class="text-[9px] text-slate-500 uppercase">Rig</label><select id="p_rig" class="cyber-input"><option value="">-- None --</option><option>Sensor Robotic</option><option>Hydraulic</option></select></div><div class="col-span-2"><label class="text-[9px] text-slate-500 uppercase">Date</label><input type="date" id="p_date" class="cyber-input" required></div><div class="col-span-full"><label class="text-[9px] text-slate-500 uppercase">Motor</label><input type="text" id="p_motor" class="cyber-input"></div></div></div>
+                    <div class="col-span-full pt-6 flex justify-end gap-3"><button type="button" onclick="showSection('projects')" class="px-4 py-2 text-slate-500 font-bold text-xs hover:text-white transition">CANCEL</button><button type="submit" class="btn-pro btn-primary"><i class="ri-save-3-line"></i> <span id="save-btn-text">SAVE RECORD</span></button></div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <div id="detailModal" class="modal-overlay" style="z-index: 100;"><div class="glass-modal p-6 w-full max-w-xl rounded-xl relative shadow-2xl overflow-y-auto max-h-[90vh]"><button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="ri-close-line text-xl"></i></button><div id="modalContent"></div></div></div>
+    <div id="previewModal" class="modal-overlay" style="z-index: 150;"><div class="glass-modal p-4 w-full max-w-2xl rounded-xl h-[85vh] flex flex-col"><div class="flex justify-between items-center mb-3 px-2"><h3 class="text-white font-bold text-sm">Preview</h3><div class="flex gap-2"><button onclick="confirmDownloadPDF()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-xs font-bold">Download PDF</button><button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-400 hover:text-white px-3 py-1.5 text-xs font-bold">Close</button></div></div><div id="previewContent" class="flex-grow bg-white overflow-y-auto rounded shadow-inner p-4 text-black"></div></div></div>
+    <div id="mapModal" class="modal-overlay" style="z-index: 200;"><div class="glass-card p-6 w-full max-w-2xl border border-slate-600 shadow-2xl"><h3 class="text-lg font-bold text-white mb-4 text-center">Satellite Targeting</h3><div class="map-wrapper"><div id="mapContainer" class="w-full h-full"></div><div class="target-reticle"><div class="reticle-dot"></div><div class="reticle-ring"></div><div class="absolute top-[30px] w-[1px] h-[20px] bg-gradient-to-b from-blue-400 to-transparent opacity-50"></div><div class="absolute w-[80px] h-[1px] bg-blue-500/30"></div><div class="absolute h-[80px] w-[1px] bg-blue-500/30"></div></div></div><div class="flex justify-center gap-4 mt-6"><button onclick="document.getElementById('mapModal').classList.remove('open')" class="text-slate-400 hover:text-white font-bold px-6 text-xs">ABORT</button><button onclick="confirmLocation()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded font-bold text-xs shadow-lg shadow-blue-900/50">LOCK COORDINATES</button></div></div></div>
+
+    <script>
+        if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        function notify(msg, type='success') {
+            Toastify({
+                text: msg, duration: 3000, gravity: "top", position: "right",
+                style: { background: type==='success' ? "#059669" : "#dc2626", borderRadius: "8px", boxShadow: "0 4px 15px rgba(0,0,0,0.3)", fontSize: "12px", fontWeight: "bold" }
+            }).showToast();
+        }
+
+        // --- AUTH & SETUP ---
+        auth.onAuthStateChanged(user => {
+            const loader = document.getElementById('system-loader');
+            const loginModal = document.getElementById('login-overlay');
+
+            if(user) {
+                // 1. User is technically logged in, but check Admin Privileges
+                db.collection('admins').doc(user.phoneNumber).get().then(doc => {
+                    if (doc.exists) {
+                        // SUCCESS: Admin Confirmed
+                        if(loader) loader.style.display = 'none'; // Kill Loader
+                        if(loginModal) loginModal.classList.remove('open'); // Ensure Login is gone
+                        showSection('leads'); 
+                        loadAnalytics(); 
+                    } else { 
+                        // FAIL: User logged in, but not an Admin
+                        notify("UNAUTHORIZED ACCESS", "error"); 
+                        auth.signOut(); 
+                        if(loader) loader.style.display = 'none';
+                        loginModal.classList.add('open');
+                    }
+                }).catch(e => {
+                    notify("System Error: " + e.message, "error");
+                    if(loader) loader.style.display = 'none';
+                    loginModal.classList.add('open');
+                });
+            } else {
+                // 2. No User Session Found
+                if(loader) loader.style.display = 'none'; // Kill Loader
+                loginModal.classList.add('open'); // Show Login Screen
+            }
+        });
+
+        function sendAdminOTP() {
+            const phone = document.getElementById('adminPhone').value;
+            if(phone.length !== 10) return notify("INVALID ID", "error");
+            const btn = document.getElementById('sendOtpBtn'); btn.innerText = "TRANSMITTING...";
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
+            auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier).then(cr => {
+                window.confirmationResult = cr; btn.classList.add('hidden');
+                document.getElementById('otp-group').classList.remove('hidden');
+                document.getElementById('verifyOtpBtn').classList.remove('hidden');
+            }).catch(e => notify("TRANSMISSION FAILED", "error"));
+        }
+        function verifyAdminOTP() { window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => notify("INVALID CODE", "error")); }
+        function logout() { auth.signOut(); window.location.reload(); }
+
+        function showSection(id) {
+            document.querySelectorAll('.content-section').forEach(e => e.classList.add('hidden'));
+            document.getElementById('section-'+id).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+            document.getElementById('nav-'+id).classList.add('active');
+            
+            const filterBar = document.getElementById('filter-bar');
+            const dashboard = document.getElementById('ceo-dashboard');
+            
+            if(id === 'leads' || id === 'projects') {
+                filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
+                dashboard.classList.remove('hidden');
+                if(id==='leads') loadLeads(); 
+                if(id==='projects') loadProjects();
+            } else if(id === 'maproom') {
+                filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
+                dashboard.classList.add('hidden');
+                initAdminMap();
+            } else if(id === 'dataops') {
+                filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
+                dashboard.classList.add('hidden');
+            } else {
+                filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
+                dashboard.classList.add('hidden');
+            }
+        }
+
+        // --- 🟢 FIXED MAP ROOM LOGIC ---
+        let adminMap, drawingManager, currentPoly;
+        let mapPolygons = []; 
+
+        const ZONE_CONFIG = {
+            rock: { color: '#ef4444', label: 'Hard Rock' },
+            water: { color: '#10b981', label: 'High Yield' },
+            moderate: { color: '#eab308', label: 'Moderate' },
+            saline: { color: '#3b82f6', label: 'Saline' },
+            silt: { color: '#f97316', label: 'Loose Silt' }
+        };
+
+        function initAdminMap() {
+            if(adminMap) { loadAdminZones(); return; }
+            
+            const startLoc = { lat: 16.4410, lng: 80.5520 }; 
+            adminMap = new google.maps.Map(document.getElementById('adminMap'), {
+                center: startLoc,
+                zoom: 13,
+                mapTypeId: 'hybrid',
+                disableDefaultUI: true,
+                zoomControl: true
+            });
+
+            drawingManager = new google.maps.drawing.DrawingManager({
+                drawingMode: null,
+                drawingControl: false,
+                polygonOptions: { strokeWeight: 2, fillOpacity: 0.35, editable: true, draggable: false }
+            });
+            drawingManager.setMap(adminMap);
+
+            google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) {
+                if(currentPoly) discardCurrentZone();
+                currentPoly = poly;
+                enableEditorUI("Save New Zone", "CONFIRM SAVE");
+                drawingManager.setDrawingMode(null);
+                toggleDrawButtons(false);
+            });
+
+            loadAdminZones();
+        }
+
+        function enableDrawing() {
+            discardCurrentZone();
+            const type = document.getElementById('drawType').value;
+            const color = ZONE_CONFIG[type].color;
+            drawingManager.setOptions({
+                drawingMode: google.maps.drawing.OverlayType.POLYGON,
+                polygonOptions: { fillColor: color, strokeColor: color, fillOpacity: 0.35, strokeWeight: 2, editable: true }
+            });
+            toggleDrawButtons(true);
+            notify(`Draw Mode: ${ZONE_CONFIG[type].label}`);
+        }
+
+        function cancelDrawing() {
+            drawingManager.setDrawingMode(null);
+            discardCurrentZone();
+            toggleDrawButtons(false);
+        }
+
+        function discardCurrentZone() {
+            document.getElementById('saveZonePanel').classList.add('hidden');
+            document.getElementById('editDocId').value = "";
+            document.getElementById('newZoneName').value = "";
+
+            if (currentPoly) {
+                if (!currentPoly.docId) {
+                    currentPoly.setMap(null);
+                } else {
+                    currentPoly.setEditable(false);
+                    currentPoly.setDraggable(false);
+                    currentPoly.setOptions({ strokeOpacity: 0.8, fillOpacity: 0.2 });
+                }
+                currentPoly = null;
+            }
+        }
+
+        function initEditZone(docId) {
+            discardCurrentZone(); 
+
+            const targetPoly = mapPolygons.find(p => p.docId === docId);
+            if(!targetPoly) return notify("Error: Zone data not synced. Refresh page.", "error");
+
+            targetPoly.setEditable(true);
+            targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); 
+            currentPoly = targetPoly; 
+
+            const data = targetPoly.zoneData;
+            document.getElementById('newZoneName').value = data.name;
+            document.getElementById('drawType').value = data.typeKey;
+            document.getElementById('editDocId').value = docId;
+            
+            enableEditorUI("Edit Existing Zone", "UPDATE SHAPE");
+            
+            const bounds = new google.maps.LatLngBounds();
+            targetPoly.getPath().forEach(xy => bounds.extend(xy));
+            adminMap.fitBounds(bounds);
+        }
+
+        function saveCurrentZone() {
+            const nameRaw = document.getElementById('newZoneName').value;
+            const type = document.getElementById('drawType').value;
+            const editId = document.getElementById('editDocId').value;
+            
+            if(!nameRaw) return notify("Enter Name", "error");
+            if(!currentPoly) return notify("No shape active", "error");
+
+            const path = currentPoly.getPath();
+            let coords = [];
+            for (let i = 0; i < path.getLength(); i++) {
+                const xy = path.getAt(i);
+                coords.push({ lat: xy.lat(), lng: xy.lng() });
+            }
+
+            const zoneData = {
+                name: nameRaw,
+                typeKey: type,
+                typeName: ZONE_CONFIG[type].label,
+                color: ZONE_CONFIG[type].color,
+                coords: coords, 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            const btn = document.getElementById('btnSaveZone');
+            const oldText = btn.innerText;
+            btn.innerText = "SAVING...";
+
+            if(editId) {
+                db.collection('geo_zones').doc(editId).update(zoneData).then(() => {
+                    notify("Zone Updated");
+                    finalizeSave(btn, oldText);
+                });
+            } else {
+                const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                db.collection('geo_zones').doc(docId).set(zoneData).then(() => {
+                    notify("New Zone Created");
+                    finalizeSave(btn, oldText);
+                });
+            }
+        }
+
+        function finalizeSave(btn, oldText) {
+            btn.innerText = oldText;
+            
+            if(currentPoly) currentPoly = null;
+            
+            document.getElementById('saveZonePanel').classList.add('hidden');
+            document.getElementById('editDocId').value = "";
+            document.getElementById('newZoneName').value = "";
+            loadAdminZones();
+        }
+
+        function deleteZone(docId) {
+            if(confirm("Delete this zone permanently?")) {
+                db.collection('geo_zones').doc(docId).delete().then(() => {
+                    notify("Zone Deleted");
+                    if(currentPoly && currentPoly.docId === docId) resetActivePoly(); 
+                    loadAdminZones();
+                });
+            }
+        }
+
+        function loadAdminZones() {
+            const listEl = document.getElementById('zonesList');
+            if(mapPolygons) {
+                mapPolygons.forEach(p => p.setMap(null));
+            }
+            mapPolygons = [];
+            listEl.innerHTML = '<div class="text-center text-slate-500 text-xs mt-4">Loading recent data...</div>';
+
+            db.collection('geo_zones')
+              .orderBy('timestamp', 'desc')
+              .limit(50) 
+              .get()
+              .then(snap => {
+                listEl.innerHTML = "";
+                
+                if(snap.empty) {
+                    listEl.innerHTML = `<div class="text-center text-slate-500 text-xs mt-10">No zones found.</div>`;
+                    return;
+                }
+
+                listEl.innerHTML = `<div class="text-[10px] text-orange-400 text-center mb-2 border-b border-slate-700 pb-2">Showing last 50 entries to save memory.</div>`;
+
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const docId = doc.id;
+
+                    const poly = new google.maps.Polygon({
+                        paths: data.coords,
+                        strokeColor: data.color,
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        fillColor: data.color,
+                        fillOpacity: 0.2,
+                        map: adminMap,
+                        clickable: true
+                    });
+                    
+                    poly.docId = docId;
+                    poly.zoneData = data;
+                    poly.addListener('click', () => initEditZone(docId));
+                    mapPolygons.push(poly);
+
+                    const item = document.createElement('div');
+                    item.className = "bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer mb-2";
+                    item.innerHTML = `
+                        <div onclick="initEditZone('${docId}')" class="flex-grow">
+                            <div class="text-xs font-bold text-white truncate w-32" title="${data.name}">${data.name}</div>
+                            <div class="text-[10px]" style="color:${data.color}">● ${data.typeName}</div>
+                        </div>
+                        <div class="flex gap-1">
+                             <button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>
+                             <button onclick="deleteZone('${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                    `;
+                    listEl.appendChild(item);
+                });
+            })
+            .catch(err => {
+                console.error("Load Error:", err);
+                listEl.innerHTML = `<div class="text-center text-red-500 text-xs mt-4">Error loading data.</div>`;
+            });
+        }
+
+        function jumpToCoords() {
+            const lat = parseFloat(document.getElementById('manualLat').value);
+            const lng = parseFloat(document.getElementById('manualLng').value);
+            if(!isNaN(lat) && !isNaN(lng)) {
+                adminMap.setCenter({lat, lng});
+                adminMap.setZoom(16);
+                new google.maps.Marker({ position: {lat, lng}, map: adminMap, title: "Target" });
+            } else {
+                notify("Invalid Coordinates", "error");
+            }
+        }
+
+        function toggleDrawButtons(isDrawing) {
+            document.getElementById('btnDraw').classList.toggle('hidden', isDrawing);
+            document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing);
+        }
+
+        function enableEditorUI(title, btnText) {
+            document.getElementById('saveZonePanel').classList.remove('hidden');
+            document.getElementById('zonePanelTitle').innerText = title;
+            document.getElementById('btnSaveZone').innerText = btnText;
+        }
+
+        // --- 🟢 DATA OPS LOGIC (RESTORED) ---
+        function addRiskRegion() {
+            const region = document.getElementById('riskRegion').value;
+            const status = document.getElementById('riskLevel').value;
+            
+            if(!region) return notify("Enter Region Name", "error");
+
+            const riskData = {
+                region: region.toLowerCase(), 
+                status: status,
+                source: "CGWB Assessment",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            db.collection('risk_map').doc(region.toLowerCase()).set(riskData).then(() => {
+                const con = document.getElementById('riskConsole');
+                con.innerHTML += `<div class="text-green-400">✓ Mapped: ${region} -> ${status}</div>`;
+                notify("Risk Region Added");
+            });
+        }
+
+        // 🟢 SMART DATA IMPORTER
+        function processJsonFile() {
+            const fileInput = document.getElementById('jsonUpload');
+            const file = fileInput.files[0];
+            if(!file) return notify("Select a file first", "error");
+
+            // A. CHECK DUPLICATES
+            const fileId = file.name.replace(/[.#$[\]]/g, '_'); 
+            db.collection('upload_history').doc(fileId).get().then(doc => {
+                if(doc.exists) {
+                    if(!confirm(`⚠️ WARNING: '${file.name}' was already uploaded on ${doc.data().date.toDate().toLocaleDateString()}.\n\nRe-uploading will create duplicates. Continue?`)) {
+                        return; 
+                    }
+                }
+                readFileData(file, fileId);
+            });
+        }
+
+
+		function readFileData(file, fileId) {
+            const reader = new FileReader();
+            notify("Reading file... please wait.", "info");
+
+            reader.onload = function(e) {
+                try {
+                    const rawData = JSON.parse(e.target.result);
+                    let features = [];
+                    
+                    // Handle both GeoJSON and Raw Arrays
+                    if(Array.isArray(rawData)) features = rawData;
+                    else if(rawData.type === "FeatureCollection") features = rawData.features;
+                    else throw new Error("Invalid Format");
+
+                    console.log("🔍 DIAGNOSTIC KEYS:", Object.keys(features[0].properties || features[0])); 
+                    notify(`Parsing ${features.length} items...`);
+                    
+                    let uploadQueue = [];
+                    let targetCollection = "geo_zones"; 
+                    
+                    features.forEach((item, index) => {
+                        const props = item.properties || item;
+                        
+                        // 🟢 GEOMETRY ENGINE: Supports both GeoJSON and Raw Lat/Lng
+                        let geomType = "Unknown";
+                        let coords = null; // For Polygons
+                        let point = null;  // For Points
+
+                        if (item.geometry) {
+                            // Standard GeoJSON
+                            if(item.geometry.type.includes("Polygon")) {
+                                geomType = "Polygon";
+                                coords = parsePolygon(item.geometry);
+                            } else if(item.geometry.type === "Point") {
+                                geomType = "Point";
+                                point = fixPoint(item.geometry.coordinates);
+                            }
+                        } else if (item.latitude && item.longitude) {
+                            // Raw JSON (Your new file)
+                            geomType = "Point";
+                            point = { lat: parseFloat(item.latitude), lng: parseFloat(item.longitude) };
+                        }
+
+                        if(geomType === "Unknown") return; // Skip invalid rows
+
+                        let zoneData = null;
+
+                        // --- 1. GROUNDWATER MONITORING STATIONS (New Feature) ---
+                        // Matches keys: 'stationCode', 'dataValue', 'wellAquiferType'
+                        if(props.stationCode || (props.stationName && props.dataValue !== undefined)) {
+                            targetCollection = "layer_lithologs"; // We can reuse this or make a new 'layer_stations'
+                            
+                            const level = parseFloat(props.dataValue || 0);
+                            const depth = parseFloat(props.wellDepth || 0);
+                            const aquifer = props.wellAquiferType || "Unknown";
+                            
+                            // Color Logic for Water Level
+                            let color = '#06b6d4'; // Cyan (Normal)
+                            if(level < 0 && Math.abs(level) > 20) color = '#eab308'; // Warning (>20m deep)
+                            if(level < 0 && Math.abs(level) > 50) color = '#ef4444'; // Danger (>50m deep)
+
+                            zoneData = {
+                                name: `Station: ${props.stationName || props.stationCode}`,
+                                typeName: `Water Lvl: ${Math.abs(level).toFixed(2)}m (${aquifer})`,
+                                color: color,
+                                waterLevel: level,
+                                wellDepth: depth,
+                                lat: point.lat, lng: point.lng
+                            };
+                        }
+
+                        // --- 2. LITHOLOGS (Old Logic) ---
+                        else if(props.Depth_of_Drill__m_ || props.Major_Lithology) {
+                            targetCollection = "layer_lithologs";
+                            const rock = (props.Major_Lithology || "").toLowerCase();
+                            let color = '#eab308'; 
+                            if(rock.includes('granite') || rock.includes('basalt')) color = '#ef4444';
+                            if(rock.includes('alluvium') || rock.includes('sand')) color = '#10b981';
+
+                            if(point) { // Lithologs must be points
+                                zoneData = {
+                                    name: `Log: ${props.Location || props.Village}`,
+                                    typeName: `${props.Major_Lithology} (${props.Depth_of_Drill__m_}m)`,
+                                    color: color,
+                                    waterLevel: props.Static_Water_Level__mbgl_ || 0,
+                                    lat: point.lat, lng: point.lng
+                                };
+                            }
+                        }
+
+                        // --- 3. RISK MAPS & ZONES (Polygons) ---
+                        else if(
+                            (props.Category || props.Categorization || props['Stage of GW extraction (%)'] !== undefined || props.Stage_of_development____ !== undefined) 
+                            && geomType === "Polygon"
+                        ) {
+                            targetCollection = "risk_map";
+                            
+                            let percentage = 0;
+                            if(props.Stage_of_development____ !== undefined) percentage = parseFloat(props.Stage_of_development____);
+                            else if(props['Stage of GW extraction (%)'] !== undefined) percentage = parseFloat(props['Stage of GW extraction (%)']);
+
+                            let rawStatus = props.Category || props.Categorization || "Unknown";
+                            let color = '#10b981'; 
+                            let riskLabel = "Safe";
+
+                            if((rawStatus === "Unknown" || !rawStatus)) {
+                                if(percentage <= 70) rawStatus = "Safe";
+                                else if(percentage <= 90) rawStatus = "Semi-Critical";
+                                else if(percentage <= 100) rawStatus = "Critical";
+                                else rawStatus = "Over-Exploited";
+                            }
+
+                            const status = rawStatus.toLowerCase();
+                            if(status.includes('critical') && !status.includes('semi')) { color = '#ef4444'; riskLabel = "Critical"; }
+                            else if(status.includes('semi')) { color = '#eab308'; riskLabel = "Semi-Critical"; }
+                            else if(status.includes('over')) { color = '#7f1d1d'; riskLabel = "Over-Exploited"; }
+                            else if(status.includes('saline')) { color = '#3b82f6'; riskLabel = "Saline"; }
+
+                            const districtName = props.District || props['Name of District'] || props.Name_of_District || 'District';
+                            
+                            zoneData = {
+                                name: `${districtName} Risk Zone`,
+                                typeName: `Govt Status: ${riskLabel} (${percentage.toFixed(1)}%)`,
+                                color: color,
+                                typeKey: "risk_zone",
+                                status: riskLabel,
+                                coords: coords
+                            };
+                        }
+                        
+                        if(zoneData) uploadQueue.push(zoneData);
+                    });
+
+                    if(uploadQueue.length > 0) {
+                        notify(`Uploading ${uploadQueue.length} items to '${targetCollection}'...`);
+                        uploadInChunks(uploadQueue, targetCollection, fileId);
+                    } else {
+                        console.warn("Keys Found:", Object.keys(features[0].properties || features[0]));
+                        notify("No recognizable data found. Check Console.", "error");
+                    }
+
+                } catch(err) {
+                    console.error(err);
+                    notify("File Error: " + err.message, "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function uploadInChunks(data, collectionName, fileId, startIndex = 0) {
+            const BATCH_SIZE = 400;
+            const batch = db.batch();
+            const chunk = data.slice(startIndex, startIndex + BATCH_SIZE);
+
+            if(chunk.length === 0) {
+                db.collection('upload_history').doc(fileId).set({
+                    date: firebase.firestore.FieldValue.serverTimestamp(),
+                    count: data.length,
+                    target: collectionName
+                });
+                return notify("✅ IMPORT COMPLETE!", "success");
+            }
+
+            chunk.forEach((item, i) => {
+                const ref = db.collection(collectionName).doc(); 
+                batch.set(ref, item);
+            });
+
+            batch.commit().then(() => {
+                const progress = Math.round(((startIndex + chunk.length) / data.length) * 100);
+                notify(`Progress: ${progress}% (${startIndex + chunk.length}/${data.length})`, "info");
+                uploadInChunks(data, collectionName, fileId, startIndex + BATCH_SIZE);
+            }).catch(err => notify("Batch Error: " + err.message, "error"));
+        }
+
+        function fixPoint(arr) {
+            let lon = arr[0], lat = arr[1];
+            if(lat > 40 && lon < 40) return { lat: lon, lng: lat }; 
+            return { lat: lat, lng: lon };
+        }
+
+        function parsePolygon(geom) {
+            let rawRing = (geom.type === 'MultiPolygon') ? geom.coordinates[0][0] : geom.coordinates[0];
+            return rawRing.map(pt => fixPoint(pt));
+        }
+
+        async function fetchWrisApi() {
+            const targetUrl = document.getElementById('wrisApiUrl').value;
+            
+            // ATTEMPT 2: Use corsproxy.io (More reliable for Gov sites)
+            const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+
+            notify("Connecting via Secure Tunnel...", "info");
+            
+            try {
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+                
+                const data = await response.json();
+                console.log("API Data Received:", data);
+                notify(`Success! Received ${Array.isArray(data) ? data.length : 'data'} records.`);
+                
+                // AUTOMATICALLY PROCESS
+                const fakeFile = new Blob([JSON.stringify(data)], {type: "application/json"});
+                fakeFile.name = "API_Fetch_" + new Date().toISOString() + ".json";
+                
+                readFileData(fakeFile, fakeFile.name);
+
+            } catch(err) {
+                console.error(err);
+                // If this fails, the User MUST use Method 2
+                notify("Govt Firewall Blocked API. Use Method 2 (Upload JSON).", "error");
             }
         }
 
@@ -1037,5 +2075,8 @@
         s.async = true; s.defer = true;
         document.body.appendChild(s);
     </script>
+</body>
+</html>
+
 </body>
 </html>
