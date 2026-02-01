@@ -837,6 +837,11 @@
             });
         }
 
+        function startNewCertificate() {
+            showSection('create');
+            resetForm();
+        }
+        
        function resetForm() {
             document.getElementById('projectForm').reset();
             isEditing = false;
