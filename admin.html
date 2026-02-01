@@ -431,8 +431,6 @@
         function finalizeSave(btn, oldText) {
             btn.innerText = oldText;
             
-            // Force reset currentPoly to prevent discardCurrentZone from hiding map object
-            // because loadAdminZones will redraw everything fresh
             if(currentPoly) currentPoly = null;
             
             document.getElementById('saveZonePanel').classList.add('hidden');
@@ -445,7 +443,7 @@
             if(confirm("Delete this zone permanently?")) {
                 db.collection('geo_zones').doc(docId).delete().then(() => {
                     notify("Zone Deleted");
-                    if(currentPoly && currentPoly.docId === docId) resetActivePoly(); // Fix reference
+                    if(currentPoly && currentPoly.docId === docId) resetActivePoly(); 
                     loadAdminZones();
                 });
             }
@@ -453,15 +451,12 @@
 
         function loadAdminZones() {
             const listEl = document.getElementById('zonesList');
-            
-            // 1. Clear Map & Memory to free up RAM
             if(mapPolygons) {
                 mapPolygons.forEach(p => p.setMap(null));
             }
             mapPolygons = [];
             listEl.innerHTML = '<div class="text-center text-slate-500 text-xs mt-4">Loading recent data...</div>';
 
-            // 🟢 SAFETY FIX: Added .limit(50) to prevent browser crash & save costs
             db.collection('geo_zones')
               .orderBy('timestamp', 'desc')
               .limit(50) 
@@ -474,14 +469,12 @@
                     return;
                 }
 
-                // Add a warning if there are many items
                 listEl.innerHTML = `<div class="text-[10px] text-orange-400 text-center mb-2 border-b border-slate-700 pb-2">Showing last 50 entries to save memory.</div>`;
 
                 snap.forEach(doc => {
                     const data = doc.data();
                     const docId = doc.id;
 
-                    // Draw Polygon (Only for these 50)
                     const poly = new google.maps.Polygon({
                         paths: data.coords,
                         strokeColor: data.color,
@@ -498,7 +491,6 @@
                     poly.addListener('click', () => initEditZone(docId));
                     mapPolygons.push(poly);
 
-                    // Add to Sidebar List
                     const item = document.createElement('div');
                     item.className = "bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer mb-2";
                     item.innerHTML = `
@@ -519,6 +511,7 @@
                 listEl.innerHTML = `<div class="text-center text-red-500 text-xs mt-4">Error loading data.</div>`;
             });
         }
+
         function jumpToCoords() {
             const lat = parseFloat(document.getElementById('manualLat').value);
             const lng = parseFloat(document.getElementById('manualLng').value);
@@ -563,146 +556,147 @@
             });
         }
 
-       // 🟢 SMART DATA IMPORTER (With India Coordinate Fixer)
+        // 🟢 SMART DATA IMPORTER
         function processJsonFile() {
             const fileInput = document.getElementById('jsonUpload');
             const file = fileInput.files[0];
             if(!file) return notify("Select a file first", "error");
 
+            // A. CHECK DUPLICATES
+            const fileId = file.name.replace(/[.#$[\]]/g, '_'); 
+            db.collection('upload_history').doc(fileId).get().then(doc => {
+                if(doc.exists) {
+                    if(!confirm(`⚠️ WARNING: '${file.name}' was already uploaded on ${doc.data().date.toDate().toLocaleDateString()}.\n\nRe-uploading will create duplicates. Continue?`)) {
+                        return; 
+                    }
+                }
+                readFileData(file, fileId);
+            });
+        }
+
+        function readFileData(file, fileId) {
             const reader = new FileReader();
-            notify("Parsing Geometry... (This may take a moment)", "info");
+            notify("Reading file... please wait.", "info");
 
             reader.onload = function(e) {
                 try {
                     const rawData = JSON.parse(e.target.result);
-                    const batch = db.batch(); 
-                    let count = 0;
-                    
-                    // 1. Detect Features Array
                     let features = [];
+                    
                     if(Array.isArray(rawData)) features = rawData;
-                    else if(rawData.type === "FeatureCollection" && Array.isArray(rawData.features)) features = rawData.features;
+                    else if(rawData.type === "FeatureCollection") features = rawData.features;
                     else throw new Error("Invalid Format");
 
-                    // 2. Safety Limit (Prevent browser crash on massive files)
-                    // We process first 600 items. For full state data, split files or run multiple times.
-                    const safeFeatures = features.slice(0, 600);
-
-                    safeFeatures.forEach((item, index) => {
+                    notify(`Parsing ${features.length} items...`);
+                    
+                    let uploadQueue = [];
+                    let targetCollection = "geo_zones"; 
+                    
+                    features.forEach((item, index) => {
                         const props = item.properties || item;
                         const geom = item.geometry;
-                        const docId = `govt_data_${Date.now()}_${index}`;
-                        const docRef = db.collection('geo_zones').doc(docId);
+                        if(!geom) return;
 
-                        let zoneData = { timestamp: firebase.firestore.FieldValue.serverTimestamp() };
-                        let isValid = false;
+                        let zoneData = null;
 
-                        // 🔍 HELPER: INDIA COORDINATE FIXER
-                        // Fixes the "Greenland" bug by ensuring Lat/Lng fall within India's box
-                        const fixPoint = (arr) => {
-                            let lon = arr[0];
-                            let lat = arr[1];
-                            
-                            // India is roughly Lat: 8-37, Lon: 68-98
-                            // If Lat is huge (e.g. 80), it's actually Longitude. Swap them.
-                            if(lat > 40 && lon < 40) {
-                                return { lat: lon, lng: lat }; // It was swapped
-                            }
-                            // Standard GeoJSON [Lon, Lat] -> Google [Lat, Lon]
-                            // If lat is already roughly India (8-40), use it as lat.
-                            if(lat > 5 && lat < 40) {
-                                return { lat: lat, lng: lon };
-                            }
-                            // Fallback: If Lon is > 60, treat it as Longitude
-                            if(lon > 60) {
-                                return { lat: lat, lng: lon };
-                            }
-                            
-                            // Default Swap (Fixes the CGWB Greenland issue)
-                            return { lat: lon, lng: lat }; 
-                        };
-
-                        // A. LITHOLOGS (Points)
+                        // 1. LITHOLOGS
                         if(props.Depth_of_Drill__m_ || props.Major_Lithology) {
+                            targetCollection = "layer_lithologs";
                             const p = fixPoint(geom.coordinates);
-                            
-                            // Color Logic
                             const rock = (props.Major_Lithology || "").toLowerCase();
-                            let color = '#eab308'; // Yellow
-                            let type = 'moderate';
-                            if(rock.includes('granite') || rock.includes('basalt')) { color = '#ef4444'; type = 'rock'; }
-                            if(rock.includes('alluvium') || rock.includes('sand')) { color = '#10b981'; type = 'water'; }
+                            let color = '#eab308'; 
+                            if(rock.includes('granite') || rock.includes('basalt')) color = '#ef4444';
+                            if(rock.includes('alluvium') || rock.includes('sand')) color = '#10b981';
 
-                            // Make a tiny box around the point so it renders as a "Zone"
-                            const size = 0.0005; // 50 meters
                             zoneData = {
                                 name: `Log: ${props.Location || props.Village}`,
                                 typeName: `${props.Major_Lithology} (${props.Depth_of_Drill__m_}m)`,
-                                typeKey: type,
                                 color: color,
-                                source: "Govt of India (WRIS)",
                                 waterLevel: props.Static_Water_Level__mbgl_ || 0,
-                                coords: [
-                                    { lat: p.lat + size, lng: p.lng - size },
-                                    { lat: p.lat + size, lng: p.lng + size },
-                                    { lat: p.lat - size, lng: p.lng + size },
-                                    { lat: p.lat - size, lng: p.lng - size }
-                                ]
+                                lat: p.lat, lng: p.lng // Store as point for Lithologs
                             };
-                            isValid = true;
                         }
-
-                        // B. WATERBODIES / AQUIFERS (Polygons)
-                        else if(geom.type === 'Polygon' || geom.type === 'MultiPolygon') {
-                            // Extract main ring
-                            let rawRing = (geom.type === 'MultiPolygon') ? geom.coordinates[0][0] : geom.coordinates[0];
-                            
-                            // Fix every point in the polygon
-                            const googleCoords = rawRing.map(pt => fixPoint(pt));
-
-                            let name = props.waterbody_ || props.wb_name || props.Aquifer_Ma || "Geo Zone";
-                            let color = '#3b82f6'; // Blue
-                            let type = 'water';
-
-                            // If it's Aquifer Map
-                            if(props.Aquifer_Ma) {
-                                name = "Aquifer: " + props.Aquifer_Ma;
-                                if(props.Aquifer_Ma.toLowerCase().includes('granite')) { color = '#ef4444'; type = 'rock'; }
-                                else { color = '#10b981'; type = 'water'; }
-                            }
+                        // 2. WATERBODIES
+                        else if(props.waterbody_ || props.wb_name) {
+                            targetCollection = "layer_waterbodies";
+                            const googleCoords = parsePolygon(geom);
+                            zoneData = {
+                                name: props.waterbody_ || "Water Body",
+                                typeName: "Surface Water",
+                                color: "#3b82f6",
+                                coords: googleCoords // Store as Polygon
+                            };
+                        }
+                        // 3. AQUIFERS
+                        else if(props.Aquifer_Ma || props.Material) {
+                            targetCollection = "layer_aquifers";
+                            const googleCoords = parsePolygon(geom);
+                            const mat = (props.Aquifer_Ma || "").toLowerCase();
+                            let color = '#f97316';
+                            if(mat.includes('granite')) color = '#ef4444';
+                            else if(mat.includes('alluvium')) color = '#10b981';
 
                             zoneData = {
-                                name: name,
-                                typeName: "Govt Verified Zone",
-                                typeKey: type,
+                                name: `Aquifer: ${props.Aquifer_Ma}`,
+                                typeName: mat.toUpperCase(),
                                 color: color,
-                                source: "Govt of India (WRIS)",
                                 coords: googleCoords
                             };
-                            isValid = true;
                         }
 
-                        if(isValid) {
-                            batch.set(docRef, zoneData);
-                            count++;
-                        }
+                        if(zoneData) uploadQueue.push(zoneData);
                     });
 
-                    if(count > 0) {
-                        batch.commit().then(() => {
-                            notify(`Success! Mapped ${count} Indian Locations.`);
-                            loadAdminZones();
-                        });
+                    if(uploadQueue.length > 0) {
+                        notify(`Uploading ${uploadQueue.length} items to '${targetCollection}'...`);
+                        uploadInChunks(uploadQueue, targetCollection, fileId);
                     } else {
-                        notify("No valid data found.", "error");
+                        notify("No recognizable data found.", "error");
                     }
 
-                } catch(e) {
-                    console.error(e);
-                    notify("File Error: " + e.message, "error");
+                } catch(err) {
+                    console.error(err);
+                    notify("File Error: " + err.message, "error");
                 }
             };
             reader.readAsText(file);
+        }
+
+        function uploadInChunks(data, collectionName, fileId, startIndex = 0) {
+            const BATCH_SIZE = 400;
+            const batch = db.batch();
+            const chunk = data.slice(startIndex, startIndex + BATCH_SIZE);
+
+            if(chunk.length === 0) {
+                db.collection('upload_history').doc(fileId).set({
+                    date: firebase.firestore.FieldValue.serverTimestamp(),
+                    count: data.length,
+                    target: collectionName
+                });
+                return notify("✅ IMPORT COMPLETE!", "success");
+            }
+
+            chunk.forEach((item, i) => {
+                const ref = db.collection(collectionName).doc(); 
+                batch.set(ref, item);
+            });
+
+            batch.commit().then(() => {
+                const progress = Math.round(((startIndex + chunk.length) / data.length) * 100);
+                notify(`Progress: ${progress}% (${startIndex + chunk.length}/${data.length})`, "info");
+                uploadInChunks(data, collectionName, fileId, startIndex + BATCH_SIZE);
+            }).catch(err => notify("Batch Error: " + err.message, "error"));
+        }
+
+        function fixPoint(arr) {
+            let lon = arr[0], lat = arr[1];
+            if(lat > 40 && lon < 40) return { lat: lon, lng: lat }; 
+            return { lat: lat, lng: lon };
+        }
+
+        function parsePolygon(geom) {
+            let rawRing = (geom.type === 'MultiPolygon') ? geom.coordinates[0][0] : geom.coordinates[0];
+            return rawRing.map(pt => fixPoint(pt));
         }
 
         async function fetchWrisApi() {
