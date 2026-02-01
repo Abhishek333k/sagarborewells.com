@@ -63,6 +63,7 @@
             <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>BWBC Archives</span></div>
             <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
             <div onclick="showSection('maproom')" id="nav-maproom" class="nav-item text-purple-400"><i class="ri-map-2-line"></i> <span>Geo-Map Room</span></div>
+            <div onclick="showSection('dataops')" id="nav-dataops" class="nav-item text-orange-400"><i class="ri-database-line"></i> <span>Govt Data Sync</span></div>
         </nav>
         <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button></div>
     </aside>
@@ -171,6 +172,65 @@
             </div>
         </div>
 
+        <div id="section-dataops" class="content-section hidden max-w-5xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-3 bg-blue-900/30 rounded-lg text-blue-400"><i class="ri-cloud-windy-line text-xl"></i></div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">WRIS Data Ingestion</h3>
+                            <p class="text-xs text-slate-400">Import Groundwater Levels from Govt API/JSON</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                            <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 1: Direct API (Experimental)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="wrisApiUrl" class="cyber-input text-xs" placeholder="https://indiawris.gov.in/api/..." value="https://indiawris.gov.in/api/groundwater/stations">
+                                <button onclick="fetchWrisApi()" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white text-xs">FETCH</button>
+                            </div>
+                            <p class="text-[10px] text-red-400 mt-2 italic">*Likely to fail due to Govt CORS security.</p>
+                        </div>
+
+                        <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                            <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 2: JSON/CSV Upload (Reliable)</label>
+                            <p class="text-xs text-slate-400 mb-2">Download data from WRIS website, save as JSON, and upload here.</p>
+                            <input type="file" id="jsonUpload" accept=".json" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-600"/>
+                            <button onclick="processJsonFile()" class="mt-3 w-full btn-pro bg-emerald-600 hover:bg-emerald-500 text-white">PROCESS & UPLOAD TO FIREBASE</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-3 bg-red-900/30 rounded-lg text-red-400"><i class="ri-alert-line text-xl"></i></div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Regional Risk Mapper</h3>
+                            <p class="text-xs text-slate-400">Map Districts/Mandals to CGWB Risk Scores</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-900 p-4 rounded border border-slate-700 h-64 overflow-y-auto custom-scrollbar" id="riskConsole">
+                        <div class="text-[10px] font-mono text-slate-500">System Ready...</div>
+                    </div>
+                    
+                    <div class="mt-4 flex gap-2">
+                        <input type="text" id="riskRegion" class="cyber-input" placeholder="Region (e.g. Guntur)">
+                        <select id="riskLevel" class="cyber-input w-32">
+                            <option value="Safe">Safe</option>
+                            <option value="Semi-Critical">Semi-Critical</option>
+                            <option value="Critical">Critical</option>
+                            <option value="Over-Exploited">Over-Exploited</option>
+                        </select>
+                        <button onclick="addRiskRegion()" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white"><i class="ri-add-line"></i></button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
         <div id="section-create" class="content-section hidden max-w-4xl mx-auto">
             <div class="glass-card p-8">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-4 mb-6"><div><h3 class="text-lg font-bold text-white">Certificate Manager</h3><p class="text-[10px] text-slate-400 font-mono mt-0.5" id="form-mode-text">CREATING NEW RECORD</p></div><div class="flex items-center gap-2"><span class="text-[10px] text-slate-500 font-bold uppercase">ID:</span><input type="text" id="p_id" class="bg-slate-900 border border-slate-700 text-emerald-400 font-mono font-bold px-2 py-1 rounded w-40 text-center text-xs" readonly></div></div>
@@ -711,6 +771,115 @@
         s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`;
         s.async = true; s.defer = true;
         document.body.appendChild(s);
+
+        // --- 🟢 DATA OPS ENGINE (AUTOMATION) ---
+
+        // 1. RISK REGION MANAGER
+        function addRiskRegion() {
+            const region = document.getElementById('riskRegion').value;
+            const status = document.getElementById('riskLevel').value;
+            
+            if(!region) return notify("Enter Region Name", "error");
+
+            const riskData = {
+                region: region.toLowerCase(), // Normalize for search
+                status: status,
+                source: "CGWB Assessment",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // Save to a NEW collection 'risk_map'
+            db.collection('risk_map').doc(region.toLowerCase()).set(riskData).then(() => {
+                const con = document.getElementById('riskConsole');
+                con.innerHTML += `<div class="text-green-400">✓ Mapped: ${region} -> ${status}</div>`;
+                notify("Risk Region Added");
+            });
+        }
+
+        // 2. WRIS DATA IMPORTER (JSON METHOD)
+        function processJsonFile() {
+            const fileInput = document.getElementById('jsonUpload');
+            const file = fileInput.files[0];
+            if(!file) return notify("Select a JSON file first", "error");
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const rawData = JSON.parse(e.target.result);
+                    // ASSUMING GOVT JSON FORMAT (e.g., array of stations)
+                    // You might need to adjust 'item.lat', 'item.long' based on actual file structure
+                    
+                    let count = 0;
+                    const batch = db.batch(); // Use batch for speed
+                    
+                    rawData.forEach((item, index) => {
+                        // Create a unique ID
+                        const docRef = db.collection('geo_zones').doc(`govt_stn_${index}`);
+                        
+                        // Logic: Auto-determine type based on water level (if available)
+                        let type = 'moderate';
+                        let color = '#eab308';
+                        const level = parseFloat(item.water_level); // Adjust key name
+
+                        if(level < 15) { type = 'water'; color = '#10b981'; } // Shallow = Good
+                        else if(level > 60) { type = 'rock'; color = '#ef4444'; } // Deep = Bad
+
+                        // Create a circular polygon (approx) or just a point marker
+                        // For compatibility with our Polygon engine, we create a small box around the point
+                        const lat = parseFloat(item.latitude);
+                        const lng = parseFloat(item.longitude);
+                        
+                        // Create small 0.005 degree box (~500m)
+                        const coords = [
+                            { lat: lat + 0.002, lng: lng - 0.002 },
+                            { lat: lat + 0.002, lng: lng + 0.002 },
+                            { lat: lat - 0.002, lng: lng + 0.002 },
+                            { lat: lat - 0.002, lng: lng - 0.002 }
+                        ];
+
+                        batch.set(docRef, {
+                            name: `WRIS Stn: ${item.station_name}`,
+                            typeKey: type,
+                            typeName: `Govt Data (${level}m)`,
+                            color: color,
+                            coords: coords,
+                            source: "Govt WRIS",
+                            waterLevel: level,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        count++;
+                    });
+
+                    // Commit Batch
+                    batch.commit().then(() => {
+                        notify(`SUCCESS: Imported ${count} Govt Stations!`);
+                        loadAdminZones(); // Refresh map
+                    });
+
+                } catch(err) {
+                    console.error(err);
+                    notify("Invalid JSON Format", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 3. API FETCH (Attempts to hit URL)
+        async function fetchWrisApi() {
+            const url = document.getElementById('wrisApiUrl').value;
+            notify("Attempting connection...", "info");
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log("API Data:", data);
+                notify("Connection Successful! Check Console.");
+                // If successful, pass 'data' to the processing logic above
+            } catch(err) {
+                console.error(err);
+                notify("Connection Failed (CORS Blocked). Use JSON Upload method.", "error");
+            }
+        }
     </script>
 </body>
 </html>
