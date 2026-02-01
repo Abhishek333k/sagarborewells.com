@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance & Aid | Sagar Borewells</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/layout.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .ad-slot { background: #e2e8f0; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; color: #64748b; font-weight: bold; font-size: 12px; letter-spacing: 1px; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <div id="navbar-mount" style="min-height: 80px;"></div>
+
+    <main class="flex-grow max-w-6xl mx-auto w-full px-4 py-10">
+        
+        <div class="text-center mb-12">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">Financial Assistance Center</h1>
+            <p class="text-slate-600 max-w-2xl mx-auto">Don't let budget stop your water project. Explore government aid or apply for instant private financing.</p>
+        </div>
+
+        <div class="w-full h-24 ad-slot rounded-xl mb-10">
+            ADVERTISEMENT SPACE (Google AdSense)
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-emerald-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-bl-lg">GOVT SCHEME</div>
+                <h2 class="text-xl font-bold text-slate-900 mb-2">YSR Jala Kala Eligibility</h2>
+                <p class="text-sm text-slate-500 mb-6">Check if you qualify for a free government borewell.</p>
+                
+                <form id="govtCheckForm" onsubmit="checkGovtScheme(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Land Holding (Acres)</label>
+                        <input type="number" id="landSize" step="0.1" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Caste Category</label>
+                        <select id="casteCat" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg" required>
+                            <option value="gen">General</option>
+                            <option value="bc">BC</option>
+                            <option value="sc_st">SC / ST (Priority)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Existing Borewell?</label>
+                        <select id="existingBore" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                            <option value="no">No</option>
+                            <option value="yes">Yes (Already have one)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition">CHECK STATUS</button>
+                </form>
+
+                <div id="govtResult" class="hidden mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200 text-sm"></div>
+            </div>
+
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-blue-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-bl-lg">PRIVATE FINANCE</div>
+                <h2 class="text-xl font-bold text-slate-900 mb-2">Borewell Loan (EMI)</h2>
+                <p class="text-sm text-slate-500 mb-6">Apply for a private loan. Fast approval for landowners.</p>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Loan Amount Required (₹)</label>
+                        <input type="range" id="loanRange" min="50000" max="500000" step="10000" value="150000" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" oninput="updateLoanCalc()">
+                        <div class="flex justify-between text-sm font-bold text-blue-600 mt-1">
+                            <span>₹50k</span>
+                            <span id="loanDisp">₹1,50,000</span>
+                            <span>₹5L</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-center">
+                        <p class="text-xs text-slate-500 uppercase font-bold">Estimated Monthly EMI</p>
+                        <h3 class="text-3xl font-extrabold text-slate-900 my-1" id="emiDisp">₹4,800</h3>
+                        <p class="text-[10px] text-slate-400">*Based on 36 months @ 12% interest</p>
+                    </div>
+
+                    <button onclick="applyForLoan()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-lg shadow-blue-200">
+                        APPLY FOR FINANCE
+                    </button>
+                    <p class="text-[10px] text-center text-slate-400 mt-2">By clicking, you agree to be contacted by our banking partners (Bajaj/HDFC).</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="w-full h-64 ad-slot rounded-xl mt-12">
+            ADVERTISEMENT SPACE (Local Drillers / Hardware Shops)
+        </div>
+
+    </main>
+
+    <div id="footer-mount"></div>
+
+    <script>
+        function checkGovtScheme(e) {
+            e.preventDefault();
+            const acres = parseFloat(document.getElementById('landSize').value);
+            const caste = document.getElementById('casteCat').value;
+            const hasBore = document.getElementById('existingBore').value;
+            const resBox = document.getElementById('govtResult');
+
+            resBox.classList.remove('hidden');
+            
+            // Logic based on YSR Jala Kala Rules (2.5 to 5 acres, no existing bore)
+            if (hasBore === 'yes') {
+                resBox.innerHTML = `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Not Eligible.</span><br>Reason: You already have a borewell. <a href="#" onclick="applyForLoan()" class="text-blue-600 underline">Apply for Private Loan instead.</a>`;
+                resBox.className = "mt-4 p-4 bg-red-50 rounded-lg border border-red-200 text-sm";
+            } else if (acres >= 2.5 && acres <= 5.0) {
+                resBox.innerHTML = `<span class="text-emerald-600 font-bold"><i class="fa-solid fa-circle-check"></i> Likely Eligible!</span><br>You meet the land criteria. Visit your Village Secretariat with Pattadar Passbook.`;
+                resBox.className = "mt-4 p-4 bg-emerald-50 rounded-lg border border-emerald-200 text-sm";
+            } else {
+                resBox.innerHTML = `<span class="text-orange-600 font-bold"><i class="fa-solid fa-circle-exclamation"></i> Eligibility Uncertain.</span><br>Scheme requires 2.5-5.0 acres. <a href="#" onclick="applyForLoan()" class="text-blue-600 underline">Check Private Finance Options.</a>`;
+                resBox.className = "mt-4 p-4 bg-orange-50 rounded-lg border border-orange-200 text-sm";
+            }
+        }
+
+        function updateLoanCalc() {
+            const amt = parseInt(document.getElementById('loanRange').value);
+            document.getElementById('loanDisp').innerText = "₹" + amt.toLocaleString('en-IN');
+            
+            // Simple EMI Calc: P * r * (1+r)^n / ((1+r)^n - 1)
+            // Assuming 12% p.a for 3 years
+            const r = 12 / 12 / 100;
+            const n = 36;
+            const emi = (amt * r * Math.pow(1+r, n)) / (Math.pow(1+r, n) - 1);
+            
+            document.getElementById('emiDisp').innerText = "₹" + Math.round(emi).toLocaleString('en-IN');
+        }
+
+        function applyForLoan() {
+            const amt = document.getElementById('loanDisp').innerText;
+            // In a real app, this would open a modal to collect Phone/Name
+            if(confirm(`Connect with a loan agent for ${amt}?`)) {
+                window.location.href = "contact.html?reason=loan&amt=" + encodeURIComponent(amt);
+            }
+        }
+    </script>
+</body>
+</html>
