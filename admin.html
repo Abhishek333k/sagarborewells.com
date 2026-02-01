@@ -49,7 +49,15 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden text-sm">
+<body class="flex h-screen overflow-hidden text-sm bg-[#0f172a]"> <div id="system-loader" class="fixed inset-0 z-[1000] bg-[#0f172a] flex flex-col items-center justify-center text-white">
+        <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div class="font-mono text-xs tracking-widest animate-pulse text-blue-400">INITIALIZING SAGAR OS...</div>
+    </div>
+
+    <div id="login-overlay" class="modal-overlay" style="z-index: 999;">
+        <div class="glass-card p-8 w-80 text-center border-t-4 border-blue-600">
+             </div>
+    </div>
 
     <aside class="w-64 bg-[#0B1120] border-r border-slate-800 flex flex-col flex-shrink-0 z-20">
         <div class="p-6 border-b border-slate-800">
@@ -233,18 +241,36 @@
 
         // --- AUTH & SETUP ---
         auth.onAuthStateChanged(user => {
-            if(user) {
-                db.collection('admins').doc(user.phoneNumber).get().then(doc => {
-                    if (doc.exists) {
-                        document.getElementById('login-overlay').classList.remove('open');
-                        showSection('leads'); 
-                        loadAnalytics(); 
-                    } else { notify("UNAUTHORIZED ACCESS", "error"); auth.signOut(); }
-                }).catch(e => notify("System Error", "error"));
-            } else {
-                document.getElementById('login-overlay').classList.add('open');
+    const loader = document.getElementById('system-loader');
+    const loginModal = document.getElementById('login-overlay');
+
+    if(user) {
+        // 1. User is technically logged in, but check Admin Privileges
+        db.collection('admins').doc(user.phoneNumber).get().then(doc => {
+            if (doc.exists) {
+                // SUCCESS: Admin Confirmed
+                if(loader) loader.style.display = 'none'; // Kill Loader
+                if(loginModal) loginModal.classList.remove('open'); // Ensure Login is gone
+                showSection('leads'); 
+                loadAnalytics(); 
+            } else { 
+                // FAIL: User logged in, but not an Admin
+                notify("UNAUTHORIZED ACCESS", "error"); 
+                auth.signOut(); 
+                if(loader) loader.style.display = 'none';
+                loginModal.classList.add('open');
             }
+        }).catch(e => {
+            notify("System Error: " + e.message, "error");
+            if(loader) loader.style.display = 'none';
+            loginModal.classList.add('open');
         });
+    } else {
+        // 2. No User Session Found
+        if(loader) loader.style.display = 'none'; // Kill Loader
+        loginModal.classList.add('open'); // Show Login Screen
+    }
+});
 
         function sendAdminOTP() {
             const phone = document.getElementById('adminPhone').value;
@@ -816,22 +842,20 @@
             });
         }
 
-        function resetForm() {
+       function resetForm() {
             document.getElementById('projectForm').reset();
             isEditing = false;
             document.getElementById('form-mode-text').innerText = "CREATING NEW RECORD";
             document.getElementById('save-btn-text').innerText = "SAVE RECORD";
-            document.getElementById('p_id').value = "Calculating...";
-            const year = new Date().getFullYear();
-            db.collection('projects').orderBy('projectId', 'desc').limit(1).get().then(snap => {
-                let nextNo = 1001;
-                if (!snap.empty) {
-                    const lastId = snap.docs[0].data().projectId;
-                    const parts = lastId.split('-');
-                    if(parts.length === 3 && !isNaN(parts[2])) nextNo = parseInt(parts[2]) + 1;
-                }
-                document.getElementById('p_id').value = `SBW-${year}-${nextNo}`;
-            });
+            
+            // NEW LOGIC: Time-Based ID (Format: SBW-YYMM-RAND)
+            // Example: SBW-2602-X92B
+            const now = new Date();
+            const yy = now.getFullYear().toString().substr(-2);
+            const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+            const rand = Math.random().toString(36).substr(2, 4).toUpperCase();
+            
+            document.getElementById('p_id').value = `SBW-${yy}${mm}-${rand}`;
         }
 
         function editProject(projectId) {
