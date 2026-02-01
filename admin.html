@@ -644,7 +644,35 @@
                             };
                         }
 
-                        if(zoneData) uploadQueue.push(zoneData);
+                        // 4. GROUNDWATER RESOURCE (RISK MAP)
+                        else if(props.Categorization || props.Stage_of_Extraction) {
+                            targetCollection = "risk_map"; // Special collection for Risk
+                            const googleCoords = parsePolygon(geom);
+                            
+                            const status = (props.Categorization || "Safe").toLowerCase();
+                            let color = '#10b981'; // Green
+                            let riskLabel = "Safe";
+
+                            if(status.includes('critical') && !status.includes('semi')) { 
+                                color = '#ef4444'; riskLabel = "Critical"; 
+                            }
+                            else if(status.includes('semi-critical')) { 
+                                color = '#eab308'; riskLabel = "Semi-Critical"; 
+                            }
+                            else if(status.includes('over')) { 
+                                color = '#7f1d1d'; riskLabel = "Over-Exploited"; 
+                            }
+
+                            zoneData = {
+                                name: `${props.Name_of_District || 'District'} Risk Zone`,
+                                typeName: `Govt Status: ${riskLabel}`,
+                                color: color,
+                                typeKey: "risk_zone", // Special tag for Science Engine
+                                status: riskLabel,    // For the Risk Meter
+                                coords: googleCoords
+                            };
+                        }
+                    if(zoneData) uploadQueue.push(zoneData);
                     });
 
                     if(uploadQueue.length > 0) {
@@ -662,6 +690,8 @@
             reader.readAsText(file);
         }
 
+
+        
         function uploadInChunks(data, collectionName, fileId, startIndex = 0) {
             const BATCH_SIZE = 400;
             const batch = db.batch();
