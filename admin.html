@@ -608,6 +608,7 @@
                     else if(rawData.type === "FeatureCollection") features = rawData.features;
                     else throw new Error("Invalid Format");
 
+                    console.log("🔍 DIAGNOSTIC KEYS:", Object.keys(features[0].properties || features[0])); 
                     notify(`Parsing ${features.length} items...`);
                     
                     let uploadQueue = [];
@@ -620,7 +621,7 @@
 
                         let zoneData = null;
 
-                        // 1. LITHOLOGS
+                        // 1. LITHOLOGS (Rock Type)
                         if(props.Depth_of_Drill__m_ || props.Major_Lithology) {
                             targetCollection = "layer_lithologs";
                             const p = fixPoint(geom.coordinates);
@@ -634,7 +635,7 @@
                                 typeName: `${props.Major_Lithology} (${props.Depth_of_Drill__m_}m)`,
                                 color: color,
                                 waterLevel: props.Static_Water_Level__mbgl_ || 0,
-                                lat: p.lat, lng: p.lng // Store as point for Lithologs
+                                lat: p.lat, lng: p.lng
                             };
                         }
                         // 2. WATERBODIES
@@ -645,7 +646,7 @@
                                 name: props.waterbody_ || "Water Body",
                                 typeName: "Surface Water",
                                 color: "#3b82f6",
-                                coords: googleCoords // Store as Polygon
+                                coords: googleCoords
                             };
                         }
                         // 3. AQUIFERS
@@ -665,42 +666,54 @@
                             };
                         }
 
-                        // 4. GROUNDWATER RESOURCE (RISK MAP)
-                        else if(props.Categorization || props.Stage_of_Extraction) {
-                            targetCollection = "risk_map"; // Special collection for Risk
+                        // 4. GROUNDWATER RESOURCE (RISK MAP) - [UPDATED FOR 2020 DATASET]
+                        // Checks for 'Category' (2020) OR 'Categorization' (Old)
+                        else if(props.Category || props.Categorization || props['Stage of GW extraction (%)']) {
+                            targetCollection = "risk_map";
                             const googleCoords = parsePolygon(geom);
                             
-                            const status = (props.Categorization || "Safe").toLowerCase();
-                            let color = '#10b981'; // Green
+                            // Normalize Status Key (Handles both 2017 and 2020 formats)
+                            const rawStatus = props.Category || props.Categorization || "Safe";
+                            const status = rawStatus.toLowerCase();
+                            
+                            let color = '#10b981'; // Green (Safe)
                             let riskLabel = "Safe";
 
                             if(status.includes('critical') && !status.includes('semi')) { 
                                 color = '#ef4444'; riskLabel = "Critical"; 
                             }
-                            else if(status.includes('semi-critical')) { 
+                            else if(status.includes('semi') || status.includes('semi-critical')) { 
                                 color = '#eab308'; riskLabel = "Semi-Critical"; 
                             }
                             else if(status.includes('over')) { 
                                 color = '#7f1d1d'; riskLabel = "Over-Exploited"; 
                             }
+                            else if(status.includes('saline')) {
+                                color = '#3b82f6'; riskLabel = "Saline";
+                            }
 
+                            // Handle various Name keys
+                            const districtName = props['Name of District'] || props.Name_of_District || props.District || 'District';
+                            
                             zoneData = {
-                                name: `${props.Name_of_District || 'District'} Risk Zone`,
+                                name: `${districtName} Risk Zone`,
                                 typeName: `Govt Status: ${riskLabel}`,
                                 color: color,
-                                typeKey: "risk_zone", // Special tag for Science Engine
-                                status: riskLabel,    // For the Risk Meter
+                                typeKey: "risk_zone",
+                                status: riskLabel,
                                 coords: googleCoords
                             };
                         }
-                    if(zoneData) uploadQueue.push(zoneData);
+                        
+                        if(zoneData) uploadQueue.push(zoneData);
                     });
 
                     if(uploadQueue.length > 0) {
                         notify(`Uploading ${uploadQueue.length} items to '${targetCollection}'...`);
                         uploadInChunks(uploadQueue, targetCollection, fileId);
                     } else {
-                        notify("No recognizable data found.", "error");
+                        console.warn("Keys Found:", Object.keys(features[0].properties || features[0]));
+                        notify("No recognizable data found. Check Console (F12) for keys.", "error");
                     }
 
                 } catch(err) {
@@ -710,7 +723,6 @@
             };
             reader.readAsText(file);
         }
-
 
         
         function uploadInChunks(data, collectionName, fileId, startIndex = 0) {
