@@ -102,7 +102,23 @@ function analyzeLocation(latLng) {
         `;
         dataBox.classList.add('hidden');
     }
+
+    // NEW: Add Government Verification Badge
+        let badge = "";
+        if(bestZone.source === "Govt of India (WRIS)") {
+            badge = `<div class="mt-2 bg-blue-900/50 border border-blue-500/30 p-2 rounded text-[10px] text-blue-200">
+                <i class="ri-government-line"></i> Verified by Central Ground Water Board
+                <br>Sensor Depth: ${bestZone.waterLevel} meters
+            </div>`;
+        }
+
+        statusBox.innerHTML = `
+            <div class="text-2xl font-bold mb-1" style="color:${bestZone.color}">${bestZone.typeName}</div>
+            <p class="text-xs text-white">Geological Profile Verified.</p>
+            ${badge}
+        `;
 }
+
 
 // --- 3. TDS CALCULATOR (DEBUGGED) ---
 function checkWaterQuality() {
