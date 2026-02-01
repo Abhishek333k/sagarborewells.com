@@ -122,7 +122,7 @@ function checkWaterQuality() {
     .then((doc) => {
         if (doc.exists) {
             const data = doc.data();
-            rangeTxt.innerText = `${data.min} - ${data.max}`;
+            rangeTxt.innerText = `${data.min_tds} - ${data.max_tds}`;
             noteTxt.innerHTML = `<span class="text-emerald-400">● ${data.type || 'Verified Record'}</span>`;
         } else {
             rangeTxt.innerText = "No Record";
