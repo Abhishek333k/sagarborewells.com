@@ -49,7 +49,9 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden text-sm bg-[#0f172a]"> <div id="system-loader" class="fixed inset-0 z-[1000] bg-[#0f172a] flex flex-col items-center justify-center text-white">
+<body class="flex h-screen overflow-hidden text-sm bg-[#0f172a]"> 
+    
+    <div id="system-loader" class="fixed inset-0 z-[1000] bg-[#0f172a] flex flex-col items-center justify-center text-white">
         <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
         <div class="font-mono text-xs tracking-widest animate-pulse text-blue-400">INITIALIZING SAGAR OS...</div>
     </div>
@@ -236,36 +238,36 @@
 
         // --- AUTH & SETUP ---
         auth.onAuthStateChanged(user => {
-    const loader = document.getElementById('system-loader');
-    const loginModal = document.getElementById('login-overlay');
+            const loader = document.getElementById('system-loader');
+            const loginModal = document.getElementById('login-overlay');
 
-    if(user) {
-        // 1. User is technically logged in, but check Admin Privileges
-        db.collection('admins').doc(user.phoneNumber).get().then(doc => {
-            if (doc.exists) {
-                // SUCCESS: Admin Confirmed
+            if(user) {
+                // 1. User is technically logged in, but check Admin Privileges
+                db.collection('admins').doc(user.phoneNumber).get().then(doc => {
+                    if (doc.exists) {
+                        // SUCCESS: Admin Confirmed
+                        if(loader) loader.style.display = 'none'; // Kill Loader
+                        if(loginModal) loginModal.classList.remove('open'); // Ensure Login is gone
+                        showSection('leads'); 
+                        loadAnalytics(); 
+                    } else { 
+                        // FAIL: User logged in, but not an Admin
+                        notify("UNAUTHORIZED ACCESS", "error"); 
+                        auth.signOut(); 
+                        if(loader) loader.style.display = 'none';
+                        loginModal.classList.add('open');
+                    }
+                }).catch(e => {
+                    notify("System Error: " + e.message, "error");
+                    if(loader) loader.style.display = 'none';
+                    loginModal.classList.add('open');
+                });
+            } else {
+                // 2. No User Session Found
                 if(loader) loader.style.display = 'none'; // Kill Loader
-                if(loginModal) loginModal.classList.remove('open'); // Ensure Login is gone
-                showSection('leads'); 
-                loadAnalytics(); 
-            } else { 
-                // FAIL: User logged in, but not an Admin
-                notify("UNAUTHORIZED ACCESS", "error"); 
-                auth.signOut(); 
-                if(loader) loader.style.display = 'none';
-                loginModal.classList.add('open');
+                loginModal.classList.add('open'); // Show Login Screen
             }
-        }).catch(e => {
-            notify("System Error: " + e.message, "error");
-            if(loader) loader.style.display = 'none';
-            loginModal.classList.add('open');
         });
-    } else {
-        // 2. No User Session Found
-        if(loader) loader.style.display = 'none'; // Kill Loader
-        loginModal.classList.add('open'); // Show Login Screen
-    }
-});
 
         function sendAdminOTP() {
             const phone = document.getElementById('adminPhone').value;
@@ -595,7 +597,147 @@
             });
         }
 
-        function readFileData(file, fileId)
+        function readFileData(file, fileId) {
+            const reader = new FileReader();
+            notify("Reading file... please wait.", "info");
+
+            reader.onload = function(e) {
+                try {
+                    const rawData = JSON.parse(e.target.result);
+                    let features = [];
+                    
+                    if(Array.isArray(rawData)) features = rawData;
+                    else if(rawData.type === "FeatureCollection") features = rawData.features;
+                    else throw new Error("Invalid Format");
+
+                    console.log("🔍 DIAGNOSTIC KEYS:", Object.keys(features[0].properties || features[0])); 
+                    notify(`Parsing ${features.length} items...`);
+                    
+                    let uploadQueue = [];
+                    let targetCollection = "geo_zones"; 
+                    
+                    features.forEach((item, index) => {
+                        const props = item.properties || item;
+                        const geom = item.geometry;
+                        if(!geom) return;
+
+                        let zoneData = null;
+
+                        // 1. LITHOLOGS (Rock Type)
+                        if(props.Depth_of_Drill__m_ || props.Major_Lithology) {
+                            targetCollection = "layer_lithologs";
+                            const p = fixPoint(geom.coordinates);
+                            const rock = (props.Major_Lithology || "").toLowerCase();
+                            let color = '#eab308'; 
+                            if(rock.includes('granite') || rock.includes('basalt')) color = '#ef4444';
+                            if(rock.includes('alluvium') || rock.includes('sand')) color = '#10b981';
+
+                            zoneData = {
+                                name: `Log: ${props.Location || props.Village}`,
+                                typeName: `${props.Major_Lithology} (${props.Depth_of_Drill__m_}m)`,
+                                color: color,
+                                waterLevel: props.Static_Water_Level__mbgl_ || 0,
+                                lat: p.lat, lng: p.lng
+                            };
+                        }
+                        // 2. WATERBODIES
+                        else if(props.waterbody_ || props.wb_name) {
+                            targetCollection = "layer_waterbodies";
+                            const googleCoords = parsePolygon(geom);
+                            zoneData = {
+                                name: props.waterbody_ || "Water Body",
+                                typeName: "Surface Water",
+                                color: "#3b82f6",
+                                coords: googleCoords
+                            };
+                        }
+                        // 3. AQUIFERS
+                        else if(props.Aquifer_Ma || props.Material) {
+                            targetCollection = "layer_aquifers";
+                            const googleCoords = parsePolygon(geom);
+                            const mat = (props.Aquifer_Ma || "").toLowerCase();
+                            let color = '#f97316';
+                            if(mat.includes('granite')) color = '#ef4444';
+                            else if(mat.includes('alluvium')) color = '#10b981';
+
+                            zoneData = {
+                                name: `Aquifer: ${props.Aquifer_Ma}`,
+                                typeName: mat.toUpperCase(),
+                                color: color,
+                                coords: googleCoords
+                            };
+                        }
+
+                        // 4. GROUNDWATER RESOURCE (RISK MAP) - [UPDATED FOR 2020 DATASET]
+                        // Checks for various keys including the raw percentage 'Stage_of_development____'
+                        else if(props.Category || props.Categorization || props['Stage of GW extraction (%)'] || props.Stage_of_development____) {
+                            targetCollection = "risk_map";
+                            const googleCoords = parsePolygon(geom);
+                            
+                            // 1. Identify Risk Percentage
+                            let percentage = 0;
+                            if(props.Stage_of_development____) percentage = parseFloat(props.Stage_of_development____);
+                            else if(props['Stage of GW extraction (%)']) percentage = parseFloat(props['Stage of GW extraction (%)']);
+
+                            // 2. Determine Status Label & Color
+                            let rawStatus = props.Category || props.Categorization || "Unknown";
+                            let color = '#10b981'; // Default Green (Safe)
+                            let riskLabel = "Safe";
+
+                            // If text label is missing/unknown, calculate from percentage
+                            if((rawStatus === "Unknown" || !rawStatus) && percentage > 0) {
+                                if(percentage <= 70) rawStatus = "Safe";
+                                else if(percentage <= 90) rawStatus = "Semi-Critical";
+                                else if(percentage <= 100) rawStatus = "Critical";
+                                else rawStatus = "Over-Exploited";
+                            }
+
+                            const status = rawStatus.toLowerCase();
+
+                            if(status.includes('critical') && !status.includes('semi')) { 
+                                color = '#ef4444'; riskLabel = "Critical"; 
+                            }
+                            else if(status.includes('semi')) { 
+                                color = '#eab308'; riskLabel = "Semi-Critical"; 
+                            }
+                            else if(status.includes('over')) { 
+                                color = '#7f1d1d'; riskLabel = "Over-Exploited"; 
+                            }
+                            else if(status.includes('saline')) {
+                                color = '#3b82f6'; riskLabel = "Saline";
+                            }
+
+                            // Handle various Name keys
+                            const districtName = props.District || props['Name of District'] || props.Name_of_District || 'District';
+                            
+                            zoneData = {
+                                name: `${districtName} Risk Zone`,
+                                typeName: `Govt Status: ${riskLabel} (${percentage.toFixed(1)}%)`,
+                                color: color,
+                                typeKey: "risk_zone",
+                                status: riskLabel,
+                                coords: googleCoords
+                            };
+                        }
+                        
+                        if(zoneData) uploadQueue.push(zoneData);
+                    });
+
+                    if(uploadQueue.length > 0) {
+                        notify(`Uploading ${uploadQueue.length} items to '${targetCollection}'...`);
+                        uploadInChunks(uploadQueue, targetCollection, fileId);
+                    } else {
+                        console.warn("Keys Found:", Object.keys(features[0].properties || features[0]));
+                        notify("No recognizable data found. Check Console.", "error");
+                    }
+
+                } catch(err) {
+                    console.error(err);
+                    notify("File Error: " + err.message, "error");
+                }
+            };
+            reader.readAsText(file);
+        }
 
         
         function uploadInChunks(data, collectionName, fileId, startIndex = 0) {
