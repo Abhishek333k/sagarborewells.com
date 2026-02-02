@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                     <div class="hidden md:flex items-center gap-8">
                         <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
-                        <a href="science.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Science Lab</a>
+                      // <a href="science.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Science Lab</a>
                         <a href="finance.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Finance & Aid</a>
                         <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
                         
