@@ -2,16 +2,42 @@
 
 document.addEventListener("DOMContentLoaded", function() {
     
-    // --- 0. GLOBAL ASSETS INJECTION (Favicon & Meta) ---
+    // --- 0. INTELLIGENCE INJECTION (Analytics & Assets) ---
     const head = document.getElementsByTagName('head')[0];
-    
-    // Inject Favicon if missing
+
+    // A. Inject Favicon (If missing)
     if (!document.querySelector("link[rel*='icon']")) {
         const link = document.createElement('link');
         link.type = 'image/png';
         link.rel = 'shortcut icon';
-        link.href = 'assets/img/favicon.png'; // Make sure this file exists!
+        link.href = 'assets/img/favicon.png';
         head.appendChild(link);
+    }
+
+    // B. Google Analytics 4 (GA4) - Auto Injector
+    
+    const gaId = 'G-LRKE2HG1RN'; 
+    if (gaId !== 'G-LRKE2HG1RN') {
+        const gaScript = document.createElement('script');
+        gaScript.async = true;
+        gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+        head.appendChild(gaScript);
+
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', gaId);
+    }
+
+    // C. Microsoft Clarity - Auto Injector (Heatmaps)
+    // Replace 'your_clarity_id' with your actual Project ID
+    const clarityId = 'vatt3qahek'; 
+    if (clarityId !== 'vatt3qahek') {
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", clarityId);
     }
 
     // --- 1. RENDER HEADER ---
@@ -35,6 +61,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     <div class="hidden md:flex items-center gap-8">
                         <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
                         <a href="science.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Science Lab</a>
+                        <a href="finance.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Finance & Aid</a>
                         <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
                         
                         <a href="admin.html" id="admin-link" class="hidden font-bold text-red-600 border border-red-200 bg-red-50 px-3 py-1 rounded-lg hover:bg-red-100 transition flex items-center gap-2">
@@ -57,6 +84,7 @@ document.addEventListener("DOMContentLoaded", function() {
             <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 p-4 absolute w-full shadow-lg left-0">
                 <a href="index.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Home</a>
                 <a href="science.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Science Lab</a>
+                <a href="finance.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Finance & Aid</a>
                 <a href="admin.html" id="mobile-admin-link" class="hidden block py-3 font-bold text-red-600 border-b border-slate-50">Admin Panel</a>
                 <a href="contact.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Contact</a>
                 <a href="quote.html" class="block py-3 mt-4 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md">Get Quote</a>
@@ -88,6 +116,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     <ul class="space-y-2 text-sm">
                         <li><a href="index.html" class="hover:text-blue-400 transition">Home</a></li>
                         <li><a href="quote.html" class="hover:text-blue-400 transition">Get Estimate</a></li>
+                        <li><a href="finance.html" class="hover:text-blue-400 transition">Finance & Aid</a></li>
                         <li><a href="science.html" class="hover:text-blue-400 transition">Science Lab</a></li>
                         <li><a href="admin.html" class="hover:text-blue-400 transition">Login</a></li>
                     </ul>
