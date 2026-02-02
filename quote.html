@@ -8,11 +8,13 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
+    <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
+    <!-- App Scripts -->
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
     <script src="assets/js/quote_constants.js"></script> 
@@ -173,9 +175,11 @@
 
     <main class="flex-grow">
         
+        <!-- STEP 1: CALCULATOR -->
         <div id="step-1" class="fade-in-up">
             <div class="quote-container">
                 
+                <!-- LEFT: DATA ENTRY -->
                 <div class="form-col">
                     <div class="mb-8">
                         <h1 class="text-3xl font-extrabold text-slate-900">Get Quote</h1>
@@ -216,6 +220,7 @@
                     </button>
                 </div>
 
+                <!-- RIGHT: THE DRILL RIG -->
                 <div class="drill-col">
                     <div class="text-center mb-6">
                         <div class="depth-display"><span id="depthVal">100</span><span class="depth-unit">ft</span></div>
@@ -226,8 +231,10 @@
                         <div class="geo-layers"></div>
                         <div class="borehole" id="boreHole"></div>
                         
+                        <!-- Dynamic Depth Markers -->
                         <div id="scaleMarkers"></div>
 
+                        <!-- The Animated Bit -->
                         <div class="drill-bit" id="drillBit">
                             <div class="bit-body" id="bitVisual"></div>
                         </div>
@@ -251,6 +258,7 @@
             </div>
         </div>
 
+        <!-- STEP 2: ESTIMATE RESULT -->
         <div id="step-2" class="container mx-auto px-4 fade-in-up py-12 hidden">
             <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
                 <div class="bg-slate-900 p-6 flex justify-between items-center text-white">
@@ -292,6 +300,7 @@
 
     <div id="footer-mount"></div>
 
+    <!-- HIGH DEPTH ALERT MODAL -->
     <div id="depthAlertModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center;">
         <div class="bg-slate-900 border border-red-500 p-6 rounded-2xl w-full max-w-md shadow-2xl animate-bounce-in text-center">
             <div class="w-16 h-16 bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500 text-red-500 text-3xl">
@@ -312,6 +321,7 @@
         </div>
     </div>
 
+    <!-- MINI MAP MODAL -->
     <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
         <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl animate-bounce-in">
             <h3 class="font-bold text-slate-800 mb-2 text-center uppercase text-sm tracking-wide">Drag Map to Pinpoint Site</h3>
