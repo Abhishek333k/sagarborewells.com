@@ -22,14 +22,14 @@
         :root { --primary: #1e3a8a; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; overflow-x: hidden; }
         
-        /* --- HIGH FIDELITY DRILL VISUALS --- */
+        /* --- 1. INDUSTRIAL DTH HAMMER (High Fidelity SVG) --- */
         .drill-assembly {
             position: absolute; left: 50%; top: 0;
             width: 50px; height: 140px; 
             transform: translateX(-50%) translateY(-100%);
             z-index: 20; cursor: grab;
             filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
-            transition: top 0.1s linear; /* Smooth movement */
+            transition: top 0.1s linear;
         }
         .drill-assembly:active { cursor: grabbing; }
 
@@ -38,7 +38,7 @@
             background-repeat: no-repeat;
             background-size: contain;
             background-position: center bottom;
-            /* Industrial Steel DTH Hammer SVG */
+            /* Detailed Machined Steel SVG */
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 280'%3E%3Cdefs%3E%3ClinearGradient id='steel' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%232d3748'/%3E%3Cstop offset='20%25' stop-color='%23718096'/%3E%3Cstop offset='50%25' stop-color='%23edf2f7'/%3E%3Cstop offset='80%25' stop-color='%23718096'/%3E%3Cstop offset='100%25' stop-color='%232d3748'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='35' y='0' width='30' height='40' fill='url(%23steel)'/%3E%3Crect x='20' y='40' width='60' height='180' rx='2' fill='url(%23steel)'/%3E%3Crect x='30' y='50' width='5' height='160' fill='%231a202c' opacity='0.3' rx='2'/%3E%3Crect x='65' y='50' width='5' height='160' fill='%231a202c' opacity='0.3' rx='2'/%3E%3Cpath d='M20 220 L80 220 L90 260 L10 260 Z' fill='url(%23steel)'/%3E%3Ccircle cx='25' cy='265' r='6' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='50' cy='270' r='7' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='75' cy='265' r='6' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='35' cy='240' r='5' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='65' cy='240' r='5' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3C/svg%3E");
         }
 
@@ -51,7 +51,7 @@
             100% { transform: translateY(0) rotate(0deg); }
         }
 
-        /* --- DYNAMIC SOIL LAYERS --- */
+        /* --- 2. DYNAMIC GEOLOGY --- */
         .drill-track-container { 
             position: relative; height: 500px; width: 140px; margin: 20px 0; 
             border-radius: 12px; border: 3px solid #64748b; 
@@ -63,6 +63,11 @@
             position: absolute; inset: 0; width: 100%; height: 100%;
             background: linear-gradient(to bottom, #5d4037 0%, #d7ccc8 20%, #78909c 50%, #37474f 100%);
             transition: background 0.3s ease;
+        }
+        
+        .geo-texture {
+            position: absolute; inset: 0; opacity: 0.4; pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
         .borehole { 
@@ -76,7 +81,7 @@
 
         .depth-marker { position: absolute; right: 8px; font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.8); transform: translateY(-50%); text-shadow: 0 1px 3px black; pointer-events: none; z-index: 15; font-family: monospace; }
 
-        /* --- UI LAYOUT --- */
+        /* --- 3. UI LAYOUT --- */
         .quote-container { max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: white; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; }
         .form-col { padding: 40px; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 30; background: white; }
         .drill-col { background: #1e293b; padding: 40px; border-left: 1px solid #334155; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
@@ -88,6 +93,7 @@
         .input-group { position: relative; }
         .input-action-btn { position: absolute; top: 50%; transform: translateY(-50%); padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; cursor: pointer; }
         .btn-map { right: 8px; color: #475569; background: #f1f5f9; font-size: 1.1rem; padding: 6px 8px; border: 1px solid #e2e8f0; }
+        .btn-map:hover { background: #e2e8f0; color: #1e293b; }
 
         .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; font-weight: 700; padding: 16px; border-radius: 12px; width: 100%; font-size: 1.1rem; transition: 0.2s; margin-top: 20px; box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); cursor: pointer; text-align: center; }
         .btn-primary:hover { transform: translateY(-2px); }
@@ -108,7 +114,16 @@
         .pin-head { width: 40px; height: 40px; background: #1e3a8a; border: 3px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
         .pin-head::after { content: ''; width: 12px; height: 12px; background: white; border-radius: 50%; }
         
-        .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: none; font-family: inherit; z-index: 10000; }
+        /* MODERN AUTOCOMPLETE */
+        .pac-container { 
+            border-radius: 12px; margin-top: 5px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+            border: 1px solid #e2e8f0; font-family: inherit; z-index: 10000; 
+        }
+        .pac-item { padding: 12px 16px; cursor: pointer; border-top: 1px solid #f1f5f9; font-size: 13px; }
+        .pac-item:hover { background-color: #eff6ff; }
+        .pac-item-query { font-weight: 700; color: #1e3a8a; }
+        .pac-icon { display: none; }
 
         @media (max-width: 768px) { 
             .quote-container { grid-template-columns: 1fr; margin: 10px; } 
@@ -173,8 +188,12 @@
 
                     <div class="drill-track-container" id="drillTrack">
                         <div id="geoGradient"></div>
+                        <div class="geo-texture"></div>
+
                         <div class="borehole" id="boreHole"></div>
+                        
                         <div id="scaleMarkers"></div>
+
                         <div class="drill-assembly" id="drillBit">
                             <div class="hammer-visual"></div>
                         </div>
@@ -289,14 +308,35 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // 🟢 AUTH
+        // 🟢 LOAD CONSTANTS (Simulated for safety)
+        const QUOTE_CONFIG_LOCAL = {
+            OFFICE_LOCATION: { lat: 16.4410, lng: 80.5520 }, 
+            TRANSPORT_THRESHOLD_KM: 30,
+            TRANSPORT_BASE_RATE: 2000,
+            LABOUR_CHARGE: 1500,
+            DEFAULT_RATES: { base_rate: 70, slab_step: 10 },
+            MATERIALS: [
+                { label: '5" PVC PIPE (6KG)', price: 380, unit: '/ft' },
+                { label: '5" PVC PIPE (10KG)', price: 550, unit: '/ft' },
+                { label: '7" MS IRON (Med)', price: 1100, unit: '/ft' },
+                { label: 'CASING CAP', price: 450, unit: '/Set' }
+            ]
+        };
+        // Use Global if available, else Local
+        const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : QUOTE_CONFIG_LOCAL;
+
+        // 🟢 AUTH STATE LISTENER (Fixes Broken Verification)
         auth.onAuthStateChanged(user => {
             const btn = document.getElementById('generateBtn');
             const verifyBtn = document.getElementById('sendOtpBtn');
+            const badge = document.getElementById('verifiedBadge');
+            const phoneInput = document.getElementById('custMobile');
+
             if(user) {
-                document.getElementById('custMobile').value = user.phoneNumber.replace('+91','');
+                phoneInput.value = user.phoneNumber.replace('+91','');
+                phoneInput.disabled = true;
                 verifyBtn.classList.add('hidden');
-                document.getElementById('verifiedBadge').classList.remove('hidden');
+                badge.classList.remove('hidden');
                 btn.disabled = false;
             } else {
                 btn.disabled = true;
@@ -310,14 +350,15 @@
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
             auth.signInWithPhoneNumber('+91'+p, window.recaptchaVerifier).then(cr=>{
                 window.confirmationResult=cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('sendOtpBtn').classList.add('hidden');
-            });
+            }).catch(e=>{ alert("SMS Error: "+e.message); });
         }
         function verifyOTP() { window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=>document.getElementById('otpSection').classList.add('hidden')); }
 
-        // 🟢 DRILL RIG
+        // 🟢 DRILL RIG LOGIC
         const drillTrack = document.getElementById('drillTrack');
         const drillBit = document.getElementById('drillBit');
         const boreHole = document.getElementById('boreHole');
+        const geoGradient = document.getElementById('geoGradient');
         
         let isDragging = false;
         let currentMaxScale = 500; 
@@ -327,6 +368,7 @@
         function initDrillRig() {
             renderScaleMarkers();
             updateDrillPosition();
+            updateGeology();
             drillBit.addEventListener('mousedown', startDrag);
             document.addEventListener('mousemove', onDrag);
             document.addEventListener('mouseup', stopDrag);
@@ -335,17 +377,20 @@
             document.addEventListener('touchend', stopDrag);
         }
 
+        function updateGeology() {
+            const max = currentMaxScale;
+            const layers = [{c:'#5d4037',l:50}, {c:'#d7ccc8',l:200}, {c:'#78909c',l:600}, {c:'#37474f',l:2000}];
+            let gradientStr = "linear-gradient(to bottom, "; let prev=0;
+            layers.forEach(l => { const pct = Math.min((l.l/max)*100, 100); gradientStr += `${l.c} ${prev}% ${pct}%, `; prev=pct; });
+            geoGradient.style.background = gradientStr.slice(0,-2)+")";
+        }
+
         function renderScaleMarkers() {
-            const container = document.getElementById('scaleMarkers');
-            container.innerHTML = '';
+            const container = document.getElementById('scaleMarkers'); container.innerHTML = '';
             const step = currentMaxScale / 5; 
             for(let i=0; i<=currentMaxScale; i+=step) {
                 if(i===0) continue;
-                const mk = document.createElement('div');
-                mk.className = 'depth-marker';
-                mk.innerText = Math.round(i) + " ft";
-                mk.style.top = (i / currentMaxScale * 100) + "%";
-                container.appendChild(mk);
+                const mk = document.createElement('div'); mk.className = 'depth-marker'; mk.innerText = Math.round(i)+" ft"; mk.style.top = (i/currentMaxScale*100)+"%"; container.appendChild(mk);
             }
         }
 
@@ -357,143 +402,137 @@
             const rect = drillTrack.getBoundingClientRect();
             let clientY = e.touches ? e.touches[0].clientY : e.clientY;
             let relativeY = clientY - rect.top;
-            if(relativeY < 0) relativeY = 0;
-            if(relativeY > rect.height) relativeY = rect.height;
+            if(relativeY < 0) relativeY = 0; if(relativeY > rect.height) relativeY = rect.height;
 
             let pct = relativeY / rect.height;
-            let rawDepth = Math.round(pct * currentMaxScale);
-            currentDepth = Math.round(rawDepth / 10) * 10;
-            if(currentDepth < 100) currentDepth = 100;
+            currentDepth = Math.max(100, Math.round((pct * currentMaxScale) / 10) * 10);
 
-            if(pct > 0.95 && currentMaxScale < 1500) { isDragging=false; currentMaxScale+=500; renderScaleMarkers(); updateDrillPosition(); }
-            if(currentDepth < (currentMaxScale - 600) && currentMaxScale > 500) { isDragging=false; currentMaxScale-=500; renderScaleMarkers(); updateDrillPosition(); }
+            if(pct > 0.95 && currentMaxScale < 1500) { isDragging=false; currentMaxScale+=500; renderScaleMarkers(); updateGeology(); updateDrillPosition(); }
+            if(currentDepth < (currentMaxScale-600) && currentMaxScale > 500) { isDragging=false; currentMaxScale-=500; renderScaleMarkers(); updateGeology(); updateDrillPosition(); }
             
-            // 600FT ALERT
-            if(currentDepth >= 600 && !alertShown) {
-                document.getElementById('depthAlertModal').style.display = 'flex';
-                alertShown = true;
-                stopDrag();
-            }
+            if(currentDepth >= 600 && !alertShown) { document.getElementById('depthAlertModal').style.display = 'flex'; alertShown = true; stopDrag(); }
             updateUI();
         }
 
         function dismissDepthAlert() { document.getElementById('depthAlertModal').style.display = 'none'; }
-        function setDepth(val) { currentDepth = parseInt(val); renderScaleMarkers(); updateUI(); }
-        function updateUI() {
-            document.getElementById('depthDisplayMain').innerText = currentDepth;
-            document.getElementById('manualDepth').value = currentDepth;
-            updateDrillPosition();
-        }
-        function updateDrillPosition() {
-            const pct = (currentDepth / currentMaxScale) * 100;
-            drillBit.style.top = pct + "%";
-            boreHole.style.height = pct + "%";
-        }
+        function setDepth(val) { currentDepth = parseInt(val); updateUI(); updateDrillPosition(); }
+        function updateUI() { document.getElementById('depthDisplayMain').innerText = currentDepth; document.getElementById('manualDepth').value = currentDepth; updateDrillPosition(); }
+        function updateDrillPosition() { const pct = (currentDepth / currentMaxScale) * 100; drillBit.style.top = pct + "%"; boreHole.style.height = pct + "%"; }
 
-        // 🟢 FIXED CALCULATION LOGIC (Using DEFAULT_RATES)
+        // 🟢 QUOTE ENGINE (FIXED)
+        let currentLeadData = {}; // Global store for saving
+
         function calculateQuote() {
-            // Using logic from your provided quote_constants.js
-            const { DEFAULT_RATES, LABOUR_CHARGE, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE } = QUOTE_CONFIG;
+            const { DEFAULT_RATES, LABOUR_CHARGE, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE } = CFG;
+            let totalCost = 0, breakdownHtml = "", remaining = currentDepth, tracked = 0;
             
-            let totalCost = 0;
-            let breakdownHtml = "";
-            let remainingDepth = currentDepth;
-            let trackedDepth = 0;
-            let currentRate = DEFAULT_RATES.base_rate; // 80
-            
-            // Slab Logic: 0-100ft, then 50ft slabs increasing by slab_step
-            // Slab 1: 0-100
-            if(remainingDepth > 0) {
-                const chunk = Math.min(remainingDepth, 100);
-                const cost = chunk * currentRate;
-                totalCost += cost;
-                breakdownHtml += `<tr><td>0 - 100 ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                remainingDepth -= chunk;
-                trackedDepth += chunk;
-            }
+            // 1. Generate Unique ID HERE (Fixing the missing ID issue)
+            const quoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000+Math.random()*9000)}`;
+            document.getElementById('resId').innerText = quoteID;
 
-            // Subsequent 50ft Slabs
-            while(remainingDepth > 0) {
-                currentRate += DEFAULT_RATES.slab_step; // +10
-                const chunk = Math.min(remainingDepth, 50);
-                const cost = chunk * currentRate;
+            // 2. Slab Calc
+            let rate = DEFAULT_RATES.base_rate || 70;
+            const step = DEFAULT_RATES.slab_step || 10;
+            
+            // First 100ft
+            if(remaining > 0) {
+                const chunk = Math.min(remaining, 100);
+                const cost = chunk * rate;
                 totalCost += cost;
-                breakdownHtml += `<tr><td>${trackedDepth+1} - ${trackedDepth+chunk} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                remainingDepth -= chunk;
-                trackedDepth += chunk;
+                breakdownHtml += `<tr><td>0 - 100 ft</td><td class="text-center">₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                remaining -= chunk; tracked += chunk;
+            }
+            // Slabs
+            while(remaining > 0) {
+                rate += step;
+                const chunk = Math.min(remaining, 50);
+                const cost = chunk * rate;
+                totalCost += cost;
+                breakdownHtml += `<tr><td>${tracked+1} - ${tracked+chunk} ft</td><td class="text-center">₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                remaining -= chunk; tracked += chunk;
             }
 
             // Transport
             if(transportDist > TRANSPORT_THRESHOLD_KM) {
-                const extraKm = transportDist - TRANSPORT_THRESHOLD_KM;
-                const transCost = TRANSPORT_BASE_RATE; // Flat charge per your config or Multiplier? config says "Charge per unit". Assuming 1 unit for now or per 30km block. 
-                // Updating to standard block logic:
-                const blocks = Math.ceil(extraKm / 30);
-                const finalTrans = blocks * TRANSPORT_BASE_RATE;
-                totalCost += finalTrans;
-                breakdownHtml += `<tr><td>Transport (${extraKm.toFixed(1)} km extra)</td><td class="text-center">--</td><td class="text-right">₹${finalTrans.toLocaleString()}</td></tr>`;
+                const extra = transportDist - TRANSPORT_THRESHOLD_KM;
+                const blocks = Math.ceil(extra / 30);
+                const transCost = blocks * TRANSPORT_BASE_RATE;
+                totalCost += transCost;
+                breakdownHtml += `<tr><td>Transport (${extra.toFixed(1)} km extra)</td><td class="text-center">--</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
             }
-
+            
             totalCost += LABOUR_CHARGE;
             breakdownHtml += `<tr><td>Labour & Setup</td><td class="text-center">Fixed</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
 
-            // UI UPDATES
+            // UI
             document.getElementById('resTotal').innerText = "₹" + totalCost.toLocaleString();
             document.getElementById('breakdownBody').innerHTML = breakdownHtml;
             document.getElementById('resDepth').innerText = currentDepth + " ft";
+            document.getElementById('resLoc').innerText = document.getElementById('locInput').value;
             
-            // Load Materials
+            // Materials
             document.getElementById('matList').innerHTML = MATERIALS.map(m => `<div><span class="text-xs text-slate-500 block">${m.label}</span><span class="font-bold text-slate-800">₹${m.price} ${m.unit}</span></div>`).join('');
 
-            // Show Step 2
+            // 3. Save Data Globally for Confirmation
+            currentLeadData = {
+                id: quoteID,
+                name: document.getElementById('custName').value,
+                mobile: "+91" + document.getElementById('custMobile').value,
+                loc: document.getElementById('locInput').value,
+                depth: currentDepth,
+                total: totalCost,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: 'New Quote'
+            };
+
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
             window.scrollTo(0,0);
         }
 
-        // 🟢 ACTIONS
+        // ACTIONS
         function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
         
         function downloadPDF() {
             const el = document.getElementById('invoice-capture');
-            const opt = { margin: 0.5, filename: 'SagarBorewells_Estimate.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter' } };
+            const opt = { margin: 0.5, filename: `Estimate_${currentLeadData.id}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter' } };
             html2pdf().set(opt).from(el).save();
         }
 
         function shareWhatsApp() {
-            const msg = `Borewell Estimate: ${currentDepth}ft. Total: ${document.getElementById('resTotal').innerText}`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+            window.open(`https://wa.me/?text=Estimate ${currentLeadData.id}: ₹${currentLeadData.total.toLocaleString()} for ${currentLeadData.depth}ft at ${currentLeadData.loc}`, '_blank');
         }
 
         function confirmBooking() {
-            const data = {
-                name: document.getElementById('custName').value,
-                mobile: "+91"+document.getElementById('custMobile').value,
-                depth: currentDepth,
-                total: document.getElementById('resTotal').innerText,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                status: 'New Quote'
-            };
-            db.collection('leads').add(data).then(() => {
+            // Save using the SAME ID generated in calculation
+            db.collection('leads').doc(currentLeadData.id).set(currentLeadData).then(() => {
                 document.getElementById('step-2').classList.add('hidden');
                 document.getElementById('step-3').classList.remove('hidden');
             });
         }
 
-        // 🟢 MAPS
-        let qMap, transportDist = 0;
+        // MAPS
+        let qMap, transportDist=0;
+        function initMapTools() { 
+            const input = document.getElementById('locInput');
+            const ac = new google.maps.places.Autocomplete(input);
+            ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry) calculateDist(p.geometry.location.lat(), p.geometry.location.lng()); });
+        }
         function openMiniMap() { document.getElementById('miniMapModal').style.display='flex'; if(!qMap && typeof google!=='undefined') qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55},zoom:15}); setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); }
-        function confirmQuoteLocation() { const pos = qMap.getCenter(); new google.maps.Geocoder().geocode({location:pos},(r,s)=>{if(s==='OK'){document.getElementById('locInput').value=r[0].formatted_address; calculateDist(pos.lat(),pos.lng());}}); document.getElementById('miniMapModal').style.display='none'; }
-        function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{ calculateDist(p.coords.latitude, p.coords.longitude); }); }
+        function confirmQuoteLocation() { const pos = qMap.getCenter(); new google.maps.Geocoder().geocode({location:pos},(r,s)=>{if(s==='OK') { document.getElementById('locInput').value=r[0].formatted_address; calculateDist(pos.lat(),pos.lng()); }}); document.getElementById('miniMapModal').style.display='none'; }
+        function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{ const c={lat:p.coords.latitude,lng:p.coords.longitude}; new google.maps.Geocoder().geocode({location:c},(r,s)=>{if(s==='OK') document.getElementById('locInput').value=r[0].formatted_address; calculateDist(c.lat,c.lng);}); }); }
+        
         function calculateDist(lat, lng) {
-            const R = 6371; const dLat = (lat-QUOTE_CONFIG.OFFICE_LOCATION.lat)*Math.PI/180; const dLon = (lng-QUOTE_CONFIG.OFFICE_LOCATION.lng)*Math.PI/180;
-            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(QUOTE_CONFIG.OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+            const R = 6371; const dLat = (lat - CFG.OFFICE_LOCATION.lat) * Math.PI/180; const dLon = (lng - CFG.OFFICE_LOCATION.lng) * Math.PI/180;
+            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(CFG.OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
             transportDist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            document.getElementById('distDisplay').innerText = `Distance: ${transportDist.toFixed(1)} km`;
+            const disp = document.getElementById('distDisplay');
+            if(transportDist > CFG.TRANSPORT_THRESHOLD_KM) { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Extra Charges)`; disp.className="text-xs text-right mt-1 font-bold h-4 text-orange-600"; }
+            else { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Free Transport)`; disp.className="text-xs text-right mt-1 font-bold h-4 text-emerald-600"; }
         }
 
         document.addEventListener("DOMContentLoaded", initDrillRig);
-        const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`; s.async=true; s.defer=true; document.body.appendChild(s);
+        const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; s.async=true; s.defer=true; document.body.appendChild(s);
 
     </script>
 </body>
