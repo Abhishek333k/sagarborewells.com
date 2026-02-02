@@ -25,24 +25,21 @@
         /* --- 1. HIGH FIDELITY DTH HAMMER --- */
         .drill-assembly {
             position: absolute; left: 50%; top: 0;
-            width: 50px; height: 140px; /* Taller, thinner industrial look */
+            width: 50px; height: 140px; 
             transform: translateX(-50%) translateY(-100%);
             z-index: 20; cursor: grab;
             filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
         }
         .drill-assembly:active { cursor: grabbing; }
 
-        /* The SVG Hammer Body */
         .hammer-visual {
             width: 100%; height: 100%;
             background-repeat: no-repeat;
             background-size: contain;
             background-position: center bottom;
-            /* Complex SVG to simulate Machined Steel & Tungsten Buttons */
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 280'%3E%3Cdefs%3E%3ClinearGradient id='steel' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%232d3748'/%3E%3Cstop offset='20%25' stop-color='%23718096'/%3E%3Cstop offset='50%25' stop-color='%23edf2f7'/%3E%3Cstop offset='80%25' stop-color='%23718096'/%3E%3Cstop offset='100%25' stop-color='%232d3748'/%3E%3C/linearGradient%3E%3ClinearGradient id='tungsten' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231a202c'/%3E%3Cstop offset='50%25' stop-color='%234a5568'/%3E%3Cstop offset='100%25' stop-color='%231a202c'/%3E%3C/linearGradient%3E%3C/defs%3E%3C!-- Top Shank (Connector) --%3E%3Crect x='35' y='0' width='30' height='40' fill='url(%23steel)'/%3E%3C!-- Main Cylinder Body --%3E%3Crect x='20' y='40' width='60' height='180' rx='2' fill='url(%23steel)'/%3E%3C!-- Splines / Air Channels (Vertical Lines) --%3E%3Crect x='30' y='50' width='5' height='160' fill='%231a202c' opacity='0.3' rx='2'/%3E%3Crect x='65' y='50' width='5' height='160' fill='%231a202c' opacity='0.3' rx='2'/%3E%3C!-- Hammer Head Base --%3E%3Cpath d='M20 220 L80 220 L90 260 L10 260 Z' fill='url(%23steel)'/%3E%3C!-- Tungsten Carbide Buttons (The Red Tips) --%3E%3Ccircle cx='25' cy='265' r='6' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='50' cy='270' r='7' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='75' cy='265' r='6' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='35' cy='240' r='5' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='65' cy='240' r='5' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 280'%3E%3Cdefs%3E%3ClinearGradient id='steel' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%232d3748'/%3E%3Cstop offset='20%25' stop-color='%23718096'/%3E%3Cstop offset='50%25' stop-color='%23edf2f7'/%3E%3Cstop offset='80%25' stop-color='%23718096'/%3E%3Cstop offset='100%25' stop-color='%232d3748'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='35' y='0' width='30' height='40' fill='url(%23steel)'/%3E%3Crect x='20' y='40' width='60' height='180' rx='2' fill='url(%23steel)'/%3E%3Crect x='30' y='50' width='5' height='160' fill='%231a202c' opacity='0.3' rx='2'/%3E%3Crect x='65' y='50' width='5' height='160' fill='%231a202c' opacity='0.3' rx='2'/%3E%3Cpath d='M20 220 L80 220 L90 260 L10 260 Z' fill='url(%23steel)'/%3E%3Ccircle cx='25' cy='265' r='6' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='50' cy='270' r='7' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='75' cy='265' r='6' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='35' cy='240' r='5' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='65' cy='240' r='5' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3C/svg%3E");
         }
 
-        /* PERCUSSION PHYSICS (Vibrate + Rotate) */
         .idle-motion { animation: idleFloat 3s ease-in-out infinite; }
         @keyframes idleFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 
@@ -55,7 +52,7 @@
             100% { transform: translateY(0) rotate(0deg); }
         }
 
-        /* --- 2. DYNAMIC GEOLOGY (The Soil) --- */
+        /* --- 2. DYNAMIC GEOLOGY --- */
         .drill-track-container { 
             position: relative; height: 500px; width: 140px; margin: 20px 0; 
             border-radius: 12px; border: 3px solid #64748b; 
@@ -63,21 +60,17 @@
             box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
         }
         
-        /* The Dynamic Gradient Layer */
         #geoGradient {
             position: absolute; inset: 0; width: 100%; height: 100%;
-            /* Default Start */
             background: linear-gradient(to bottom, #5d4037 0%, #d7ccc8 20%, #78909c 50%, #37474f 100%);
-            transition: background 0.3s ease; /* Smooth transition when scale changes */
+            transition: background 0.3s ease;
         }
         
-        /* Texture Overlay (Noise) to make it look like dirt */
         .geo-texture {
             position: absolute; inset: 0; opacity: 0.4; pointer-events: none;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
-        /* The Borehole */
         .borehole { 
             position: absolute; top: 0; left: 50%; transform: translateX(-50%); 
             width: 18px; background: #0f172a; height: 0%; 
@@ -86,29 +79,26 @@
             border-bottom-left-radius: 5px; border-bottom-right-radius: 5px;
         }
 
-        /* Markers */
         .depth-marker { position: absolute; right: 8px; font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.8); transform: translateY(-50%); text-shadow: 0 1px 3px black; pointer-events: none; z-index: 15; font-family: monospace; }
 
         /* --- 3. UI LAYOUT --- */
         .quote-container { max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: white; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; }
-        .form-col { padding: 40px; display: flex; flex-direction: column; justify-content: center; }
+        .form-col { padding: 40px; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 30; background: white; }
         .drill-col { background: #1e293b; padding: 40px; border-left: 1px solid #334155; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
 
         .form-label { font-weight: 800; font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
         .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; transition: 0.3s; }
-        .custom-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); }
+        .custom-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); outline: none; }
         
-        /* Map Pin UI */
         .input-group { position: relative; }
         .input-action-btn { position: absolute; top: 50%; transform: translateY(-50%); padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; cursor: pointer; }
         .btn-map { right: 8px; color: #475569; background: #f1f5f9; font-size: 1.1rem; padding: 6px 8px; border: 1px solid #e2e8f0; }
         .btn-map:hover { background: #e2e8f0; color: #1e293b; }
 
-        .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; font-weight: 700; padding: 16px; border-radius: 12px; width: 100%; font-size: 1.1rem; transition: 0.2s; margin-top: 20px; box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); }
+        .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; font-weight: 700; padding: 16px; border-radius: 12px; width: 100%; font-size: 1.1rem; transition: 0.2s; margin-top: 20px; box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); cursor: pointer; text-align: center; }
         .btn-primary:hover { transform: translateY(-2px); }
-        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        /* Depth Display */
         .depth-readout { text-align: center; color: white; margin-bottom: 20px; }
         .depth-val { font-size: 4rem; font-weight: 900; line-height: 1; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         .depth-lbl { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 2px; }
@@ -123,13 +113,11 @@
         .est-table th { text-align: left; padding: 10px; color: #64748b; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
         .est-table td { padding: 12px 10px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; }
         
-        /* Modals */
         #miniMapModal, #depthAlertModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; }
         .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 100; pointer-events: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
         .pin-head { width: 40px; height: 40px; background: #1e3a8a; border: 3px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
         .pin-head::after { content: ''; width: 12px; height: 12px; background: white; border-radius: 50%; }
         
-        /* AutoComplete Style Override */
         .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: none; font-family: inherit; z-index: 10000; }
     </style>
 </head>
@@ -219,7 +207,15 @@
         </div>
 
         <div id="step-2" class="container mx-auto px-4 fade-in-up py-12 hidden">
-            <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+            <div class="flex justify-between items-center max-w-3xl mx-auto mb-4">
+                <button onclick="goToStep1()" class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-1"><i class="ri-arrow-left-line"></i> Edit</button>
+                <div class="flex gap-2">
+                    <button onclick="downloadPDF()" class="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-50"><i class="ri-file-download-line"></i> PDF</button>
+                    <button onclick="shareWhatsApp()" class="bg-emerald-50 text-emerald-600 border border-emerald-200 px-4 py-2 rounded-lg font-bold text-sm hover:bg-emerald-100"><i class="ri-whatsapp-line"></i> Share</button>
+                </div>
+            </div>
+
+            <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200" id="invoice-capture">
                 <div class="bg-slate-900 p-6 flex justify-between items-center text-white">
                     <div>
                         <h2 class="text-xl font-bold">ESTIMATED COST</h2>
@@ -247,10 +243,26 @@
                         <div class="grid grid-cols-2 gap-2 text-sm" id="matList"></div>
                     </div>
 
-                    <div class="flex gap-4 mt-8">
-                        <button onclick="location.reload()" class="flex-1 py-3 border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Edit</button>
-                        <button onclick="confirmBooking()" class="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200">Book Visit</button>
+                    <div class="text-center mt-10">
+                        <button onclick="confirmBooking()" class="bg-emerald-600 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-emerald-700 transition shadow-lg">
+                            Confirm Booking
+                        </button>
+                        <p class="text-xs text-slate-400 mt-3 uppercase tracking-wide">Valid for 30 Days • Computer Generated Estimate</p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="step-3" class="container mx-auto px-4 fade-in-up hidden py-12">
+            <div class="quote-card text-center max-w-lg mx-auto">
+                <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="ri-check-line text-4xl text-emerald-600"></i>
+                </div>
+                <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Booking Confirmed!</h1>
+                <p class="text-slate-500 mb-8">We have received your request. A representative will call you shortly to discuss site logistics.</p>
+                <div class="flex justify-center gap-4">
+                    <a href="dashboard.html" class="py-3 px-6 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50">Dashboard</a>
+                    <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}`, '_blank')" class="py-3 px-6 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">Chat Support</button>
                 </div>
             </div>
         </div>
@@ -369,10 +381,6 @@
 
         // DYNAMIC SOIL GENERATOR
         function updateGeology() {
-            // Calculates percentage stops based on current Scale
-            // At 500ft: Topsoil(0-10%), Sand(10-30%), Rock(30-100%)
-            // At 1500ft: Topsoil(0-3%), Sand(3-10%), Rock(10-30%), Granite(30-100%)
-            
             const max = currentMaxScale;
             // Define layer depths in FEET
             const layers = [
@@ -488,7 +496,7 @@
             boreHole.style.height = pct + "%";
         }
 
-        // 🟢 PRICING ENGINE (Slab Logic)
+        // 🟢 PRICING ENGINE (Restored from Previous Version)
         function calculateQuote() {
             const { RATES, LABOUR_CHARGE, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE } = QUOTE_CONFIG;
             let totalCost = 0;
@@ -534,6 +542,7 @@
             totalCost += LABOUR_CHARGE;
             breakdownHtml += `<tr><td>Site Setup & Labour</td><td class="text-center">Fixed</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
 
+            // RENDER RESULT
             document.getElementById('resTotal').innerText = "₹" + totalCost.toLocaleString();
             document.getElementById('breakdownBody').innerHTML = breakdownHtml;
             document.getElementById('resLoc').innerText = document.getElementById('locInput').value;
@@ -542,9 +551,31 @@
             const matHtml = MATERIALS.map(m => `<div><span class="text-xs text-slate-500 block">${m.label}</span><span class="font-bold text-slate-800">₹${m.price} ${m.unit}</span></div>`).join('');
             document.getElementById('matList').innerHTML = matHtml;
 
+            // TOGGLE VIEW (This was missing in your broken version)
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
             window.scrollTo(0,0);
+        }
+
+        // Navigation for Edit
+        function goToStep1() {
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-1').classList.remove('hidden');
+        }
+
+        // PDF Function
+        function downloadPDF() {
+            const el = document.getElementById('invoice-capture');
+            const opt = { margin: 0.5, filename: 'Estimate.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+            html2pdf().set(opt).from(el).save();
+        }
+
+        // Share Function
+        function shareWhatsApp() {
+            const total = document.getElementById('resTotal').innerText;
+            const loc = document.getElementById('resLoc').innerText;
+            const msg = `Estimate for ${loc} (${currentDepth} ft). Total: ${total}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         // 🟢 MAPS LOGIC
@@ -621,8 +652,9 @@
                 status: 'New Quote'
             };
             db.collection('leads').add(data).then(() => {
-                alert("Booking Request Sent! Our engineer will call you.");
-                location.reload();
+                // Show Success Step
+                document.getElementById('step-2').classList.add('hidden');
+                document.getElementById('step-3').classList.remove('hidden');
             });
         }
 
