@@ -19,116 +19,56 @@
     <script src="assets/js/pdf_template.js"></script>
 
     <style>
-        :root { --primary: #1e3a8a; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; overflow-x: hidden; }
+        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+        .reticle-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 15px 2px #ef4444; }
+        .reticle-ring { position: absolute; width: 50px; height: 50px; border: 2px dashed #2563eb; border-radius: 50%; animation: spin 8s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
         
-        /* --- 1. INDUSTRIAL DTH HAMMER (High Fidelity SVG) --- */
-        .drill-assembly {
-            position: absolute; left: 50%; top: 0;
-            width: 50px; height: 140px; 
-            transform: translateX(-50%) translateY(-100%);
-            z-index: 20; cursor: grab;
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
-            transition: top 0.1s linear;
-        }
-        .drill-assembly:active { cursor: grabbing; }
+        :root { --primary: #1e3a8a; --text-main: #1e293b; --bg: #f8fafc; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text-main); }
+        .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .quote-card { background: #ffffff; border-radius: 24px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); padding: 40px; max-width: 800px; margin: 40px auto; }
+        .form-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
+        .custom-input, .custom-select { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; transition: 0.3s; }
+        .custom-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); }
+        .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; font-weight: 700; padding: 18px; border-radius: 12px; width: 100%; font-size: 1.1rem; transition: 0.2s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); }
+        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        .hammer-visual {
-            width: 100%; height: 100%;
-            background-repeat: no-repeat;
-            background-size: contain;
-            background-position: center bottom;
-            /* Detailed Machined Steel SVG */
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 280'%3E%3Cdefs%3E%3ClinearGradient id='steel' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%232d3748'/%3E%3Cstop offset='20%25' stop-color='%23718096'/%3E%3Cstop offset='50%25' stop-color='%23edf2f7'/%3E%3Cstop offset='80%25' stop-color='%23718096'/%3E%3Cstop offset='100%25' stop-color='%232d3748'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='35' y='0' width='30' height='40' fill='url(%23steel)'/%3E%3Crect x='20' y='40' width='60' height='180' rx='2' fill='url(%23steel)'/%3E%3Crect x='30' y='50' width='5' height='160' fill='%231a202c' opacity='0.3' rx='2'/%3E%3Crect x='65' y='50' width='5' height='160' fill='%231a202c' opacity='0.3' rx='2'/%3E%3Cpath d='M20 220 L80 220 L90 260 L10 260 Z' fill='url(%23steel)'/%3E%3Ccircle cx='25' cy='265' r='6' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='50' cy='270' r='7' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='75' cy='265' r='6' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='35' cy='240' r='5' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='65' cy='240' r='5' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3C/svg%3E");
-        }
-
-        .drilling-active { animation: percussionDrill 0.08s infinite linear; }
-        @keyframes percussionDrill {
-            0% { transform: translateY(0) rotate(0deg); }
-            25% { transform: translateY(2px) rotate(1deg); }
-            50% { transform: translateY(0) rotate(0deg); }
-            75% { transform: translateY(-2px) rotate(-1deg); }
-            100% { transform: translateY(0) rotate(0deg); }
-        }
-
-        /* --- 2. DYNAMIC GEOLOGY --- */
-        .drill-track-container { 
-            position: relative; height: 500px; width: 140px; margin: 20px 0; 
-            border-radius: 12px; border: 3px solid #64748b; 
-            background: #e2e8f0; overflow: hidden; 
-            box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
-        }
+        /* ESTIMATE CARD */
+        .est-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px -10px rgba(0,0,0,0.15); margin-top: 20px; border: 1px solid #e2e8f0; }
+        .est-header { background: #ffffff; padding: 30px; border-bottom: 2px solid #1e3a8a; }
+        .est-brand h2 { font-size: 2rem; font-weight: 900; color: #1e3a8a; margin: 0; line-height: 1; text-transform: uppercase; }
+        .est-brand p { font-size: 0.75rem; color: #64748b; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+        .est-total-block { text-align: right; }
+        .est-label { font-size: 0.7rem; font-weight: 700; color: #64748b; letter-spacing: 1px; text-transform: uppercase; }
+        .est-amount { font-size: 2.2rem; font-weight: 800; color: #1e3a8a; line-height: 1; margin-top: 5px; }
         
-        #geoGradient {
-            position: absolute; inset: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, #5d4037 0%, #d7ccc8 20%, #78909c 50%, #37474f 100%);
-            transition: background 0.3s ease;
-        }
+        .est-meta { display: flex; justify-content: space-between; margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; }
+        .est-meta-item strong { display: block; font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
+        .est-meta-item span { font-size: 0.95rem; font-weight: 700; color: #334155; }
+
+        .est-body { padding: 30px; }
+        .section-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: #1e3a8a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        .est-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 0.9rem; }
+        .est-table th { text-align: left; padding: 8px; color: #64748b; font-size: 0.7rem; text-transform: uppercase; font-weight: 700; }
+        .est-table td { padding: 10px 8px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; color: #334155; }
+        .est-table tfoot td { border-top: 2px solid #e2e8f0; font-weight: 800; color: #1e3a8a; padding-top: 15px; font-size: 1rem; border-bottom: none; }
         
-        .geo-texture {
-            position: absolute; inset: 0; opacity: 0.4; pointer-events: none;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-        }
+        /* VARIABLE MATERIALS BOX */
+        .var-box { background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 12px; padding: 20px; position: relative; }
+        .var-title { font-size: 0.8rem; font-weight: 800; color: #1e40af; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        .var-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 30px; font-size: 0.85rem; }
+        .var-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed #dbeafe; }
+        .var-badge { background: #fff; color: #1e40af; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #bfdbfe; }
 
-        .borehole { 
-            position: absolute; top: 0; left: 50%; transform: translateX(-50%); 
-            width: 18px; background: #0f172a; height: 0%; 
-            z-index: 10; 
-            box-shadow: inset 5px 0 5px rgba(0,0,0,0.8);
-            border-bottom-left-radius: 5px; border-bottom-right-radius: 5px;
-            transition: height 0.1s linear;
-        }
-
-        .depth-marker { position: absolute; right: 8px; font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.8); transform: translateY(-50%); text-shadow: 0 1px 3px black; pointer-events: none; z-index: 15; font-family: monospace; }
-
-        /* --- 3. UI LAYOUT --- */
-        .quote-container { max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: white; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; }
-        .form-col { padding: 40px; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 30; background: white; }
-        .drill-col { background: #1e293b; padding: 40px; border-left: 1px solid #334155; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-
-        .form-label { font-weight: 800; font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
-        .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; transition: 0.3s; }
-        .custom-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); outline: none; }
-        
-        .input-group { position: relative; }
-        .input-action-btn { position: absolute; top: 50%; transform: translateY(-50%); padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; cursor: pointer; }
-        .btn-map { right: 8px; color: #475569; background: #f1f5f9; font-size: 1.1rem; padding: 6px 8px; border: 1px solid #e2e8f0; }
-        .btn-map:hover { background: #e2e8f0; color: #1e293b; }
-
-        .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; font-weight: 700; padding: 16px; border-radius: 12px; width: 100%; font-size: 1.1rem; transition: 0.2s; margin-top: 20px; box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); cursor: pointer; text-align: center; }
-        .btn-primary:hover { transform: translateY(-2px); }
-        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
-
-        .depth-readout { text-align: center; color: white; margin-bottom: 20px; }
-        .depth-val { font-size: 4rem; font-weight: 900; line-height: 1; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .depth-lbl { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 2px; }
-
-        /* RESULT TABLE */
-        .est-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
-        .est-table th { text-align: left; padding: 10px; color: #64748b; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
-        .est-table td { padding: 12px 10px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; }
-        
-        /* MODALS */
-        #miniMapModal, #depthAlertModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; }
-        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 100; pointer-events: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
-        .pin-head { width: 40px; height: 40px; background: #1e3a8a; border: 3px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
-        .pin-head::after { content: ''; width: 12px; height: 12px; background: white; border-radius: 50%; }
-        
-        /* MODERN AUTOCOMPLETE */
-        .pac-container { 
-            border-radius: 12px; margin-top: 5px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
-            border: 1px solid #e2e8f0; font-family: inherit; z-index: 10000; 
-        }
-        .pac-item { padding: 12px 16px; cursor: pointer; border-top: 1px solid #f1f5f9; font-size: 13px; }
-        .pac-item:hover { background-color: #eff6ff; }
-        .pac-item-query { font-weight: 700; color: #1e3a8a; }
+        .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; }
+        .range-slider { width: 100%; height: 12px; border-radius: 6px; background: #cbd5e1; outline: none; -webkit-appearance: none; }
+        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: var(--primary); border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; }
+        .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); font-family: 'Plus Jakarta Sans', sans-serif; border: none; }
+        .pac-item { padding: 10px 15px; border-top: 1px solid #f1f5f9; font-size: 14px; color: #64748b; }
         .pac-icon { display: none; }
-
-        @media (max-width: 768px) { 
-            .quote-container { grid-template-columns: 1fr; margin: 10px; } 
-            .drill-col { padding: 40px 20px; border-left: none; border-top: 5px solid #0f172a; } 
-        }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -137,403 +77,402 @@
 
     <main class="flex-grow">
         
-        <div id="step-1" class="fade-in-up">
-            <div class="quote-container">
-                
-                <div class="form-col">
-                    <div class="mb-8">
-                        <h1 class="text-3xl font-extrabold text-slate-900">Get Quote</h1>
-                        <p class="text-sm text-slate-500 font-bold mt-1">Configure your borewell requirements.</p>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div>
-                            <label class="form-label">Full Name</label>
-                            <input type="text" id="custName" class="custom-input" placeholder="Your Name">
-                        </div>
-                        <div>
-                            <label class="form-label">Mobile Number</label>
-                            <div class="input-group">
-                                <input type="tel" id="custMobile" class="custom-input" style="padding-right: 90px;" placeholder="98765 43210" maxlength="10">
-                                <button id="sendOtpBtn" onclick="sendOTP()" class="input-action-btn bg-slate-900 text-white hover:bg-black" style="right: 8px;">VERIFY</button>
-                                <div id="verifiedBadge" class="hidden absolute right-3 top-4 text-emerald-600 font-bold text-xs flex items-center gap-1"><i class="ri-checkbox-circle-fill"></i> VERIFIED</div>
-                            </div>
-                            <div id="otpSection" class="hidden mt-3 flex gap-2">
-                                <input type="text" id="otpInput" class="custom-input text-center tracking-widest" placeholder="OTP" maxlength="6">
-                                <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold hover:bg-emerald-700">Confirm</button>
-                            </div>
-                            <div id="recaptcha-container"></div>
-                        </div>
-                        <div>
-                            <label class="form-label">Site Location</label>
-                            <div class="input-group">
-                                <input type="text" id="locInput" class="custom-input" style="padding-right: 120px;" placeholder="Start typing address...">
-                                <button onclick="detectGPS()" class="input-action-btn bg-blue-50 text-blue-600 hover:bg-blue-100" style="right: 50px;"><i class="ri-gps-fill"></i> Detect</button>
-                                <button onclick="openMiniMap()" class="input-action-btn btn-map" title="Open Map"><i class="ri-map-2-line"></i></button>
-                            </div>
-                            <p id="distDisplay" class="text-xs text-right mt-1 text-slate-400 font-bold h-4"></p>
-                        </div>
-                    </div>
-
-                    <button id="generateBtn" onclick="calculateQuote()" class="btn-primary" disabled>
-                        GENERATE ESTIMATE <i class="ri-arrow-right-line ml-2"></i>
-                    </button>
+        <div id="step-1" class="container mx-auto px-4 fade-in-up py-8">
+            <div class="quote-card">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Instant Quotation</h1>
+                    <p class="text-slate-500 font-medium">Precision estimation engine</p>
                 </div>
 
-                <div class="drill-col">
-                    <div class="depth-readout">
-                        <div class="depth-val" id="depthDisplayMain">100</div>
-                        <div class="depth-lbl">Target Depth (FT)</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="custName" class="custom-input" placeholder="Your Name">
                     </div>
-
-                    <div class="drill-track-container" id="drillTrack">
-                        <div id="geoGradient"></div>
-                        <div class="geo-texture"></div>
-
-                        <div class="borehole" id="boreHole"></div>
-                        
-                        <div id="scaleMarkers"></div>
-
-                        <div class="drill-assembly" id="drillBit">
-                            <div class="hammer-visual"></div>
+                    <div>
+                        <label class="form-label">Mobile Number</label>
+                        <div class="relative">
+                            <input type="tel" id="custMobile" class="custom-input pr-24" placeholder="98765 43210" maxlength="10" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                            <button id="sendOtpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-4 rounded-lg font-bold text-xs hover:bg-black transition">VERIFY</button>
+                            <div id="verifiedBadge" class="absolute right-4 top-4 text-emerald-600 font-bold text-xs uppercase hidden flex items-center gap-1"><i class="ri-checkbox-circle-fill"></i> Verified</div>
                         </div>
-                    </div>
-
-                    <div class="w-full max-w-xs mt-6 space-y-4">
-                        <div class="grid grid-cols-4 gap-2">
-                            <button class="bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 rounded p-2 text-xs font-bold" onclick="setDepth(150)">150</button>
-                            <button class="bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 rounded p-2 text-xs font-bold" onclick="setDepth(200)">200</button>
-                            <button class="bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 rounded p-2 text-xs font-bold" onclick="setDepth(300)">300</button>
-                            <button class="bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 rounded p-2 text-xs font-bold" onclick="setDepth(500)">500</button>
+                        <div id="otpSection" class="hidden mt-2 flex gap-2">
+                            <input type="text" id="otpInput" class="custom-input text-center tracking-widest" placeholder="OTP" maxlength="6">
+                            <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold hover:bg-emerald-700">OK</button>
                         </div>
-                        <div class="flex items-center gap-2 bg-slate-800 p-2 rounded-xl border border-slate-700">
-                            <span class="text-xs font-bold text-slate-400 pl-2">MANUAL:</span>
-                            <input type="number" id="manualDepth" class="w-full outline-none font-bold text-white bg-transparent text-right pr-2" value="100" oninput="setDepth(this.value)">
-                            <span class="text-xs font-bold text-slate-400 pr-2">FT</span>
-                        </div>
+                        <div id="recaptcha-container"></div>
                     </div>
                 </div>
+
+                <div>
+                    <label class="form-label">Site Location</label>
+                    <div class="relative flex gap-2">
+                        <input type="text" id="locInput" class="custom-input pr-24" placeholder="Start typing address...">
+                        <button onclick="detectGPS()" class="absolute right-14 top-2 bottom-2 bg-blue-100 text-blue-600 px-3 rounded-lg font-bold text-xs hover:bg-blue-200 transition">DETECT</button>
+                        <button onclick="openMiniMap()" class="absolute right-2 top-2 bottom-2 bg-slate-100 text-slate-600 px-3 rounded-lg hover:bg-slate-200 transition" title="Pick on Map"><i class="ri-map-2-line text-lg"></i></button>
+                    </div>
+                    <p id="distDisplay" class="text-xs text-right mt-1 text-slate-400 font-mono"></p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6 mb-8 mt-6">
+                    <div>
+                        <label class="form-label">Purpose</label>
+                        <select id="purposeInput" class="custom-select cursor-pointer">
+                            <option value="residential">Residential Use</option>
+                            <option value="agriculture">Agriculture / Farm</option>
+                            <option value="commercial">Commercial / Industrial</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-10">
+                    <label class="form-label text-center mb-4">ESTIMATED DEPTH REQUIRED</label>
+                    <div class="slider-container">
+                        <div class="text-center mb-2"><span id="display-val" class="text-6xl font-extrabold text-blue-800">100</span><span class="text-xl font-bold text-slate-400 align-top">FT</span></div>
+                        <input type="range" id="depthSlider" class="range-slider" min="100" max="1500" value="100" step="10">
+                        <div class="flex justify-between text-xs font-bold text-slate-400 mt-2"><span>100 FT</span><span id="maxLabel">1500 FT</span></div>
+                    </div>
+                </div>
+
+                <button id="generateBtn" onclick="goToStep2()" class="btn-primary" disabled>
+                    <i class="ri-calculator-line mr-2"></i> Calculate Estimate
+                </button>
             </div>
         </div>
 
-        <div id="step-2" class="container mx-auto px-4 fade-in-up py-12 hidden">
-            <div class="flex justify-between items-center max-w-3xl mx-auto mb-4">
-                <button onclick="goToStep1()" class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-1"><i class="ri-arrow-left-line"></i> Edit</button>
+        <div id="step-2" class="container mx-auto px-4 fade-in-up pb-12 hidden">
+            
+            <div class="flex justify-between items-center max-w-4xl mx-auto mb-4">
+                <button onclick="goToStep1()" class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-1"><i class="ri-arrow-left-line"></i> Edit Details</button>
                 <div class="flex gap-2">
                     <button onclick="downloadPDF()" class="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-50"><i class="ri-file-download-line"></i> PDF</button>
                     <button onclick="shareWhatsApp()" class="bg-emerald-50 text-emerald-600 border border-emerald-200 px-4 py-2 rounded-lg font-bold text-sm hover:bg-emerald-100"><i class="ri-whatsapp-line"></i> Share</button>
                 </div>
             </div>
 
-            <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200" id="invoice-capture">
-                <div class="bg-slate-900 p-6 flex justify-between items-center text-white">
-                    <div>
-                        <h2 class="text-xl font-bold">ESTIMATED COST</h2>
-                        <p class="text-xs text-slate-400 font-mono" id="resId">QT-2024-XXXX</p>
+            <div class="est-card max-w-4xl mx-auto" id="invoice-capture">
+                <div class="est-header">
+                    <div class="flex justify-between items-start">
+                        <div class="est-brand">
+                            <h2>SAGAR BOREWELLS</h2>
+                            <p>Advanced Geological Infrastructure</p>
+                        </div>
+                        <div class="est-total-block">
+                            <div class="est-label">ESTIMATED TOTAL</div>
+                            <div class="est-amount" id="invTotal">₹0</div>
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <div class="text-3xl font-extrabold text-emerald-400" id="resTotal">₹0</div>
-                        <div class="text-xs text-slate-400">Approximate Total</div>
+                    <div class="est-meta">
+                        <div class="est-meta-item"><strong>Location</strong><span id="invLoc">--</span></div>
+                        <div class="est-meta-item"><strong>Depth</strong><span id="invDepth">--</span></div>
                     </div>
                 </div>
-                
-                <div class="p-8" id="invoice-content">
-                    <div class="flex justify-between mb-6 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                        <div><span class="text-xs font-bold text-slate-500 uppercase block">Location</span><span class="font-bold text-slate-800" id="resLoc">--</span></div>
-                        <div class="text-right"><span class="text-xs font-bold text-slate-500 uppercase block">Depth</span><span class="font-bold text-blue-600" id="resDepth">--</span></div>
-                    </div>
 
-                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2">Drilling Breakdown</h3>
+                <div class="est-body">
+                    
+                    <div class="section-title"><i class="ri-bar-chart-grouped-line"></i> Drilling Cost Structure</div>
                     <table class="est-table">
-                        <tbody id="breakdownBody"></tbody>
+                        <thead><tr><th>Depth Range</th><th class="text-center">Rate</th><th class="text-right">Amount</th></tr></thead>
+                        <tbody id="drillBody"></tbody>
+                        <tfoot><tr><td colspan="2">Drilling Subtotal</td><td class="text-right" id="drillSubtotal">₹0</td></tr></tfoot>
                     </table>
 
-                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 mt-6">
-                        <h3 class="text-xs font-bold text-blue-800 uppercase mb-2">Variable Costs (Materials)</h3>
-                        <div class="grid grid-cols-2 gap-2 text-sm" id="matList"></div>
+                    <div id="opsSection">
+                        <div class="section-title"><i class="ri-shield-check-line"></i> Operational Costs</div>
+                        <table class="est-table">
+                            <tbody id="opsBody"></tbody>
+                            <tfoot><tr><td style="font-weight:700;">Subtotal (Fixed)</td><td class="text-right" id="opsSubtotal">₹0</td></tr></tfoot>
+                        </table>
+                    </div>
+
+                    <div class="var-box mt-6">
+                        <div class="var-title"><i class="ri-tools-line"></i> Material Estimates (Actuals)</div>
+                        <p class="text-xs text-slate-500 mb-4">Prices apply based on actual measurements at site.</p>
+                        <div class="var-grid" id="materialsGrid">
+                            </div>
                     </div>
 
                     <div class="text-center mt-10">
-                        <button onclick="confirmBooking()" class="bg-emerald-600 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-emerald-700 transition shadow-lg">Confirm Booking</button>
+                        <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">
+                            Confirm Booking to Proceed
+                        </button>
+                        <p class="text-xs text-slate-400 mt-3 uppercase tracking-wide">Valid for 30 Days • Computer Generated Estimate</p>
                     </div>
+
                 </div>
             </div>
         </div>
 
         <div id="step-3" class="container mx-auto px-4 fade-in-up hidden py-12">
-            <div class="quote-card text-center max-w-lg mx-auto bg-white p-10 rounded-2xl shadow-xl">
+            <div class="quote-card text-center max-w-lg mx-auto">
                 <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
                     <i class="ri-check-line text-4xl text-emerald-600"></i>
                 </div>
                 <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Booking Confirmed!</h1>
-                <p class="text-slate-500 mb-8">We have received your request. A representative will call you shortly.</p>
+                <p class="text-slate-500 mb-8">We have received your request. A representative will call you shortly to discuss site logistics.</p>
                 <div class="flex justify-center gap-4">
                     <a href="dashboard.html" class="py-3 px-6 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50">Dashboard</a>
                     <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}`, '_blank')" class="py-3 px-6 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">Chat Support</button>
                 </div>
             </div>
         </div>
+
     </main>
 
     <div id="footer-mount"></div>
 
-    <div id="depthAlertModal">
-        <div class="bg-slate-900 border border-red-500 p-6 rounded-2xl w-full max-w-md shadow-2xl animate-bounce-in text-center">
-            <div class="w-16 h-16 bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500 text-red-500 text-3xl"><i class="ri-alarm-warning-fill"></i></div>
-            <h3 class="text-xl font-extrabold text-white mb-2">DEEP DRILLING ALERT</h3>
-            <p class="text-slate-400 text-sm mb-6">Depths beyond <strong>600 ft</strong> require specialized rigs.</p>
-            <button onclick="dismissDepthAlert()" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg uppercase">Understood</button>
-        </div>
-    </div>
-
-    <div id="miniMapModal">
-        <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl animate-bounce-in">
-            <h3 class="font-bold text-slate-800 mb-2 text-center uppercase text-sm tracking-wide">Pinpoint Location</h3>
-            <div style="position: relative; width: 100%; height: 350px; background: #eee; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0;">
+    <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
+        <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl">
+            <h3 class="font-bold text-slate-800 mb-2 text-center">Pinpoint Location</h3>
+            <div style="position: relative; width: 100%; height: 300px; background: #eee; border-radius: 10px; overflow: hidden;">
                 <div id="quoteMapContainer" style="width:100%; height:100%;"></div>
-                <div class="target-reticle"><div class="pin-head"></div></div>
+                <div class="target-reticle"><div class="reticle-dot"></div><div class="reticle-ring"></div></div>
             </div>
             <div class="flex justify-end gap-2 mt-4">
-                <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-500 text-xs">CANCEL</button>
-                <button onclick="confirmQuoteLocation()" class="px-6 py-2 bg-slate-900 text-white font-bold rounded-lg text-xs hover:bg-black">CONFIRM</button>
+                <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-500">Cancel</button>
+                <button onclick="confirmQuoteLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg">Set Location</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 🟢 FIREBASE INIT
-        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
-            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
-        }
+        // INIT
+        if(CONTACT_INFO.firebase_config && !firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
         const db = firebase.firestore();
-        const auth = firebase.auth();
 
-        // 🟢 LOAD CONSTANTS (Simulated for safety)
-        const QUOTE_CONFIG_LOCAL = {
-            OFFICE_LOCATION: { lat: 16.4410, lng: 80.5520 }, 
-            TRANSPORT_THRESHOLD_KM: 30,
-            TRANSPORT_BASE_RATE: 2000,
-            LABOUR_CHARGE: 1500,
-            DEFAULT_RATES: { base_rate: 70, slab_step: 10 },
-            MATERIALS: [
-                { label: '5" PVC PIPE (6KG)', price: 380, unit: '/ft' },
-                { label: '5" PVC PIPE (10KG)', price: 550, unit: '/ft' },
-                { label: '7" MS IRON (Med)', price: 1100, unit: '/ft' },
-                { label: 'CASING CAP', price: 450, unit: '/Set' }
-            ]
-        };
-        // Use Global if available, else Local
-        const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : QUOTE_CONFIG_LOCAL;
+        // 🟢 LOAD CONSTANTS
+        const { OFFICE_LOCATION, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, MATERIALS, DEFAULT_RATES } = QUOTE_CONFIG;
 
-        // 🟢 AUTH STATE LISTENER (Fixes Broken Verification)
-        auth.onAuthStateChanged(user => {
-            const btn = document.getElementById('generateBtn');
-            const verifyBtn = document.getElementById('sendOtpBtn');
-            const badge = document.getElementById('verifiedBadge');
-            const phoneInput = document.getElementById('custMobile');
+        let globalRates = DEFAULT_RATES;
+        let transportDist = 0;
+        let siteCoords = null;
 
-            if(user) {
-                phoneInput.value = user.phoneNumber.replace('+91','');
-                phoneInput.disabled = true;
-                verifyBtn.classList.add('hidden');
-                badge.classList.remove('hidden');
-                btn.disabled = false;
-            } else {
-                btn.disabled = true;
-                verifyBtn.classList.remove('hidden');
+        document.addEventListener("DOMContentLoaded", () => {
+            // Load Rates from Settings
+            db.collection('settings').doc('rates').get().then(doc => { if(doc.exists) globalRates = { ...globalRates, ...doc.data() }; });
+            
+            // 🟢 LOAD MATERIALS GRID (FROM ASSET FILE)
+            const matGrid = document.getElementById('materialsGrid');
+            if(matGrid) {
+                matGrid.innerHTML = MATERIALS.map(m => `
+                    <div class="var-item">
+                        <span class="font-bold text-slate-700">${m.label}</span>
+                        <span class="var-badge">₹${m.price}${m.unit}</span>
+                    </div>
+                `).join('');
             }
         });
 
-        function sendOTP() {
-            const p = document.getElementById('custMobile').value;
-            if(p.length!=10) return alert("Enter 10 digit number");
-            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
-            auth.signInWithPhoneNumber('+91'+p, window.recaptchaVerifier).then(cr=>{
-                window.confirmationResult=cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('sendOtpBtn').classList.add('hidden');
-            }).catch(e=>{ alert("SMS Error: "+e.message); });
-        }
-        function verifyOTP() { window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=>document.getElementById('otpSection').classList.add('hidden')); }
+        // AUTH & MAPS (Standard)
+        firebase.auth().onAuthStateChanged((user) => {
+            const btn = document.getElementById('generateBtn');
+            if (user) {
+                document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
+                document.getElementById('custMobile').disabled = true;
+                document.getElementById('sendOtpBtn').classList.add('hidden');
+                document.getElementById('verifiedBadge').classList.remove('hidden');
+                btn.disabled = false; btn.classList.remove('bg-slate-300');
+            } else { btn.disabled = true; }
+        });
 
-        // 🟢 DRILL RIG LOGIC
-        const drillTrack = document.getElementById('drillTrack');
-        const drillBit = document.getElementById('drillBit');
-        const boreHole = document.getElementById('boreHole');
-        const geoGradient = document.getElementById('geoGradient');
-        
-        let isDragging = false;
-        let currentMaxScale = 500; 
-        let currentDepth = 100;
-        let alertShown = false;
-
-        function initDrillRig() {
-            renderScaleMarkers();
-            updateDrillPosition();
-            updateGeology();
-            drillBit.addEventListener('mousedown', startDrag);
-            document.addEventListener('mousemove', onDrag);
-            document.addEventListener('mouseup', stopDrag);
-            drillBit.addEventListener('touchstart', startDrag);
-            document.addEventListener('touchmove', onDrag);
-            document.addEventListener('touchend', stopDrag);
+        // MAPS & LOGIC
+        let autocomplete;
+        function initMapTools() {
+            const input = document.getElementById('locInput');
+            autocomplete = new google.maps.places.Autocomplete(input, { types: ['geocode'] });
+            autocomplete.addListener('place_changed', () => {
+                const place = autocomplete.getPlace();
+                if (place.geometry) {
+                    siteCoords = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
+                    calcDistance();
+                    // Removed analyzeLocation for Zone logic
+                }
+            });
         }
 
-        function updateGeology() {
-            const max = currentMaxScale;
-            const layers = [{c:'#5d4037',l:50}, {c:'#d7ccc8',l:200}, {c:'#78909c',l:600}, {c:'#37474f',l:2000}];
-            let gradientStr = "linear-gradient(to bottom, "; let prev=0;
-            layers.forEach(l => { const pct = Math.min((l.l/max)*100, 100); gradientStr += `${l.c} ${prev}% ${pct}%, `; prev=pct; });
-            geoGradient.style.background = gradientStr.slice(0,-2)+")";
-        }
-
-        function renderScaleMarkers() {
-            const container = document.getElementById('scaleMarkers'); container.innerHTML = '';
-            const step = currentMaxScale / 5; 
-            for(let i=0; i<=currentMaxScale; i+=step) {
-                if(i===0) continue;
-                const mk = document.createElement('div'); mk.className = 'depth-marker'; mk.innerText = Math.round(i)+" ft"; mk.style.top = (i/currentMaxScale*100)+"%"; container.appendChild(mk);
-            }
-        }
-
-        function startDrag(e) { isDragging = true; drillBit.querySelector('.hammer-visual').classList.add('drilling-active'); e.preventDefault(); }
-        function stopDrag() { isDragging = false; drillBit.querySelector('.hammer-visual').classList.remove('drilling-active'); }
-
-        function onDrag(e) {
-            if(!isDragging) return;
-            const rect = drillTrack.getBoundingClientRect();
-            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            let relativeY = clientY - rect.top;
-            if(relativeY < 0) relativeY = 0; if(relativeY > rect.height) relativeY = rect.height;
-
-            let pct = relativeY / rect.height;
-            currentDepth = Math.max(100, Math.round((pct * currentMaxScale) / 10) * 10);
-
-            if(pct > 0.95 && currentMaxScale < 1500) { isDragging=false; currentMaxScale+=500; renderScaleMarkers(); updateGeology(); updateDrillPosition(); }
-            if(currentDepth < (currentMaxScale-600) && currentMaxScale > 500) { isDragging=false; currentMaxScale-=500; renderScaleMarkers(); updateGeology(); updateDrillPosition(); }
+        function calcDistance() {
+            if(!siteCoords) return;
+            const R = 6371; 
+            const dLat = (siteCoords.lat - OFFICE_LOCATION.lat) * Math.PI/180;
+            const dLon = (siteCoords.lng - OFFICE_LOCATION.lng) * Math.PI/180;
+            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(siteCoords.lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+            transportDist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             
-            if(currentDepth >= 600 && !alertShown) { document.getElementById('depthAlertModal').style.display = 'flex'; alertShown = true; stopDrag(); }
-            updateUI();
-        }
-
-        function dismissDepthAlert() { document.getElementById('depthAlertModal').style.display = 'none'; }
-        function setDepth(val) { currentDepth = parseInt(val); updateUI(); updateDrillPosition(); }
-        function updateUI() { document.getElementById('depthDisplayMain').innerText = currentDepth; document.getElementById('manualDepth').value = currentDepth; updateDrillPosition(); }
-        function updateDrillPosition() { const pct = (currentDepth / currentMaxScale) * 100; drillBit.style.top = pct + "%"; boreHole.style.height = pct + "%"; }
-
-        // 🟢 QUOTE ENGINE (FIXED)
-        let currentLeadData = {}; // Global store for saving
-
-        function calculateQuote() {
-            const { DEFAULT_RATES, LABOUR_CHARGE, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE } = CFG;
-            let totalCost = 0, breakdownHtml = "", remaining = currentDepth, tracked = 0;
-            
-            // 1. Generate Unique ID HERE (Fixing the missing ID issue)
-            const quoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000+Math.random()*9000)}`;
-            document.getElementById('resId').innerText = quoteID;
-
-            // 2. Slab Calc
-            let rate = DEFAULT_RATES.base_rate || 70;
-            const step = DEFAULT_RATES.slab_step || 10;
-            
-            // First 100ft
-            if(remaining > 0) {
-                const chunk = Math.min(remaining, 100);
-                const cost = chunk * rate;
-                totalCost += cost;
-                breakdownHtml += `<tr><td>0 - 100 ft</td><td class="text-center">₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                remaining -= chunk; tracked += chunk;
-            }
-            // Slabs
-            while(remaining > 0) {
-                rate += step;
-                const chunk = Math.min(remaining, 50);
-                const cost = chunk * rate;
-                totalCost += cost;
-                breakdownHtml += `<tr><td>${tracked+1} - ${tracked+chunk} ft</td><td class="text-center">₹${rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                remaining -= chunk; tracked += chunk;
-            }
-
-            // Transport
+            const disp = document.getElementById('distDisplay');
             if(transportDist > TRANSPORT_THRESHOLD_KM) {
-                const extra = transportDist - TRANSPORT_THRESHOLD_KM;
-                const blocks = Math.ceil(extra / 30);
-                const transCost = blocks * TRANSPORT_BASE_RATE;
-                totalCost += transCost;
-                breakdownHtml += `<tr><td>Transport (${extra.toFixed(1)} km extra)</td><td class="text-center">--</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
+                disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Transport Charges Apply)`;
+                disp.classList.add('text-orange-600');
+            } else {
+                disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Free Transport)`;
+                disp.classList.remove('text-orange-600');
             }
-            
-            totalCost += LABOUR_CHARGE;
-            breakdownHtml += `<tr><td>Labour & Setup</td><td class="text-center">Fixed</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
+        }
 
-            // UI
-            document.getElementById('resTotal').innerText = "₹" + totalCost.toLocaleString();
-            document.getElementById('breakdownBody').innerHTML = breakdownHtml;
-            document.getElementById('resDepth').innerText = currentDepth + " ft";
-            document.getElementById('resLoc').innerText = document.getElementById('locInput').value;
-            
-            // Materials
-            document.getElementById('matList').innerHTML = MATERIALS.map(m => `<div><span class="text-xs text-slate-500 block">${m.label}</span><span class="font-bold text-slate-800">₹${m.price} ${m.unit}</span></div>`).join('');
+        // CALCULATION ENGINE
+        let leadData = {};
 
-            // 3. Save Data Globally for Confirmation
-            currentLeadData = {
-                id: quoteID,
-                name: document.getElementById('custName').value,
-                mobile: "+91" + document.getElementById('custMobile').value,
-                loc: document.getElementById('locInput').value,
-                depth: currentDepth,
-                total: totalCost,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                status: 'New Quote'
-            };
+        function goToStep2() {
+            if(document.getElementById('generateBtn').disabled) return;
+            const name = document.getElementById('custName').value;
+            const loc = document.getElementById('locInput').value;
+            
+            if(!name || !loc) { alert("Please fill all details"); return; }
+
+            const totalDepth = parseInt(document.getElementById('depthSlider').value);
+            // 🟢 USE BASE RATE FROM CONSTANTS (No Zone)
+            const startRate = globalRates.base_rate;
+            const slabStep = globalRates.slab_step;
+
+            // A. DRILLING SLABS
+            let drillHtml = "";
+            let drillCost = 0;
+            let currentDepth = 0;
+            let currentRate = startRate;
+
+            const firstChunk = Math.min(totalDepth, 100);
+            if(firstChunk > 0) {
+                const cost = firstChunk * currentRate;
+                drillCost += cost;
+                drillHtml += `<tr><td>0 - ${firstChunk} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                currentDepth += firstChunk;
+            }
+
+            while(currentDepth < totalDepth) {
+                currentRate += slabStep;
+                let nextChunk = Math.min(50, totalDepth - currentDepth);
+                let cost = nextChunk * currentRate;
+                drillCost += cost;
+                const endDepth = currentDepth + nextChunk;
+                drillHtml += `<tr><td>${currentDepth} - ${endDepth} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                currentDepth += nextChunk;
+            }
+
+            // B. OPERATIONAL COSTS
+            let opsHtml = "";
+            let opsCost = 0;
+            
+            // Transport: Only if > Threshold
+            if (transportDist > TRANSPORT_THRESHOLD_KM) {
+                const multiplier = transportDist / TRANSPORT_THRESHOLD_KM;
+                const transCost = Math.round(multiplier * TRANSPORT_BASE_RATE); 
+                opsHtml += `<tr><td>Transport (${transportDist.toFixed(1)} km)</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
+                opsCost += transCost;
+            }
+
+            // Labour
+            opsHtml += `<tr><td>Labour Charges</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
+            opsCost += LABOUR_CHARGE;
+
+            // Slotting Logic
+            const estCasing = 100;
+            const pipes = Math.ceil(estCasing / 20);
+            const slottedPipes = Math.max(0, pipes - 1);
+            
+            // Find slotting price from MATERIALS array
+            const slotItem = MATERIALS.find(m => m.id === 'holes');
+            const slotRate = slotItem ? slotItem.price : 200;
+            
+            const slotCost = slottedPipes * slotRate;
+            opsHtml += `<tr><td>Slotting Charges (Est. ${slottedPipes} pipes)</td><td class="text-right">₹${slotCost.toLocaleString()}</td></tr>`;
+            opsCost += slotCost;
+
+            // Hide/Show Ops Section
+            if (opsCost === 0) {
+                document.getElementById('opsSection').style.display = 'none';
+            } else {
+                document.getElementById('opsSection').style.display = 'block';
+                document.getElementById('opsBody').innerHTML = opsHtml;
+                document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
+            }
+
+            const grandTotal = drillCost + opsCost;
+
+            document.getElementById('drillBody').innerHTML = drillHtml;
+            document.getElementById('drillSubtotal').innerText = "₹" + drillCost.toLocaleString();
+            document.getElementById('invTotal').innerText = "₹" + grandTotal.toLocaleString();
+
+            document.getElementById('invLoc').innerText = loc;
+            document.getElementById('invDepth').innerText = totalDepth + " ft";
+
+            leadData = { name, mobile: "+91"+document.getElementById('custMobile').value, loc, depth: totalDepth, total: grandTotal, status: "Quote Generated" };
 
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
             window.scrollTo(0,0);
         }
 
-        // ACTIONS
-        function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
-        
-        function downloadPDF() {
-            const el = document.getElementById('invoice-capture');
-            const opt = { margin: 0.5, filename: `Estimate_${currentLeadData.id}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter' } };
-            html2pdf().set(opt).from(el).save();
-        }
-
-        function shareWhatsApp() {
-            window.open(`https://wa.me/?text=Estimate ${currentLeadData.id}: ₹${currentLeadData.total.toLocaleString()} for ${currentLeadData.depth}ft at ${currentLeadData.loc}`, '_blank');
+        function goToStep1() {
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-1').classList.remove('hidden');
         }
 
         function confirmBooking() {
-            // Save using the SAME ID generated in calculation
-            db.collection('leads').doc(currentLeadData.id).set(currentLeadData).then(() => {
+            const year = new Date().getFullYear();
+            const rand = Math.floor(1000 + Math.random() * 9000);
+            const leadId = `QT-${year}-${rand}`;
+            const data = { ...leadData, id: leadId, timestamp: firebase.firestore.FieldValue.serverTimestamp(), userId: firebase.auth().currentUser.uid };
+            db.collection('leads').doc(leadId).set(data).then(() => {
                 document.getElementById('step-2').classList.add('hidden');
                 document.getElementById('step-3').classList.remove('hidden');
             });
         }
 
-        // MAPS
-        let qMap, transportDist=0;
-        function initMapTools() { 
-            const input = document.getElementById('locInput');
-            const ac = new google.maps.places.Autocomplete(input);
-            ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry) calculateDist(p.geometry.location.lat(), p.geometry.location.lng()); });
+        // OTP & MAPS (Boilerplate)
+        function sendOTP() {
+            const phone = document.getElementById('custMobile').value;
+            if (phone.length !== 10) return alert("Enter 10 digit number");
+            const btn = document.getElementById('sendOtpBtn');
+            btn.innerText = "...";
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
+            firebase.auth().signInWithPhoneNumber('+91' + phone, window.recaptchaVerifier).then((cr) => {
+                window.confirmationResult = cr; btn.classList.add('hidden'); document.getElementById('otpSection').classList.remove('hidden');
+            }).catch((e) => { console.error(e); alert("SMS Error"); btn.innerText="VERIFY"; });
         }
-        function openMiniMap() { document.getElementById('miniMapModal').style.display='flex'; if(!qMap && typeof google!=='undefined') qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55},zoom:15}); setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); }
-        function confirmQuoteLocation() { const pos = qMap.getCenter(); new google.maps.Geocoder().geocode({location:pos},(r,s)=>{if(s==='OK') { document.getElementById('locInput').value=r[0].formatted_address; calculateDist(pos.lat(),pos.lng()); }}); document.getElementById('miniMapModal').style.display='none'; }
-        function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{ const c={lat:p.coords.latitude,lng:p.coords.longitude}; new google.maps.Geocoder().geocode({location:c},(r,s)=>{if(s==='OK') document.getElementById('locInput').value=r[0].formatted_address; calculateDist(c.lat,c.lng);}); }); }
+        function verifyOTP() {
+            window.confirmationResult.confirm(document.getElementById('otpInput').value).then(() => document.getElementById('otpSection').classList.add('hidden')).catch(() => alert("Invalid OTP"));
+        }
+
+        const slider = document.getElementById('depthSlider');
+        slider.addEventListener('input', function() {
+            document.getElementById('display-val').innerText = this.value;
+            const pct = ((this.value - this.min) / (this.max - this.min)) * 100;
+            this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
+        });
+
+        function downloadPDF() {
+            const el = document.getElementById('invoice-capture');
+            const opt = { margin: 0.5, filename: `Estimate_${leadData.loc}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+            html2pdf().set(opt).from(el).save();
+        }
+
+        function shareWhatsApp() {
+            const msg = `Here is the estimate for ${leadData.loc} (${leadData.depth} ft). Total: ₹${leadData.total.toLocaleString()}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // Load Maps
+        const s = document.createElement('script'); 
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
+        s.async = true; s.defer = true; 
+        document.body.appendChild(s);
         
-        function calculateDist(lat, lng) {
-            const R = 6371; const dLat = (lat - CFG.OFFICE_LOCATION.lat) * Math.PI/180; const dLon = (lng - CFG.OFFICE_LOCATION.lng) * Math.PI/180;
-            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(CFG.OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
-            transportDist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            const disp = document.getElementById('distDisplay');
-            if(transportDist > CFG.TRANSPORT_THRESHOLD_KM) { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Extra Charges)`; disp.className="text-xs text-right mt-1 font-bold h-4 text-orange-600"; }
-            else { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Free Transport)`; disp.className="text-xs text-right mt-1 font-bold h-4 text-emerald-600"; }
+        // Map Modal
+        let qMap;
+        function openMiniMap() { document.getElementById('miniMapModal').style.display='flex'; if(!qMap && typeof google !=='undefined') qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55},zoom:15}); setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); }
+        function confirmQuoteLocation() { 
+            const pos = qMap.getCenter();
+            new google.maps.Geocoder().geocode({location:pos}, (res, status)=>{ if(status==='OK') document.getElementById('locInput').value = res[0].formatted_address; });
+            document.getElementById('miniMapModal').style.display='none';
         }
-
-        document.addEventListener("DOMContentLoaded", initDrillRig);
-        const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; s.async=true; s.defer=true; document.body.appendChild(s);
-
+        function detectGPS() {
+            if(navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => {
+                const c = {lat:pos.coords.latitude, lng:pos.coords.longitude};
+                siteCoords = c; calcDistance();
+                new google.maps.Geocoder().geocode({location:c}, (res,status)=>{ if(status==='OK') document.getElementById('locInput').value=res[0].formatted_address; });
+            });
+        }
     </script>
 </body>
 </html>
+
+
