@@ -6,7 +6,7 @@
     <title>Get Quote | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -19,508 +19,459 @@
     <script src="assets/js/pdf_template.js"></script>
 
     <style>
-        :root { --primary: #1e3a8a; --soil: #8d6e63; --rock: #78909c; --hard-rock: #455a64; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; user-select: none; }
+        :root { --primary: #1e3a8a; --soil-top: #8d6e63; --soil-mid: #d4a373; --soil-deep: #4b5563; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; }
         
-        /* DRILL SLIDER CONTAINER */
-        .drill-stage {
-            position: relative;
-            height: 500px; /* Viewport for the drill */
-            background: #e2e8f0;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
-            margin: 20px 0;
-            border: 2px solid #cbd5e1;
-            display: flex;
-            justify-content: center;
+        /* CARD LAYOUT */
+        .quote-container { max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: white; border-radius: 24px; box-shadow: 0 20px 60px -10px rgba(0,0,0,0.1); overflow: hidden; }
+        
+        /* LEFT COLUMN (Form) */
+        .form-col { padding: 40px; display: flex; flex-direction: column; justify-content: center; }
+        .form-label { font-weight: 800; font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
+        .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; transition: 0.3s; }
+        .custom-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); }
+        .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; font-weight: 700; padding: 16px; border-radius: 12px; width: 100%; font-size: 1.1rem; transition: 0.2s; margin-top: 20px; box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); }
+        .btn-primary:hover { transform: translateY(-2px); }
+        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        /* RIGHT COLUMN (The Drill Rig) */
+        .drill-col { background: #f1f5f9; padding: 40px; border-left: 1px solid #e2e8f0; position: relative; display: flex; flex-direction: column; align-items: center; }
+        
+        /* VERTICAL SLIDER (The Hole) */
+        .drill-track-container { position: relative; height: 500px; width: 80px; margin: 20px 0; }
+        
+        /* Geological Layers (Background) */
+        .geo-layers { 
+            position: absolute; inset: 0; border-radius: 40px; overflow: hidden; border: 2px solid #cbd5e1; 
+            background: linear-gradient(to bottom, var(--soil-top) 0%, var(--soil-mid) 30%, var(--soil-deep) 100%);
+            opacity: 0.2;
         }
 
-        /* STRATA LAYERS (Background Visuals) */
-        .strata-layer { position: absolute; width: 100%; left: 0; z-index: 0; opacity: 0.3; }
-        .layer-top { top: 0; height: 20%; background: var(--soil); }
-        .layer-mid { top: 20%; height: 40%; background: var(--rock); }
-        .layer-bot { top: 60%; height: 40%; background: var(--hard-rock); }
-
-        /* THE BOREHOLE (Trail) */
-        .borehole-path {
-            position: absolute;
-            top: 0;
-            width: 12px;
-            background: #0f172a; /* Void color */
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1;
-            border-radius: 0 0 6px 6px;
-        }
-
-        /* THE DRILL BIT (Thumb) */
-        .drill-bit {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 40px;
-            height: 60px;
+        /* The Borehole (Dark line expanding down) */
+        .borehole {
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 12px; background: #0f172a; 
+            height: 0%; /* Dynamic */
+            transition: height 0.1s linear;
             z-index: 10;
-            cursor: grab;
+        }
+
+        /* The Drill Bit (Thumb) */
+        .drill-bit {
+            position: absolute; left: 50%; top: 0%; transform: translate(-50%, -50%);
+            width: 40px; height: 50px;
+            cursor: grab; z-index: 20;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
-            touch-action: none; /* Crucial for mobile drag */
         }
-        .drill-bit:active { cursor: grabbing; transform: translateX(-50%) scale(1.05); }
+        .drill-bit:active { cursor: grabbing; }
+        /* CSS Drill Bit Shape */
+        .bit-body { width: 100%; height: 100%; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ef4444"><path d="M12 2L2 22h20L12 2zm0 4l5 14H7l5-14z"/></svg>') no-repeat center/contain; transition: transform 0.1s; }
+        .spinning { animation: spinBit 0.2s linear infinite; }
+        @keyframes spinBit { 0% { transform: scaleX(1); } 50% { transform: scaleX(0.5); } 100% { transform: scaleX(1); } }
 
-        /* BIT GRAPHIC (CSS Art) */
-        .bit-head {
-            width: 0; height: 0; 
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-top: 30px solid #ef4444; /* Red Tip */
-        }
-        .bit-body {
-            width: 24px; height: 30px; 
-            background: linear-gradient(90deg, #334155 0%, #94a3b8 50%, #334155 100%);
-            margin: 0 auto;
-            border-radius: 0 0 4px 4px;
-        }
+        /* Depth Markers */
+        .depth-marker { position: absolute; right: -40px; font-size: 10px; font-weight: bold; color: #64748b; transform: translateY(-50%); transition: top 0.3s; }
 
-        /* DEPTH RULER (Side Scale) */
-        .depth-ruler {
-            position: absolute;
-            right: 10px;
-            top: 0;
-            bottom: 0;
-            width: 60px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            font-family: monospace;
-            font-size: 10px;
-            color: #64748b;
-            pointer-events: none;
-            padding: 10px 0;
-        }
-        .ruler-mark { text-align: right; border-top: 1px solid #cbd5e1; width: 100%; padding-top: 2px; }
-
-        /* HUD OVERLAY (Current Depth) */
-        .drill-hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px 16px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            z-index: 20;
-            border: 1px solid #e2e8f0;
-        }
-
-        /* EXPANSION NOTIFICATION */
-        .expand-notify {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e3a8a;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            opacity: 0;
-            transition: 0.3s;
-            pointer-events: none;
-            white-space: nowrap;
-        }
-        .expand-notify.active { opacity: 1; transform: translateX(-50%) translateY(-10px); }
-
-        /* Standard Estimator Styles (Reused) */
-        .est-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px -10px rgba(0,0,0,0.15); margin-top: 20px; border: 1px solid #e2e8f0; }
-        .est-header { background: #ffffff; padding: 30px; border-bottom: 2px solid #1e3a8a; }
-        .est-amount { font-size: 2.2rem; font-weight: 800; color: #1e3a8a; line-height: 1; margin-top: 5px; }
-        .est-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 0.9rem; }
-        .est-table th { text-align: left; padding: 8px; color: #64748b; font-size: 0.7rem; text-transform: uppercase; font-weight: 700; }
-        .est-table td { padding: 10px 8px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; color: #334155; }
-        .est-table tfoot td { border-top: 2px solid #e2e8f0; font-weight: 800; color: #1e3a8a; padding-top: 15px; font-size: 1rem; border-bottom: none; }
+        /* Controls */
+        .preset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; margin-top: auto; }
+        .preset-btn { background: white; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: #475569; transition: 0.2s; }
+        .preset-btn:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
         
-        .var-box { background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 12px; padding: 20px; }
-        .var-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 30px; font-size: 0.85rem; }
-        .var-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed #dbeafe; }
-        .var-badge { background: #fff; color: #1e40af; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #bfdbfe; }
+        .depth-display { font-size: 3rem; font-weight: 900; color: var(--primary); line-height: 1; text-align: center; margin-bottom: 10px; }
+        .depth-unit { font-size: 1rem; color: #94a3b8; font-weight: 700; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .quote-container { grid-template-columns: 1fr; margin: 10px; }
+            .drill-col { border-left: none; border-top: 1px solid #e2e8f0; padding: 30px 20px; }
+        }
+
+        /* RESULT TABLE */
+        .est-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
+        .est-table th { text-align: left; padding: 10px; color: #64748b; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+        .est-table td { padding: 12px 10px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; }
+        .est-table tr:last-child td { border-bottom: none; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
-    <div id="navbar-mount" style="min-height: 80px;"></div>
+    <div id="navbar-mount"></div>
 
     <main class="flex-grow">
         
-        <div id="step-1" class="container mx-auto px-4 py-8 max-w-2xl">
-            <div class="bg-white rounded-3xl p-6 shadow-xl border border-slate-100">
-                <div class="text-center mb-6">
-                    <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Drill Configurator</h1>
-                    <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Drag to set depth</p>
-                </div>
-
-                <div class="drill-stage" id="drillStage">
-                    <div class="strata-layer layer-top"></div>
-                    <div class="strata-layer layer-mid"></div>
-                    <div class="strata-layer layer-bot"></div>
-
-                    <div class="drill-hud">
-                        <div class="text-[10px] text-slate-400 font-bold uppercase">Current Depth</div>
-                        <div class="text-4xl font-black text-blue-900 leading-none" id="depthDisplay">0 <span class="text-sm align-top text-slate-400">ft</span></div>
+        <div id="step-1" class="fade-in-up">
+            <div class="quote-container">
+                
+                <div class="form-col">
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-extrabold text-slate-900">Get Quote</h1>
+                        <p class="text-sm text-slate-500 font-bold mt-1">Configure your borewell requirements.</p>
                     </div>
 
-                    <div class="borehole-path" id="borehole" style="height: 0px;"></div>
-
-                    <div class="drill-bit" id="drillBit" style="top: 0px;">
-                        <div class="bit-body"></div>
-                        <div class="bit-head"></div>
-                    </div>
-
-                    <div class="depth-ruler" id="depthRuler">
+                    <div class="space-y-5">
+                        <div>
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="custName" class="custom-input" placeholder="Your Name">
                         </div>
-
-                    <div class="expand-notify" id="expandMsg">Scale Expanded!</div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Your Name</label>
-                        <input type="text" id="custName" class="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 transition" placeholder="Full Name">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mobile</label>
-                        <div class="relative">
-                            <input type="tel" id="custMobile" class="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 transition" placeholder="98765 43210" maxlength="10">
-                            <button id="otpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-3 rounded-lg text-xs font-bold hover:bg-black">VERIFY</button>
+                        <div>
+                            <label class="form-label">Mobile Number</label>
+                            <div class="relative">
+                                <input type="tel" id="custMobile" class="custom-input pr-24" placeholder="98765 43210" maxlength="10">
+                                <button id="sendOtpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-3 rounded-lg font-bold text-xs hover:bg-black">VERIFY</button>
+                                <div id="verifiedBadge" class="hidden absolute right-3 top-4 text-emerald-600 font-bold text-xs flex items-center gap-1"><i class="ri-checkbox-circle-fill"></i> VERIFIED</div>
+                            </div>
+                            <div id="otpSection" class="hidden mt-2 flex gap-2">
+                                <input type="text" id="otpInput" class="custom-input text-center" placeholder="OTP" maxlength="6">
+                                <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-4 rounded-lg font-bold hover:bg-emerald-700">OK</button>
+                            </div>
+                            <div id="recaptcha-container"></div>
                         </div>
-                        <div id="otpSection" class="hidden mt-2 flex gap-2">
-                            <input type="text" id="otpInput" class="w-full p-2 bg-white border border-slate-300 rounded text-center tracking-widest font-bold" placeholder="OTP">
-                            <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-4 rounded font-bold hover:bg-emerald-700">OK</button>
+                        <div>
+                            <label class="form-label">Site Location</label>
+                            <div class="relative flex gap-2">
+                                <input type="text" id="locInput" class="custom-input pr-12" placeholder="Start typing address...">
+                                <button onclick="detectGPS()" class="absolute right-2 top-2 bottom-2 text-blue-600 px-2 rounded hover:bg-blue-50" title="Detect GPS"><i class="ri-map-pin-user-fill text-xl"></i></button>
+                            </div>
+                            <p id="distDisplay" class="text-xs text-right mt-1 text-slate-400 font-bold"></p>
                         </div>
-                        <div id="recaptcha-container"></div>
                     </div>
+
+                    <button id="generateBtn" onclick="calculateQuote()" class="btn-primary" disabled>
+                        GENERATE ESTIMATE <i class="ri-arrow-right-line ml-2"></i>
+                    </button>
                 </div>
 
-                <div class="mt-4">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Location</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="locInput" class="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 transition" placeholder="City / Village">
-                        <button onclick="detectGPS()" class="bg-blue-100 text-blue-600 px-4 rounded-xl font-bold text-xs hover:bg-blue-200"><i class="ri-gps-line"></i></button>
+                <div class="drill-col">
+                    <div class="text-center mb-4">
+                        <div class="depth-display"><span id="depthVal">100</span><span class="depth-unit">ft</span></div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Target Depth</p>
+                    </div>
+
+                    <div class="drill-track-container" id="drillTrack">
+                        <div class="geo-layers"></div>
+                        <div class="borehole" id="boreHole"></div>
+                        
+                        <div id="scaleMarkers"></div>
+
+                        <div class="drill-bit" id="drillBit">
+                            <div class="bit-body" id="bitVisual"></div>
+                        </div>
+                    </div>
+
+                    <div class="w-full max-w-xs mt-4">
+                        <label class="form-label text-center mb-2">Quick Presets</label>
+                        <div class="preset-grid">
+                            <button class="preset-btn" onclick="setDepth(150)">150 FT</button>
+                            <button class="preset-btn" onclick="setDepth(200)">200 FT</button>
+                            <button class="preset-btn" onclick="setDepth(300)">300 FT</button>
+                            <button class="preset-btn" onclick="setDepth(500)">500 FT</button>
+                        </div>
+                        <div class="mt-4">
+                            <label class="form-label text-center">Manual Entry</label>
+                            <input type="number" id="manualDepth" class="custom-input text-center" value="100" oninput="setDepth(this.value)">
+                        </div>
                     </div>
                 </div>
-
-                <button onclick="goToStep2()" id="genBtn" class="w-full mt-6 bg-gradient-to-r from-blue-700 to-blue-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg shadow-blue-200 hover:shadow-xl hover:scale-[1.01] transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                    GENERATE ESTIMATE
-                </button>
 
             </div>
         </div>
 
-        <div id="step-2" class="container mx-auto px-4 pb-12 hidden">
-             <div class="flex justify-between items-center max-w-4xl mx-auto mb-4 mt-8">
-                <button onclick="goToStep1()" class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-1"><i class="ri-arrow-left-line"></i> Edit Depth</button>
-                <div class="flex gap-2">
-                    <button onclick="downloadPDF()" class="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-50"><i class="ri-file-download-line"></i> PDF</button>
-                    <button onclick="shareWhatsApp()" class="bg-emerald-50 text-emerald-600 border border-emerald-200 px-4 py-2 rounded-lg font-bold text-sm hover:bg-emerald-100"><i class="ri-whatsapp-line"></i> Share</button>
-                </div>
-            </div>
-
-            <div class="est-card max-w-4xl mx-auto" id="invoice-capture">
-                <div class="est-header">
-                    <div class="flex justify-between items-start">
-                        <div class="est-brand">
-                            <h2 class="text-2xl font-black text-blue-900">SAGAR BOREWELLS</h2>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Precision Estimate</p>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-xs font-bold text-slate-400 uppercase">Total Estimate</div>
-                            <div class="est-amount" id="invTotal">₹0</div>
-                        </div>
+        <div id="step-2" class="container mx-auto px-4 fade-in-up py-12 hidden">
+            <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+                <div class="bg-slate-900 p-6 flex justify-between items-center text-white">
+                    <div>
+                        <h2 class="text-xl font-bold">ESTIMATED COST</h2>
+                        <p class="text-xs text-slate-400 font-mono" id="resId">QT-2024-XXXX</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-extrabold text-emerald-400" id="resTotal">₹0</div>
+                        <div class="text-xs text-slate-400">Approximate Total</div>
                     </div>
                 </div>
-
-                <div class="p-8">
-                    <div class="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
-                        <i class="ri-bar-chart-grouped-line text-blue-600"></i>
-                        <span class="text-xs font-bold text-blue-900 uppercase">Drilling Cost Breakdown</span>
+                
+                <div class="p-8" id="invoice-content">
+                    <div class="flex justify-between mb-6 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                        <div><span class="text-xs font-bold text-slate-500 uppercase block">Location</span><span class="font-bold text-slate-800" id="resLoc">--</span></div>
+                        <div class="text-right"><span class="text-xs font-bold text-slate-500 uppercase block">Depth</span><span class="font-bold text-blue-600" id="resDepth">--</span></div>
                     </div>
-                    
+
+                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2">Drilling Breakdown</h3>
                     <table class="est-table">
-                        <thead><tr><th>Depth Slab (Feet)</th><th class="text-center">Rate / ft</th><th class="text-right">Amount</th></tr></thead>
-                        <tbody id="drillBody"></tbody>
-                        <tfoot><tr><td colspan="2">Drilling Subtotal</td><td class="text-right" id="drillSubtotal">₹0</td></tr></tfoot>
+                        <tbody id="breakdownBody"></tbody>
                     </table>
 
-                    <div class="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2 mt-6">
-                        <i class="ri-shield-check-line text-blue-600"></i>
-                        <span class="text-xs font-bold text-blue-900 uppercase">Operational Costs</span>
-                    </div>
-                    <table class="est-table">
-                        <tbody id="opsBody"></tbody>
-                        <tfoot><tr><td style="font-weight:700;">Ops Subtotal</td><td class="text-right" id="opsSubtotal">₹0</td></tr></tfoot>
-                    </table>
-
-                    <div class="var-box mt-6">
-                        <div class="flex items-center gap-2 mb-4">
-                            <i class="ri-tools-line text-blue-600"></i>
-                            <span class="text-xs font-bold text-blue-900 uppercase">Variable Materials (Charged on Actuals)</span>
-                        </div>
-                        <div class="var-grid" id="materialsGrid"></div>
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 mt-6">
+                        <h3 class="text-xs font-bold text-blue-800 uppercase mb-2">Variable Costs (Materials)</h3>
+                        <div class="grid grid-cols-2 gap-2 text-sm" id="matList"></div>
                     </div>
 
-                    <div class="text-center mt-10">
-                        <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg w-full md:w-auto">
-                            Confirm Booking Request
-                        </button>
-                        <p class="text-[10px] text-slate-400 mt-3 uppercase tracking-wide">Valid for 30 Days</p>
+                    <div class="flex gap-4 mt-8">
+                        <button onclick="location.reload()" class="flex-1 py-3 border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Edit</button>
+                        <button onclick="confirmBooking()" class="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200">Book Visit</button>
                     </div>
-
                 </div>
             </div>
-        </div>
-
-        <div id="step-3" class="container mx-auto px-4 hidden py-20 text-center">
-            <div class="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="ri-check-line text-5xl text-emerald-600"></i>
-            </div>
-            <h1 class="text-3xl font-black text-slate-900 mb-2">Request Received!</h1>
-            <p class="text-slate-500 mb-8 max-w-md mx-auto">Our engineer will review your site location and contact you shortly.</p>
-            <a href="dashboard.html" class="inline-block py-3 px-8 bg-slate-900 text-white font-bold rounded-xl hover:bg-black">Go to Dashboard</a>
         </div>
 
     </main>
+
     <div id="footer-mount"></div>
 
     <script>
-        // --- CONSTANTS ---
-        const STAGE_HEIGHT = 500; // px
-        const BIT_OFFSET = 30; // Center offset
-        let currentMaxDepth = 500; // Starts at 500ft
-        let currentDepth = 0;
-        let isDragging = false;
-        
-        // --- 🟢 VERTICAL SLIDER LOGIC ---
-        const stage = document.getElementById('drillStage');
-        const bit = document.getElementById('drillBit');
-        const hole = document.getElementById('borehole');
-        const display = document.getElementById('depthDisplay');
-        const ruler = document.getElementById('depthRuler');
-        const notify = document.getElementById('expandMsg');
-
-        function initRuler() {
-            ruler.innerHTML = "";
-            const steps = 5; // 0, 100, 200, 300, 400, 500
-            for(let i=0; i<=steps; i++) {
-                const val = Math.round((currentMaxDepth / steps) * i);
-                const mark = document.createElement('div');
-                mark.className = 'ruler-mark';
-                mark.innerText = val;
-                mark.style.height = (100/steps) + "%";
-                ruler.appendChild(mark);
-            }
-        }
-        initRuler();
-
-        // Drag Events
-        bit.addEventListener('mousedown', startDrag);
-        bit.addEventListener('touchstart', startDrag, {passive: false});
-        
-        window.addEventListener('mousemove', onDrag);
-        window.addEventListener('touchmove', onDrag, {passive: false});
-        
-        window.addEventListener('mouseup', stopDrag);
-        window.addEventListener('touchend', stopDrag);
-
-        function startDrag(e) {
-            isDragging = true;
-            e.preventDefault(); // Prevent scrolling on mobile
-        }
-
-        function stopDrag() {
-            isDragging = false;
-        }
-
-        function onDrag(e) {
-            if(!isDragging) return;
-            e.preventDefault();
-
-            const rect = stage.getBoundingClientRect();
-            let clientY = e.clientY || e.touches[0].clientY;
-            
-            // Calculate relative Y position (0 to STAGE_HEIGHT)
-            let y = clientY - rect.top;
-            
-            // Clamp values
-            if(y < 0) y = 0;
-            if(y > STAGE_HEIGHT) y = STAGE_HEIGHT;
-
-            // Move UI
-            updateDrillPosition(y);
-
-            // ELASTIC EXPANSION CHECK
-            if (y > STAGE_HEIGHT * 0.95) {
-                expandScale();
-            }
-        }
-
-        function updateDrillPosition(y) {
-            // Update Visuals
-            bit.style.top = (y - 10) + 'px'; // -10 to center mouse on bit body
-            hole.style.height = y + 'px';
-            
-            // Calculate Depth (Snap to 10ft)
-            const rawDepth = (y / STAGE_HEIGHT) * currentMaxDepth;
-            const snappedDepth = Math.round(rawDepth / 10) * 10;
-            
-            if(snappedDepth !== currentDepth) {
-                currentDepth = snappedDepth;
-                display.innerHTML = `${currentDepth} <span class="text-sm align-top text-slate-400">ft</span>`;
-                
-                // Color Logic (Soil -> Rock)
-                if(currentDepth > 450) hole.style.backgroundColor = '#ef4444'; // Red (Danger/Deep)
-                else if(currentDepth > 200) hole.style.backgroundColor = '#78909c'; // Grey (Rock)
-                else hole.style.backgroundColor = '#8d6e63'; // Brown (Soil)
-            }
-        }
-
-        function expandScale() {
-            if(currentMaxDepth >= 2000) return; // Hard limit
-
-            // 1. Increase Scale
-            const oldMax = currentMaxDepth;
-            currentMaxDepth += 500;
-            
-            // 2. Notify User
-            notify.classList.add('active');
-            setTimeout(() => notify.classList.remove('active'), 2000);
-
-            // 3. Recalculate Drill Position to stay visual consistent
-            // We want the bit to "jump up" so user can pull it down again
-            // Current pixels = STAGE_HEIGHT (bottom)
-            // New Depth ratio = oldMax / newMax
-            // New Y = STAGE_HEIGHT * (oldMax / newMax)
-            
-            const newY = STAGE_HEIGHT * (oldMax / currentMaxDepth);
-            
-            // Animate transition
-            isDragging = false; // Force re-grab to prevent glitching
-            updateDrillPosition(newY);
-            initRuler(); // Redraw numbers
-        }
-
-        // 🟢 AUTH & CONFIG LOADER
+        // FIREBASE INIT
         if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
             if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
         }
         const db = firebase.firestore();
-        const auth = firebase.auth();
 
-        // Load Rates
-        let globalRates = QUOTE_CONFIG.DEFAULT_RATES;
-        db.collection('settings').doc('rates').get().then(doc => { if(doc.exists) globalRates = {...globalRates, ...doc.data()}; });
+        // 🟢 DRILL RIG LOGIC (Vertical Slider)
+        const drillTrack = document.getElementById('drillTrack');
+        const drillBit = document.getElementById('drillBit');
+        const boreHole = document.getElementById('boreHole');
+        const bitVisual = document.getElementById('bitVisual');
+        
+        let isDragging = false;
+        let currentMaxScale = 500; // Elastic Limit
+        let currentDepth = 100;
 
-        // Load Materials Grid
-        const matGrid = document.getElementById('materialsGrid');
-        if(matGrid && QUOTE_CONFIG.MATERIALS) {
-            matGrid.innerHTML = QUOTE_CONFIG.MATERIALS.map(m => `
-                <div class="var-item">
-                    <span class="font-bold text-slate-700 text-xs uppercase">${m.label}</span>
-                    <span class="var-badge">₹${m.price}${m.unit}</span>
-                </div>
-            `).join('');
+        function initDrillRig() {
+            renderScaleMarkers();
+            updateDrillPosition();
+
+            // Mouse Events
+            drillBit.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', stopDrag);
+            
+            // Touch Events
+            drillBit.addEventListener('touchstart', startDrag);
+            document.addEventListener('touchmove', onDrag);
+            document.addEventListener('touchend', stopDrag);
         }
 
-        // Auth Listener
-        auth.onAuthStateChanged((user) => {
-            const btn = document.getElementById('genBtn');
-            if (user) {
-                document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
-                document.getElementById('custMobile').disabled = true;
-                document.getElementById('otpBtn').classList.add('hidden');
-                btn.disabled = false;
-            } else { btn.disabled = true; }
-        });
+        function renderScaleMarkers() {
+            const container = document.getElementById('scaleMarkers');
+            container.innerHTML = '';
+            const step = currentMaxScale / 5; // 5 markers
+            for(let i=0; i<=currentMaxScale; i+=step) {
+                const mk = document.createElement('div');
+                mk.className = 'depth-marker';
+                mk.innerText = Math.round(i) + " ft";
+                mk.style.top = (i / currentMaxScale * 100) + "%";
+                container.appendChild(mk);
+            }
+        }
 
-        // 🟢 CALCULATION ENGINE
-        function goToStep2() {
-            if(!currentDepth) return alert("Drag the drill to set depth!");
+        function startDrag(e) { 
+            isDragging = true; 
+            bitVisual.classList.add('spinning'); // Animate Bit
+            e.preventDefault(); 
+        }
+        
+        function stopDrag() { 
+            isDragging = false; 
+            bitVisual.classList.remove('spinning'); 
+        }
+
+        function onDrag(e) {
+            if(!isDragging) return;
             
-            const name = document.getElementById('custName').value;
-            const loc = document.getElementById('locInput').value;
-            if(!name || !loc) return alert("Enter Name and Location");
+            const rect = drillTrack.getBoundingClientRect();
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let relativeY = clientY - rect.top;
+            
+            // Clamp
+            if(relativeY < 0) relativeY = 0;
+            if(relativeY > rect.height) relativeY = rect.height;
 
-            // --- PRICING LOGIC ---
-            let drillCost = 0;
-            let drillHtml = "";
-            let processedDepth = 0;
-            let currentRate = globalRates.base_rate;
-            const jumps = globalRates.jumps;
+            // Calculate Depth
+            let pct = relativeY / rect.height;
+            let rawDepth = Math.round(pct * currentMaxScale);
+            
+            // Snap to 10ft
+            currentDepth = Math.round(rawDepth / 10) * 10;
+            if(currentDepth < 100) currentDepth = 100; // Min depth
 
-            // 1. Drilling
-            // Block 1: 0-100
-            const firstBlock = Math.min(currentDepth, 100);
-            if(firstBlock > 0) {
-                const cost = firstBlock * currentRate;
-                drillCost += cost;
-                drillHtml += `<tr><td>0 - ${firstBlock} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                processedDepth += firstBlock;
+            // Elastic Expansion (The "Push")
+            if(pct > 0.95 && currentMaxScale < 2000) {
+                expandScale();
             }
 
-            // Next Blocks (50ft slabs)
-            while(processedDepth < currentDepth) {
-                let jump = jumps.phase_1; // 10
-                if(processedDepth >= 450) jump = jumps.phase_3; // 30
-                else if(processedDepth >= 200) jump = jumps.phase_2; // 20
+            updateUI();
+        }
+
+        function expandScale() {
+            isDragging = false; // Reset drag to prevent jumping
+            currentMaxScale += 500;
+            renderScaleMarkers();
+            // Recalculate position on new scale
+            updateDrillPosition(); 
+        }
+
+        function setDepth(val) {
+            currentDepth = parseInt(val);
+            // Auto expand if manual entry is huge
+            while(currentDepth > currentMaxScale) {
+                currentMaxScale += 500;
+            }
+            renderScaleMarkers();
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('depthVal').innerText = currentDepth;
+            document.getElementById('manualDepth').value = currentDepth;
+            updateDrillPosition();
+        }
+
+        function updateDrillPosition() {
+            const pct = (currentDepth / currentMaxScale) * 100;
+            drillBit.style.top = pct + "%";
+            boreHole.style.height = pct + "%";
+            
+            // Color Logic (Brown -> Grey)
+            if(currentDepth > 200) boreHole.style.background = "#4b5563"; // Rock
+            else boreHole.style.background = "#0f172a"; // Soil
+        }
+
+        // 🟢 PRICING ENGINE (Slab Logic)
+        function calculateQuote() {
+            const { RATES, LABOUR_CHARGE, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE } = QUOTE_CONFIG;
+            
+            let totalCost = 0;
+            let breakdownHtml = "";
+            let remainingDepth = currentDepth;
+            let trackedDepth = 0;
+
+            // 1. DRILLING SLABS
+            // Slab 1: 0-100ft (Base Rate)
+            if(remainingDepth > 0) {
+                const chunk = Math.min(remainingDepth, 100);
+                const cost = chunk * RATES.base_rate;
+                totalCost += cost;
+                breakdownHtml += `<tr><td>0 - 100 ft</td><td class="text-center">₹${RATES.base_rate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                remainingDepth -= chunk;
+                trackedDepth += chunk;
+            }
+
+            // Loop for remaining slabs (50ft chunks)
+            let currentRate = RATES.base_rate; // 70
+            
+            while(remainingDepth > 0) {
+                // Determine Jump
+                let jump = RATES.jumps.phase_1; // +10
+                if(trackedDepth >= 450) jump = RATES.jumps.phase_3; // +30
+                else if(trackedDepth >= 200) jump = RATES.jumps.phase_2; // +20
                 
                 currentRate += jump;
                 
-                let nextChunk = Math.min(50, currentDepth - processedDepth);
-                const chunkCost = nextChunk * currentRate;
-                drillCost += chunkCost;
+                const chunk = Math.min(remainingDepth, 50);
+                const cost = chunk * currentRate;
+                totalCost += cost;
                 
-                drillHtml += `<tr><td>${processedDepth} - ${processedDepth+nextChunk} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${chunkCost.toLocaleString()}</td></tr>`;
-                processedDepth += nextChunk;
+                breakdownHtml += `<tr><td>${trackedDepth + 1} - ${trackedDepth + chunk} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                
+                remainingDepth -= chunk;
+                trackedDepth += chunk;
             }
 
-            // 2. Ops
-            const opsCost = QUOTE_CONFIG.LABOUR_CHARGE; // + Transport if needed
-            let opsHtml = `<tr><td>Site Setup & Labour</td><td class="text-right">₹${opsCost.toLocaleString()}</td></tr>`;
+            // 2. OPERATIONAL
+            // Transport
+            if(transportDist > TRANSPORT_THRESHOLD_KM) {
+                const extraKm = transportDist - TRANSPORT_THRESHOLD_KM;
+                const charges = Math.ceil(extraKm / 30);
+                const transCost = charges * TRANSPORT_BASE_RATE;
+                totalCost += transCost;
+                breakdownHtml += `<tr><td>Transport (${extraKm.toFixed(1)} km extra)</td><td class="text-center">--</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
+            }
+            
+            // Labour
+            totalCost += LABOUR_CHARGE;
+            breakdownHtml += `<tr><td>Site Setup & Labour</td><td class="text-center">Fixed</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
 
-            // Render
-            document.getElementById('drillBody').innerHTML = drillHtml;
-            document.getElementById('drillSubtotal').innerText = "₹" + drillCost.toLocaleString();
-            document.getElementById('opsBody').innerHTML = opsHtml;
-            document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
-            document.getElementById('invTotal').innerText = "₹" + (drillCost + opsCost).toLocaleString();
+            // 3. RENDER
+            document.getElementById('resTotal').innerText = "₹" + totalCost.toLocaleString();
+            document.getElementById('breakdownBody').innerHTML = breakdownHtml;
+            document.getElementById('resLoc').innerText = document.getElementById('locInput').value;
+            document.getElementById('resDepth').innerText = currentDepth + " ft";
+            
+            // Materials List
+            const matHtml = MATERIALS.map(m => `<div><span class="text-xs text-slate-500 block">${m.label}</span><span class="font-bold text-slate-800">₹${m.price} ${m.unit}</span></div>`).join('');
+            document.getElementById('matList').innerHTML = matHtml;
 
+            // Show Result
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
             window.scrollTo(0,0);
         }
 
-        // Utils (Same as before)
-        function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
-        
+        // 🟢 AUTH & MAPS (Standard)
+        firebase.auth().onAuthStateChanged(user => {
+            const btn = document.getElementById('generateBtn');
+            if(user) {
+                document.getElementById('custMobile').value = user.phoneNumber.replace('+91','');
+                document.getElementById('sendOtpBtn').classList.add('hidden');
+                document.getElementById('verifiedBadge').classList.remove('hidden');
+                btn.disabled = false;
+            }
+        });
+
         function sendOTP() {
-            const ph = document.getElementById('custMobile').value;
-            if(ph.length!=10) return alert("Invalid Number");
+            const p = document.getElementById('custMobile').value;
+            if(p.length!=10) return alert("Invalid Number");
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
-            auth.signInWithPhoneNumber('+91'+ph, window.recaptchaVerifier).then(cr => {
-                window.confirmationResult = cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('otpBtn').classList.add('hidden');
-            }).catch(e => alert("SMS Error: "+e.message));
+            firebase.auth().signInWithPhoneNumber('+91'+p, window.recaptchaVerifier).then(cr=>{
+                window.confirmationResult=cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('sendOtpBtn').classList.add('hidden');
+            });
         }
-        function verifyOTP() {
-            window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=> document.getElementById('otpSection').classList.add('hidden')).catch(()=>alert("Bad OTP"));
+        function verifyOTP() { window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=>document.getElementById('otpSection').classList.add('hidden')); }
+        
+        // Maps Logic
+        let transportDist = 0;
+        function detectGPS() {
+            if(navigator.geolocation) navigator.geolocation.getCurrentPosition(pos=>{
+                const {latitude, longitude} = pos.coords;
+                // Simple Distance Calc
+                const R = 6371; 
+                const dLat = (latitude - QUOTE_CONFIG.OFFICE_LOCATION.lat) * Math.PI/180;
+                const dLon = (longitude - QUOTE_CONFIG.OFFICE_LOCATION.lng) * Math.PI/180;
+                const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(QUOTE_CONFIG.OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(latitude*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                transportDist = R * c;
+                
+                document.getElementById('distDisplay').innerText = `Distance: ${transportDist.toFixed(1)} km`;
+                // Reverse Geocode for Display
+                new google.maps.Geocoder().geocode({location:{lat:latitude, lng:longitude}}, (res,s)=>{
+                    if(s==='OK') document.getElementById('locInput').value = res[0].formatted_address;
+                });
+            });
+        }
+        
+        function confirmBooking() {
+            // Save to Firestore 'leads'
+            const data = {
+                name: document.getElementById('custName').value,
+                mobile: "+91"+document.getElementById('custMobile').value,
+                loc: document.getElementById('resLoc').innerText,
+                depth: currentDepth,
+                total: document.getElementById('resTotal').innerText.replace(/[^0-9]/g, ''),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: 'New Quote'
+            };
+            db.collection('leads').add(data).then(() => {
+                alert("Booking Request Sent! Our engineer will call you.");
+                location.reload();
+            });
         }
 
-        // ... Existing Maps & PDF logic can be reused here ...
-        function downloadPDF() {
-            const el = document.getElementById('invoice-capture');
-            const opt = { margin: 0.2, filename: 'Estimate.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
-            html2pdf().set(opt).from(el).save();
-        }
+        // Initialize
+        document.addEventListener("DOMContentLoaded", initDrillRig);
+        
+        const s = document.createElement('script'); 
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`; 
+        s.async = true; s.defer = true; 
+        document.body.appendChild(s);
+
     </script>
 </body>
 </html>
