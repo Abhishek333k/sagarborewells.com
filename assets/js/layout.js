@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // --- 0. INTELLIGENCE INJECTION (Analytics & Assets) ---
     const head = document.getElementsByTagName('head')[0];
 
-    // A. Inject Favicon (If missing)
+    // A. Inject Favicon (Standardizing Brand Identity)
     if (!document.querySelector("link[rel*='icon']")) {
         const link = document.createElement('link');
         link.type = 'image/png';
@@ -14,33 +14,28 @@ document.addEventListener("DOMContentLoaded", function() {
         head.appendChild(link);
     }
 
-    // B. Google Analytics 4 (GA4) - Auto Injector
-    
+    // B. Google Analytics 4 (GA4) - LIVE
     const gaId = 'G-LRKE2HG1RN'; 
-    if (gaId !== 'G-LRKE2HG1RN') {
-        const gaScript = document.createElement('script');
-        gaScript.async = true;
-        gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
-        head.appendChild(gaScript);
+    const gaScript = document.createElement('script');
+    gaScript.async = true;
+    gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+    head.appendChild(gaScript);
 
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', gaId);
-    }
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', gaId);
 
-    // C. Microsoft Clarity - Auto Injector (Heatmaps)
-    // Replace 'your_clarity_id' with your actual Project ID
-    const clarityId = 'vatt3qahek'; 
-    if (clarityId !== 'vatt3qahek') {
-        (function(c,l,a,r,i,t,y){
-            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-        })(window, document, "clarity", "script", clarityId);
-    }
+    // C. Microsoft Clarity - LIVE (Heatmaps)
+    const clarityId = 'vatt3qahek';
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", clarityId);
 
-    // --- 1. RENDER HEADER ---
+
+    // --- 1. RENDER HEADER (Navigation) ---
     const headerMount = document.getElementById('navbar-mount');
     if (headerMount) {
         headerMount.innerHTML = `
@@ -103,6 +98,7 @@ document.addEventListener("DOMContentLoaded", function() {
         footerMount.innerHTML = `
         <footer class="bg-[#0f172a] pt-16 pb-8 border-t border-slate-800 text-slate-400 font-sans mt-auto">
             <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                
                 <div class="col-span-1 md:col-span-1">
                     <a href="index.html" class="text-xl font-extrabold text-white flex items-center gap-2 mb-4">
                         SAGAR <span class="text-blue-500">BOREWELLS</span>
@@ -110,7 +106,19 @@ document.addEventListener("DOMContentLoaded", function() {
                     <p class="text-xs leading-relaxed mb-6">
                         Advanced geological sensor drilling. Delivering precision water solutions since 2010.
                     </p>
+                    <div class="flex gap-3">
+                        <a href="https://wa.me/${CONTACT_INFO.whatsapp_api}" target="_blank" class="w-9 h-9 rounded bg-slate-800 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition">
+                            <i class="ri-whatsapp-line text-lg"></i>
+                        </a>
+                        <a href="${CONTACT_INFO.social_instagram}" target="_blank" class="w-9 h-9 rounded bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition">
+                            <i class="ri-instagram-line text-lg"></i>
+                        </a>
+                        <a href="${CONTACT_INFO.social_youtube}" target="_blank" class="w-9 h-9 rounded bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition">
+                            <i class="ri-youtube-fill text-lg"></i>
+                        </a>
+                    </div>
                 </div>
+
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Quick Access</h4>
                     <ul class="space-y-2 text-sm">
@@ -121,22 +129,35 @@ document.addEventListener("DOMContentLoaded", function() {
                         <li><a href="admin.html" class="hover:text-blue-400 transition">Login</a></li>
                     </ul>
                 </div>
+
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Legal</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="terms.html" class="hover:text-blue-400 transition">Terms</a></li>
-                        <li><a href="privacy.html" class="hover:text-blue-400 transition">Privacy</a></li>
-                        <li><a href="refund.html" class="hover:text-blue-400 transition">Refunds</a></li>
+                        <li><a href="terms.html" class="hover:text-blue-400 transition">Terms & Conditions</a></li>
+                        <li><a href="privacy.html" class="hover:text-blue-400 transition">Privacy Policy</a></li>
+                        <li><a href="refund.html" class="hover:text-blue-400 transition">Refund Policy</a></li>
                     </ul>
                 </div>
+
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Contact</h4>
                     <ul class="space-y-3 text-sm">
-                        <li class="flex items-center gap-3"><i class="ri-phone-line text-blue-500"></i> ${CONTACT_INFO.phone_display}</li>
-                        <li class="flex items-center gap-3"><i class="ri-mail-line text-blue-500"></i> ${CONTACT_INFO.email}</li>
+                        <li class="flex items-start gap-3">
+                            <i class="ri-map-pin-line mt-1 text-blue-500"></i>
+                            <span>${CONTACT_INFO.address_line1}<br>${CONTACT_INFO.address_line2}</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="ri-phone-line text-blue-500"></i>
+                            <a href="tel:+${CONTACT_INFO.whatsapp_api}" class="hover:text-white font-mono">${CONTACT_INFO.phone_display}</a>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="ri-mail-line text-blue-500"></i>
+                            <a href="mailto:${CONTACT_INFO.email}" class="hover:text-white">${CONTACT_INFO.email}</a>
+                        </li>
                     </ul>
                 </div>
             </div>
+
             <div class="border-t border-slate-800 pt-8 text-center text-xs">
                 <p>© ${new Date().getFullYear()} Sagar Borewells. All rights reserved.</p>
             </div>
@@ -144,8 +165,10 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
+// --- HELPER: ADMIN CHECK ---
 function checkAdminStatus() {
     if(typeof firebase === 'undefined' || !firebase.auth) return;
+    
     firebase.auth().onAuthStateChanged(user => {
         if(user) {
             const db = firebase.firestore();
