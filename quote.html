@@ -19,89 +19,148 @@
     <script src="assets/js/pdf_template.js"></script>
 
     <style>
-        /* UBER-STYLE MAP PIN */
+        :root { --primary: #1e3a8a; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        
+        /* --- 1. GOOGLE MAPS AUTOCOMPLETE CUSTOMIZATION --- */
+        /* Make the dropdown look like the website, not 1990s Google */
+        .pac-container {
+            border-radius: 12px;
+            margin-top: 5px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .pac-item {
+            padding: 10px 15px;
+            font-size: 14px;
+            color: #475569;
+            cursor: pointer;
+        }
+        .pac-item:hover { background-color: #f1f5f9; }
+        .pac-item-query { font-size: 14px; color: #1e293b; font-weight: 700; }
+        .pac-icon { display: none; } /* Remove default icon */
+
+        /* --- 2. UBER-STYLE MAP PIN --- */
         .target-reticle { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); /* Tip at center */
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%);
             z-index: 1000; pointer-events: none; 
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            display: flex; flex-direction: column; align-items: center; 
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
         }
-        /* The Pin Head */
         .pin-head {
             width: 40px; height: 40px; 
-            background: #1e3a8a; /* Brand Blue */
+            background: #1e3a8a; 
             border: 3px solid #ffffff; 
-            border-radius: 50% 50% 50% 0; /* Teardrop shape */
+            border-radius: 50% 50% 50% 0; 
             transform: rotate(-45deg);
             display: flex; align-items: center; justify-content: center;
         }
-        /* The Center Dot */
-        .pin-head::after {
-            content: ''; width: 14px; height: 14px; background: white; border-radius: 50%;
-        }
-        /* The Shadow Point */
-        .pin-shadow {
-            width: 10px; height: 4px; background: rgba(0,0,0,0.3); border-radius: 50%;
-            margin-top: -5px; transform: translate(0, 100%);
-        }
+        .pin-head::after { content: ''; width: 14px; height: 14px; background: white; border-radius: 50%; }
+        .pin-shadow { width: 10px; height: 4px; background: rgba(0,0,0,0.3); border-radius: 50%; margin-top: -5px; transform: translate(0, 100%); }
 
-        :root { --primary: #1e3a8a; --soil-top: #8d6e63; --soil-mid: #d4a373; --soil-deep: #4b5563; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; }
-        
-        /* LAYOUT */
-        .quote-container { max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: white; border-radius: 24px; box-shadow: 0 20px 60px -10px rgba(0,0,0,0.1); overflow: hidden; }
-        
-        /* LEFT: FORM */
+        /* --- 3. LAYOUT GRID --- */
+        .quote-container { 
+            max-width: 1100px; margin: 40px auto; 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 0; 
+            background: white; border-radius: 24px; 
+            box-shadow: 0 20px 60px -10px rgba(0,0,0,0.1); 
+            overflow: hidden; 
+        }
         .form-col { padding: 40px; display: flex; flex-direction: column; justify-content: center; }
+        .drill-col { background: #f1f5f9; padding: 40px; border-left: 1px solid #e2e8f0; position: relative; display: flex; flex-direction: column; align-items: center; }
+
+        /* --- 4. INPUT STYLES --- */
         .form-label { font-weight: 800; font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
+        .input-group { position: relative; }
         .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; transition: 0.3s; }
         .custom-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); }
+        .custom-input.has-buttons { padding-right: 100px; } /* Space for buttons */
+
+        .input-action-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 0.75rem;
+            transition: 0.2s; display: flex; align-items: center; gap: 4px;
+        }
+        .btn-detect { right: 50px; color: #2563eb; background: #eff6ff; }
+        .btn-detect:hover { background: #dbeafe; }
+        .btn-map { right: 8px; color: #475569; background: #f1f5f9; font-size: 1.1rem; padding: 6px 8px; }
+        .btn-map:hover { background: #e2e8f0; color: #1e293b; }
+
         .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; font-weight: 700; padding: 16px; border-radius: 12px; width: 100%; font-size: 1.1rem; transition: 0.2s; margin-top: 20px; box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); }
         .btn-primary:hover { transform: translateY(-2px); }
         .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; transform: none; }
 
-        /* RIGHT: DRILL RIG */
-        .drill-col { background: #f1f5f9; padding: 40px; border-left: 1px solid #e2e8f0; position: relative; display: flex; flex-direction: column; align-items: center; }
-        .drill-track-container { position: relative; height: 500px; width: 100px; margin: 20px 0; }
-        .geo-layers { position: absolute; inset: 0; border-radius: 10px; overflow: hidden; border: 2px solid #cbd5e1; background: linear-gradient(to bottom, var(--soil-top) 0%, var(--soil-mid) 30%, var(--soil-deep) 100%); opacity: 0.2; }
-        .borehole { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 14px; background: #0f172a; height: 0%; transition: height 0.1s linear; z-index: 10; border-radius: 0 0 4px 4px; }
+        /* --- 5. THE DRILL RIG SIMULATOR --- */
+        .drill-track-container { position: relative; height: 500px; width: 120px; margin: 20px 0; }
+        
+        /* Realistic Soil Layers */
+        .geo-layers { 
+            position: absolute; inset: 0; border-radius: 8px; overflow: hidden; border: 2px solid #94a3b8; 
+            background: linear-gradient(
+                to bottom, 
+                #8d6e63 0%,   /* Top Soil */
+                #8d6e63 10%, 
+                #d4a373 10%,  /* Sand/Clay */
+                #d4a373 30%,
+                #a8a29e 30%,  /* Soft Rock */
+                #a8a29e 60%,
+                #4b5563 60%,  /* Hard Rock */
+                #4b5563 100%
+            );
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+        }
 
-        /* DTH HAMMER (Drill Bit) */
+        /* The Borehole */
+        .borehole {
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 14px; background: #0f172a; 
+            height: 0%; 
+            transition: height 0.1s linear;
+            z-index: 10;
+            border-left: 1px solid #334155; border-right: 1px solid #334155;
+        }
+
+        /* 3D Spinning Drill Bit */
         .drill-bit {
-            position: absolute; left: 50%; top: 0%; transform: translate(-50%, 0); /* Pivot from top */
-            width: 50px; height: 80px; 
-            cursor: grab; z-index: 20; 
-            margin-top: -10px; /* Offset to connect with borehole */
+            position: absolute; left: 50%; top: 0%; transform: translate(-50%, 0);
+            width: 60px; height: 90px;
+            cursor: grab; z-index: 20;
+            margin-top: -10px; /* Connect to pipe */
+            perspective: 1000px; /* 3D Space */
         }
         .drill-bit:active { cursor: grabbing; }
-        
-        /* Realistic DTH Bit SVG */
-        .bit-body { 
-            width: 100%; height: 100%; 
-            /* Detailed Hammer Shape: Cylinder body + Tungsten Buttons at bottom */
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 160'%3E%3Cdefs%3E%3ClinearGradient id='grad1' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' style='stop-color:%23334155;stop-opacity:1' /%3E%3Cstop offset='50%25' style='stop-color:%2394a3b8;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23334155;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3C!-- Main Shaft --%3E%3Crect x='30' y='0' width='40' height='100' fill='url(%23grad1)' stroke='%231e293b' stroke-width='2'/%3E%3C!-- Hammer Head --%3E%3Cpath d='M20 100 L80 100 L90 140 L10 140 Z' fill='url(%23grad1)' stroke='%231e293b' stroke-width='2'/%3E%3C!-- Buttons (Carbide Tips) --%3E%3Ccircle cx='30' cy='140' r='5' fill='%23ef4444'/%3E%3Ccircle cx='50' cy='145' r='5' fill='%23ef4444'/%3E%3Ccircle cx='70' cy='140' r='5' fill='%23ef4444'/%3E%3Ccircle cx='25' cy='120' r='4' fill='%2394a3b8'/%3E%3Ccircle cx='75' cy='120' r='4' fill='%2394a3b8'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: center bottom;
-            background-size: contain;
-            transition: transform 0.1s;
-            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
-        }
-        .spinning { animation: shakeDrill 0.1s infinite; }
-        @keyframes shakeDrill { 
-            0% { transform: translateY(0) rotate(0deg); } 
-            25% { transform: translateY(1px) rotate(1deg); } 
-            75% { transform: translateY(-1px) rotate(-1deg); } 
-            100% { transform: translateY(0) rotate(0deg); } 
+
+        .bit-body {
+            width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 160'%3E%3Cdefs%3E%3ClinearGradient id='metal' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23334155'/%3E%3Cstop offset='0.5' stop-color='%23cbd5e1'/%3E%3Cstop offset='1' stop-color='%23334155'/%3E%3C/linearGradient%3E%3C/defs%3E%3C!-- Hammer Body (Cylinder) --%3E%3Crect x='25' y='0' width='50' height='110' fill='url(%23metal)' stroke='%231e293b' stroke-width='2'/%3E%3C!-- Drill Head (Tungsten Buttons) --%3E%3Cpath d='M20 110 L80 110 L90 150 L10 150 Z' fill='%23475569' stroke='%231e293b' stroke-width='2'/%3E%3Ccircle cx='30' cy='150' r='5' fill='%23dc2626'/%3E%3Ccircle cx='50' cy='155' r='5' fill='%23dc2626'/%3E%3Ccircle cx='70' cy='150' r='5' fill='%23dc2626'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: center; background-size: contain;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
         }
 
-        .depth-marker { position: absolute; right: -50px; font-size: 10px; font-weight: bold; color: #64748b; transform: translateY(-50%); transition: top 0.3s; }
+        /* The Ballerina Spin */
+        .spinning { animation: spin3D 0.6s linear infinite; }
+        @keyframes spin3D {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        .depth-marker { 
+            position: absolute; right: -50px; 
+            font-size: 10px; font-weight: 800; color: #64748b; 
+            transform: translateY(-50%); transition: top 0.3s; 
+        }
+        
         .preset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; margin-top: auto; }
         .preset-btn { background: white; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: #475569; transition: 0.2s; }
         .preset-btn:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
-        .depth-display { font-size: 3rem; font-weight: 900; color: var(--primary); line-height: 1; text-align: center; margin-bottom: 10px; }
+        
+        .depth-display { font-size: 3.5rem; font-weight: 900; color: var(--primary); line-height: 1; text-align: center; margin-bottom: 5px; }
         .depth-unit { font-size: 1rem; color: #94a3b8; font-weight: 700; }
 
         @media (max-width: 768px) { .quote-container { grid-template-columns: 1fr; margin: 10px; } .drill-col { border-left: none; border-top: 1px solid #e2e8f0; padding: 30px 20px; } }
+        
+        /* TABLE STYLES */
         .est-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
         .est-table th { text-align: left; padding: 10px; color: #64748b; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
         .est-table td { padding: 12px 10px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; }
@@ -130,9 +189,9 @@
                         </div>
                         <div>
                             <label class="form-label">Mobile Number</label>
-                            <div class="relative">
-                                <input type="tel" id="custMobile" class="custom-input pr-24" placeholder="98765 43210" maxlength="10">
-                                <button id="sendOtpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-3 rounded-lg font-bold text-xs hover:bg-black">VERIFY</button>
+                            <div class="input-group">
+                                <input type="tel" id="custMobile" class="custom-input has-buttons" placeholder="98765 43210" maxlength="10">
+                                <button id="sendOtpBtn" onclick="sendOTP()" class="input-action-btn btn-detect bg-slate-800 text-white hover:bg-black" style="right: 8px;">VERIFY</button>
                                 <div id="verifiedBadge" class="hidden absolute right-3 top-4 text-emerald-600 font-bold text-xs flex items-center gap-1"><i class="ri-checkbox-circle-fill"></i> VERIFIED</div>
                             </div>
                             <div id="otpSection" class="hidden mt-2 flex gap-2">
@@ -143,9 +202,10 @@
                         </div>
                         <div>
                             <label class="form-label">Site Location</label>
-                            <div class="relative flex gap-2">
-                                <input type="text" id="locInput" class="custom-input pr-12" placeholder="Address...">
-                                <button onclick="openMiniMap()" class="absolute right-2 top-2 bottom-2 bg-blue-100 text-blue-600 px-3 rounded-lg hover:bg-blue-200 transition" title="Pick on Map"><i class="ri-map-pin-2-fill text-lg"></i></button>
+                            <div class="input-group">
+                                <input type="text" id="locInput" class="custom-input has-buttons" placeholder="Start typing address...">
+                                <button onclick="detectGPS()" class="input-action-btn btn-detect" title="Use GPS"><i class="ri-gps-fill"></i> DETECT</button>
+                                <button onclick="openMiniMap()" class="input-action-btn btn-map" title="Open Map"><i class="ri-map-2-line"></i></button>
                             </div>
                             <p id="distDisplay" class="text-xs text-right mt-1 text-slate-400 font-bold"></p>
                         </div>
@@ -157,7 +217,7 @@
                 </div>
 
                 <div class="drill-col">
-                    <div class="text-center mb-4">
+                    <div class="text-center mb-6">
                         <div class="depth-display"><span id="depthVal">100</span><span class="depth-unit">ft</span></div>
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Target Depth</p>
                     </div>
@@ -173,7 +233,7 @@
                         </div>
                     </div>
 
-                    <div class="w-full max-w-xs mt-4">
+                    <div class="w-full max-w-xs mt-6">
                         <label class="form-label text-center mb-2">Quick Presets</label>
                         <div class="preset-grid">
                             <button class="preset-btn" onclick="setDepth(150)">150 FT</button>
@@ -232,19 +292,36 @@
 
     <div id="footer-mount"></div>
 
+    <div id="depthAlertModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center;">
+        <div class="bg-slate-900 border border-red-500 p-6 rounded-2xl w-full max-w-md shadow-2xl animate-bounce-in text-center">
+            <div class="w-16 h-16 bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500 text-red-500 text-3xl">
+                <i class="ri-alarm-warning-fill"></i>
+            </div>
+            <h3 class="text-xl font-extrabold text-white mb-2">EXTREME DEPTH WARNING</h3>
+            <p class="text-slate-400 text-sm mb-6">
+                Drilling beyond <strong>1200 ft</strong> requires specialized heavy-duty rigs and geological surveys. Costs vary significantly.
+            </p>
+            <div class="flex flex-col gap-3">
+                <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=I need a borewell deeper than 1200ft`, '_blank')" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg uppercase tracking-wide">
+                    Talk to Senior Expert
+                </button>
+                <button onclick="dismissDepthAlert()" class="text-slate-500 hover:text-white text-xs font-bold underline">
+                    Continue with Estimate
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
         <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl animate-bounce-in">
             <h3 class="font-bold text-slate-800 mb-2 text-center uppercase text-sm tracking-wide">Drag Map to Pinpoint Site</h3>
-            
             <div style="position: relative; width: 100%; height: 350px; background: #eee; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0;">
                 <div id="quoteMapContainer" style="width:100%; height:100%;"></div>
-                
                 <div class="target-reticle">
                     <div class="pin-head"></div>
                     <div class="pin-shadow"></div>
                 </div>
             </div>
-
             <div class="flex justify-end gap-2 mt-4">
                 <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-500 text-xs">CANCEL</button>
                 <button onclick="confirmQuoteLocation()" class="px-6 py-2 bg-slate-900 text-white font-bold rounded-lg text-xs hover:bg-black">CONFIRM LOCATION</button>
@@ -259,7 +336,7 @@
         }
         const db = firebase.firestore();
 
-        // 🟢 DRILL RIG LOGIC (Vertical Slider)
+        // 🟢 DRILL RIG LOGIC (Bi-Directional Scale)
         const drillTrack = document.getElementById('drillTrack');
         const drillBit = document.getElementById('drillBit');
         const boreHole = document.getElementById('boreHole');
@@ -268,6 +345,7 @@
         let isDragging = false;
         let currentMaxScale = 500; // Elastic Limit
         let currentDepth = 100;
+        let alertShown = false; // Prevent spamming alert
 
         function initDrillRig() {
             renderScaleMarkers();
@@ -287,7 +365,7 @@
         function renderScaleMarkers() {
             const container = document.getElementById('scaleMarkers');
             container.innerHTML = '';
-            const step = currentMaxScale / 5; // 5 markers
+            const step = currentMaxScale / 5; 
             for(let i=0; i<=currentMaxScale; i+=step) {
                 const mk = document.createElement('div');
                 mk.className = 'depth-marker';
@@ -299,7 +377,7 @@
 
         function startDrag(e) { 
             isDragging = true; 
-            bitVisual.classList.add('spinning'); // Hammer Shake Effect
+            bitVisual.classList.add('spinning'); // 3D Spin
             e.preventDefault(); 
         }
         
@@ -325,28 +403,46 @@
             
             // Snap to 10ft
             currentDepth = Math.round(rawDepth / 10) * 10;
-            if(currentDepth < 100) currentDepth = 100; // Min depth
+            if(currentDepth < 100) currentDepth = 100;
 
-            // Elastic Expansion (The "Push")
+            // 1. EXPAND SCALE (Drag down > 95%)
             if(pct > 0.95 && currentMaxScale < 2000) {
-                expandScale();
+                isDragging = false; // Pause drag to reset position
+                currentMaxScale += 500;
+                renderScaleMarkers();
+                updateDrillPosition();
+            }
+
+            // 2. SHRINK SCALE (Drag up < 400ft on a 1000ft scale)
+            // Logic: If user is at 300ft but scale is 1500ft, shrink it back for better UX
+            if(currentDepth < (currentMaxScale - 600) && currentMaxScale > 500) {
+                isDragging = false;
+                currentMaxScale -= 500;
+                renderScaleMarkers();
+                updateDrillPosition();
+            }
+
+            // 3. SAFETY VALVE ALERT (1200ft)
+            if(currentDepth >= 1200 && !alertShown) {
+                document.getElementById('depthAlertModal').style.display = 'flex';
+                alertShown = true;
+                stopDrag(); // Force stop
             }
 
             updateUI();
         }
 
-        function expandScale() {
-            isDragging = false; 
-            currentMaxScale += 500;
-            renderScaleMarkers();
-            updateDrillPosition(); 
+        function dismissDepthAlert() {
+            document.getElementById('depthAlertModal').style.display = 'none';
         }
 
         function setDepth(val) {
             currentDepth = parseInt(val);
-            while(currentDepth > currentMaxScale) {
-                currentMaxScale += 500;
-            }
+            // Auto expand
+            while(currentDepth > currentMaxScale) currentMaxScale += 500;
+            // Auto shrink (if manual entry is small)
+            while(currentDepth < (currentMaxScale - 500) && currentMaxScale > 500) currentMaxScale -= 500;
+            
             renderScaleMarkers();
             updateUI();
         }
@@ -361,13 +457,9 @@
             const pct = (currentDepth / currentMaxScale) * 100;
             drillBit.style.top = pct + "%";
             boreHole.style.height = pct + "%";
-            
-            // Color Logic (Brown -> Grey)
-            if(currentDepth > 200) boreHole.style.background = "#4b5563"; // Rock
-            else boreHole.style.background = "#0f172a"; // Soil
         }
 
-        // 🟢 PRICING ENGINE (Slab Logic)
+        // 🟢 PRICING ENGINE (Standard)
         function calculateQuote() {
             const { RATES, LABOUR_CHARGE, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE } = QUOTE_CONFIG;
             
@@ -376,7 +468,6 @@
             let remainingDepth = currentDepth;
             let trackedDepth = 0;
 
-            // 1. DRILLING SLABS
             if(remainingDepth > 0) {
                 const chunk = Math.min(remainingDepth, 100);
                 const cost = chunk * RATES.base_rate;
@@ -401,7 +492,6 @@
                 trackedDepth += chunk;
             }
 
-            // 2. OPERATIONAL
             if(transportDist > TRANSPORT_THRESHOLD_KM) {
                 const extraKm = transportDist - TRANSPORT_THRESHOLD_KM;
                 const charges = Math.ceil(extraKm / 30);
@@ -413,7 +503,6 @@
             totalCost += LABOUR_CHARGE;
             breakdownHtml += `<tr><td>Site Setup & Labour</td><td class="text-center">Fixed</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
 
-            // 3. RENDER
             document.getElementById('resTotal').innerText = "₹" + totalCost.toLocaleString();
             document.getElementById('breakdownBody').innerHTML = breakdownHtml;
             document.getElementById('resLoc').innerText = document.getElementById('locInput').value;
@@ -455,11 +544,8 @@
             document.getElementById('miniMapModal').style.display='flex'; 
             if(!qMap && typeof google !=='undefined') {
                 qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55}, zoom:15, disableDefaultUI:true}); 
-                
-                // DRAG LISTENER: Reverse Geocode continuously as user drags
                 qMap.addListener('dragend', () => {
-                    const c = qMap.getCenter();
-                    // Optional: Update UI to show "Loading address..." here if you want
+                    // Optional: Update UI
                 });
             }
             setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); 
@@ -494,6 +580,18 @@
             }
         }
         
+        function detectGPS() {
+            if(navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => {
+                const c = {lat:pos.coords.latitude, lng:pos.coords.longitude};
+                new google.maps.Geocoder().geocode({location:c}, (res,status)=>{ 
+                    if(status==='OK') {
+                        document.getElementById('locInput').value=res[0].formatted_address;
+                        calculateDist(c.lat, c.lng);
+                    }
+                });
+            });
+        }
+
         function confirmBooking() {
             const data = {
                 name: document.getElementById('custName').value,
