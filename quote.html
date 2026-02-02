@@ -22,81 +22,100 @@
         :root { --primary: #1e3a8a; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; overflow-x: hidden; }
         
-        /* --- 1. INDUSTRIAL 3D DRILL BIT (CSS CONSTRUCT) --- */
+        /* --- 1. HIGH FIDELITY DTH HAMMER --- */
         .drill-assembly {
             position: absolute; left: 50%; top: 0;
-            width: 60px; height: 120px;
-            transform: translateX(-50%) translateY(-100%); /* Tip at cursor */
-            perspective: 800px;
-            z-index: 20;
-            cursor: grab;
+            width: 50px; height: 140px; /* Taller, thinner industrial look */
+            transform: translateX(-50%) translateY(-100%);
+            z-index: 20; cursor: grab;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
         }
         .drill-assembly:active { cursor: grabbing; }
 
-        .hammer-body {
-            position: relative; width: 100%; height: 100%;
-            transform-style: preserve-3d;
-            animation: idleSpin 4s linear infinite; /* Slow idle spin */
+        /* The SVG Hammer Body */
+        .hammer-visual {
+            width: 100%; height: 100%;
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position: center bottom;
+            /* Complex SVG to simulate Machined Steel & Tungsten Buttons */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 280'%3E%3Cdefs%3E%3ClinearGradient id='steel' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%232d3748'/%3E%3Cstop offset='20%25' stop-color='%23718096'/%3E%3Cstop offset='50%25' stop-color='%23edf2f7'/%3E%3Cstop offset='80%25' stop-color='%23718096'/%3E%3Cstop offset='100%25' stop-color='%232d3748'/%3E%3C/linearGradient%3E%3ClinearGradient id='tungsten' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231a202c'/%3E%3Cstop offset='50%25' stop-color='%234a5568'/%3E%3Cstop offset='100%25' stop-color='%231a202c'/%3E%3C/linearGradient%3E%3C/defs%3E%3C!-- Top Shank (Connector) --%3E%3Crect x='35' y='0' width='30' height='40' fill='url(%23steel)'/%3E%3C!-- Main Cylinder Body --%3E%3Crect x='20' y='40' width='60' height='180' rx='2' fill='url(%23steel)'/%3E%3C!-- Splines / Air Channels (Vertical Lines) --%3E%3Crect x='30' y='50' width='5' height='160' fill='%231a202c' opacity='0.3' rx='2'/%3E%3Crect x='65' y='50' width='5' height='160' fill='%231a202c' opacity='0.3' rx='2'/%3E%3C!-- Hammer Head Base --%3E%3Cpath d='M20 220 L80 220 L90 260 L10 260 Z' fill='url(%23steel)'/%3E%3C!-- Tungsten Carbide Buttons (The Red Tips) --%3E%3Ccircle cx='25' cy='265' r='6' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='50' cy='270' r='7' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='75' cy='265' r='6' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='35' cy='240' r='5' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3Ccircle cx='65' cy='240' r='5' fill='%23ef4444' stroke='%237f1d1d' stroke-width='1'/%3E%3C/svg%3E");
         }
-        .spinning .hammer-body { animation: fastSpin 0.2s linear infinite; }
 
-        @keyframes fastSpin { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
-        @keyframes idleSpin { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
+        /* PERCUSSION PHYSICS (Vibrate + Rotate) */
+        .idle-motion { animation: idleFloat 3s ease-in-out infinite; }
+        @keyframes idleFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 
-        /* The Cylinder Faces */
-        .face { position: absolute; width: 40px; height: 100px; left: 10px; background: linear-gradient(90deg, #334155, #94a3b8, #334155); border: 1px solid #1e293b; }
-        .f1 { transform: translateZ(20px); }
-        .f2 { transform: rotateY(90deg) translateZ(20px); }
-        .f3 { transform: rotateY(180deg) translateZ(20px); }
-        .f4 { transform: rotateY(-90deg) translateZ(20px); }
-
-        /* The Drill Head (Tungsten Buttons) */
-        .bit-head {
-            position: absolute; bottom: -10px; left: 5px; width: 50px; height: 20px;
-            background: #475569;
-            transform: translateZ(0);
-            border-radius: 0 0 10px 10px;
-            display: flex; justify-content: space-around; align-items: center;
-            border-bottom: 4px solid #ef4444; /* Red Tip */
+        .drilling-active { animation: percussionDrill 0.08s infinite linear; }
+        @keyframes percussionDrill {
+            0% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(2px) rotate(1deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(-2px) rotate(-1deg); }
+            100% { transform: translateY(0) rotate(0deg); }
         }
-        .button-stud { width: 6px; height: 6px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 5px rgba(239, 68, 68, 0.8); }
 
-        /* --- 2. SOIL TEXTURES --- */
-        .drill-track-container { position: relative; height: 500px; width: 140px; margin: 20px 0; border-radius: 12px; border: 3px solid #cbd5e1; background: #e2e8f0; overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.2); }
+        /* --- 2. DYNAMIC GEOLOGY (The Soil) --- */
+        .drill-track-container { 
+            position: relative; height: 500px; width: 140px; margin: 20px 0; 
+            border-radius: 12px; border: 3px solid #64748b; 
+            background: #e2e8f0; overflow: hidden; 
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+        }
         
-        .geo-layer { position: absolute; width: 100%; left: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 2px; }
-        .geo-top { top: 0; height: 10%; background: #5d4037; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E"); }
-        .geo-sand { top: 10%; height: 20%; background: #d7ccc8; background-image: url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 3h1v1H1V3zm2-2h1v1H3V1z' fill='%23a1887f' fill-opacity='0.4'/%3E%3C/svg%3E"); color: rgba(0,0,0,0.2); }
-        .geo-rock { top: 30%; height: 40%; background: #78909c; background-image: radial-gradient(circle, #546e7a 10%, transparent 10%), radial-gradient(circle, #546e7a 10%, transparent 10%); background-size: 20px 20px; background-position: 0 0, 10px 10px; }
-        .geo-deep { top: 70%; height: 30%; background: #37474f; border-top: 2px dashed rgba(255,255,255,0.1); }
+        /* The Dynamic Gradient Layer */
+        #geoGradient {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            /* Default Start */
+            background: linear-gradient(to bottom, #5d4037 0%, #d7ccc8 20%, #78909c 50%, #37474f 100%);
+            transition: background 0.3s ease; /* Smooth transition when scale changes */
+        }
+        
+        /* Texture Overlay (Noise) to make it look like dirt */
+        .geo-texture {
+            position: absolute; inset: 0; opacity: 0.4; pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
 
         /* The Borehole */
-        .borehole { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 16px; background: #0f172a; height: 0%; z-index: 10; border-left: 2px solid #1e293b; border-right: 2px solid #1e293b; transition: height 0.05s linear; }
+        .borehole { 
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%); 
+            width: 18px; background: #0f172a; height: 0%; 
+            z-index: 10; 
+            box-shadow: inset 5px 0 5px rgba(0,0,0,0.8);
+            border-bottom-left-radius: 5px; border-bottom-right-radius: 5px;
+        }
 
-        /* Depth Markers */
-        .depth-marker { position: absolute; right: 10px; font-size: 9px; font-weight: 800; color: rgba(255,255,255,0.7); transform: translateY(-50%); text-shadow: 0 1px 2px rgba(0,0,0,0.5); pointer-events: none; z-index: 15; }
+        /* Markers */
+        .depth-marker { position: absolute; right: 8px; font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.8); transform: translateY(-50%); text-shadow: 0 1px 3px black; pointer-events: none; z-index: 15; font-family: monospace; }
 
-        /* --- 3. LAYOUT & FORM --- */
-        .quote-container { max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: white; border-radius: 24px; box-shadow: 0 20px 60px -10px rgba(0,0,0,0.1); overflow: hidden; }
-        .form-col { padding: 40px; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 30; background: white; }
-        .drill-col { background: #f8fafc; padding: 40px; border-left: 1px solid #e2e8f0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        /* --- 3. UI LAYOUT --- */
+        .quote-container { max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: white; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; }
+        .form-col { padding: 40px; display: flex; flex-direction: column; justify-content: center; }
+        .drill-col { background: #1e293b; padding: 40px; border-left: 1px solid #334155; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
 
-        .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; background: #fff; transition: 0.3s; }
-        .custom-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); outline: none; }
+        .form-label { font-weight: 800; font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
+        .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; transition: 0.3s; }
+        .custom-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); }
         
+        /* Map Pin UI */
+        .input-group { position: relative; }
+        .input-action-btn { position: absolute; top: 50%; transform: translateY(-50%); padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+        .btn-map { right: 8px; color: #475569; background: #f1f5f9; font-size: 1.1rem; padding: 6px 8px; border: 1px solid #e2e8f0; }
+        .btn-map:hover { background: #e2e8f0; color: #1e293b; }
+
         .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; font-weight: 700; padding: 16px; border-radius: 12px; width: 100%; font-size: 1.1rem; transition: 0.2s; margin-top: 20px; box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); }
         .btn-primary:hover { transform: translateY(-2px); }
-        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
 
-        /* Maps & Utils */
-        .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: none; font-family: inherit; }
-        .input-action-btn { position: absolute; top: 50%; transform: translateY(-50%); padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; cursor: pointer; }
-        
-        /* Mobile */
+        /* Depth Display */
+        .depth-readout { text-align: center; color: white; margin-bottom: 20px; }
+        .depth-val { font-size: 4rem; font-weight: 900; line-height: 1; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .depth-lbl { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 2px; }
+
         @media (max-width: 768px) { 
             .quote-container { grid-template-columns: 1fr; margin: 10px; } 
-            .drill-col { border-left: none; border-top: 1px solid #e2e8f0; padding: 40px 20px; } 
-            .drill-track-container { height: 400px; }
+            .drill-col { padding: 40px 20px; border-left: none; border-top: 5px solid #0f172a; } 
         }
 
         /* Result Table */
@@ -104,11 +123,14 @@
         .est-table th { text-align: left; padding: 10px; color: #64748b; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
         .est-table td { padding: 12px 10px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; }
         
-        /* Mini Map Modal */
-        #miniMapModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; }
-        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 100; pointer-events: none; }
-        .pin-head { width: 40px; height: 40px; background: #1e3a8a; border: 3px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        /* Modals */
+        #miniMapModal, #depthAlertModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; }
+        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 100; pointer-events: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
+        .pin-head { width: 40px; height: 40px; background: #1e3a8a; border: 3px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
         .pin-head::after { content: ''; width: 12px; height: 12px; background: white; border-radius: 50%; }
+        
+        /* AutoComplete Style Override */
+        .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: none; font-family: inherit; z-index: 10000; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -133,9 +155,9 @@
                         </div>
                         <div>
                             <label class="form-label">Mobile Number</label>
-                            <div class="relative">
-                                <input type="tel" id="custMobile" class="custom-input pr-24" placeholder="98765 43210" maxlength="10">
-                                <button id="sendOtpBtn" onclick="sendOTP()" class="input-action-btn bg-slate-800 text-white hover:bg-black" style="right: 8px;">VERIFY</button>
+                            <div class="input-group">
+                                <input type="tel" id="custMobile" class="custom-input" style="padding-right: 90px;" placeholder="98765 43210" maxlength="10">
+                                <button id="sendOtpBtn" onclick="sendOTP()" class="input-action-btn bg-slate-900 text-white hover:bg-black" style="right: 8px;">VERIFY</button>
                                 <div id="verifiedBadge" class="hidden absolute right-3 top-4 text-emerald-600 font-bold text-xs flex items-center gap-1"><i class="ri-checkbox-circle-fill"></i> VERIFIED</div>
                             </div>
                             <div id="otpSection" class="hidden mt-3 flex gap-2">
@@ -146,10 +168,10 @@
                         </div>
                         <div>
                             <label class="form-label">Site Location</label>
-                            <div class="relative">
-                                <input type="text" id="locInput" class="custom-input pr-32" placeholder="Start typing address...">
+                            <div class="input-group">
+                                <input type="text" id="locInput" class="custom-input" style="padding-right: 120px;" placeholder="Start typing address...">
                                 <button onclick="detectGPS()" class="input-action-btn bg-blue-50 text-blue-600 hover:bg-blue-100" style="right: 50px;"><i class="ri-gps-fill"></i> Detect</button>
-                                <button onclick="openMiniMap()" class="input-action-btn bg-slate-100 text-slate-600 hover:bg-slate-200" style="right: 8px; font-size: 1.2rem; padding: 4px 8px;"><i class="ri-map-2-line"></i></button>
+                                <button onclick="openMiniMap()" class="input-action-btn btn-map" title="Open Map"><i class="ri-map-2-line"></i></button>
                             </div>
                             <p id="distDisplay" class="text-xs text-right mt-1 text-slate-400 font-bold h-4"></p>
                         </div>
@@ -161,47 +183,34 @@
                 </div>
 
                 <div class="drill-col">
-                    <div class="text-center mb-6">
-                        <div class="text-5xl font-black text-slate-900 leading-none" id="depthDisplayMain">100<span class="text-xl text-slate-400 ml-1">ft</span></div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Target Depth</p>
+                    <div class="depth-readout">
+                        <div class="depth-val" id="depthDisplayMain">100</div>
+                        <div class="depth-lbl">Target Depth (FT)</div>
                     </div>
 
                     <div class="drill-track-container" id="drillTrack">
-                        <div class="geo-layer geo-top">Top Soil</div>
-                        <div class="geo-layer geo-sand">Sand & Clay</div>
-                        <div class="geo-layer geo-rock">Hard Rock</div>
-                        <div class="geo-layer geo-deep">Bedrock</div>
+                        <div id="geoGradient"></div>
+                        <div class="geo-texture"></div>
 
                         <div class="borehole" id="boreHole"></div>
                         
                         <div id="scaleMarkers"></div>
 
                         <div class="drill-assembly" id="drillBit">
-                            <div class="hammer-body" id="bitVisual">
-                                <div class="face f1"></div>
-                                <div class="face f2"></div>
-                                <div class="face f3"></div>
-                                <div class="face f4"></div>
-                                <div class="bit-head">
-                                    <div class="button-stud"></div>
-                                    <div class="button-stud"></div>
-                                    <div class="button-stud"></div>
-                                </div>
-                            </div>
+                            <div class="hammer-visual idle-motion" id="bitVisual"></div>
                         </div>
                     </div>
 
                     <div class="w-full max-w-xs mt-6 space-y-4">
                         <div class="grid grid-cols-4 gap-2">
-                            <button class="preset-btn border hover:border-blue-600 rounded p-2 text-xs font-bold" onclick="setDepth(150)">150</button>
-                            <button class="preset-btn border hover:border-blue-600 rounded p-2 text-xs font-bold" onclick="setDepth(200)">200</button>
-                            <button class="preset-btn border hover:border-blue-600 rounded p-2 text-xs font-bold" onclick="setDepth(300)">300</button>
-                            <button class="preset-btn border hover:border-blue-600 rounded p-2 text-xs font-bold" onclick="setDepth(500)">500</button>
+                            <button class="bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 rounded p-2 text-xs font-bold transition" onclick="setDepth(150)">150</button>
+                            <button class="bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 rounded p-2 text-xs font-bold transition" onclick="setDepth(200)">200</button>
+                            <button class="bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 rounded p-2 text-xs font-bold transition" onclick="setDepth(300)">300</button>
+                            <button class="bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 rounded p-2 text-xs font-bold transition" onclick="setDepth(500)">500</button>
                         </div>
-                        <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200">
+                        <div class="flex items-center gap-2 bg-slate-800 p-2 rounded-xl border border-slate-700">
                             <span class="text-xs font-bold text-slate-400 pl-2">MANUAL:</span>
-                            <input type="number" id="manualDepth" class="w-full outline-none font-bold text-slate-900" value="100" oninput="setDepth(this.value)">
-                            <span class="text-xs font-bold text-slate-400 pr-2">FT</span>
+                            <input type="number" id="manualDepth" class="w-full outline-none font-bold text-white bg-transparent text-right pr-2" value="100" oninput="setDepth(this.value)">
                         </div>
                     </div>
                 </div>
@@ -252,20 +261,12 @@
 
     <div id="depthAlertModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center;">
         <div class="bg-slate-900 border border-red-500 p-6 rounded-2xl w-full max-w-md shadow-2xl animate-bounce-in text-center">
-            <div class="w-16 h-16 bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500 text-red-500 text-3xl">
-                <i class="ri-alarm-warning-fill"></i>
-            </div>
-            <h3 class="text-xl font-extrabold text-white mb-2">EXTREME DEPTH WARNING</h3>
-            <p class="text-slate-400 text-sm mb-6">
-                Drilling beyond <strong>1200 ft</strong> requires specialized heavy-duty rigs and geological surveys. Costs vary significantly.
-            </p>
+            <div class="w-16 h-16 bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500 text-red-500 text-3xl"><i class="ri-alarm-warning-fill"></i></div>
+            <h3 class="text-xl font-extrabold text-white mb-2">HIGH DEPTH ALERT</h3>
+            <p class="text-slate-400 text-sm mb-6">Drilling beyond <strong>1200 ft</strong> requires specialized geological surveys.</p>
             <div class="flex flex-col gap-3">
-                <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=I need a borewell deeper than 1200ft`, '_blank')" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg uppercase tracking-wide">
-                    Talk to Senior Expert
-                </button>
-                <button onclick="dismissDepthAlert()" class="text-slate-500 hover:text-white text-xs font-bold underline">
-                    Continue with Estimate
-                </button>
+                <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=Deep Borewell Inquiry`, '_blank')" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg">TALK TO EXPERT</button>
+                <button onclick="dismissDepthAlert()" class="text-slate-500 hover:text-white text-xs font-bold underline">CONTINUE</button>
             </div>
         </div>
     </div>
@@ -295,7 +296,7 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // 🟢 AUTH STATE LISTENER (Fixes Broken Verification)
+        // 🟢 AUTH INTELLIGENCE (Auto-Verify if logged in)
         auth.onAuthStateChanged(user => {
             const btn = document.getElementById('generateBtn');
             const verifyBtn = document.getElementById('sendOtpBtn');
@@ -303,15 +304,15 @@
             const phoneInput = document.getElementById('custMobile');
 
             if(user) {
-                // User Logged In: Auto-fill and Lock
+                // User is already Auth'd (Admin or Client)
                 phoneInput.value = user.phoneNumber.replace('+91','');
                 phoneInput.disabled = true;
                 verifyBtn.classList.add('hidden');
                 badge.classList.remove('hidden');
                 btn.disabled = false;
-                console.log("User verified:", user.phoneNumber);
+                console.log("Auth Status: Verified User");
             } else {
-                // User Logged Out
+                // New User
                 btn.disabled = true;
                 verifyBtn.classList.remove('hidden');
                 badge.classList.add('hidden');
@@ -321,37 +322,31 @@
         function sendOTP() {
             const p = document.getElementById('custMobile').value;
             if(p.length!=10) return alert("Invalid Number");
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
             
-            // Render Recaptcha only if not already rendered
-            if(!window.recaptchaVerifier) {
-                window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
-            }
-
             auth.signInWithPhoneNumber('+91'+p, window.recaptchaVerifier).then(cr=>{
                 window.confirmationResult=cr; 
                 document.getElementById('otpSection').classList.remove('hidden'); 
                 document.getElementById('sendOtpBtn').classList.add('hidden');
             }).catch(e => {
                 console.error(e);
-                alert("SMS Failed: " + e.message);
-                // Reset UI if fail
+                alert("SMS Error: " + e.message);
                 document.getElementById('sendOtpBtn').classList.remove('hidden');
             });
         }
-
         function verifyOTP() { 
-            const code = document.getElementById('otpInput').value;
-            window.confirmationResult.confirm(code).then((result)=>{
+            window.confirmationResult.confirm(document.getElementById('otpInput').value).then(() => {
                 document.getElementById('otpSection').classList.add('hidden');
-                // The onAuthStateChanged listener will handle the UI update
+                // onAuthStateChanged will handle the rest
             }).catch(e => alert("Invalid Code")); 
         }
 
-        // 🟢 DRILL RIG LOGIC (Bi-Directional Scale)
+        // 🟢 DRILL RIG LOGIC (High Fidelity + Dynamic Soil)
         const drillTrack = document.getElementById('drillTrack');
         const drillBit = document.getElementById('drillBit');
         const boreHole = document.getElementById('boreHole');
         const bitVisual = document.getElementById('bitVisual');
+        const geoGradient = document.getElementById('geoGradient');
         
         let isDragging = false;
         let currentMaxScale = 500; 
@@ -361,6 +356,7 @@
         function initDrillRig() {
             renderScaleMarkers();
             updateDrillPosition();
+            updateGeology();
 
             drillBit.addEventListener('mousedown', startDrag);
             document.addEventListener('mousemove', onDrag);
@@ -369,6 +365,34 @@
             drillBit.addEventListener('touchstart', startDrag);
             document.addEventListener('touchmove', onDrag);
             document.addEventListener('touchend', stopDrag);
+        }
+
+        // DYNAMIC SOIL GENERATOR
+        function updateGeology() {
+            // Calculates percentage stops based on current Scale
+            // At 500ft: Topsoil(0-10%), Sand(10-30%), Rock(30-100%)
+            // At 1500ft: Topsoil(0-3%), Sand(3-10%), Rock(10-30%), Granite(30-100%)
+            
+            const max = currentMaxScale;
+            // Define layer depths in FEET
+            const layers = [
+                { color: '#5d4037', limit: 50 },   // Topsoil
+                { color: '#d7ccc8', limit: 200 },  // Sand/Clay
+                { color: '#78909c', limit: 600 },  // Soft Rock
+                { color: '#37474f', limit: 2000 }  // Hard Granite
+            ];
+
+            let gradientStr = "linear-gradient(to bottom, ";
+            let prevStop = 0;
+
+            layers.forEach((layer, index) => {
+                const stopPct = Math.min((layer.limit / max) * 100, 100);
+                gradientStr += `${layer.color} ${prevStop}% ${stopPct}%, `;
+                prevStop = stopPct;
+            });
+            
+            gradientStr = gradientStr.slice(0, -2) + ")"; // Remove last comma
+            geoGradient.style.background = gradientStr;
         }
 
         function renderScaleMarkers() {
@@ -387,13 +411,15 @@
 
         function startDrag(e) { 
             isDragging = true; 
-            bitVisual.parentElement.classList.add('spinning'); 
+            bitVisual.classList.remove('idle-motion');
+            bitVisual.classList.add('drilling-active'); // Vibrate + Spin
             e.preventDefault(); 
         }
         
         function stopDrag() { 
             isDragging = false; 
-            bitVisual.parentElement.classList.remove('spinning'); 
+            bitVisual.classList.remove('drilling-active');
+            bitVisual.classList.add('idle-motion');
         }
 
         function onDrag(e) {
@@ -413,10 +439,11 @@
             if(currentDepth < 100) currentDepth = 100;
 
             // Expand Logic
-            if(pct > 0.95 && currentMaxScale < 2000) {
+            if(pct > 0.95 && currentMaxScale < 1500) { // Limit to 1500ft visually
                 isDragging = false; 
                 currentMaxScale += 500;
                 renderScaleMarkers();
+                updateGeology();
                 updateDrillPosition();
             }
             // Shrink Logic
@@ -424,6 +451,7 @@
                 isDragging = false;
                 currentMaxScale -= 500;
                 renderScaleMarkers();
+                updateGeology();
                 updateDrillPosition();
             }
             // 1200ft Alert
@@ -442,12 +470,14 @@
             currentDepth = parseInt(val);
             while(currentDepth > currentMaxScale) currentMaxScale += 500;
             while(currentDepth < (currentMaxScale - 500) && currentMaxScale > 500) currentMaxScale -= 500;
+            
             renderScaleMarkers();
+            updateGeology();
             updateUI();
         }
 
         function updateUI() {
-            document.getElementById('depthDisplayMain').innerHTML = currentDepth + '<span class="text-xl text-slate-400 ml-1">ft</span>';
+            document.getElementById('depthDisplayMain').innerHTML = currentDepth;
             document.getElementById('manualDepth').value = currentDepth;
             updateDrillPosition();
         }
@@ -458,7 +488,7 @@
             boreHole.style.height = pct + "%";
         }
 
-        // 🟢 PRICING ENGINE (Updated)
+        // 🟢 PRICING ENGINE (Slab Logic)
         function calculateQuote() {
             const { RATES, LABOUR_CHARGE, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE } = QUOTE_CONFIG;
             let totalCost = 0;
@@ -517,8 +547,20 @@
             window.scrollTo(0,0);
         }
 
-        // MAPS
+        // 🟢 MAPS LOGIC
         let qMap, transportDist = 0;
+        
+        function initMapTools() {
+            const input = document.getElementById('locInput');
+            const autocomplete = new google.maps.places.Autocomplete(input, { types: ['geocode'] });
+            autocomplete.addListener('place_changed', () => {
+                const place = autocomplete.getPlace();
+                if (place.geometry) {
+                    calculateDist(place.geometry.location.lat(), place.geometry.location.lng());
+                }
+            });
+        }
+
         function openMiniMap() { 
             document.getElementById('miniMapModal').style.display='flex'; 
             if(!qMap && typeof google !=='undefined') {
@@ -549,10 +591,10 @@
             const disp = document.getElementById('distDisplay');
             if(transportDist > QUOTE_CONFIG.TRANSPORT_THRESHOLD_KM) {
                 disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Charges Apply)`;
-                disp.classList.add('text-orange-600');
+                disp.className = "text-xs text-right mt-1 font-bold h-4 text-orange-600";
             } else {
                 disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Free Transport)`;
-                disp.classList.remove('text-orange-600');
+                disp.className = "text-xs text-right mt-1 font-bold h-4 text-emerald-600";
             }
         }
         
@@ -586,7 +628,7 @@
 
         document.addEventListener("DOMContentLoaded", initDrillRig);
         const s = document.createElement('script'); 
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`; 
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
         s.async = true; s.defer = true; 
         document.body.appendChild(s);
 
