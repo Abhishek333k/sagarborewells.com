@@ -6,7 +6,7 @@
     <title>Get Quote | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -19,13 +19,39 @@
     <script src="assets/js/pdf_template.js"></script>
 
     <style>
+        /* UBER-STYLE MAP PIN */
+        .target-reticle { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); /* Tip at center */
+            z-index: 1000; pointer-events: none; 
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+        }
+        /* The Pin Head */
+        .pin-head {
+            width: 40px; height: 40px; 
+            background: #1e3a8a; /* Brand Blue */
+            border: 3px solid #ffffff; 
+            border-radius: 50% 50% 50% 0; /* Teardrop shape */
+            transform: rotate(-45deg);
+            display: flex; align-items: center; justify-content: center;
+        }
+        /* The Center Dot */
+        .pin-head::after {
+            content: ''; width: 14px; height: 14px; background: white; border-radius: 50%;
+        }
+        /* The Shadow Point */
+        .pin-shadow {
+            width: 10px; height: 4px; background: rgba(0,0,0,0.3); border-radius: 50%;
+            margin-top: -5px; transform: translate(0, 100%);
+        }
+
         :root { --primary: #1e3a8a; --soil-top: #8d6e63; --soil-mid: #d4a373; --soil-deep: #4b5563; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; }
         
-        /* CARD LAYOUT */
+        /* LAYOUT */
         .quote-container { max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: white; border-radius: 24px; box-shadow: 0 20px 60px -10px rgba(0,0,0,0.1); overflow: hidden; }
         
-        /* LEFT COLUMN (Form) */
+        /* LEFT: FORM */
         .form-col { padding: 40px; display: flex; flex-direction: column; justify-content: center; }
         .form-label { font-weight: 800; font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
         .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; transition: 0.3s; }
@@ -34,59 +60,48 @@
         .btn-primary:hover { transform: translateY(-2px); }
         .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; transform: none; }
 
-        /* RIGHT COLUMN (The Drill Rig) */
+        /* RIGHT: DRILL RIG */
         .drill-col { background: #f1f5f9; padding: 40px; border-left: 1px solid #e2e8f0; position: relative; display: flex; flex-direction: column; align-items: center; }
-        
-        /* VERTICAL SLIDER (The Hole) */
-        .drill-track-container { position: relative; height: 500px; width: 80px; margin: 20px 0; }
-        
-        /* Geological Layers (Background) */
-        .geo-layers { 
-            position: absolute; inset: 0; border-radius: 40px; overflow: hidden; border: 2px solid #cbd5e1; 
-            background: linear-gradient(to bottom, var(--soil-top) 0%, var(--soil-mid) 30%, var(--soil-deep) 100%);
-            opacity: 0.2;
-        }
+        .drill-track-container { position: relative; height: 500px; width: 100px; margin: 20px 0; }
+        .geo-layers { position: absolute; inset: 0; border-radius: 10px; overflow: hidden; border: 2px solid #cbd5e1; background: linear-gradient(to bottom, var(--soil-top) 0%, var(--soil-mid) 30%, var(--soil-deep) 100%); opacity: 0.2; }
+        .borehole { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 14px; background: #0f172a; height: 0%; transition: height 0.1s linear; z-index: 10; border-radius: 0 0 4px 4px; }
 
-        /* The Borehole (Dark line expanding down) */
-        .borehole {
-            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-            width: 12px; background: #0f172a; 
-            height: 0%; /* Dynamic */
-            transition: height 0.1s linear;
-            z-index: 10;
-        }
-
-        /* The Drill Bit (Thumb) */
+        /* DTH HAMMER (Drill Bit) */
         .drill-bit {
-            position: absolute; left: 50%; top: 0%; transform: translate(-50%, -50%);
-            width: 40px; height: 50px;
-            cursor: grab; z-index: 20;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+            position: absolute; left: 50%; top: 0%; transform: translate(-50%, 0); /* Pivot from top */
+            width: 50px; height: 80px; 
+            cursor: grab; z-index: 20; 
+            margin-top: -10px; /* Offset to connect with borehole */
         }
         .drill-bit:active { cursor: grabbing; }
-        /* CSS Drill Bit Shape */
-        .bit-body { width: 100%; height: 100%; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ef4444"><path d="M12 2L2 22h20L12 2zm0 4l5 14H7l5-14z"/></svg>') no-repeat center/contain; transition: transform 0.1s; }
-        .spinning { animation: spinBit 0.2s linear infinite; }
-        @keyframes spinBit { 0% { transform: scaleX(1); } 50% { transform: scaleX(0.5); } 100% { transform: scaleX(1); } }
+        
+        /* Realistic DTH Bit SVG */
+        .bit-body { 
+            width: 100%; height: 100%; 
+            /* Detailed Hammer Shape: Cylinder body + Tungsten Buttons at bottom */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 160'%3E%3Cdefs%3E%3ClinearGradient id='grad1' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' style='stop-color:%23334155;stop-opacity:1' /%3E%3Cstop offset='50%25' style='stop-color:%2394a3b8;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23334155;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3C!-- Main Shaft --%3E%3Crect x='30' y='0' width='40' height='100' fill='url(%23grad1)' stroke='%231e293b' stroke-width='2'/%3E%3C!-- Hammer Head --%3E%3Cpath d='M20 100 L80 100 L90 140 L10 140 Z' fill='url(%23grad1)' stroke='%231e293b' stroke-width='2'/%3E%3C!-- Buttons (Carbide Tips) --%3E%3Ccircle cx='30' cy='140' r='5' fill='%23ef4444'/%3E%3Ccircle cx='50' cy='145' r='5' fill='%23ef4444'/%3E%3Ccircle cx='70' cy='140' r='5' fill='%23ef4444'/%3E%3Ccircle cx='25' cy='120' r='4' fill='%2394a3b8'/%3E%3Ccircle cx='75' cy='120' r='4' fill='%2394a3b8'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            background-size: contain;
+            transition: transform 0.1s;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+        }
+        .spinning { animation: shakeDrill 0.1s infinite; }
+        @keyframes shakeDrill { 
+            0% { transform: translateY(0) rotate(0deg); } 
+            25% { transform: translateY(1px) rotate(1deg); } 
+            75% { transform: translateY(-1px) rotate(-1deg); } 
+            100% { transform: translateY(0) rotate(0deg); } 
+        }
 
-        /* Depth Markers */
-        .depth-marker { position: absolute; right: -40px; font-size: 10px; font-weight: bold; color: #64748b; transform: translateY(-50%); transition: top 0.3s; }
-
-        /* Controls */
+        .depth-marker { position: absolute; right: -50px; font-size: 10px; font-weight: bold; color: #64748b; transform: translateY(-50%); transition: top 0.3s; }
         .preset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; margin-top: auto; }
         .preset-btn { background: white; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: #475569; transition: 0.2s; }
         .preset-btn:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
-        
         .depth-display { font-size: 3rem; font-weight: 900; color: var(--primary); line-height: 1; text-align: center; margin-bottom: 10px; }
         .depth-unit { font-size: 1rem; color: #94a3b8; font-weight: 700; }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .quote-container { grid-template-columns: 1fr; margin: 10px; }
-            .drill-col { border-left: none; border-top: 1px solid #e2e8f0; padding: 30px 20px; }
-        }
-
-        /* RESULT TABLE */
+        @media (max-width: 768px) { .quote-container { grid-template-columns: 1fr; margin: 10px; } .drill-col { border-left: none; border-top: 1px solid #e2e8f0; padding: 30px 20px; } }
         .est-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
         .est-table th { text-align: left; padding: 10px; color: #64748b; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
         .est-table td { padding: 12px 10px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; }
@@ -129,8 +144,8 @@
                         <div>
                             <label class="form-label">Site Location</label>
                             <div class="relative flex gap-2">
-                                <input type="text" id="locInput" class="custom-input pr-12" placeholder="Start typing address...">
-                                <button onclick="detectGPS()" class="absolute right-2 top-2 bottom-2 text-blue-600 px-2 rounded hover:bg-blue-50" title="Detect GPS"><i class="ri-map-pin-user-fill text-xl"></i></button>
+                                <input type="text" id="locInput" class="custom-input pr-12" placeholder="Address...">
+                                <button onclick="openMiniMap()" class="absolute right-2 top-2 bottom-2 bg-blue-100 text-blue-600 px-3 rounded-lg hover:bg-blue-200 transition" title="Pick on Map"><i class="ri-map-pin-2-fill text-lg"></i></button>
                             </div>
                             <p id="distDisplay" class="text-xs text-right mt-1 text-slate-400 font-bold"></p>
                         </div>
@@ -217,6 +232,26 @@
 
     <div id="footer-mount"></div>
 
+    <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
+        <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl animate-bounce-in">
+            <h3 class="font-bold text-slate-800 mb-2 text-center uppercase text-sm tracking-wide">Drag Map to Pinpoint Site</h3>
+            
+            <div style="position: relative; width: 100%; height: 350px; background: #eee; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0;">
+                <div id="quoteMapContainer" style="width:100%; height:100%;"></div>
+                
+                <div class="target-reticle">
+                    <div class="pin-head"></div>
+                    <div class="pin-shadow"></div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4">
+                <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-500 text-xs">CANCEL</button>
+                <button onclick="confirmQuoteLocation()" class="px-6 py-2 bg-slate-900 text-white font-bold rounded-lg text-xs hover:bg-black">CONFIRM LOCATION</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // FIREBASE INIT
         if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
@@ -264,7 +299,7 @@
 
         function startDrag(e) { 
             isDragging = true; 
-            bitVisual.classList.add('spinning'); // Animate Bit
+            bitVisual.classList.add('spinning'); // Hammer Shake Effect
             e.preventDefault(); 
         }
         
@@ -301,16 +336,14 @@
         }
 
         function expandScale() {
-            isDragging = false; // Reset drag to prevent jumping
+            isDragging = false; 
             currentMaxScale += 500;
             renderScaleMarkers();
-            // Recalculate position on new scale
             updateDrillPosition(); 
         }
 
         function setDepth(val) {
             currentDepth = parseInt(val);
-            // Auto expand if manual entry is huge
             while(currentDepth > currentMaxScale) {
                 currentMaxScale += 500;
             }
@@ -344,7 +377,6 @@
             let trackedDepth = 0;
 
             // 1. DRILLING SLABS
-            // Slab 1: 0-100ft (Base Rate)
             if(remainingDepth > 0) {
                 const chunk = Math.min(remainingDepth, 100);
                 const cost = chunk * RATES.base_rate;
@@ -354,29 +386,22 @@
                 trackedDepth += chunk;
             }
 
-            // Loop for remaining slabs (50ft chunks)
-            let currentRate = RATES.base_rate; // 70
-            
+            let currentRate = RATES.base_rate; 
             while(remainingDepth > 0) {
-                // Determine Jump
-                let jump = RATES.jumps.phase_1; // +10
-                if(trackedDepth >= 450) jump = RATES.jumps.phase_3; // +30
-                else if(trackedDepth >= 200) jump = RATES.jumps.phase_2; // +20
+                let jump = RATES.jumps.phase_1; 
+                if(trackedDepth >= 450) jump = RATES.jumps.phase_3; 
+                else if(trackedDepth >= 200) jump = RATES.jumps.phase_2; 
                 
                 currentRate += jump;
-                
                 const chunk = Math.min(remainingDepth, 50);
                 const cost = chunk * currentRate;
                 totalCost += cost;
-                
                 breakdownHtml += `<tr><td>${trackedDepth + 1} - ${trackedDepth + chunk} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                
                 remainingDepth -= chunk;
                 trackedDepth += chunk;
             }
 
             // 2. OPERATIONAL
-            // Transport
             if(transportDist > TRANSPORT_THRESHOLD_KM) {
                 const extraKm = transportDist - TRANSPORT_THRESHOLD_KM;
                 const charges = Math.ceil(extraKm / 30);
@@ -385,7 +410,6 @@
                 breakdownHtml += `<tr><td>Transport (${extraKm.toFixed(1)} km extra)</td><td class="text-center">--</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
             }
             
-            // Labour
             totalCost += LABOUR_CHARGE;
             breakdownHtml += `<tr><td>Site Setup & Labour</td><td class="text-center">Fixed</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
 
@@ -395,17 +419,15 @@
             document.getElementById('resLoc').innerText = document.getElementById('locInput').value;
             document.getElementById('resDepth').innerText = currentDepth + " ft";
             
-            // Materials List
             const matHtml = MATERIALS.map(m => `<div><span class="text-xs text-slate-500 block">${m.label}</span><span class="font-bold text-slate-800">₹${m.price} ${m.unit}</span></div>`).join('');
             document.getElementById('matList').innerHTML = matHtml;
 
-            // Show Result
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
             window.scrollTo(0,0);
         }
 
-        // 🟢 AUTH & MAPS (Standard)
+        // 🟢 AUTH & MAPS
         firebase.auth().onAuthStateChanged(user => {
             const btn = document.getElementById('generateBtn');
             if(user) {
@@ -426,29 +448,53 @@
         }
         function verifyOTP() { window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=>document.getElementById('otpSection').classList.add('hidden')); }
         
-        // Maps Logic
+        let qMap;
         let transportDist = 0;
-        function detectGPS() {
-            if(navigator.geolocation) navigator.geolocation.getCurrentPosition(pos=>{
-                const {latitude, longitude} = pos.coords;
-                // Simple Distance Calc
-                const R = 6371; 
-                const dLat = (latitude - QUOTE_CONFIG.OFFICE_LOCATION.lat) * Math.PI/180;
-                const dLon = (longitude - QUOTE_CONFIG.OFFICE_LOCATION.lng) * Math.PI/180;
-                const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(QUOTE_CONFIG.OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(latitude*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                transportDist = R * c;
+        
+        function openMiniMap() { 
+            document.getElementById('miniMapModal').style.display='flex'; 
+            if(!qMap && typeof google !=='undefined') {
+                qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55}, zoom:15, disableDefaultUI:true}); 
                 
-                document.getElementById('distDisplay').innerText = `Distance: ${transportDist.toFixed(1)} km`;
-                // Reverse Geocode for Display
-                new google.maps.Geocoder().geocode({location:{lat:latitude, lng:longitude}}, (res,s)=>{
-                    if(s==='OK') document.getElementById('locInput').value = res[0].formatted_address;
+                // DRAG LISTENER: Reverse Geocode continuously as user drags
+                qMap.addListener('dragend', () => {
+                    const c = qMap.getCenter();
+                    // Optional: Update UI to show "Loading address..." here if you want
                 });
+            }
+            setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); 
+        }
+        
+        function confirmQuoteLocation() { 
+            const pos = qMap.getCenter();
+            new google.maps.Geocoder().geocode({location:pos}, (res, status)=>{ 
+                if(status==='OK') {
+                    document.getElementById('locInput').value = res[0].formatted_address;
+                    calculateDist(pos.lat(), pos.lng());
+                }
             });
+            document.getElementById('miniMapModal').style.display='none';
+        }
+
+        function calculateDist(lat, lng) {
+            const R = 6371; 
+            const dLat = (lat - QUOTE_CONFIG.OFFICE_LOCATION.lat) * Math.PI/180;
+            const dLon = (lng - QUOTE_CONFIG.OFFICE_LOCATION.lng) * Math.PI/180;
+            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(QUOTE_CONFIG.OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            transportDist = R * c;
+            
+            const disp = document.getElementById('distDisplay');
+            if(transportDist > QUOTE_CONFIG.TRANSPORT_THRESHOLD_KM) {
+                disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Charges Apply)`;
+                disp.classList.add('text-orange-600');
+            } else {
+                disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Free Transport)`;
+                disp.classList.remove('text-orange-600');
+            }
         }
         
         function confirmBooking() {
-            // Save to Firestore 'leads'
             const data = {
                 name: document.getElementById('custName').value,
                 mobile: "+91"+document.getElementById('custMobile').value,
@@ -464,9 +510,7 @@
             });
         }
 
-        // Initialize
         document.addEventListener("DOMContentLoaded", initDrillRig);
-        
         const s = document.createElement('script'); 
         s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places`; 
         s.async = true; s.defer = true; 
