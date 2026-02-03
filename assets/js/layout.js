@@ -1,11 +1,15 @@
 // FILENAME: assets/js/layout.js
+// PURPOSE: Controls the global Header, Footer, Analytics, and Security.
+// DEPENDENCIES: Requires 'config.js' to be loaded first.
 
 document.addEventListener("DOMContentLoaded", function() {
     
-    // --- 0. INTELLIGENCE INJECTION (Analytics & Assets) ---
+    // ============================================================
+    // 0. INTELLIGENCE INJECTION (Analytics & SEO Assets)
+    // ============================================================
     const head = document.getElementsByTagName('head')[0];
 
-    // A. Inject Favicon 
+    // A. Inject Favicon (Ensures brand icon appears in browser tab)
     if (!document.querySelector("link[rel*='icon']")) {
         const link = document.createElement('link');
         link.type = 'image/png';
@@ -14,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function() {
         head.appendChild(link);
     }
 
-    // B. Google Analytics 4 (GA4) - LIVE
+    // B. Google Analytics 4 (GA4) - Tracks visitor traffic
     const gaId = 'G-LRKE2HG1RN'; 
     const gaScript = document.createElement('script');
     gaScript.async = true;
@@ -26,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function() {
     gtag('js', new Date());
     gtag('config', gaId);
 
-    // C. Microsoft Clarity - LIVE
+    // C. Microsoft Clarity - Heatmaps (Tracks clicks and scrolls)
     const clarityId = 'vatt3qahek';
     (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -35,11 +39,12 @@ document.addEventListener("DOMContentLoaded", function() {
     })(window, document, "clarity", "script", clarityId);
 
 
-    // --- 1. RENDER HEADER (Navigation) ---
+    // ============================================================
+    // 1. RENDER HEADER (Global Navigation Bar)
+    // ============================================================
     const headerMount = document.getElementById('navbar-mount');
     if (headerMount) {
-        // Prepare WhatsApp Link using the template engine if available
-        // Fallback to simple link if templates not loaded
+        // Generate Smart WhatsApp Link (Uses templates if available, else generic)
         const waText = (typeof WA_MSG !== 'undefined') ? encodeURIComponent(WA_MSG.support()) : "Hello";
         const waLink = `https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${waText}`;
 
@@ -60,12 +65,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
                     <div class="hidden md:flex items-center gap-8">
                         <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
+                        <a href="finance.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Finance & Aid</a>
                         <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
                         
-                        <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
-                            <i class="ri-user-line"></i> Account
-                        </a>
-
                         <a href="admin.html" id="admin-link" class="hidden font-bold text-red-600 border border-red-200 bg-red-50 px-3 py-1 rounded-lg hover:bg-red-100 transition flex items-center gap-2">
                             <i class="ri-shield-user-line"></i> Admin
                         </a>
@@ -90,7 +92,7 @@ document.addEventListener("DOMContentLoaded", function() {
             
             <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 p-4 absolute w-full shadow-lg left-0">
                 <a href="index.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Home</a>
-                <a href="dashboard.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">My Account</a>
+                <a href="finance.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Finance & Aid</a>
                 <a href="contact.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Contact</a>
                 <a href="admin.html" id="mobile-admin-link" class="hidden block py-3 font-bold text-red-600 border-b border-slate-50">Admin Panel</a>
                 
@@ -101,19 +103,27 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>
         </nav>`;
 
+        // Mobile Menu Logic
         const btn = document.getElementById('mobile-menu-btn');
         if(btn) btn.addEventListener('click', () => document.getElementById('mobile-menu').classList.toggle('hidden'));
         
+        // Trigger Admin Check
         checkAdminStatus();
     }
 
-    // --- 2. RENDER FOOTER (Updated Links) ---
+    // ============================================================
+    // 2. RENDER FOOTER (Global Command Center)
+    // ============================================================
     const footerMount = document.getElementById('footer-mount');
     if (footerMount) {
-        // Footer has explicit phone number for copying/calling
+        // Fallback address values (Safety check)
+        const addr1 = (typeof CONTACT_INFO !== 'undefined') ? CONTACT_INFO.address_line1 : "Mangalagiri";
+        const addr2 = (typeof CONTACT_INFO !== 'undefined') ? CONTACT_INFO.address_line2 : "Andhra Pradesh";
+
         footerMount.innerHTML = `
         <footer class="bg-[#0f172a] pt-16 pb-8 border-t border-slate-800 text-slate-400 font-sans mt-auto">
             <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                
                 <div class="col-span-1 md:col-span-1">
                     <a href="index.html" class="text-xl font-extrabold text-white flex items-center gap-2 mb-4">
                         SAGAR <span class="text-blue-500">BOREWELLS</span>
@@ -121,43 +131,58 @@ document.addEventListener("DOMContentLoaded", function() {
                     <p class="text-xs leading-relaxed mb-6">
                         Advanced geological sensor drilling. Delivering precision water solutions since 2010.
                     </p>
+                    <div class="flex gap-3">
+                        <a href="https://wa.me/${CONTACT_INFO.whatsapp_api}" target="_blank" class="w-9 h-9 rounded bg-slate-800 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition">
+                            <i class="ri-whatsapp-line text-lg"></i>
+                        </a>
+                        <a href="${CONTACT_INFO.social_instagram}" target="_blank" class="w-9 h-9 rounded bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition">
+                            <i class="ri-instagram-line text-lg"></i>
+                        </a>
+                        <a href="${CONTACT_INFO.social_youtube}" target="_blank" class="w-9 h-9 rounded bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition">
+                            <i class="ri-youtube-fill text-lg"></i>
+                        </a>
+                    </div>
                 </div>
+
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Quick Access</h4>
                     <ul class="space-y-2 text-sm">
                         <li><a href="index.html" class="hover:text-blue-400 transition">Home</a></li>
                         <li><a href="quote.html" class="hover:text-blue-400 transition">Get Estimate</a></li>
+                        <li><a href="finance.html" class="hover:text-blue-400 transition">Finance & Aid</a></li>
                         <li><a href="dashboard.html" class="hover:text-blue-400 transition">Client Login</a></li>
                         <li><a href="admin.html" class="hover:text-blue-400 transition">Admin</a></li>
                     </ul>
                 </div>
+
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Legal</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="terms.html" class="hover:text-blue-400 transition">Terms</a></li>
-                        <li><a href="privacy.html" class="hover:text-blue-400 transition">Privacy</a></li>
-                        <li><a href="refund.html" class="hover:text-blue-400 transition">Refunds</a></li>
+                        <li><a href="terms.html" class="hover:text-blue-400 transition">Terms & Conditions</a></li>
+                        <li><a href="privacy.html" class="hover:text-blue-400 transition">Privacy Policy</a></li>
+                        <li><a href="refund.html" class="hover:text-blue-400 transition">Refund Policy</a></li>
                     </ul>
                 </div>
+
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Contact</h4>
                     <ul class="space-y-3 text-sm">
-                        <li class="flex items-center gap-3">
-                            <i class="ri-phone-line text-blue-500"></i> 
-                            <a href="tel:${CONTACT_INFO.whatsapp_api}" class="hover:text-white">${CONTACT_INFO.phone_display}</a>
+                        <li class="flex items-start gap-3">
+                            <i class="ri-map-pin-line mt-1 text-blue-500"></i>
+                            <span>${addr1}<br>${addr2}</span>
                         </li>
                         <li class="flex items-center gap-3">
-                            <i class="ri-mail-line text-blue-500"></i> 
+                            <i class="ri-phone-line text-blue-500"></i>
+                            <a href="tel:+${CONTACT_INFO.whatsapp_api}" class="hover:text-white font-mono">${CONTACT_INFO.phone_display}</a>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="ri-mail-line text-blue-500"></i>
                             <a href="mailto:${CONTACT_INFO.email}" class="hover:text-white">${CONTACT_INFO.email}</a>
-                        </li>
-                        <li class="mt-4">
-                            <a href="https://wa.me/${CONTACT_INFO.whatsapp_api}" target="_blank" class="inline-flex items-center gap-2 text-green-400 hover:text-green-300 font-bold text-xs uppercase tracking-wide">
-                                <i class="ri-whatsapp-fill text-lg"></i> Priority Chat
-                            </a>
                         </li>
                     </ul>
                 </div>
             </div>
+
             <div class="border-t border-slate-800 pt-8 text-center text-xs">
                 <p>© ${new Date().getFullYear()} Sagar Borewells. All rights reserved.</p>
             </div>
@@ -165,12 +190,16 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-// --- HELPER: ADMIN CHECK ---
+// ============================================================
+// 3. HELPER: ADMIN CHECK (Shows hidden links if admin logs in)
+// ============================================================
 function checkAdminStatus() {
     if(typeof firebase === 'undefined' || !firebase.auth) return;
+    
     firebase.auth().onAuthStateChanged(user => {
         if(user) {
             const db = firebase.firestore();
+            // Checks if user's phone number exists in 'admins' collection
             db.collection('admins').doc(user.phoneNumber).get()
             .then(doc => {
                 if (doc.exists) {
@@ -184,9 +213,11 @@ function checkAdminStatus() {
     });
 }
 
-// --- 🛡️ SITE PROTECTION SUITE (CSS + JS) 🛡️ ---
+// ============================================================
+// 4. SITE PROTECTION SUITE (Prevents Copying/Inspecting)
+// ============================================================
 (function() {
-    // 1. 🎨 INJECT CSS PROTECTION (Prevents Highlighting & Dragging)
+    // A. INJECT CSS PROTECTION (Prevents Highlighting & Dragging)
     const style = document.createElement('style');
     style.innerHTML = `
         /* Disable Text Selection Globally */
@@ -213,15 +244,13 @@ function checkAdminStatus() {
     document.head.appendChild(style);
 
 
-    // 2. 🚫 DISABLE RIGHT CLICK
+    // B. DISABLE RIGHT CLICK
     document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
-        // Optional: specific alert, or just fail silently
-        // alert("🔒 Copyright © Sagar Borewells. All rights reserved."); 
     });
 
 
-    // 3. ⌨️ DISABLE SHORTCUTS (F12, Ctrl+U, Inspect)
+    // C. DISABLE SHORTCUTS (F12, Ctrl+U, Inspect)
     document.onkeydown = function(e) {
         // F12
         if (event.keyCode == 123) return false;
@@ -238,9 +267,5 @@ function checkAdminStatus() {
         // Ctrl+U (View Source)
         if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
     };
-
-    // 4. 🧹 CLEAR CONSOLE (Hides any errors or logs)
-    // setInterval(function(){ console.clear(); }, 2000); 
-    // (Uncomment line 4 if you want to aggressively clear console)
 
 })();
