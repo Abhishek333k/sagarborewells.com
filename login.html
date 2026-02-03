@@ -14,6 +14,7 @@
     
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
+    <script src="assets/js/notifications.js"></script>
 
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
@@ -29,7 +30,7 @@
             
             <div class="flex flex-col justify-center">
                 <h1 class="text-3xl font-extrabold text-slate-900 mb-4">Client Portal</h1>
-                <p class="text-slate-500 mb-8">Access your project history, invoices, and BWBC certificates.</p>
+                <p class="text-slate-500 mb-8">Access your project history and documents securely.</p>
                 
                 <div class="space-y-6">
                     <div class="flex gap-4">
@@ -96,9 +97,6 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // 🟢 PREVENT LOOP: Allow page to load, logic handled in verify
-        // Only redirect if explicit user action, not just persistent session
-        
         // 🟢 SEND OTP
         function sendLoginOTP() {
             const phone = document.getElementById('loginMobile').value;
@@ -144,23 +142,27 @@
                 .then(([leadsSnap, projectsSnap]) => {
                     
                     if (!leadsSnap.empty || !projectsSnap.empty) {
-                        // ✅ CASE A: EXISTING CUSTOMER (Found in either)
-                        // This catches Offline customers (projects) AND Online quotes (leads)
+                        // ✅ CASE A: EXISTING CUSTOMER
                         status.innerText = "Records found! Redirecting to Dashboard...";
                         status.className = "text-xs text-center mt-4 text-emerald-600 font-bold";
+                        
+                        // 🟢 Notify Admin: Existing Client Login
+                        sendTelegramAlert(NOTIFY_TEMPLATES.client_return({ mobile: phone }));
+                        
                         setTimeout(() => window.location.href = "dashboard.html", 1000);
                     } else {
                         // ⚠️ CASE B: NEW / UNREGISTERED
                         status.innerText = "Account verified. Redirecting to Estimates...";
                         status.className = "text-xs text-center mt-4 text-blue-600 font-bold";
                         
+                        // Log Silent Lead + Notify
                         logNewUser(phone);
+                        
                         setTimeout(() => window.location.href = "quote.html", 1500);
                     }
                 })
                 .catch(e => {
                     console.error("DB Error", e);
-                    // Safe Fallback: Go to Dashboard anyway just in case
                     window.location.href = "dashboard.html";
                 });
 
@@ -173,16 +175,16 @@
         }
 
         function logNewUser(phone) {
-            db.collection('silent_leads').add({
-                mobile: phone,
-                source: "Login (No Record Found)",
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                status: "Verified Number"
-            });
+            const data = { mobile: phone, source: "Login Page", status: "Unregistered", timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+            db.collection('silent_leads').add(data);
+            
+            // 🟢 Notify Admin: New Lead
+            sendTelegramAlert(NOTIFY_TEMPLATES.silent_lead(data));
+        }
 
+        function sendTelegramAlert(msg) {
             if(typeof TELEGRAM_BOT_TOKEN !== 'undefined' && typeof TELEGRAM_CHAT_ID !== 'undefined') {
-                const msg = `👤 *NEW LOGIN (NO RECORDS)* %0A📱 Mobile: \`${phone}\` %0A⚠️ Status: No Projects found.`;
-                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${msg}&parse_mode=Markdown`;
+                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
                 fetch(url).catch(e => console.log("Notify Error"));
             }
         }
