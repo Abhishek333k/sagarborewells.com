@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sagar Admin</title>
+    <title>SBW Admin Console</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
@@ -21,13 +21,6 @@
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
-        /* Slick Profile Card Style */
-        .profile-card-modal {
-            background: #0f172a; /* Deep, solid matte blue/black */
-            border: 1px solid #1e293b;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* Deep shadow */
-            border-radius: 24px; /* Smooth corners */
-        }
         /* 🌑 COMMAND CENTER THEME */
         :root { 
             --bg-deep: #020617; 
@@ -46,9 +39,9 @@
             border-radius: 12px; 
         }
 
-        /* DETAIL MODAL CARD STYLE (The "Profile" Look) */
+        /* DETAIL MODAL CARD STYLE */
         .profile-card {
-            background: #0f172a; /* Deep solid blue/black */
+            background: #0f172a; 
             border: 1px solid #1e293b;
             border-radius: 20px;
             box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8);
@@ -88,6 +81,11 @@
         .modal.open { display: flex; animation: fadeUp 0.2s ease-out; }
         @keyframes fadeUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
+        /* SCROLLBAR */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
         /* LOADING */
         .loader-ring { width: 40px; height: 40px; border: 3px solid #1e293b; border-top-color: var(--neon-blue); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -122,8 +120,8 @@
         <div class="mb-10 px-2 flex items-center gap-3">
             <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg font-bold text-xl">S</div>
             <div>
-                <h1 class="font-black text-white text-lg tracking-tight">SAGAR</h1>
-                <p class="text-[10px] text-blue-400 font-mono tracking-widest">ADMIN CONSOLE</p>
+                <h1 class="font-black text-white text-lg tracking-tight">SBW CONSOLE</h1>
+                <p class="text-[10px] text-blue-400 font-mono tracking-widest">ADMIN v4.2</p>
             </div>
         </div>
         <nav class="flex-1 space-y-2">
@@ -131,13 +129,13 @@
                 <i class="ri-user-star-line text-lg"></i> Active Leads
             </button>
             <button onclick="showSection('projects')" class="w-full text-left p-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition flex items-center gap-3 font-medium group" id="d-nav-projects">
-                <i class="ri-folder-shield-2-line text-lg"></i> Projects
+                <i class="ri-folder-shield-2-line text-lg"></i> BWBC Records
             </button>
             <button onclick="showSection('silent')" class="w-full text-left p-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition flex items-center gap-3 font-medium group" id="d-nav-silent">
                 <i class="ri-eye-2-line text-lg"></i> Window Shoppers
             </button>
             <button onclick="showSection('maproom')" class="w-full text-left p-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition flex items-center gap-3 font-medium group" id="d-nav-maproom">
-                <i class="ri-map-2-line text-lg"></i> War Room
+                <i class="ri-map-2-line text-lg"></i> Mapping
             </button>
         </nav>
         <button onclick="logout()" class="w-full py-3 border border-red-900/30 bg-red-900/10 text-red-400 rounded-xl hover:bg-red-900/30 transition flex items-center justify-center gap-2 text-sm font-bold">
@@ -181,7 +179,13 @@
         </div>
 
         <div id="section-projects" class="content-section hidden space-y-4">
-            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Active Projects</h2>
+            <div class="flex justify-between items-end mb-2">
+                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">BWBC Records</h2>
+                <div class="relative w-48">
+                    <input type="text" id="projectSearch" onkeyup="filterProjectsLocal()" class="bg-slate-900 border border-slate-800 text-white text-xs rounded px-3 py-1 pl-8 outline-none focus:border-slate-600" placeholder="Filter records...">
+                    <i class="ri-search-line absolute left-2.5 top-1.5 text-slate-500 text-xs"></i>
+                </div>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="projects-list"></div>
         </div>
 
@@ -193,12 +197,12 @@
         <div id="section-maproom" class="content-section hidden flex flex-col md:flex-row h-[80vh] gap-4">
             <div class="w-full md:w-72 flex flex-col gap-4 bg-[#0f172a] p-4 rounded-xl border border-slate-800 h-[30vh] md:h-full order-2 md:order-1">
                 <div class="relative">
-                    <input type="text" id="zoneSearch" onkeyup="filterMapList()" class="cyber-input text-xs py-2 pl-8 bg-slate-900" placeholder="Search 15k Zones...">
+                    <input type="text" id="zoneSearch" onkeyup="filterMapList()" class="cyber-input text-xs py-2 pl-8 bg-slate-900" placeholder="Search Zones...">
                     <i class="ri-search-line absolute left-2 top-2.5 text-slate-500 text-xs"></i>
                 </div>
                 <div class="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar" id="zonesListSide">
                     </div>
-                <div class="text-[10px] text-slate-600 text-center font-mono border-t border-slate-800 pt-2">MAP ATLAS: ONLINE</div>
+                <div class="text-[10px] text-slate-600 text-center font-mono border-t border-slate-800 pt-2">ATLAS: ONLINE</div>
             </div>
 
             <div class="flex-1 relative rounded-xl overflow-hidden border border-slate-800 shadow-2xl order-1 md:order-2">
@@ -334,25 +338,49 @@
             const filterBar = document.getElementById('filter-bar');
             const dashboard = document.getElementById('ceo-dashboard');
             
-            if(id === 'leads' || id === 'projects') {
-                filterBar.classList.remove('hidden'); filterBar.classList.add('flex'); dashboard.classList.remove('hidden');
-            } else {
-                filterBar.classList.add('hidden'); filterBar.classList.remove('flex'); dashboard.classList.add('hidden');
+            // PROJECTS: HIDE Main Filter Bar, SHOW only records
+            if(id === 'projects') {
+                filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
+                dashboard.classList.remove('hidden');
+                loadProjects();
+            } 
+            else if(id === 'leads') {
+                filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
+                dashboard.classList.remove('hidden');
+                loadLeads(); 
             }
-
-            if(id === 'leads') loadLeads(); 
-            else if(id === 'projects') loadProjects();
-            else if(id === 'silent') loadSilentLeads(); 
-            else if(id === 'maproom') initAdminMap();
+            else if(id === 'silent') {
+                filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
+                dashboard.classList.add('hidden');
+                loadSilentLeads();
+            }
+            else if(id === 'maproom') {
+                filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
+                dashboard.classList.add('hidden');
+                initAdminMap();
+            }
+            else if(id === 'create') {
+                filterBar.classList.add('hidden');
+                dashboard.classList.add('hidden');
+            }
         }
 
         // --- DATA RENDERERS ---
         let leadsCache = [], projectsCache = [];
+        
+        // Global Search (Leads/Silent)
         function filterData() {
             const term = document.getElementById('searchInput').value.toLowerCase();
-            const list = document.getElementById('section-leads').classList.contains('hidden') ? projectsCache : leadsCache;
+            const list = document.getElementById('section-leads').classList.contains('hidden') ? [] : leadsCache;
             const filtered = list.filter(item => (item.name + item.mobile + item.loc).toLowerCase().includes(term));
-            if(list === leadsCache) renderLeads(filtered); else renderProjects(filtered);
+            if(list === leadsCache) renderLeads(filtered); 
+        }
+
+        // Local Search (Projects)
+        function filterProjectsLocal() {
+            const term = document.getElementById('projectSearch').value.toLowerCase();
+            const filtered = projectsCache.filter(item => (item.customerName + item.mobile + item.location + item.projectId).toLowerCase().includes(term));
+            renderProjects(filtered);
         }
 
         function loadLeads() { 
@@ -432,8 +460,9 @@
             });
         }
 
-        // --- 🟢 MAPS 15k SOLUTION ---
+        // --- 🟢 MAPS 15k SOLUTION (With Edit) ---
         let adminMap, drawingManager, currentPoly; let mapPolygons = []; 
+        let allZonesCache = [];
         const ZONE_CONFIG = { rock: { color: '#ef4444', label: 'Hard Rock' }, water: { color: '#10b981', label: 'High Yield' }, moderate: { color: '#eab308', label: 'Moderate' }, saline: { color: '#3b82f6', label: 'Saline' }, silt: { color: '#f97316', label: 'Loose Silt' } };
 
         function initAdminMap() {
@@ -442,7 +471,7 @@
             drawingManager = new google.maps.drawing.DrawingManager({ drawingMode: null, drawingControl: false, polygonOptions: { strokeWeight: 2, fillOpacity: 0.35, editable: true, draggable: false } });
             drawingManager.setMap(adminMap);
             google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) { if(currentPoly) discardCurrentZone(); currentPoly = poly; document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('btnCancelDraw').classList.add('hidden'); drawingManager.setDrawingMode(null); });
-            // RELOAD ZONES ON PAN/ZOOM to handle 15k items without lag
+            // RELOAD ZONES ON PAN/ZOOM
             adminMap.addListener('idle', loadAdminZones);
         }
 
@@ -455,6 +484,7 @@
         }
         function cancelDrawing() { drawingManager.setDrawingMode(null); document.getElementById('btnCancelDraw').classList.add('hidden'); discardCurrentZone(); }
         function discardCurrentZone() { document.getElementById('saveZonePanel').classList.add('hidden'); if(currentPoly) { currentPoly.setMap(null); currentPoly = null; } }
+        
         function saveCurrentZone() {
             const name = document.getElementById('newZoneName').value; const type = document.getElementById('drawType').value;
             if(!name) return notify("Enter Zone Name", "error");
@@ -464,19 +494,15 @@
             });
         }
         
-        // 🟢 FILTERABLE LIST + MAP HIGHLIGHT
-        let allZonesCache = [];
         function loadAdminZones() {
             const list = document.getElementById('zonesListSide'); 
-            // Simple logic: Load ALL once, then filter client-side. 
-            // If 15k is too heavy, we would use bounds queries, but for now we filter visually.
             if(allZonesCache.length === 0) {
                 list.innerHTML = '<div class="text-center text-slate-500 mt-4 text-xs animate-pulse">Syncing Atlas...</div>';
                 db.collection('geo_zones').get().then(snap => {
                     allZonesCache = [];
                     snap.forEach(doc => { allZonesCache.push({ id: doc.id, ...doc.data() }); });
                     renderMapList(allZonesCache);
-                    renderMapPolygons(allZonesCache); // Initial Render
+                    renderMapPolygons(allZonesCache);
                 });
             } else {
                 renderMapList(allZonesCache);
@@ -491,7 +517,7 @@
 
         function renderMapList(zones) {
             const list = document.getElementById('zonesListSide'); list.innerHTML = "";
-            const display = zones.slice(0, 50); // Only show top 50 to prevent DOM lag
+            const display = zones.slice(0, 50);
             display.forEach(z => {
                 list.innerHTML += `
                 <div onclick="focusZone('${z.id}')" class="p-2 border-b border-slate-700 cursor-pointer hover:bg-slate-800 transition flex justify-between items-center group">
@@ -499,7 +525,10 @@
                         <div class="w-2 h-2 rounded-full" style="background:${z.color}"></div>
                         <span class="text-xs text-slate-300 font-bold group-hover:text-white">${z.name}</span>
                     </div>
-                    <button onclick="event.stopPropagation(); deleteZone('${z.id}')" class="text-slate-600 hover:text-red-500"><i class="ri-close-line"></i></button>
+                    <div class="flex gap-1">
+                        <button onclick="event.stopPropagation(); initEditZone('${z.id}')" class="text-slate-600 hover:text-blue-400 p-1"><i class="ri-pencil-line"></i></button>
+                        <button onclick="event.stopPropagation(); deleteZone('${z.id}')" class="text-slate-600 hover:text-red-500 p-1"><i class="ri-close-line"></i></button>
+                    </div>
                 </div>`;
             });
         }
@@ -509,12 +538,9 @@
             zones.forEach(z => {
                 const poly = new google.maps.Polygon({ paths: z.coords, strokeColor: z.color, fillColor: z.color, fillOpacity: 0.15, strokeWeight: 1, map: adminMap });
                 poly.zoneId = z.id;
-                
-                // CLICK EVENT: Highlight & Show Info
+                poly.zoneData = z; // Attach Data for editing
                 poly.addListener('click', () => {
-                    const info = new google.maps.InfoWindow({ content: `<div style="color:black; font-weight:bold">${z.name}</div><button onclick="deleteZone('${z.id}')" style="color:red; font-size:10px; margin-top:5px">DELETE</button>` });
-                    info.setPosition(poly.getPath().getAt(0));
-                    info.open(adminMap);
+                    new google.maps.InfoWindow({ content: `<div style="color:black; font-weight:bold">${z.name}</div>` }).open(adminMap);
                 });
                 mapPolygons.push(poly);
             });
@@ -523,103 +549,78 @@
         function focusZone(id) {
             const zone = allZonesCache.find(z => z.id === id);
             if(zone && adminMap) {
-                // Find Center
                 let bounds = new google.maps.LatLngBounds();
                 zone.coords.forEach(c => bounds.extend(c));
                 adminMap.fitBounds(bounds);
-                // Flash Effect could be added here
             }
+        }
+
+        function initEditZone(id) {
+            const zone = allZonesCache.find(z => z.id === id);
+            // Delete existing to redraw as editable
+            db.collection('geo_zones').doc(id).delete().then(() => {
+                document.getElementById('newZoneName').value = zone.name;
+                // Re-create as drawing
+                currentPoly = new google.maps.Polygon({ paths: zone.coords, editable: true, strokeColor: zone.color, fillColor: zone.color, fillOpacity: 0.35, map: adminMap });
+                document.getElementById('saveZonePanel').classList.remove('hidden');
+            });
         }
 
         function deleteZone(id) { if(confirm("Delete Zone?")) db.collection('geo_zones').doc(id).delete().then(() => { notify("Deleted"); allZonesCache = allZonesCache.filter(z => z.id !== id); loadAdminZones(); }); }
 
-		function openLeadModal(docId) {
-			const data = leadsCache.find(l => l.docId === docId);
-			const notes = data.adminNotes || "";
-			
-			// We replace the 'glass-modal' class with our new 'profile-card-modal' in the JS injection logic below
-			// But since the container is static in HTML, we will style the CONTENT to look like the card.
+        // --- 🟢 RESTORED LEAD ACTIONS (DATA CARD) ---
+        function openLeadModal(docId) {
+            const data = leadsCache.find(l => l.docId === docId); 
+            const notes = data.adminNotes || "";
+            const content = `
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-3 relative">
+                    <div class="absolute inset-0 border border-blue-500/30 rounded-full animate-pulse"></div>
+                    <i class="ri-user-star-fill text-2xl text-blue-500"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white">${data.name}</h2>
+                <p class="text-sm text-slate-400 font-mono tracking-wide mb-1">${data.mobile}</p>
+                <div class="text-[10px] text-slate-500 flex items-center justify-center gap-1"><i class="ri-map-pin-line"></i> ${data.loc}</div>
+            </div>
 
-			const content = `
-			<div class="text-center pt-2 pb-6">
-				<div class="relative w-20 h-20 mx-auto mb-4">
-					<div class="absolute inset-0 bg-blue-500 rounded-full blur opacity-20 animate-pulse"></div>
-					<div class="relative w-full h-full bg-[#1e293b] rounded-full flex items-center justify-center border border-blue-500/30 text-blue-400 text-3xl">
-						<i class="ri-user-star-fill"></i>
-					</div>
-				</div>
-				<h2 class="text-2xl font-black text-white tracking-tight">${data.name}</h2>
-				<p class="text-sm text-slate-400 font-mono mt-1 tracking-wide">${data.mobile}</p>
-				<div class="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-slate-700 text-[10px] text-slate-400">
-					<i class="ri-map-pin-line text-blue-500"></i> ${data.loc}
-				</div>
-			</div>
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1 block pl-1">Current Status</label>
+                    <div class="relative">
+                        <select class="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-3 text-white text-sm outline-none focus:border-blue-500 transition appearance-none" onchange="updateLeadStatus('${data.docId}', this.value)">
+                            <option ${data.status==='Pending'?'selected':''}>Pending</option>
+                            <option ${data.status==='Contacted'?'selected':''}>Contacted</option>
+                            <option ${data.status==='Site Visit'?'selected':''}>Site Visit</option>
+                            <option ${data.status==='Closed'?'selected':''}>Closed</option>
+                        </select>
+                        <i class="ri-arrow-down-s-line absolute right-3 top-3.5 text-slate-500 pointer-events-none"></i>
+                    </div>
+                </div>
 
-			<div class="space-y-5 px-2">
-				<div>
-					<div class="flex justify-between text-[10px] uppercase font-bold text-slate-500 mb-1 pl-1">
-						<span>Current Status</span>
-						<span class="text-blue-400">${data.status || 'Pending'}</span>
-					</div>
-					<div class="relative">
-						<select class="w-full bg-[#1e293b] border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:border-blue-500 transition appearance-none font-medium" onchange="updateLeadStatus('${data.docId}', this.value)">
-							<option ${data.status==='Pending'?'selected':''}>Pending</option>
-							<option ${data.status==='Contacted'?'selected':''}>Contacted</option>
-							<option ${data.status==='Site Visit'?'selected':''}>Site Visit</option>
-							<option ${data.status==='Closed'?'selected':''}>Closed</option>
-						</select>
-						<i class="ri-arrow-down-s-line absolute right-4 top-3.5 text-slate-500 pointer-events-none"></i>
-					</div>
-				</div>
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1 block pl-1">Mission Log</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="adminNotes" class="flex-1 bg-[#1e293b] border border-slate-700 rounded-lg p-3 text-white text-sm outline-none focus:border-blue-500 placeholder-slate-600" placeholder="Add private notes..." value="${notes}">
+                        <button onclick="saveNote('${data.docId}')" class="bg-blue-600 hover:bg-blue-500 text-white rounded-lg w-12 flex items-center justify-center transition shadow-lg shadow-blue-900/20"><i class="ri-save-line text-lg"></i></button>
+                    </div>
+                </div>
+            </div>
 
-				<div>
-					<label class="text-[10px] uppercase font-bold text-slate-500 mb-1 block pl-1">Mission Log</label>
-					<div class="flex gap-2">
-						<input type="text" id="adminNotes" class="flex-1 bg-[#1e293b] border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:border-blue-500 placeholder-slate-600 transition" placeholder="Add private notes..." value="${notes}">
-						<button onclick="saveNote('${data.docId}')" class="w-12 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition shadow-lg shadow-blue-900/20"><i class="ri-save-line text-lg"></i></button>
-					</div>
-				</div>
-			</div>
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-900/20"><i class="ri-whatsapp-line text-lg"></i> Chat</a>
+                <a href="tel:${data.mobile}" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition shadow-lg shadow-blue-900/20"><i class="ri-phone-line text-lg"></i> Call</a>
+            </div>
+            
+            <button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="w-full bg-[#1e293b] hover:bg-slate-800 border border-slate-700 text-slate-300 py-3 rounded-lg font-bold text-sm mb-3 transition uppercase tracking-wide">VIEW QUOTE PDF</button>
+            
+            <button onclick="convertToProject('${data.docId}')" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white py-3 rounded-lg font-bold text-sm shadow-lg shadow-purple-900/30 mb-6 flex items-center justify-center gap-2 transition uppercase tracking-wide">
+                <i class="ri-magic-line text-lg"></i> CONVERT TO PROJECT
+            </button>
 
-			<div class="mt-8 space-y-3">
-				<div class="grid grid-cols-2 gap-3">
-					<a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="bg-emerald-600/10 hover:bg-emerald-600 border border-emerald-600/30 text-emerald-400 hover:text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition group">
-						<i class="ri-whatsapp-line text-lg group-hover:scale-110 transition"></i> Chat
-					</a>
-					<a href="tel:${data.mobile}" class="bg-blue-600/10 hover:bg-blue-600 border border-blue-600/30 text-blue-400 hover:text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition group">
-						<i class="ri-phone-line text-lg group-hover:scale-110 transition"></i> Call
-					</a>
-				</div>
-				
-				<button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2">
-					<i class="ri-file-list-3-line"></i> VIEW QUOTE PDF
-				</button>
-				
-				<button onclick="convertToProject('${data.docId}')" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white py-3.5 rounded-xl font-black text-sm shadow-xl shadow-purple-900/30 flex items-center justify-center gap-2 transition transform hover:scale-[1.02]">
-					<i class="ri-magic-line text-lg"></i> CONVERT TO PROJECT
-				</button>
-			</div>
-
-			<div class="text-center mt-6 pt-4 border-t border-slate-800">
-				<button onclick="deleteRecord('leads', '${data.docId}')" class="text-red-500/60 hover:text-red-500 text-[10px] font-bold tracking-widest uppercase transition">
-					Delete Database Entry
-				</button>
-			</div>
-			`;
-			
-			// Inject content
-			document.getElementById('modalContent').innerHTML = content;
-			
-			// IMPORTANT: Swap classes to ensure it doesn't look like the old modal
-			const modalContainer = document.querySelector('#detailModal .glass-modal');
-			if(modalContainer) {
-				modalContainer.className = "glass-modal p-1 w-full max-w-md rounded-3xl relative shadow-2xl overflow-hidden bg-[#0f172a] border border-slate-800";
-				// We set padding to 1 above, but the content needs padding
-				document.getElementById('modalContent').className = "p-6"; 
-			}
-			
-			document.getElementById('detailModal').classList.add('open');
-		}
+            <button onclick="deleteRecord('leads', '${data.docId}')" class="block w-full text-center text-red-500/50 hover:text-red-500 text-[10px] font-bold tracking-widest transition uppercase">DELETE LEAD</button>
+            `;
+            document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open');
+        }
 
         // --- UTILS ---
         function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }).then(() => notify("Status Updated")); }
