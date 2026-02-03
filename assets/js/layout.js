@@ -38,6 +38,11 @@ document.addEventListener("DOMContentLoaded", function() {
     // --- 1. RENDER HEADER (Navigation) ---
     const headerMount = document.getElementById('navbar-mount');
     if (headerMount) {
+        // Prepare WhatsApp Link using the template engine if available
+        // Fallback to simple link if templates not loaded
+        const waText = (typeof WA_MSG !== 'undefined') ? encodeURIComponent(WA_MSG.support()) : "Hello";
+        const waLink = `https://wa.me/${CONTACT_INFO.whatsapp_api}?text=${waText}`;
+
         headerMount.innerHTML = `
         <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
             <div class="max-w-7xl mx-auto px-4">
@@ -55,7 +60,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
                     <div class="hidden md:flex items-center gap-8">
                         <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
-                        
                         <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
                         
                         <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
@@ -66,9 +70,14 @@ document.addEventListener("DOMContentLoaded", function() {
                             <i class="ri-shield-user-line"></i> Admin
                         </a>
 
-                        <a href="quote.html" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-lg shadow-blue-200 flex items-center gap-2">
-                            <i class="ri-calculator-line"></i> Get Quote
-                        </a>
+                        <div class="flex items-center gap-2">
+                            <a href="${waLink}" target="_blank" class="px-4 py-2.5 bg-green-50 text-green-600 hover:bg-green-100 font-bold rounded-lg transition border border-green-200 flex items-center gap-2" title="Chat Support">
+                                <i class="ri-whatsapp-line text-lg"></i>
+                            </a>
+                            <a href="quote.html" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-lg shadow-blue-200 flex items-center gap-2">
+                                <i class="ri-calculator-line"></i> Get Quote
+                            </a>
+                        </div>
                     </div>
 
                     <div class="md:hidden flex items-center">
@@ -84,7 +93,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 <a href="dashboard.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">My Account</a>
                 <a href="contact.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Contact</a>
                 <a href="admin.html" id="mobile-admin-link" class="hidden block py-3 font-bold text-red-600 border-b border-slate-50">Admin Panel</a>
-                <a href="quote.html" class="block py-3 mt-4 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md">Get Quote</a>
+                
+                <div class="grid grid-cols-2 gap-2 mt-4">
+                    <a href="${waLink}" class="py-3 text-center bg-green-50 text-green-700 font-bold rounded-lg border border-green-200"><i class="ri-whatsapp-line"></i> Chat</a>
+                    <a href="quote.html" class="py-3 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md">Get Quote</a>
+                </div>
             </div>
         </nav>`;
 
@@ -97,6 +110,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // --- 2. RENDER FOOTER (Updated Links) ---
     const footerMount = document.getElementById('footer-mount');
     if (footerMount) {
+        // Footer has explicit phone number for copying/calling
         footerMount.innerHTML = `
         <footer class="bg-[#0f172a] pt-16 pb-8 border-t border-slate-800 text-slate-400 font-sans mt-auto">
             <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
@@ -128,8 +142,19 @@ document.addEventListener("DOMContentLoaded", function() {
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Contact</h4>
                     <ul class="space-y-3 text-sm">
-                        <li class="flex items-center gap-3"><i class="ri-phone-line text-blue-500"></i> ${CONTACT_INFO.phone_display}</li>
-                        <li class="flex items-center gap-3"><i class="ri-mail-line text-blue-500"></i> ${CONTACT_INFO.email}</li>
+                        <li class="flex items-center gap-3">
+                            <i class="ri-phone-line text-blue-500"></i> 
+                            <a href="tel:${CONTACT_INFO.whatsapp_api}" class="hover:text-white">${CONTACT_INFO.phone_display}</a>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="ri-mail-line text-blue-500"></i> 
+                            <a href="mailto:${CONTACT_INFO.email}" class="hover:text-white">${CONTACT_INFO.email}</a>
+                        </li>
+                        <li class="mt-4">
+                            <a href="https://wa.me/${CONTACT_INFO.whatsapp_api}" target="_blank" class="inline-flex items-center gap-2 text-green-400 hover:text-green-300 font-bold text-xs uppercase tracking-wide">
+                                <i class="ri-whatsapp-fill text-lg"></i> Priority Chat
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
