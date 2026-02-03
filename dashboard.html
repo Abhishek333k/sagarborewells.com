@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client Portal | Sagar Borewells</title>
+    <title>My Command Center | Sagar Borewells</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -15,69 +16,117 @@
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
-    <script src="assets/js/pdf_template.js"></script>
+    <script src="assets/js/pdf_template.js"></script> 
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
-        /* 🟢 PREVENT FLICKER: Hide body initially */
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; opacity: 0; transition: opacity 0.5s ease-in; }
+        /* SMOOTH LOAD */
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; opacity: 0; transition: opacity 0.4s ease-in; }
         
-        .tab-btn { border-bottom: 2px solid transparent; transition: all 0.3s; }
-        .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 700; }
+        /* CARD STYLING */
+        .glass-panel { background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border-radius: 16px; overflow: hidden; transition: transform 0.2s; }
+        .glass-panel:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
         
-        /* Centered Loader for initial check */
-        #auth-loader { position: fixed; inset: 0; background: white; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* TIMELINE (Track Booking) */
+        .timeline-track { display: flex; position: relative; margin: 30px 0 10px; }
+        .timeline-track::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; height: 3px; background: #e2e8f0; z-index: 0; }
+        .t-step { position: relative; z-index: 1; flex: 1; text-align: center; }
+        .t-dot { width: 30px; height: 30px; background: #fff; border: 3px solid #cbd5e1; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #64748b; transition: all 0.3s; }
+        .t-step.active .t-dot { border-color: #2563eb; background: #2563eb; color: white; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2); }
+        .t-step.completed .t-dot { border-color: #10b981; background: #10b981; color: white; }
+        .t-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .t-step.active .t-label { color: #2563eb; }
+
+        /* TAB UI */
+        .nav-pill { cursor: pointer; padding: 10px 20px; border-radius: 100px; font-weight: 600; color: #64748b; transition: 0.2s; }
+        .nav-pill.active { background: #1e293b; color: white; shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+        /* PREVIEW MODAL */
+        #previewContent { transform: scale(0.85); transform-origin: top center; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
-    <div id="auth-loader">
-        <div class="spinner"></div>
-        <p class="text-slate-400 text-xs mt-3 font-bold tracking-widest uppercase">Secure Login...</p>
-    </div>
+    <div id="navbar-mount"></div>
 
-    <div id="navbar-mount" style="min-height: 80px;"></div>
-
-    <main class="flex-grow container mx-auto px-4 py-8">
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-6xl">
         
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
             <div>
-                <h1 class="text-2xl font-extrabold text-slate-900">Client Portal</h1>
-                <p class="text-sm text-slate-500">Logged in as: <span id="userPhone" class="font-bold font-mono text-blue-600">--</span></p>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Mission Control</h1>
+                <p class="text-slate-500 font-medium mt-1">Welcome back, <span id="userPhone" class="text-blue-600 font-mono">--</span></p>
             </div>
-            <button onclick="logout()" class="mt-4 md:mt-0 text-sm text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg transition font-semibold border border-red-100 flex items-center gap-2">
-                <i class="ri-logout-box-line"></i> Sign Out
-            </button>
+            <div class="flex gap-2">
+                <button onclick="logout()" class="text-sm font-bold text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg border border-red-100 transition">
+                    <i class="ri-shut-down-line mr-1"></i> Logout
+                </button>
+            </div>
         </div>
 
-        <div class="flex border-b border-slate-200 mb-8 overflow-x-auto">
-            <button onclick="switchTab('projects')" id="tab-projects" class="tab-btn active px-6 py-3 text-slate-600 hover:text-slate-800 whitespace-nowrap">My Borewells</button>
-            <button onclick="switchTab('quotes')" id="tab-quotes" class="tab-btn px-6 py-3 text-slate-600 hover:text-slate-800 whitespace-nowrap">Price Quotations</button>
-        </div>
+        <div id="live-tracker" class="hidden mb-10 bg-white border border-blue-100 rounded-2xl p-6 shadow-lg shadow-blue-50 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl animate-pulse">
+                        <i class="ri-radar-line"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg">Active Project</h3>
+                        <p class="text-xs text-slate-500 font-mono" id="active-ref">REF: --</p>
+                    </div>
+                </div>
+                <span class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Live</span>
+            </div>
 
-        <div id="data-loader" class="text-center py-12 hidden">
-            <i class="ri-loader-4-line text-3xl text-blue-600 animate-spin"></i>
-            <p class="text-slate-400 text-sm mt-2">Syncing your records...</p>
-        </div>
-
-        <div id="view-projects" class="tab-content">
-            <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
-            <div id="no-projects" class="hidden text-center py-12 bg-white rounded-xl border border-slate-100 shadow-sm">
-                <i class="ri-hammer-line text-4xl text-slate-300"></i>
-                <p class="text-slate-500 mt-2 font-medium">No completed projects found.</p>
-                <div class="mt-4 text-xs text-orange-600 bg-orange-50 inline-block px-3 py-2 rounded border border-orange-100">
-                    <strong>Note:</strong> Records are linked to <span id="debugPhone" class="font-mono">...</span>
+            <div class="timeline-track">
+                <div class="t-step completed" id="step-booked">
+                    <div class="t-dot"><i class="ri-check-line"></i></div>
+                    <div class="t-label">Booked</div>
+                </div>
+                <div class="t-step" id="step-survey">
+                    <div class="t-dot"><i class="ri-map-pin-user-line"></i></div>
+                    <div class="t-label">Survey</div>
+                </div>
+                <div class="t-step" id="step-rig">
+                    <div class="t-dot"><i class="ri-truck-line"></i></div>
+                    <div class="t-label">Rig Move</div>
+                </div>
+                <div class="t-step" id="step-drill">
+                    <div class="t-dot"><i class="ri-focus-3-line"></i></div>
+                    <div class="t-label">Drilling</div>
+                </div>
+                <div class="t-step" id="step-water">
+                    <div class="t-dot"><i class="ri-drop-line"></i></div>
+                    <div class="t-label">Water</div>
                 </div>
             </div>
         </div>
 
-        <div id="view-quotes" class="tab-content hidden">
-            <div id="quotes-grid" class="grid grid-cols-1 gap-4"></div>
-            <div id="no-quotes" class="hidden text-center py-12">
-                <p class="text-slate-400">No active price quotations found.</p>
-                <a href="quote.html" class="text-blue-600 font-bold hover:underline text-sm mt-2 inline-block">Get a New Estimate →</a>
+        <div class="flex gap-2 mb-6 bg-slate-200 p-1 rounded-full w-fit">
+            <div onclick="switchTab('estimates')" id="tab-estimates" class="nav-pill active">Estimates & Quotes</div>
+            <div onclick="switchTab('history')" id="tab-history" class="nav-pill">Project History</div>
+        </div>
+
+        <div id="view-estimates" class="tab-view">
+            <div id="estimates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            <div id="empty-estimates" class="hidden text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
+                <div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                    <i class="ri-file-paper-line"></i>
+                </div>
+                <h3 class="text-slate-800 font-bold mb-1">No Estimates Yet</h3>
+                <p class="text-slate-400 text-sm mb-6">Create a price estimation to see it here.</p>
+                <a href="quote.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow-lg shadow-blue-100">
+                    <i class="ri-calculator-line mr-2"></i> Get Quote
+                </a>
+            </div>
+        </div>
+
+        <div id="view-history" class="tab-view hidden">
+            <div id="history-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                </div>
+            <div id="empty-history" class="hidden text-center py-20">
+                <p class="text-slate-400">No completed borewell records found.</p>
             </div>
         </div>
 
@@ -85,150 +134,242 @@
 
     <div id="footer-mount"></div>
 
-    <script>
-        if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
-        const db = firebase.firestore();
+    <div id="previewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; overflow-y:auto;">
+        <div class="min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full relative">
+                <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
+                    <h3 class="font-bold text-gray-700">Document Preview</h3>
+                    <div class="flex gap-2">
+                        <button id="modalDownloadBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700">
+                            <i class="ri-download-line mr-1"></i> Download
+                        </button>
+                        <button onclick="closePreview()" class="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-300">
+                            Close
+                        </button>
+                    </div>
+                </div>
+                <div class="p-8 bg-gray-500 overflow-auto max-h-[80vh] flex justify-center">
+                    <div id="previewContent" class="bg-white shadow-lg origin-top">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // 1. AUTH LISTENER (Eliminates Flicker)
-        firebase.auth().onAuthStateChanged((user) => {
-            const loader = document.getElementById('auth-loader');
-            
+    <script>
+        // 🟢 1. SYSTEM INIT
+        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
+            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        }
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // 🟢 2. AUTH GUARD
+        auth.onAuthStateChanged((user) => {
             if (user) {
-                // USER FOUND: Reveal Page
                 document.getElementById('userPhone').innerText = user.phoneNumber;
-                document.getElementById('debugPhone').innerText = user.phoneNumber;
-                
-                // Hide loader, Fade in body
-                loader.style.display = 'none';
                 document.body.style.opacity = '1';
-                
-                loadClientData(user.uid, user.phoneNumber);
+                loadDashboard(user.uid, user.phoneNumber);
             } else {
-                // NO USER: Redirect Immediately (Replace history so back button works)
                 window.location.replace("login.html");
             }
         });
 
         function logout() {
-            firebase.auth().signOut().then(() => window.location.href = "index.html");
+            auth.signOut().then(() => window.location.href = "index.html");
         }
 
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            document.getElementById('view-' + tabName).classList.remove('hidden');
-            document.getElementById('tab-' + tabName).classList.add('active');
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-pill').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-'+tab).classList.remove('hidden');
+            document.getElementById('tab-'+tab).classList.add('active');
         }
 
-        // 2. DATA LOADING
-       function loadClientData(uid, phone) {
-            const dataLoader = document.getElementById('data-loader');
-            dataLoader.classList.remove('hidden'); // Show spinner
+        // 🟢 3. DATA ENGINE (Fixed Sorting Issue)
+        function loadDashboard(uid, phone) {
             
-            // --- A. LOAD QUOTATIONS (Leads) ---
-            db.collection('leads')
-              .where('userId', '==', uid)
-              .get() 
+            // A. FETCH QUOTES
+            // REMOVED .orderBy() to avoid Index Requirement Error
+            db.collection('leads').where('userId', '==', uid).get()
               .then(snap => {
-                  const grid = document.getElementById('quotes-grid');
-                  const noData = document.getElementById('no-quotes');
-                  
+                  const grid = document.getElementById('estimates-grid');
                   if(snap.empty) {
-                      noData.classList.remove('hidden');
+                      document.getElementById('empty-estimates').classList.remove('hidden');
                   } else {
-                      let leads = [];
-                      snap.forEach(doc => leads.push(doc.data()));
-                      leads.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-
+                      let activeBookingFound = false;
                       grid.innerHTML = "";
-                      leads.forEach(data => {
-                          const dateObj = data.timestamp ? new Date(data.timestamp.toDate()) : new Date();
-                          const date = dateObj.toLocaleDateString();
-                          const isExpired = ((new Date() - dateObj) / (1000 * 60 * 60 * 24)) > 30;
-                          const dataStr = encodeURIComponent(JSON.stringify(data));
-                          const recalcLink = `quote.html?recalc=1&loc=${encodeURIComponent(data.loc)}&depth=${data.depth}`;
+                      
+                      // Client-Side Sorting (Newest First)
+                      let docs = [];
+                      snap.forEach(doc => docs.push(doc.data()));
+                      docs.sort((a, b) => {
+                          const timeA = a.timestamp ? a.timestamp.seconds : 0;
+                          const timeB = b.timestamp ? b.timestamp.seconds : 0;
+                          return timeB - timeA;
+                      });
 
-                          grid.innerHTML += `
-                            <div class="flex flex-col md:flex-row justify-between items-center p-5 bg-white border ${isExpired ? 'border-red-100 bg-red-50/10' : 'border-slate-200'} rounded-xl shadow-sm hover:shadow-md transition gap-4">
-                                <div class="flex-grow">
-                                    <h4 class="font-bold text-slate-700 text-lg">${data.loc || "Location"}</h4>
-                                    <p class="text-xs text-slate-400 mt-1"><i class="ri-calendar-line"></i> Quoted: ${date}</p>
-                                    <div class="mt-2 text-xs font-semibold text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded">${data.zone || 'Standard'} • ${data.depth} ft</div>
-                                    ${isExpired ? '<span class="ml-2 text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded">EXPIRED</span>' : ''}
-                                </div>
-                                <div class="text-right flex flex-col items-end gap-2">
-                                    <div class="font-extrabold text-xl text-slate-900">₹${parseInt(data.total).toLocaleString()}</div>
-                                    <div class="flex gap-2">
-                                        <button onclick="downloadQuotePDF('${dataStr}')" class="px-3 py-2 text-xs font-bold text-blue-600 border border-blue-200 bg-blue-50 rounded hover:bg-blue-100"><i class="ri-file-download-line"></i> PDF</button>
-                                        ${isExpired ? `<a href="${recalcLink}" class="px-3 py-2 text-xs font-bold text-white bg-slate-400 rounded hover:bg-slate-500">Recalculate</a>` : `<button class="px-3 py-2 text-xs font-bold text-white bg-emerald-500 rounded cursor-default"><i class="ri-check-line"></i> Valid</button>`}
+                      docs.forEach(data => {
+                          const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                          
+                          if (data.status === 'Booked' && !activeBookingFound) {
+                              updateLiveTracker(data);
+                              activeBookingFound = true;
+                          }
+
+                          const card = `
+                            <div class="glass-panel p-6 flex flex-col justify-between h-full relative">
+                                ${data.status === 'Booked' ? '<span class="absolute top-4 right-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">BOOKED</span>' : ''}
+                                <div>
+                                    <div class="text-xs font-bold text-slate-400 mb-1">${date}</div>
+                                    <h3 class="font-bold text-slate-800 text-lg mb-1">${data.loc}</h3>
+                                    <div class="flex items-baseline gap-1 mb-4">
+                                        <span class="text-2xl font-extrabold text-blue-900">₹${parseInt(data.total).toLocaleString()}</span>
+                                        <span class="text-sm text-slate-500 font-medium">/ ${data.depth}ft</span>
+                                    </div>
+                                    <div class="space-y-2 mb-6">
+                                        <div class="flex justify-between text-xs text-slate-500 border-b border-slate-50 pb-1"><span>Ref ID</span><span class="font-mono text-slate-700">${data.id}</span></div>
                                     </div>
                                 </div>
-                            </div>`;
+                                <div class="grid grid-cols-2 gap-2 mt-auto">
+                                    <button onclick="handleDocAction('preview', 'quote', '${encodeURIComponent(JSON.stringify(data))}')" class="bg-indigo-50 text-indigo-600 font-bold py-2 rounded-lg text-sm hover:bg-indigo-100">
+                                        <i class="ri-eye-line mr-1"></i> Preview
+                                    </button>
+                                    <button onclick="handleDocAction('download', 'quote', '${encodeURIComponent(JSON.stringify(data))}')" class="bg-emerald-50 text-emerald-600 font-bold py-2 rounded-lg text-sm hover:bg-emerald-100">
+                                        <i class="ri-download-line mr-1"></i> Download
+                                    </button>
+                                    <button onclick="recalc('${data.loc}', ${data.depth})" class="col-span-2 bg-slate-800 text-white font-bold py-2 rounded-lg text-sm hover:bg-black">
+                                        <i class="ri-refresh-line mr-1"></i> Edit / Recalculate
+                                    </button>
+                                </div>
+                            </div>
+                          `;
+                          grid.innerHTML += card;
                       });
                   }
-              });
+              }).catch(e => console.error("Error fetching quotes:", e));
 
-            // --- B. LOAD PROJECTS (Completed Borewells) ---
-            db.collection('projects')
-              .where('mobile', '==', phone)
-              .get()
+            // B. FETCH HISTORY (Completed Jobs)
+            db.collection('projects').where('mobile', '==', phone).get()
               .then(snap => {
-                  const grid = document.getElementById('projects-grid');
-                  const noData = document.getElementById('no-projects');
-                  
+                  const grid = document.getElementById('history-grid');
                   if(snap.empty) {
-                      noData.classList.remove('hidden');
+                      document.getElementById('empty-history').classList.remove('hidden');
                   } else {
                       grid.innerHTML = "";
                       snap.forEach(doc => {
                           const data = doc.data();
-                          const dataStr = encodeURIComponent(JSON.stringify(data));
+                          // Ensure ID exists for naming
+                          data.id = data.id || `BWBC-${Math.floor(Math.random()*10000)}`; 
                           
-                          grid.innerHTML += `
-                            <div class="bg-white p-6 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden group">
-                                <div class="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">COMPLETED</div>
-                                <h3 class="text-xl font-extrabold text-slate-800 mb-1">${data.location}</h3>
-                                <p class="text-xs text-slate-500 mb-4">Drilled on: ${data.date}</p>
-                                <div class="grid grid-cols-2 gap-2 text-sm bg-slate-50 p-4 rounded-lg mb-6">
-                                    <div><span class="block text-[10px] text-slate-400 uppercase">Total Depth</span> <b class="text-slate-700">${data.depth} ft</b></div>
-                                    <div><span class="block text-[10px] text-slate-400 uppercase">Yield</span> <b class="text-emerald-600">${data.yield}</b></div>
-                                    <div><span class="block text-[10px] text-slate-400 uppercase">Motor</span> <b class="text-slate-700">${data.motor}</b></div>
-                                    <div><span class="block text-[10px] text-slate-400 uppercase">Casing</span> <b class="text-slate-700">${data.casing_depth} ft</b></div>
+                          const card = `
+                            <div class="glass-panel p-6 border-l-4 border-l-emerald-500">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="font-bold text-slate-800 text-lg">${data.location}</h3>
+                                        <p class="text-xs text-slate-500">Completed: ${data.date}</p>
+                                    </div>
+                                    <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+                                        <i class="ri-checkbox-circle-line text-xl"></i>
+                                    </div>
                                 </div>
-                                <button onclick="downloadCert('${dataStr}')" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition flex items-center justify-center gap-2 shadow-lg group-hover:shadow-xl">
-                                    <i class="ri-file-certificate-line text-yellow-400"></i> Download Birth Certificate
-                                </button>
-                            </div>`;
+                                <div class="grid grid-cols-2 gap-4 text-sm bg-slate-50 p-4 rounded-xl mb-4">
+                                    <div><p class="text-[10px] text-slate-400 uppercase">Total Depth</p><p class="font-bold text-slate-700">${data.depth} ft</p></div>
+                                    <div><p class="text-[10px] text-slate-400 uppercase">Water Yield</p><p class="font-bold text-emerald-600">${data.yield}</p></div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="handleDocAction('preview', 'cert', '${encodeURIComponent(JSON.stringify(data))}')" class="flex-1 bg-indigo-50 text-indigo-600 font-bold py-2 rounded-lg text-sm hover:bg-indigo-100">
+                                        <i class="ri-eye-line mr-1"></i> Preview
+                                    </button>
+                                    <button onclick="handleDocAction('download', 'cert', '${encodeURIComponent(JSON.stringify(data))}')" class="flex-1 bg-emerald-50 text-emerald-600 font-bold py-2 rounded-lg text-sm hover:bg-emerald-100">
+                                        <i class="ri-download-line mr-1"></i> Download
+                                    </button>
+                                </div>
+                            </div>
+                          `;
+                          grid.innerHTML += card;
                       });
-                      switchTab('projects'); // Default view if projects exist
                   }
-                  dataLoader.classList.add('hidden'); // Hide loader when done
               });
         }
 
-        // PDF GENERATORS (Same Logic)
-        function downloadQuotePDF(encodedData) {
-            const data = JSON.parse(decodeURIComponent(encodedData));
-            let rows = "", remaining = parseInt(data.depth), floor = 0, currentRate = 90;
-            while(remaining > 0) {
-                let chunk = (remaining >= 50) ? 50 : remaining;
-                let cost = chunk * currentRate;
-                rows += `<tr><td>${floor}-${floor+chunk}ft @ ₹${currentRate}</td><td style="text-align:right">₹${cost.toLocaleString()}</td></tr>`;
-                remaining -= chunk; floor += chunk; currentRate += 5;
-            }
-            const content = getInvoiceHTML({ name: data.name || "Customer", mobile: data.mobile, loc: data.loc, total: data.total, rows: rows });
-            const el = document.createElement('div'); el.innerHTML = content; document.body.appendChild(el);
-            html2pdf().from(el).save(`Sagar_Estimate_${data.loc}.pdf`).then(() => document.body.removeChild(el));
+        function updateLiveTracker(data) {
+            const tracker = document.getElementById('live-tracker');
+            tracker.classList.remove('hidden');
+            document.getElementById('active-ref').innerText = `REF: ${data.id}`;
+            document.getElementById('step-booked').classList.add('active', 'completed');
         }
 
-        function downloadCert(encodedData) {
-            const data = JSON.parse(decodeURIComponent(encodedData));
-            const certID = data.projectId || `SBW-${new Date().getFullYear()}-GEN`;
-            const content = getCertificateHTML({ id: certID, name: data.customerName || "Valued Customer", loc: data.location, date: data.date, gps: data.gps || "Unavailable", depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType });
-            const el = document.createElement('div'); el.innerHTML = content; document.body.appendChild(el);
-            html2pdf().from(el).save(`${certID}.pdf`).then(() => document.body.removeChild(el));
+        function recalc(loc, depth) {
+            window.location.href = `quote.html?loc=${encodeURIComponent(loc)}&depth=${depth}`;
         }
+
+        // 🟢 UNIFIED DOCUMENT HANDLER (Preview & Download)
+        function handleDocAction(action, type, encodedData) {
+            const data = JSON.parse(decodeURIComponent(encodedData));
+            let htmlContent = "";
+            let fileName = "";
+
+            // 1. GENERATE CONTENT & NAME
+            if (type === 'quote') {
+                // Reconstruct rows logic
+                let rows = "";
+                let remaining = parseInt(data.depth); 
+                let floor = 0; 
+                let currentRate = 70;
+                while(remaining > 0) {
+                    let chunk = (remaining >= 50) ? 50 : remaining;
+                    let cost = chunk * currentRate;
+                    rows += `<tr><td>${floor}-${floor+chunk}ft</td><td style="text-align:right">₹${cost.toLocaleString()}</td></tr>`;
+                    remaining -= chunk; floor += chunk; currentRate += 10;
+                }
+                data.rows = rows;
+                
+                if(typeof getInvoiceHTML === 'function') {
+                    htmlContent = getInvoiceHTML(data);
+                    fileName = `${data.id}.pdf`; // 🟢 Smart Name
+                }
+            } else if (type === 'cert') {
+                if(typeof getCertificateHTML === 'function') {
+                    // Normalize data structure for cert template
+                    htmlContent = getCertificateHTML({
+                        id: data.id,
+                        name: "Valued Customer",
+                        loc: data.location,
+                        date: data.date,
+                        depth: data.depth,
+                        yield: data.yield,
+                        motor: data.motor
+                    });
+                    fileName = `${data.id}.pdf`; // 🟢 Smart Name (BWBC-xxxx)
+                }
+            }
+
+            if (!htmlContent) return alert("Template Engine Error");
+
+            // 2. EXECUTE ACTION
+            if (action === 'preview') {
+                document.getElementById('previewContent').innerHTML = htmlContent;
+                document.getElementById('previewModal').style.display = 'flex';
+                // Bind Download button in modal to the specific file
+                document.getElementById('modalDownloadBtn').onclick = function() {
+                    downloadFromHTML(htmlContent, fileName);
+                };
+            } else {
+                downloadFromHTML(htmlContent, fileName);
+            }
+        }
+
+        function downloadFromHTML(html, filename) {
+            const element = document.createElement('div');
+            element.innerHTML = html;
+            html2pdf().from(element).save(filename);
+        }
+
+        function closePreview() {
+            document.getElementById('previewModal').style.display = 'none';
+        }
+
     </script>
 </body>
 </html>
