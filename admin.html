@@ -1,18 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sagar Admin</title>
-    
+    <title>Sagar Admin | Command OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
@@ -21,265 +22,203 @@
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
-        /* APP-LIKE FEEL */
-        :root { --cyber-black: #0f172a; --cyber-blue: #3b82f6; --glass: rgba(30, 41, 59, 0.7); }
-        body { background-color: var(--cyber-black); color: #e2e8f0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 80px; } /* Padding for bottom nav */
+        /* --- APP CORE --- */
+        :root { --app-bg: #0f172a; --glass: rgba(30, 41, 59, 0.7); --border: rgba(255, 255, 255, 0.08); }
+        body { background-color: var(--app-bg); color: #e2e8f0; font-family: 'Inter', sans-serif; overflow: hidden; /* Lock Body Scroll */ }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* --- GLASS UI --- */
+        .glass-card { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 16px; }
+        .glass-modal { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(59, 130, 246, 0.3); }
         
-        /* GLASS CARDS */
-        .glass-card { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
-        
-        /* MOBILE NAV (Bottom Bar) */
-        .mobile-nav { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: #1e293b; border-top: 1px solid #334155; 
-            display: flex; justify-content: space-around; padding: 12px 0; 
-            z-index: 50; padding-bottom: env(safe-area-inset-bottom);
-        }
-        .nav-item { color: #64748b; flex-direction: column; align-items: center; display: flex; font-size: 10px; font-weight: 600; }
+        /* --- NAVIGATION --- */
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; font-size: 10px; font-weight: 600; padding: 8px; transition: 0.2s; border-radius: 8px; }
         .nav-item i { font-size: 20px; margin-bottom: 2px; }
-        .nav-item.active { color: #3b82f6; }
+        .nav-item.active { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
         
-        /* DESKTOP SIDEBAR (Hidden on Mobile) */
-        @media (min-width: 768px) {
-            body { padding-bottom: 0; display: flex; }
-            .mobile-nav { display: none; }
-            .desktop-sidebar { width: 260px; height: 100vh; position: fixed; border-right: 1px solid #334155; padding: 20px; }
-            .main-content { margin-left: 260px; width: calc(100% - 260px); padding: 30px; }
-        }
+        /* Desktop Sidebar Items */
+        .nav-item-desk { display: flex; align-items: center; gap: 12px; padding: 12px; color: #94a3b8; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 14px; font-weight: 600; }
+        .nav-item-desk:hover, .nav-item-desk.active { background: #1e293b; color: white; border-left: 3px solid #3b82f6; }
 
-        /* UTILS */
-        .cyber-input { background: #0f172a; border: 1px solid #334155; color: white; padding: 12px; border-radius: 8px; width: 100%; outline: none; font-size: 14px; }
-        .cyber-input:focus { border-color: var(--cyber-blue); }
-        .btn-primary { background: var(--cyber-blue); color: white; padding: 12px 20px; border-radius: 8px; font-weight: 700; width: 100%; text-align: center; }
+        /* --- UTILS --- */
+        .cyber-input { background: #1e293b; border: 1px solid #334155; color: white; padding: 10px; border-radius: 8px; width: 100%; outline: none; font-size: 13px; transition: 0.2s; }
+        .cyber-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
         
-        /* MODAL ANIMATION */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal.open { display: flex; animation: fadeUp 0.2s ease-out; }
-        .modal-content { background: #1e293b; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 24px; position: relative; }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
 
-        /* LOADING SPINNER */
-        .spinner { border: 3px solid #334155; border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* --- ANIMATIONS --- */
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- PDF PREVIEW --- */
+        #previewContent { display: flex; justify-content: center; background: #525659; padding: 20px; min-height: 100%; }
+        #previewContent > div { width: 210mm; min-height: 297mm; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
     </style>
 </head>
-<body>
+<body class="flex h-screen w-screen">
 
-    <div id="login-overlay" class="fixed inset-0 bg-[#0f172a] z-[200] flex flex-col items-center justify-center p-6 transition-all duration-300">
-        <div class="text-center mb-8">
-            <div class="w-16 h-16 bg-blue-600 rounded-xl mx-auto flex items-center justify-center text-3xl font-bold mb-4 shadow-lg shadow-blue-500/20">S</div>
-            <h1 class="text-2xl font-bold tracking-tight">System Access</h1>
-            <p class="text-slate-500 text-sm">Authorized Personnel Only</p>
-        </div>
-        
-        <div class="w-full max-w-sm space-y-4">
-            <input type="tel" id="adminPhone" class="cyber-input text-center tracking-widest text-lg" placeholder="Mobile Number" maxlength="10">
-            <button id="sendOtpBtn" onclick="sendAdminOTP()" class="btn-primary">AUTHENTICATE</button>
+    <div id="system-loader" class="fixed inset-0 z-[2000] bg-[#0f172a] flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div class="font-mono text-xs tracking-[0.2em] text-blue-500 animate-pulse">INITIALIZING...</div>
+    </div>
+
+    <div id="login-overlay" class="fixed inset-0 z-[1500] bg-[#0f172a] hidden flex-col items-center justify-center p-6">
+        <div class="w-full max-w-sm text-center">
+            <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl text-white font-bold mx-auto mb-6 shadow-lg shadow-blue-500/20">S</div>
+            <h1 class="text-2xl font-bold text-white mb-2">System Access</h1>
+            <p class="text-slate-500 text-sm mb-8">Authorized Personnel Only</p>
             
-            <div id="otp-group" class="hidden space-y-4">
-                <input type="text" id="adminOtp" class="cyber-input text-center tracking-[1em] font-bold" placeholder="• • • • • •" maxlength="6">
-                <button id="verifyOtpBtn" onclick="verifyAdminOTP()" class="btn-primary bg-emerald-600">UNLOCK TERMINAL</button>
+            <div class="space-y-4">
+                <input type="tel" id="adminPhone" class="cyber-input text-center text-lg tracking-widest font-mono" placeholder="MOBILE ID" maxlength="10">
+                <button id="sendOtpBtn" onclick="sendAdminOTP()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition">VERIFY ID</button>
+                
+                <div id="otp-group" class="hidden space-y-4 pt-2">
+                    <input type="tel" id="adminOtp" class="cyber-input text-center text-xl tracking-[0.5em] font-bold" placeholder="••••••" maxlength="6">
+                    <button onclick="verifyAdminOTP()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-500/20">UNLOCK TERMINAL</button>
+                </div>
             </div>
-            <div id="recaptcha-container"></div>
+            <div id="recaptcha-container" class="mt-4"></div>
         </div>
     </div>
 
-    <aside class="desktop-sidebar hidden md:flex flex-col bg-[#1e293b]">
-        <div class="mb-8 flex items-center gap-3 px-2">
-            <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold">S</div>
-            <div>
-                <h1 class="font-bold text-sm">ADMIN CONSOLE</h1>
-                <p class="text-[10px] text-slate-500">v2.4 Mobile Ready</p>
-            </div>
+    <aside class="hidden md:flex w-64 bg-[#0f172a] border-r border-slate-800 flex-col z-20">
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-xl font-black text-white tracking-tight">SAGAR<span class="text-blue-500">OS</span></h1>
+            <div class="flex items-center gap-2 mt-1"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span><span class="text-[10px] font-mono text-emerald-500">ONLINE</span></div>
         </div>
-        
-        <nav class="flex-1 space-y-2">
-            <button onclick="showSection('leads')" class="nav-item-desk w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex gap-3 items-center" id="d-nav-leads">
-                <i class="ri-user-star-line"></i> Active Leads
-            </button>
-            <button onclick="showSection('projects')" class="nav-item-desk w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex gap-3 items-center" id="d-nav-projects">
-                <i class="ri-folder-shield-2-line"></i> Projects
-            </button>
-            <button onclick="showSection('silent')" class="nav-item-desk w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex gap-3 items-center" id="d-nav-silent">
-                <i class="ri-eye-2-line"></i> Window Shoppers
-            </button>
-            <button onclick="showSection('maproom')" class="nav-item-desk w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex gap-3 items-center" id="d-nav-maproom">
-                <i class="ri-map-pin-2-line"></i> Map Room
-            </button>
+        <nav class="flex-1 p-4 space-y-1">
+            <div onclick="showSection('leads')" id="d-nav-leads" class="nav-item-desk active"><i class="ri-radar-line"></i> Live Leads</div>
+            <div onclick="showSection('projects')" id="d-nav-projects" class="nav-item-desk"><i class="ri-folder-shield-2-line"></i> Projects</div>
+            <div onclick="showSection('silent')" id="d-nav-silent" class="nav-item-desk"><i class="ri-eye-2-line"></i> Window Shoppers</div>
+            <div onclick="showSection('maproom')" id="d-nav-maproom" class="nav-item-desk"><i class="ri-map-2-line"></i> Map Room</div>
         </nav>
-
-        <button onclick="logout()" class="p-3 text-red-400 hover:bg-red-900/20 rounded flex items-center gap-3 text-sm font-bold">
-            <i class="ri-logout-box-line"></i> Secure Exit
-        </button>
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="logout()" class="w-full py-2 flex items-center justify-center gap-2 text-red-400 hover:bg-red-500/10 rounded-lg text-xs font-bold transition"><i class="ri-shut-down-line"></i> SECURE LOGOUT</button>
+        </div>
     </aside>
 
-    <main class="main-content w-full p-4 md:p-8">
+    <main class="flex-1 relative flex flex-col h-full overflow-hidden">
         
-        <div class="flex justify-between items-center mb-6 md:hidden">
-            <h1 class="text-xl font-bold">Dashboard</h1>
-            <div class="w-8 h-8 bg-blue-900/30 rounded-full flex items-center justify-center text-blue-400" onclick="logout()">
-                <i class="ri-shut-down-line"></i>
-            </div>
-        </div>
+        <header class="md:hidden h-16 bg-[#0f172a]/90 backdrop-blur border-b border-slate-800 flex items-center justify-between px-4 z-30">
+            <div class="font-bold text-white">Dashboard</div>
+            <button onclick="logout()" class="text-slate-400"><i class="ri-logout-box-r-line"></i></button>
+        </header>
 
-        <div id="ceo-dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
-            <div class="glass-card p-4">
-                <div class="text-xs text-slate-400 uppercase font-bold">Total Revenue</div>
-                <div class="text-lg md:text-2xl font-bold text-emerald-400 mt-1" id="stat-revenue">₹0</div>
-            </div>
-            <div class="glass-card p-4">
-                <div class="text-xs text-slate-400 uppercase font-bold">Depth Drilled</div>
-                <div class="text-lg md:text-2xl font-bold text-blue-400 mt-1" id="stat-depth">0 ft</div>
-            </div>
-            <div class="glass-card p-4 col-span-2 md:col-span-2">
-                <div class="flex justify-between items-center">
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 custom-scrollbar relative">
+            
+            <div id="ceo-dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
+                <div class="glass-card p-4 border-l-4 border-emerald-500">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold">Revenue</p>
+                    <h3 class="text-lg md:text-2xl font-bold text-white mt-1" id="stat-revenue">₹0</h3>
+                </div>
+                <div class="glass-card p-4 border-l-4 border-blue-500">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold">Drilled</p>
+                    <h3 class="text-lg md:text-2xl font-bold text-white mt-1" id="stat-depth">0 ft</h3>
+                </div>
+                <div class="glass-card p-4 col-span-2 border-l-4 border-purple-500 flex justify-between items-center">
                     <div>
-                        <div class="text-xs text-slate-400 uppercase font-bold">Conversion Rate</div>
-                        <div class="text-xl font-bold text-white mt-1" id="stat-conversion">0%</div>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold">Conversion</p>
+                        <h3 class="text-xl font-bold text-white mt-1" id="stat-conversion">0%</h3>
                     </div>
-                    <div class="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center animate-pulse"><i class="ri-flashlight-fill"></i></div>
+                    <button onclick="startNewCertificate()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg flex items-center gap-2">
+                        <i class="ri-add-line"></i> <span class="hidden sm:inline">NEW PROJECT</span>
+                    </button>
                 </div>
             </div>
-        </div>
 
-        <div id="filter-bar" class="flex gap-2 mb-6 hidden">
-            <div class="relative flex-1">
-                <i class="ri-search-line absolute left-3 top-3 text-slate-500"></i>
-                <input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input pl-10" placeholder="Search name, phone...">
-            </div>
-            <button onclick="showSection('create')" class="bg-blue-600 text-white px-4 rounded-lg font-bold"><i class="ri-add-line"></i></button>
-        </div>
-
-        <div id="section-leads" class="content-section">
-            <h2 class="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Recent Inquiries</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="leads-list"></div>
-        </div>
-
-        <div id="section-projects" class="content-section hidden">
-            <h2 class="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Project Files</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="projects-list"></div>
-        </div>
-
-        <div id="section-silent" class="content-section hidden">
-            <h2 class="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Window Shoppers (Silent)</h2>
-            <p class="text-xs text-slate-400 mb-4">Users who verified OTP but didn't book.</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="silent-list"></div>
-        </div>
-
-        <div id="section-create" class="content-section hidden">
-            <div class="glass-card p-4 md:p-6 max-w-2xl mx-auto">
-                <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
-                    <h2 class="font-bold text-lg text-white" id="form-mode-text">New Project Record</h2>
-                    <button onclick="showSection('projects')" class="text-slate-400"><i class="ri-close-line text-xl"></i></button>
+            <div id="filter-bar" class="mb-6 hidden">
+                <div class="relative w-full">
+                    <i class="ri-search-line absolute left-3 top-3 text-slate-500"></i>
+                    <input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input pl-10" placeholder="Search leads, names, locations...">
                 </div>
-                <form id="projectForm" onsubmit="saveProject(event)" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <input type="text" id="p_id" class="cyber-input bg-slate-800 text-slate-400 cursor-not-allowed" readonly>
-                        <input type="date" id="p_date" class="cyber-input" required>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="tel" id="p_mobile" class="cyber-input" placeholder="Customer Mobile (10 digits)" required maxlength="10">
-                        <input type="text" id="p_name" class="cyber-input" placeholder="Customer Name" required>
-                    </div>
-                    <input type="text" id="p_loc" class="cyber-input" placeholder="Location / Address" required>
-                    <div class="flex gap-2">
-                        <input type="text" id="p_gps" class="cyber-input" placeholder="GPS Coordinates" required>
-                        <button type="button" onclick="openMapPicker()" class="bg-slate-700 px-4 rounded text-white"><i class="ri-map-pin-line"></i></button>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-700">
-                        <div><label class="text-[10px] text-slate-500 uppercase">Depth (ft)</label><input type="number" id="p_depth" class="cyber-input"></div>
-                        <div><label class="text-[10px] text-slate-500 uppercase">Yield (Inch)</label><input type="text" id="p_yield" class="cyber-input"></div>
-                        <div><label class="text-[10px] text-slate-500 uppercase">Casing (ft)</label><input type="number" id="p_casing" class="cyber-input"></div>
-                        <div><label class="text-[10px] text-slate-500 uppercase">Casing Type</label>
-                            <select id="p_casingType" class="cyber-input"><option>PVC</option><option>MS</option><option>GI</option></select>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-[10px] text-slate-500 uppercase">Rig Type</label><input type="text" id="p_rig" class="cyber-input" value="Sensor Rig"></div>
-                        <div><label class="text-[10px] text-slate-500 uppercase">Motor Rec.</label><input type="text" id="p_motor" class="cyber-input" value="7.5 HP Texmo"></div>
-                    </div>
-                    <button type="submit" class="btn-primary mt-6" id="save-btn-text">SAVE RECORD</button>
-                </form>
             </div>
-        </div>
 
-        <div id="section-maproom" class="content-section hidden h-[80vh] relative rounded-xl overflow-hidden border border-slate-700">
-            <div id="adminMap" class="w-full h-full"></div>
-            <div class="absolute top-2 left-2 right-2 flex flex-col gap-2 pointer-events-none">
-                <div class="bg-slate-900/90 p-2 rounded-lg pointer-events-auto flex gap-2 overflow-x-auto">
-                    <select id="drawType" class="bg-slate-800 text-white text-xs p-2 rounded border border-slate-600">
+            <div id="section-leads" class="content-section space-y-3"></div>
+
+            <div id="section-projects" class="content-section hidden grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+            <div id="section-silent" class="content-section hidden space-y-3">
+                <div id="silent-list"></div>
+            </div>
+
+            <div id="section-maproom" class="content-section hidden h-[75vh] md:h-[80vh] relative rounded-xl overflow-hidden border border-slate-700">
+                <div id="adminMap" class="w-full h-full bg-slate-900"></div>
+                
+                <div class="absolute top-4 left-4 z-10 flex gap-2">
+                    <select id="drawType" class="bg-slate-900 text-white text-xs p-2 rounded border border-slate-600 shadow-lg">
                         <option value="rock">Hard Rock (Red)</option>
                         <option value="water">High Yield (Green)</option>
                         <option value="moderate">Moderate (Yellow)</option>
-                        <option value="saline">Saline (Blue)</option>
-                        <option value="silt">Silt/Collapse (Orange)</option>
                     </select>
-                    <button id="btnDraw" onclick="enableDrawing()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold whitespace-nowrap">DRAW ZONE</button>
-                    <button id="btnCancel" onclick="cancelDrawing()" class="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold hidden whitespace-nowrap">CANCEL</button>
+                    <button onclick="enableDrawing()" id="btnDraw" class="bg-white text-black px-3 py-1 rounded text-xs font-bold shadow-lg">DRAW</button>
+                    <button onclick="cancelDrawing()" id="btnCancel" class="hidden bg-red-500 text-white px-3 py-1 rounded text-xs font-bold shadow-lg">CANCEL</button>
+                </div>
+
+                <div class="absolute top-4 right-4 z-10">
+                    <div class="bg-slate-900/90 backdrop-blur border border-slate-700 rounded-xl shadow-2xl w-48 overflow-hidden transition-all duration-300" id="layersPanel">
+                        <div onclick="document.getElementById('layersBody').classList.toggle('hidden')" class="p-3 bg-slate-800 flex justify-between items-center cursor-pointer border-b border-slate-700">
+                            <h4 class="text-xs font-bold text-white uppercase">Active Layers</h4>
+                            <i class="ri-arrow-down-s-line text-slate-400"></i>
+                        </div>
+                        <div id="layersBody" class="max-h-48 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                            <div id="zonesList" class="text-[10px] text-slate-500 text-center py-2">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="saveZonePanel" class="hidden absolute bottom-4 left-4 right-4 bg-slate-900 p-4 rounded-xl border border-slate-600 shadow-2xl z-20">
+                    <h4 class="text-white text-sm font-bold mb-2">Save Zone</h4>
+                    <input type="hidden" id="editDocId">
+                    <div class="flex gap-2">
+                        <input type="text" id="newZoneName" class="cyber-input" placeholder="Name">
+                        <button onclick="saveCurrentZone()" id="btnSaveZone" class="bg-emerald-600 text-white px-4 rounded text-xs font-bold">SAVE</button>
+                    </div>
                 </div>
             </div>
-            
-            <div id="saveZonePanel" class="absolute bottom-4 left-4 right-4 bg-slate-900 p-4 rounded-xl border border-slate-600 hidden z-10">
-                <h3 class="text-white font-bold text-sm mb-2" id="zonePanelTitle">Save New Zone</h3>
-                <input type="hidden" id="editDocId">
-                <div class="flex gap-2">
-                    <input type="text" id="newZoneName" class="cyber-input text-xs" placeholder="Zone Name (e.g. Mangalagiri North)">
-                    <button onclick="saveCurrentZone()" id="btnSaveZone" class="bg-emerald-600 text-white px-4 rounded text-xs font-bold">SAVE</button>
+
+            <div id="section-create" class="content-section hidden max-w-2xl mx-auto">
+                <div class="glass-card p-6">
+                    <div class="flex justify-between mb-6 border-b border-slate-700 pb-4">
+                        <h3 class="font-bold text-white">New Record</h3>
+                        <button onclick="showSection('projects')" class="text-slate-400"><i class="ri-close-line text-xl"></i></button>
+                    </div>
+                    <form id="projectForm" onsubmit="saveProject(event)" class="space-y-4">
+                        <input type="hidden" id="p_id">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Date</label><input type="date" id="p_date" class="cyber-input" required></div>
+                            <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Mobile</label><input type="tel" id="p_mobile" class="cyber-input" required maxlength="10"></div>
+                        </div>
+                        <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Name</label><input type="text" id="p_name" class="cyber-input" required></div>
+                        <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Location</label><input type="text" id="p_loc" class="cyber-input" required></div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Depth</label><input type="number" id="p_depth" class="cyber-input" required></div>
+                            <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Yield</label><input type="text" id="p_yield" class="cyber-input" required></div>
+                            <div><label class="text-[10px] text-slate-500 uppercase block mb-1">Casing</label><input type="number" id="p_casing" class="cyber-input" required></div>
+                        </div>
+                        <div class="pt-4"><button type="submit" class="w-full btn-primary py-3" id="save-btn-text">SAVE RECORD</button></div>
+                    </form>
                 </div>
             </div>
-            
-            <div class="absolute top-14 right-2 w-48 bg-slate-900/90 p-2 rounded-lg max-h-[50vh] overflow-y-auto pointer-events-auto border border-slate-700">
-                <h4 class="text-[10px] text-slate-400 uppercase font-bold mb-2">Active Layers</h4>
-                <div id="zonesList" class="space-y-1"></div>
-            </div>
-        </div>
 
-        <div class="h-20 md:h-0"></div> </main>
+        </div> </main>
 
-    <nav class="mobile-nav md:hidden">
-        <div class="nav-item active" id="nav-leads" onclick="showSection('leads')">
-            <i class="ri-user-star-line"></i>
-            <span>Leads</span>
-        </div>
-        <div class="nav-item" id="nav-projects" onclick="showSection('projects')">
-            <i class="ri-folder-shield-2-line"></i>
-            <span>Projects</span>
-        </div>
-        <div class="nav-item" id="nav-silent" onclick="showSection('silent')">
-            <i class="ri-eye-2-line"></i>
-            <span>Shoppers</span>
-        </div>
-        <div class="nav-item" id="nav-maproom" onclick="showSection('maproom')">
-            <i class="ri-map-pin-2-line"></i>
-            <span>Maps</span>
-        </div>
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0f172a] border-t border-slate-800 flex justify-around items-center z-40 pb-safe">
+        <div onclick="showSection('leads')" id="nav-leads" class="nav-item active"><i class="ri-radar-line"></i><span>Leads</span></div>
+        <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-folder-shield-2-line"></i><span>Files</span></div>
+        <div onclick="showSection('silent')" id="nav-silent" class="nav-item"><i class="ri-eye-2-line"></i><span>Silent</span></div>
+        <div onclick="showSection('maproom')" id="nav-maproom" class="nav-item"><i class="ri-map-2-line"></i><span>Map</span></div>
     </nav>
 
-    <div id="detailModal" class="modal">
-        <div class="modal-content relative">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="ri-close-circle-fill text-2xl"></i></button>
-            <div id="modalContent"></div>
-        </div>
-    </div>
-
-    <div id="previewModal" class="modal">
-        <div class="modal-content max-w-3xl bg-white text-black p-0 overflow-hidden flex flex-col h-[90vh]">
-            <div class="bg-slate-100 p-3 flex justify-between items-center border-b">
-                <h3 class="font-bold text-slate-700">Document Preview</h3>
-                <div class="flex gap-2">
-                    <button onclick="confirmDownloadPDF()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">DOWNLOAD</button>
-                    <button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-500"><i class="ri-close-line text-xl"></i></button>
-                </div>
+    <div id="detailModal" class="hidden fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+        <div class="glass-modal w-full max-w-lg rounded-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900">
+                <h3 class="font-bold text-white">Details</h3>
+                <button onclick="closeModal()" class="text-slate-400"><i class="ri-close-circle-fill text-2xl"></i></button>
             </div>
-            <div id="previewContent" class="flex-1 overflow-y-auto p-4 bg-gray-500"></div>
-        </div>
-    </div>
-
-    <div id="mapModal" class="modal">
-        <div class="modal-content h-[60vh] flex flex-col p-0 overflow-hidden">
-            <div id="mapContainer" class="flex-1 bg-slate-800"></div>
-            <button onclick="confirmLocation()" class="bg-blue-600 text-white py-4 font-bold tracking-widest hover:bg-blue-500">CONFIRM LOCATION</button>
+            <div id="modalContent" class="p-6 overflow-y-auto"></div>
         </div>
     </div>
 
@@ -290,232 +229,326 @@
 
         function notify(msg, type='success') {
             Toastify({
-                text: msg, duration: 3000, gravity: "top", position: "right",
-                style: { background: type==='success' ? "#059669" : "#dc2626", borderRadius: "8px", boxShadow: "0 4px 15px rgba(0,0,0,0.3)", fontSize: "12px", fontWeight: "bold" }
+                text: msg, duration: 3000, gravity: "top", position: "center",
+                style: { background: type==='success' ? "#059669" : "#dc2626", borderRadius: "8px", fontSize: "12px", fontWeight: "bold" }
             }).showToast();
         }
 
-        // --- AUTH & SETUP ---
+        // --- 🟢 FIXED AUTH LOGIC ---
         auth.onAuthStateChanged(user => {
-            const loginModal = document.getElementById('login-overlay');
+            const loader = document.getElementById('system-loader');
+            const loginOverlay = document.getElementById('login-overlay');
 
             if(user) {
+                // User detected, verify admin status
                 db.collection('admins').doc(user.phoneNumber).get().then(doc => {
                     if (doc.exists) {
-                        loginModal.classList.add('hidden'); // Hide Login
+                        // SUCCESS: Hide everything blocking the view
+                        if(loader) loader.classList.add('hidden');
+                        if(loginOverlay) loginOverlay.classList.add('hidden');
+                        
                         showSection('leads'); 
                         loadAnalytics(); 
                     } else { 
-                        notify("UNAUTHORIZED ACCESS", "error"); 
+                        // FAILED: Not an admin
                         auth.signOut(); 
-                        loginModal.classList.remove('hidden');
+                        if(loader) loader.classList.add('hidden');
+                        if(loginOverlay) loginOverlay.classList.remove('hidden');
+                        notify("ACCESS DENIED", "error");
                     }
                 }).catch(e => {
-                    notify("System Error", "error");
-                    loginModal.classList.remove('hidden');
+                    notify("Auth Error", "error");
+                    if(loader) loader.classList.add('hidden');
+                    if(loginOverlay) loginOverlay.classList.remove('hidden');
                 });
             } else {
-                loginModal.classList.remove('hidden');
+                // NO USER: Show Login
+                if(loader) loader.classList.add('hidden');
+                if(loginOverlay) loginOverlay.classList.remove('hidden');
             }
         });
 
+        // OTP & LOGIN
         function sendAdminOTP() {
             const phone = document.getElementById('adminPhone').value;
-            if(phone.length !== 10) return notify("INVALID ID", "error");
-            const btn = document.getElementById('sendOtpBtn'); btn.innerText = "TRANSMITTING...";
+            if(phone.length !== 10) return notify("Enter 10-digit Mobile", "error");
+            
+            const btn = document.getElementById('sendOtpBtn'); 
+            btn.innerText = "SENDING...";
+            
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
+            
             auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier).then(cr => {
-                window.confirmationResult = cr; btn.classList.add('hidden');
+                window.confirmationResult = cr; 
+                btn.classList.add('hidden');
                 document.getElementById('otp-group').classList.remove('hidden');
-            }).catch(e => { notify("SMS FAILED", "error"); btn.innerText = "RETRY"; });
+            }).catch(e => { notify("SMS Failed", "error"); btn.innerText = "RETRY"; });
         }
-        function verifyAdminOTP() { window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => notify("INVALID CODE", "error")); }
-        function logout() { auth.signOut(); window.location.reload(); }
+        function verifyAdminOTP() { 
+            window.confirmationResult.confirm(document.getElementById('adminOtp').value)
+            .then(() => window.location.reload())
+            .catch(() => notify("Invalid Code", "error")); 
+        }
+        function logout() { auth.signOut().then(() => window.location.reload()); }
 
-        // --- 🟢 FIXED NAVIGATION ---
+        // --- NAVIGATION ---
         function showSection(id) {
-            // Hide all content
             document.querySelectorAll('.content-section').forEach(e => e.classList.add('hidden'));
             document.getElementById('section-'+id).classList.remove('hidden');
             
-            // Update Nav State (Mobile & Desktop)
+            // Mobile Nav
             document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-            const navEl = document.getElementById('nav-'+id);
-            if(navEl) navEl.classList.add('active');
-            
-            // Update Desktop Sidebar Highlights
-            document.querySelectorAll('.nav-item-desk').forEach(e => e.classList.remove('bg-slate-800','text-white'));
-            const dNavEl = document.getElementById('d-nav-'+id);
-            if(dNavEl) dNavEl.classList.add('bg-slate-800','text-white');
+            const nav = document.getElementById('nav-'+id);
+            if(nav) nav.classList.add('active');
 
-            // Dashboard & Search Visibility
+            // Desktop Nav
+            document.querySelectorAll('.nav-item-desk').forEach(e => e.classList.remove('active', 'bg-slate-800', 'text-white', 'border-l-4', 'border-blue-500'));
+            const dNav = document.getElementById('d-nav-'+id);
+            if(dNav) dNav.classList.add('active', 'bg-slate-800', 'text-white', 'border-l-4', 'border-blue-500');
+
             const filterBar = document.getElementById('filter-bar');
-            const dashboard = document.getElementById('ceo-dashboard');
-            
-            if(id === 'leads' || id === 'projects') {
-                filterBar.classList.remove('hidden'); 
-                filterBar.classList.add('flex');
-                dashboard.classList.remove('hidden');
-            } else {
-                filterBar.classList.add('hidden'); 
-                filterBar.classList.remove('flex');
-                dashboard.classList.add('hidden');
-            }
+            if(id === 'leads' || id === 'projects') filterBar.classList.remove('hidden');
+            else filterBar.classList.add('hidden');
 
-            // Load Data
-            if(id === 'leads') loadLeads(); 
-            else if(id === 'projects') loadProjects();
-            else if(id === 'silent') loadSilentLeads(); // ✅ FIXED: Calls the correct function
-            else if(id === 'maproom') initAdminMap();
+            if(id === 'leads') loadLeads();
+            if(id === 'projects') loadProjects();
+            if(id === 'silent') loadSilentLeads();
+            if(id === 'maproom') setTimeout(initAdminMap, 100); // Slight delay for rendering
         }
 
-        // --- 🟢 FIXED DELETE LOGIC ---
-        function deleteRecord(collection, docId) {
-            if(confirm("⚠ PERMANENT DELETE: Are you sure?")) {
-                db.collection(collection).doc(docId).delete().then(() => {
-                    notify("RECORD DELETED", "error"); 
-                    closeModal();
-                    if(collection === 'leads') loadLeads(); 
-                    else if(collection === 'projects') loadProjects();
-                    else if(collection === 'silent_leads') loadSilentLeads(); // ✅ REFRESHES SILENT LIST
-                });
-            }
-        }
-
-        // --- 🟢 SILENT LEADS (Mobile Optimized) ---
-        function loadSilentLeads() {
-            const list = document.getElementById('silent-list');
-            list.innerHTML = '<div class="text-center text-slate-500 py-10"><div class="spinner mx-auto mb-2"></div>Scanning...</div>';
+        // --- DATA LOADERS ---
+        function loadLeads() {
+            const el = document.getElementById('section-leads');
+            el.innerHTML = '<div class="text-center text-slate-500 py-10 animate-pulse">Scanning Leads...</div>';
             
-            db.collection('silent_leads').orderBy('timestamp', 'desc').limit(50).get().then(snap => {
-                list.innerHTML = "";
-                if(snap.empty) { list.innerHTML = '<div class="text-center text-slate-600 mt-10">No Window Shoppers found.</div>'; return; }
+            db.collection('leads').orderBy('timestamp','desc').limit(50).get().then(snap => {
+                el.innerHTML = "";
+                if(snap.empty) { el.innerHTML = '<div class="text-center text-slate-600 mt-10">No Active Leads</div>'; return; }
                 
                 snap.forEach(doc => {
                     const data = doc.data();
-                    const time = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : "Just now";
-                    
-                    list.innerHTML += `
-                        <div class="glass-card p-4 flex justify-between items-center group">
-                            <div>
-                                <h4 class="text-lg font-mono font-bold text-yellow-400">${data.mobile}</h4>
-                                <p class="text-xs text-slate-500 flex items-center gap-2 mt-1">
-                                    <i class="ri-time-line"></i> ${time}
-                                </p>
+                    // 🟢 FIX: Added min-w-0 and truncate to prevent spilling
+                    el.innerHTML += `
+                        <div onclick="openLeadModal('${doc.id}')" class="glass-card p-4 flex justify-between items-center cursor-pointer hover:border-blue-500 transition group">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-full bg-blue-900/40 flex items-center justify-center text-blue-400 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition">
+                                    <i class="ri-user-line"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-white text-sm truncate pr-2">${data.name}</div>
+                                    <div class="text-[10px] text-slate-400 font-mono truncate">${data.loc}</div>
+                                </div>
                             </div>
-                            <div class="flex gap-2">
-                                <a href="tel:${data.mobile}" class="bg-green-600/20 text-green-400 border border-green-600/50 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-green-600 hover:text-white transition">
-                                    <i class="ri-phone-fill"></i>
-                                </a>
-                                <button onclick="deleteRecord('silent_leads', '${doc.id}')" class="bg-red-600/20 text-red-400 border border-red-600/50 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-red-600 hover:text-white transition">
-                                    <i class="ri-delete-bin-line"></i>
-                                </button>
+                            <div class="text-right shrink-0">
+                                <div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div>
+                                <div class="text-[9px] text-slate-500 font-bold uppercase">${data.status || 'Pending'}</div>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
             });
         }
 
-        // --- 🟢 MAPS & ZONES (UNCHANGED logic) ---
-        let adminMap, drawingManager, currentPoly;
-        let mapPolygons = []; 
-        const ZONE_CONFIG = { rock: { color: '#ef4444', label: 'Hard Rock' }, water: { color: '#10b981', label: 'High Yield' }, moderate: { color: '#eab308', label: 'Moderate' }, saline: { color: '#3b82f6', label: 'Saline' }, silt: { color: '#f97316', label: 'Loose Silt' } };
+        function loadSilentLeads() {
+            const el = document.getElementById('silent-list');
+            el.innerHTML = '<div class="text-center text-slate-500">Loading...</div>';
+            
+            db.collection('silent_leads').orderBy('timestamp', 'desc').limit(50).get().then(snap => {
+                el.innerHTML = "";
+                if(snap.empty) { el.innerHTML = '<div class="text-center text-slate-600">No Data</div>'; return; }
+                
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const time = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleTimeString() : "";
+                    
+                    el.innerHTML += `
+                        <div class="glass-card p-4 flex justify-between items-center">
+                            <div>
+                                <h4 class="text-lg font-mono font-bold text-yellow-400">${data.mobile}</h4>
+                                <p class="text-[10px] text-slate-500 flex items-center gap-1"><i class="ri-time-line"></i> ${time}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <a href="tel:${data.mobile}" class="w-8 h-8 rounded bg-green-600/20 text-green-500 flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i class="ri-phone-fill"></i></a>
+                                <button onclick="deleteRecord('silent_leads', '${doc.id}')" class="w-8 h-8 rounded bg-red-600/20 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i class="ri-delete-bin-line"></i></button>
+                            </div>
+                        </div>`;
+                });
+            });
+        }
 
+        function loadProjects() {
+            const el = document.getElementById('section-projects');
+            db.collection('projects').orderBy('timestamp', 'desc').limit(20).get().then(snap => {
+                el.innerHTML = "";
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    el.innerHTML += `
+                        <div onclick="openProjectModal('${data.projectId}')" class="glass-card p-5 border-l-4 border-emerald-500 relative cursor-pointer hover:bg-slate-800/50">
+                            <h3 class="font-bold text-white mb-1 truncate">${data.location}</h3>
+                            <p class="text-xs text-slate-400 font-mono">${data.customerName}</p>
+                            <div class="absolute top-2 right-2 text-[10px] bg-emerald-900/30 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">${data.projectId}</div>
+                        </div>`;
+                });
+            });
+        }
+
+        // --- MAP ROOM (Restored & Fixed) ---
+        let adminMap, drawingManager, currentPoly, mapPolygons = [];
+        
         function initAdminMap() {
             if(adminMap) { loadAdminZones(); return; }
-            const startLoc = { lat: 16.4410, lng: 80.5520 }; 
-            adminMap = new google.maps.Map(document.getElementById('adminMap'), { center: startLoc, zoom: 13, mapTypeId: 'hybrid', disableDefaultUI: true, zoomControl: true });
-            drawingManager = new google.maps.drawing.DrawingManager({ drawingMode: null, drawingControl: false, polygonOptions: { strokeWeight: 2, fillOpacity: 0.35, editable: true, draggable: false } });
+            adminMap = new google.maps.Map(document.getElementById('adminMap'), {
+                center: { lat: 16.4410, lng: 80.5520 }, zoom: 13, mapTypeId: 'hybrid', disableDefaultUI: true
+            });
+            drawingManager = new google.maps.drawing.DrawingManager({
+                drawingMode: null, drawingControl: false,
+                polygonOptions: { strokeWeight: 2, fillOpacity: 0.35, editable: true }
+            });
             drawingManager.setMap(adminMap);
-            google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) { if(currentPoly) discardCurrentZone(); currentPoly = poly; enableEditorUI("Save New Zone", "CONFIRM SAVE"); drawingManager.setDrawingMode(null); toggleDrawButtons(false); });
+            google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) {
+                if(currentPoly) discardCurrentZone();
+                currentPoly = poly;
+                enableEditorUI();
+                drawingManager.setDrawingMode(null);
+            });
             loadAdminZones();
         }
 
-        function enableDrawing() { discardCurrentZone(); const type = document.getElementById('drawType').value; const color = ZONE_CONFIG[type].color; drawingManager.setOptions({ drawingMode: google.maps.drawing.OverlayType.POLYGON, polygonOptions: { fillColor: color, strokeColor: color, fillOpacity: 0.35, strokeWeight: 2, editable: true } }); toggleDrawButtons(true); notify(`Draw Mode: ${ZONE_CONFIG[type].label}`); }
-        function cancelDrawing() { drawingManager.setDrawingMode(null); discardCurrentZone(); toggleDrawButtons(false); }
-        function discardCurrentZone() { document.getElementById('saveZonePanel').classList.add('hidden'); document.getElementById('editDocId').value = ""; document.getElementById('newZoneName').value = ""; if (currentPoly) { if (!currentPoly.docId) { currentPoly.setMap(null); } else { currentPoly.setEditable(false); currentPoly.setOptions({ strokeOpacity: 0.8, fillOpacity: 0.2 }); } currentPoly = null; } }
-        function initEditZone(docId) { discardCurrentZone(); const targetPoly = mapPolygons.find(p => p.docId === docId); if(!targetPoly) return notify("Error: Zone data not synced.", "error"); targetPoly.setEditable(true); targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); currentPoly = targetPoly; const data = targetPoly.zoneData; document.getElementById('newZoneName').value = data.name; document.getElementById('drawType').value = data.typeKey; document.getElementById('editDocId').value = docId; enableEditorUI("Edit Existing Zone", "UPDATE SHAPE"); }
-        function saveCurrentZone() { const nameRaw = document.getElementById('newZoneName').value; const type = document.getElementById('drawType').value; const editId = document.getElementById('editDocId').value; if(!nameRaw) return notify("Enter Name", "error"); if(!currentPoly) return notify("No shape active", "error"); const path = currentPoly.getPath(); let coords = []; for (let i = 0; i < path.getLength(); i++) { const xy = path.getAt(i); coords.push({ lat: xy.lat(), lng: xy.lng() }); } const zoneData = { name: nameRaw, typeKey: type, typeName: ZONE_CONFIG[type].label, color: ZONE_CONFIG[type].color, coords: coords, timestamp: firebase.firestore.FieldValue.serverTimestamp() }; const btn = document.getElementById('btnSaveZone'); const oldText = btn.innerText; btn.innerText = "SAVING..."; if(editId) { db.collection('geo_zones').doc(editId).update(zoneData).then(() => { notify("Zone Updated"); finalizeSave(btn, oldText); }); } else { const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_'); db.collection('geo_zones').doc(docId).set(zoneData).then(() => { notify("New Zone Created"); finalizeSave(btn, oldText); }); } }
-        function finalizeSave(btn, oldText) { btn.innerText = oldText; if(currentPoly) currentPoly = null; document.getElementById('saveZonePanel').classList.add('hidden'); document.getElementById('editDocId').value = ""; document.getElementById('newZoneName').value = ""; loadAdminZones(); }
-        function deleteZone(collectionName, docId) { if(!confirm(`PERMANENT DELETE from ${collectionName}?`)) return; db.collection(collectionName).doc(docId).delete().then(() => { notify("Object Deleted"); loadAdminZones(); }).catch(e => notify("Delete Failed", "error")); }
-        function loadAdminZones() { const listEl = document.getElementById('zonesList'); if(mapPolygons) mapPolygons.forEach(p => p.setMap(null)); mapPolygons = []; listEl.innerHTML = '<div class="text-center text-slate-500 text-xs mt-4 animate-pulse">Scanning layers...</div>'; const layers = [ { id: 'geo_zones', label: 'Manual' }, { id: 'risk_map', label: 'Risk Zone' }, { id: 'layer_lithologs', label: 'Station' } ]; const promises = layers.map(l => db.collection(l.id).orderBy('timestamp', 'desc').limit(50).get().then(snap => ({ id: l.id, label: l.label, docs: snap.docs }))); Promise.all(promises).then(results => { listEl.innerHTML = ""; let count = 0; results.forEach(res => { res.docs.forEach(doc => { const data = doc.data(); const docId = doc.id; const collection = res.id; count++; let mapObj = null; if (data.lat && data.lng) { mapObj = new google.maps.Circle({ strokeColor: data.color||'#06b6d4', fillColor: data.color||'#06b6d4', fillOpacity:0.6, map:adminMap, center:{lat:data.lat,lng:data.lng}, radius:150, clickable:true }); } else if (data.coords) { mapObj = new google.maps.Polygon({ paths: data.coords, strokeColor: data.color, fillColor: data.color, fillOpacity: 0.2, map: adminMap, clickable: true }); } if(mapObj) { mapObj.docId = docId; mapObj.zoneData = data; mapObj.addListener('click', () => { notify(data.name); if(mapObj.getCenter) adminMap.panTo(mapObj.getCenter()); }); mapPolygons.push(mapObj); listEl.innerHTML += `<div class="bg-slate-800 p-3 mb-2 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 cursor-pointer"><div><div class="text-xs font-bold text-white w-32 truncate">${data.name}</div><div class="text-[9px] text-slate-400">${res.label}</div></div><div class="flex gap-1">${collection === 'geo_zones' ? `<button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>` : ''}<button onclick="deleteZone('${collection}', '${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button></div></div>`; } }); }); if(count === 0) listEl.innerHTML = '<div class="text-center text-slate-600 text-xs mt-10">No Zones Found</div>'; }); }
-        function toggleDrawButtons(isDrawing) { document.getElementById('btnDraw').classList.toggle('hidden', isDrawing); document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing); }
-        function enableEditorUI(title, btnText) { document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('zonePanelTitle').innerText = title; document.getElementById('btnSaveZone').innerText = btnText; }
+        function loadAdminZones() {
+            const listEl = document.getElementById('zonesList');
+            listEl.innerHTML = "Scanning...";
+            
+            // Clear Map
+            mapPolygons.forEach(p => p.setMap(null));
+            mapPolygons = [];
 
-        // --- 🟢 CORE UTILS (UNCHANGED logic) ---
-        function loadAnalytics() {
-            let totalDepth = 0; let totalRevenue = 0; let leadCount = 0; let projectCount = 0;
-            db.collection('projects').get().then(snap => { projectCount = snap.size; snap.forEach(doc => { totalDepth += parseInt(doc.data().depth || 0); }); document.getElementById('stat-depth').innerText = totalDepth.toLocaleString() + " ft"; updateConversion(); });
-            db.collection('leads').get().then(snap => { leadCount = snap.size; snap.forEach(doc => { totalRevenue += parseInt(doc.data().total || 0); }); document.getElementById('stat-revenue').innerText = "₹" + (totalRevenue/100000).toFixed(1) + "L"; updateConversion(); });
-            function updateConversion() { if(leadCount > 0) document.getElementById('stat-conversion').innerText = ((projectCount / leadCount) * 100).toFixed(1) + "%"; }
+            db.collection('geo_zones').limit(50).get().then(snap => {
+                listEl.innerHTML = "";
+                if(snap.empty) { listEl.innerHTML = "No Zones"; return; }
+                
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    // Render on Map
+                    const poly = new google.maps.Polygon({
+                        paths: data.coords, strokeColor: data.color, fillColor: data.color, fillOpacity: 0.2, map: adminMap
+                    });
+                    mapPolygons.push(poly);
+
+                    // Render in List
+                    listEl.innerHTML += `
+                        <div class="flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-700 mb-1">
+                            <span class="text-xs text-white truncate w-24" style="color:${data.color}">● ${data.name}</span>
+                            <button onclick="deleteRecord('geo_zones', '${doc.id}')" class="text-slate-500 hover:text-red-500"><i class="ri-delete-bin-line"></i></button>
+                        </div>`;
+                });
+            });
         }
-        let leadsCache = [], projectsCache = []; let currentView = 'leads';
-        function filterData() {
-            const term = document.getElementById('searchInput').value.toLowerCase();
-            const list = currentView === 'leads' ? leadsCache : projectsCache;
-            const filtered = list.filter(item => (item.name + item.mobile + item.loc).toLowerCase().includes(term));
-            if(currentView === 'leads') renderLeads(filtered); else renderProjects(filtered);
+
+        function enableDrawing() {
+            const type = document.getElementById('drawType').value;
+            const colors = { rock: '#ef4444', water: '#10b981', moderate: '#eab308' };
+            drawingManager.setOptions({
+                drawingMode: google.maps.drawing.OverlayType.POLYGON,
+                polygonOptions: { fillColor: colors[type], strokeColor: colors[type] }
+            });
+            document.getElementById('btnDraw').classList.add('hidden');
+            document.getElementById('btnCancel').classList.remove('hidden');
         }
-        function loadLeads() { currentView = 'leads'; db.collection('leads').orderBy('timestamp','desc').limit(100).get().then(snap => { leadsCache = []; snap.forEach(d => { let data = d.data(); data.docId = d.id; leadsCache.push(data); }); renderLeads(leadsCache); }); }
-        function renderLeads(list) {
-            const el = document.getElementById('leads-list'); el.innerHTML = "";
-            list.forEach(data => { el.innerHTML += `<div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 flex justify-between items-center hover:bg-slate-800/50 cursor-pointer border border-slate-800/50 hover:border-blue-500/30"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center text-blue-400 shrink-0"><i class="ri-user-search-line"></i></div><div class="min-w-0"><div class="font-bold text-white text-sm truncate">${data.name}</div><div class="text-[10px] text-slate-400 font-mono truncate">${data.loc}</div></div></div><div class="text-right shrink-0"><div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[9px] text-blue-400 font-mono font-bold uppercase">${data.status || 'Pending'}</div></div></div>`; });
+
+        function cancelDrawing() {
+            drawingManager.setDrawingMode(null);
+            document.getElementById('btnDraw').classList.remove('hidden');
+            document.getElementById('btnCancel').classList.add('hidden');
         }
-        function loadProjects() { currentView = 'projects'; db.collection('projects').orderBy('projectId', 'desc').get().then(snap => { projectsCache = []; snap.forEach(d => { let data = d.data(); projectsCache.push(data); }); renderProjects(projectsCache); }); }
-        function renderProjects(list) {
-            const el = document.getElementById('projects-list'); el.innerHTML = "";
-            list.forEach(data => { el.innerHTML += `<div onclick="openProjectModal('${data.projectId}')" class="glass-card p-5 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition border-y border-r border-slate-800/50"><div class="absolute top-2 right-2 text-slate-600 text-[9px] font-mono">${data.date}</div><h3 class="font-bold text-base text-white mb-1 truncate">${data.location}</h3><p class="text-xs text-slate-400 mb-3 font-mono">${data.customerName}</p><div class="text-[10px] text-emerald-500 font-mono tracking-widest bg-emerald-900/20 inline-block px-2 py-0.5 rounded border border-emerald-900/50">${data.projectId}</div></div>`; });
+
+        function enableEditorUI() {
+            document.getElementById('saveZonePanel').classList.remove('hidden');
         }
-        function startNewCertificate() { showSection('create'); resetForm(); }
-        function resetForm() {
-            document.getElementById('projectForm').reset(); isEditing = false;
-            document.getElementById('form-mode-text').innerText = "CREATING NEW RECORD"; document.getElementById('save-btn-text').innerText = "SAVE RECORD";
-            const now = new Date(); const yy = now.getFullYear().toString().substr(-2); const mm = (now.getMonth() + 1).toString().padStart(2, '0'); const rand = Math.random().toString(36).substr(2, 4).toUpperCase();
-            document.getElementById('p_id').value = `SBW-${yy}${mm}-${rand}`;
+
+        function saveCurrentZone() {
+            const name = document.getElementById('newZoneName').value;
+            const type = document.getElementById('drawType').value;
+            if(!name) return notify("Enter Name", "error");
+
+            const path = currentPoly.getPath();
+            let coords = [];
+            for (let i = 0; i < path.getLength(); i++) {
+                const xy = path.getAt(i);
+                coords.push({ lat: xy.lat(), lng: xy.lng() });
+            }
+
+            const colors = { rock: '#ef4444', water: '#10b981', moderate: '#eab308' };
+
+            db.collection('geo_zones').add({
+                name: name, typeKey: type, color: colors[type], coords: coords, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                notify("Zone Saved");
+                currentPoly.setMap(null); // Clear temp
+                document.getElementById('saveZonePanel').classList.add('hidden');
+                document.getElementById('newZoneName').value = "";
+                loadAdminZones(); // Reload
+            });
         }
-        function editProject(projectId) {
-            const data = projectsCache.find(p => p.projectId === projectId); closeModal(); showSection('create'); isEditing = true;
-            document.getElementById('form-mode-text').innerText = "EDITING RECORD: " + projectId; document.getElementById('save-btn-text').innerText = "UPDATE RECORD";
-            document.getElementById('p_id').value = data.projectId; document.getElementById('p_mobile').value = data.mobile.replace('+91',''); document.getElementById('p_name').value = data.customerName; document.getElementById('p_loc').value = data.location; document.getElementById('p_gps').value = data.gps; document.getElementById('p_depth').value = data.depth; document.getElementById('p_yield').value = data.yield; document.getElementById('p_casing').value = data.casing_depth; document.getElementById('p_casingType').value = data.casing_type; document.getElementById('p_rig').value = data.rigType; document.getElementById('p_motor').value = data.motor; document.getElementById('p_date').value = data.date ? new Date(data.date).toISOString().split('T')[0] : '';
+
+        // --- UTILS ---
+        function deleteRecord(collection, docId) {
+            if(confirm("Delete permanently?")) {
+                db.collection(collection).doc(docId).delete().then(() => {
+                    notify("Deleted");
+                    if(collection === 'leads') loadLeads();
+                    if(collection === 'geo_zones') loadAdminZones();
+                    if(collection === 'silent_leads') loadSilentLeads();
+                });
+            }
         }
-        function convertToProject(docId) {
-            const lead = leadsCache.find(l => l.docId === docId); startNewCertificate(); closeModal();
-            document.getElementById('p_mobile').value = lead.mobile.replace('+91', ''); document.getElementById('p_name').value = lead.name; document.getElementById('p_loc').value = lead.loc; document.getElementById('p_depth').value = lead.depth;
-            document.getElementById('projectForm').scrollIntoView({behavior: "smooth"});
-        }
-        function saveProject(e) {
-            e.preventDefault(); const id = document.getElementById('p_id').value;
-            const data = { projectId: id, mobile: "+91" + document.getElementById('p_mobile').value, customerName: document.getElementById('p_name').value, location: document.getElementById('p_loc').value, gps: document.getElementById('p_gps').value, depth: document.getElementById('p_depth').value, yield: document.getElementById('p_yield').value, casing_depth: document.getElementById('p_casing').value, casing_type: document.getElementById('p_casingType').value, rigType: document.getElementById('p_rig').value, motor: document.getElementById('p_motor').value, date: document.getElementById('p_date').value, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
-            const docRef = db.collection('projects').doc(id);
-            docRef.get().then(doc => { if(doc.exists && !isEditing) { notify("ERROR: ID Exists.", "error"); resetForm(); } else { docRef.set(data, { merge: true }).then(() => { notify(isEditing ? "RECORD UPDATED" : "CERTIFICATE ISSUED"); resetForm(); showSection('projects'); }); } });
-        }
-        
-        // --- 🟢 PDF & UTILS ---
-        let currentPDFElement;
-        function previewQuote(encoded) { const data = JSON.parse(decodeURIComponent(encoded)); let rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`; const content = getInvoiceHTML({ id: data.docId, name: data.name, mobile: data.mobile, loc: data.loc, total: data.total, rows: rows }); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); }
-        function previewCert(encoded) { const data = JSON.parse(decodeURIComponent(encoded)); const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType }; const content = getCertificateHTML(certData); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); }
-        function confirmDownloadPDF() { const el = document.createElement('div'); el.innerHTML = currentPDFElement; document.body.appendChild(el); html2pdf().from(el).save('Document.pdf').then(() => document.body.removeChild(el)); }
-        
-        // Modals
-        function openProjectModal(projectId) { const data = projectsCache.find(p => p.projectId === projectId); const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Project File</h2><p class="text-emerald-400 font-mono text-xs">${data.projectId}</p></div><div class="space-y-4 mb-6"><div class="glass-card p-4"><h3 class="font-bold text-white mb-2">${data.location}</h3><div class="grid grid-cols-2 gap-2 text-xs text-slate-400"><div>Depth: <span class="text-white">${data.depth}ft</span></div><div>Yield: <span class="text-white">${data.yield}"</span></div><div>Casing: <span class="text-white">${data.casing_depth}ft</span></div><div>Motor: <span class="text-white">${data.motor}</span></div></div></div></div><div class="grid grid-cols-2 gap-3"><button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-primary bg-emerald-600"><i class="ri-file-download-line"></i> Certificate</button><button onclick="editProject('${data.projectId}')" class="btn-primary bg-blue-600"><i class="ri-edit-line"></i> Edit</button></div><div class="text-center mt-4"><button onclick="deleteRecord('projects', '${data.projectId}')" class="text-red-400 text-xs font-bold">DELETE RECORD</button></div>`; document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open'); }
-        function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
-        
+
         function openLeadModal(docId) {
-            const data = leadsCache.find(l => l.docId === docId); const notes = data.adminNotes || "";
-            const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Lead Details</h2><p class="text-slate-400 font-mono text-xs">Quote: ${data.docId}</p></div><div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm truncate">${data.name}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm truncate">${data.loc}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div></div><div class="mb-6 grid grid-cols-1 gap-4"><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Status</label><select class="cyber-input w-full text-xs" onchange="updateLeadStatus('${data.docId}', this.value)"><option ${data.status==='Pending'?'selected':''}>Pending</option><option ${data.status==='Contacted'?'selected':''}>Contacted</option><option ${data.status==='Site Visit'?'selected':''}>Site Visit</option><option ${data.status==='Closed'?'selected':''}>Closed</option></select></div><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Mission Log</label><div class="flex gap-2"><textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Notes...">${notes}</textarea><button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-3 rounded text-white"><i class="ri-save-line"></i></button></div></div></div><div class="grid grid-cols-2 gap-3 mb-4"><a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="btn-primary bg-green-600"><i class="ri-whatsapp-line"></i> Chat</a><a href="tel:${data.mobile}" class="btn-primary bg-blue-600"><i class="ri-phone-line"></i> Call</a><button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="btn-primary bg-slate-700"><i class="ri-eye-line"></i> View</button><button onclick="convertToProject('${data.docId}')" class="btn-primary bg-purple-600"><i class="ri-magic-line"></i> Convert</button></div><div class="text-center pt-2"><button onclick="deleteRecord('leads', '${data.docId}')" class="text-red-400 text-xs font-bold">DELETE LEAD</button></div>`;
-            document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open');
+            db.collection('leads').doc(docId).get().then(doc => {
+                const data = doc.data();
+                document.getElementById('modalContent').innerHTML = `
+                    <div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Lead Details</h2></div>
+                    <div class="space-y-4">
+                        <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                            <span class="text-[10px] text-slate-500 uppercase">Customer</span>
+                            <div class="text-white font-bold">${data.name}</div>
+                        </div>
+                        <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                            <span class="text-[10px] text-slate-500 uppercase">Location</span>
+                            <div class="text-white text-sm">${data.loc}</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                                <span class="text-[10px] text-slate-500 uppercase">Depth</span>
+                                <div class="text-yellow-400 font-bold">${data.depth} ft</div>
+                            </div>
+                            <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                                <span class="text-[10px] text-slate-500 uppercase">Total</span>
+                                <div class="text-emerald-400 font-bold">₹${parseInt(data.total).toLocaleString()}</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 pt-4">
+                            <a href="tel:${data.mobile}" class="flex-1 bg-blue-600 text-white py-3 rounded font-bold text-center text-sm">CALL</a>
+                            <a href="https://wa.me/${data.mobile.replace('+','')}" class="flex-1 bg-green-600 text-white py-3 rounded font-bold text-center text-sm">WHATSAPP</a>
+                        </div>
+                        <button onclick="deleteRecord('leads', '${doc.id}'); closeModal()" class="w-full text-red-500 text-xs font-bold mt-4">DELETE LEAD</button>
+                    </div>`;
+                document.getElementById('detailModal').classList.remove('hidden');
+                document.getElementById('detailModal').classList.add('flex');
+            });
         }
-        
-        function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }); }
-        function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
-        
-        function initMapTools() { const input = document.getElementById('p_loc'); if(input) { const ac = new google.maps.places.Autocomplete(input); ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); } }
-        function openMapPicker() { if(typeof google === 'undefined') { notify("Maps Loading...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
-        function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
-        
-        // Maps Loader
-        const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`; s.async = true; s.defer = true; document.body.appendChild(s);
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+            document.getElementById('detailModal').classList.remove('flex');
+        }
+
+        function loadAnalytics() {
+            // Simple Counts for Dashboard
+            db.collection('leads').get().then(snap => {
+                let total = 0;
+                snap.forEach(doc => total += parseInt(doc.data().total || 0));
+                document.getElementById('stat-revenue').innerText = "₹" + (total/100000).toFixed(1) + "L";
+            });
+        }
     </script>
 </body>
 </html>
