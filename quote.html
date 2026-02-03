@@ -19,56 +19,57 @@
     <script src="assets/js/pdf_template.js"></script>
 
     <style>
-        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none; display: flex; align-items: center; justify-content: center; }
-        .reticle-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 15px 2px #ef4444; }
-        .reticle-ring { position: absolute; width: 50px; height: 50px; border: 2px dashed #2563eb; border-radius: 50%; animation: spin 8s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        
         :root { --primary: #1e3a8a; --text-main: #1e293b; --bg: #f8fafc; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text-main); }
         .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
         .quote-card { background: #ffffff; border-radius: 24px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); padding: 40px; max-width: 800px; margin: 40px auto; }
         .form-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
         .custom-input, .custom-select { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; transition: 0.3s; }
         .custom-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); }
+        
         .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; font-weight: 700; padding: 18px; border-radius: 12px; width: 100%; font-size: 1.1rem; transition: 0.2s; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); }
         .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        /* ESTIMATE CARD */
+        /* SLIDER STYLES */
+        .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; transition: all 0.3s ease; }
+        .slider-container.expanded { border-color: #f59e0b; background: #fffbeb; } /* Visual cue for expansion */
+        
+        .range-slider { width: 100%; height: 12px; border-radius: 6px; background: #cbd5e1; outline: none; -webkit-appearance: none; }
+        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: var(--primary); border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.1s; }
+        .range-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
+
+        /* EXPERT ALERT BOX */
+        .expert-alert {
+            display: none; /* Hidden by default */
+            margin-top: 15px; padding: 15px; 
+            background: #fff1f2; border: 1px solid #fda4af; 
+            border-radius: 12px; text-align: center; 
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ESTIMATE CARD & TABLE */
         .est-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px -10px rgba(0,0,0,0.15); margin-top: 20px; border: 1px solid #e2e8f0; }
         .est-header { background: #ffffff; padding: 30px; border-bottom: 2px solid #1e3a8a; }
-        .est-brand h2 { font-size: 2rem; font-weight: 900; color: #1e3a8a; margin: 0; line-height: 1; text-transform: uppercase; }
-        .est-brand p { font-size: 0.75rem; color: #64748b; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
         .est-total-block { text-align: right; }
-        .est-label { font-size: 0.7rem; font-weight: 700; color: #64748b; letter-spacing: 1px; text-transform: uppercase; }
         .est-amount { font-size: 2.2rem; font-weight: 800; color: #1e3a8a; line-height: 1; margin-top: 5px; }
-        
-        .est-meta { display: flex; justify-content: space-between; margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; }
-        .est-meta-item strong { display: block; font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
-        .est-meta-item span { font-size: 0.95rem; font-weight: 700; color: #334155; }
-
         .est-body { padding: 30px; }
-        .section-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: #1e3a8a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
         .est-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 0.9rem; }
         .est-table th { text-align: left; padding: 8px; color: #64748b; font-size: 0.7rem; text-transform: uppercase; font-weight: 700; }
         .est-table td { padding: 10px 8px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; color: #334155; }
         .est-table tfoot td { border-top: 2px solid #e2e8f0; font-weight: 800; color: #1e3a8a; padding-top: 15px; font-size: 1rem; border-bottom: none; }
         
-        /* VARIABLE MATERIALS BOX */
-        .var-box { background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 12px; padding: 20px; position: relative; }
-        .var-title { font-size: 0.8rem; font-weight: 800; color: #1e40af; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        .var-box { background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 12px; padding: 20px; }
         .var-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 30px; font-size: 0.85rem; }
         .var-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed #dbeafe; }
-        .var-badge { background: #fff; color: #1e40af; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #bfdbfe; }
-
-        .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; }
-        .range-slider { width: 100%; height: 12px; border-radius: 6px; background: #cbd5e1; outline: none; -webkit-appearance: none; }
-        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: var(--primary); border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; }
-        .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); font-family: 'Plus Jakarta Sans', sans-serif; border: none; }
-        .pac-item { padding: 10px 15px; border-top: 1px solid #f1f5f9; font-size: 14px; color: #64748b; }
-        .pac-icon { display: none; }
+        
+        /* Map Styles */
+        .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: none; font-family: inherit; }
+        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; }
+        .reticle-dot { width: 10px; height: 10px; background: red; border-radius: 50%; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -92,7 +93,7 @@
                     <div>
                         <label class="form-label">Mobile Number</label>
                         <div class="relative">
-                            <input type="tel" id="custMobile" class="custom-input pr-24" placeholder="98765 43210" maxlength="10" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                            <input type="tel" id="custMobile" class="custom-input pr-24" placeholder="98765 43210" maxlength="10">
                             <button id="sendOtpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-4 rounded-lg font-bold text-xs hover:bg-black transition">VERIFY</button>
                             <div id="verifiedBadge" class="absolute right-4 top-4 text-emerald-600 font-bold text-xs uppercase hidden flex items-center gap-1"><i class="ri-checkbox-circle-fill"></i> Verified</div>
                         </div>
@@ -116,10 +117,28 @@
 
                 <div class="mb-10 mt-8">
                     <label class="form-label text-center mb-4">ESTIMATED DEPTH REQUIRED</label>
-                    <div class="slider-container">
-                        <div class="text-center mb-2"><span id="display-val" class="text-6xl font-extrabold text-blue-800">100</span><span class="text-xl font-bold text-slate-400 align-top">FT</span></div>
-                        <input type="range" id="depthSlider" class="range-slider" min="100" max="1200" value="100" step="10">
-                        <div class="flex justify-between text-xs font-bold text-slate-400 mt-2"><span>100 FT</span><span id="maxLabel">1200 FT</span></div>
+                    <div id="sliderBox" class="slider-container">
+                        <div class="text-center mb-2">
+                            <span id="display-val" class="text-6xl font-extrabold text-blue-800">100</span>
+                            <span class="text-xl font-bold text-slate-400 align-top">FT</span>
+                        </div>
+                        
+                        <input type="range" id="depthSlider" class="range-slider" min="100" max="500" value="100" step="10">
+                        
+                        <div class="flex justify-between text-xs font-bold text-slate-400 mt-2">
+                            <span>100 FT</span>
+                            <span id="maxLabel">500 FT</span>
+                        </div>
+
+                        <div id="expertAlert" class="expert-alert">
+                            <div class="flex items-center justify-center gap-2 text-red-600 font-bold mb-1">
+                                <i class="ri-alarm-warning-fill"></i> High Depth Detected
+                            </div>
+                            <p class="text-xs text-slate-600 mb-2">Depths beyond 600ft involve complex geology. We recommend a verified expert consultation.</p>
+                            <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=I need expert advice for deep drilling`, '_blank')" class="bg-white border border-red-200 text-red-600 px-4 py-1 rounded-full text-xs font-bold hover:bg-red-50">
+                                <i class="ri-whatsapp-line"></i> Consult Expert
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -142,9 +161,9 @@
             <div class="est-card max-w-4xl mx-auto" id="invoice-capture">
                 <div class="est-header">
                     <div class="flex justify-between items-start">
-                        <div class="est-brand">
-                            <h2>SAGAR BOREWELLS</h2>
-                            <p>Advanced Geological Infrastructure</p>
+                        <div>
+                            <h2 class="text-2xl font-black text-blue-900">SAGAR BOREWELLS</h2>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Estimation Summary</p>
                         </div>
                         <div class="est-total-block">
                             <div class="est-label">ESTIMATED TOTAL</div>
@@ -162,13 +181,13 @@
                     
                     <div class="section-title"><i class="ri-bar-chart-grouped-line"></i> Drilling Cost Structure</div>
                     <table class="est-table">
-                        <thead><tr><th>Depth Range</th><th class="text-center">Rate</th><th class="text-right">Amount</th></tr></thead>
+                        <thead><tr><th>Depth Slab (Feet)</th><th class="text-center">Rate / ft</th><th class="text-right">Amount</th></tr></thead>
                         <tbody id="drillBody"></tbody>
                         <tfoot><tr><td colspan="2">Drilling Subtotal</td><td class="text-right" id="drillSubtotal">₹0</td></tr></tfoot>
                     </table>
 
                     <div id="opsSection">
-                        <div class="section-title"><i class="ri-shield-check-line"></i> Operational Costs</div>
+                        <div class="section-title"><i class="ri-shield-check-line"></i> Operational & Labour</div>
                         <table class="est-table">
                             <tbody id="opsBody"></tbody>
                             <tfoot><tr><td style="font-weight:700;">Subtotal (Fixed)</td><td class="text-right" id="opsSubtotal">₹0</td></tr></tfoot>
@@ -176,16 +195,16 @@
                     </div>
 
                     <div class="var-box mt-6">
-                        <div class="var-title"><i class="ri-tools-line"></i> Material Estimates (Actuals)</div>
-                        <p class="text-xs text-slate-500 mb-4">Prices apply based on actual measurements at site.</p>
+                        <div class="var-title"><i class="ri-tools-line"></i> Material Estimates (On Actuals)</div>
+                        <p class="text-xs text-slate-500 mb-4">Casing pipes are charged based on actual depth required.</p>
                         <div class="var-grid" id="materialsGrid"></div>
                     </div>
 
                     <div class="text-center mt-10">
                         <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">
-                            Confirm Booking to Proceed
+                            Confirm Booking
                         </button>
-                        <p class="text-xs text-slate-400 mt-3 uppercase tracking-wide">Valid for 30 Days • Computer Generated Estimate</p>
+                        <p class="text-xs text-slate-400 mt-3 uppercase tracking-wide">Prices subject to geological conditions.</p>
                     </div>
 
                 </div>
@@ -198,7 +217,7 @@
                     <i class="ri-check-line text-4xl text-emerald-600"></i>
                 </div>
                 <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Booking Confirmed!</h1>
-                <p class="text-slate-500 mb-8">We have received your request. A representative will call you shortly to discuss site logistics.</p>
+                <p class="text-slate-500 mb-8">Your request has been logged. Our team will contact you shortly.</p>
                 <div class="flex justify-center gap-4">
                     <a href="dashboard.html" class="py-3 px-6 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50">Dashboard</a>
                     <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}`, '_blank')" class="py-3 px-6 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">Chat Support</button>
@@ -231,52 +250,47 @@
         }
         const db = firebase.firestore();
 
-        // 🟢 LOAD CONSTANTS (Fallback included for safety)
-        const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : {
-            OFFICE_LOCATION: { lat: 16.4410, lng: 80.5520 },
-            TRANSPORT_THRESHOLD_KM: 30,
-            TRANSPORT_BASE_RATE: 2000,
-            LABOUR_CHARGE: 1500,
-            PRICING_MODEL: {
-                base_rate: 70,
-                jumps: { phase_1: 10, phase_2: 20, phase_3: 50 },
-                boundaries: { phase_2_start: 200, phase_3_start: 300 }
-            },
-            MATERIALS: []
-        };
-
-        const { PRICING_MODEL, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, OFFICE_LOCATION } = CFG;
+        // 🟢 LOAD CONSTANTS
+        const { OFFICE_LOCATION, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, MATERIALS, PRICING_MODEL } = QUOTE_CONFIG;
 
         let transportDist = 0;
         let siteCoords = null;
         let leadData = {};
 
-        document.addEventListener("DOMContentLoaded", () => {
-            // Load Materials
-            const matGrid = document.getElementById('materialsGrid');
-            if(matGrid) {
-                matGrid.innerHTML = MATERIALS.map(m => `
-                    <div class="var-item">
-                        <span class="font-bold text-slate-700 text-xs">${m.label}</span>
-                        <span class="var-badge">₹${m.price}${m.unit}</span>
-                    </div>
-                `).join('');
+        // 🟢 DYNAMIC SLIDER LOGIC
+        const slider = document.getElementById('depthSlider');
+        const maxLabel = document.getElementById('maxLabel');
+        const sliderBox = document.getElementById('sliderBox');
+        const alertBox = document.getElementById('expertAlert');
+
+        slider.addEventListener('input', function() {
+            let val = parseInt(this.value);
+            let currentMax = parseInt(this.max);
+
+            // 1. Update Display
+            document.getElementById('display-val').innerText = val;
+            
+            // 2. Dynamic Expansion (Elastic Scale)
+            if (val >= currentMax) {
+                if (currentMax === 500) { this.max = 900; maxLabel.innerText = "900 FT"; sliderBox.classList.add('expanded'); }
+                else if (currentMax === 900) { this.max = 1200; maxLabel.innerText = "1200 FT"; }
+            } 
+            // 3. Dynamic Contraction (Reverse Elastic)
+            else if (val < 400 && currentMax > 500) {
+                this.max = 500; maxLabel.innerText = "500 FT"; sliderBox.classList.remove('expanded');
+                this.value = val; // Force retain value
             }
+
+            // 4. Expert Alert Trigger (at 600ft)
+            if (val >= 600) alertBox.style.display = 'block';
+            else alertBox.style.display = 'none';
+
+            // Visual Fill
+            const pct = ((val - this.min) / (this.max - this.min)) * 100;
+            this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
         });
 
-        // AUTH & MAPS (Standard)
-        firebase.auth().onAuthStateChanged((user) => {
-            const btn = document.getElementById('generateBtn');
-            if (user) {
-                document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
-                document.getElementById('custMobile').disabled = true;
-                document.getElementById('sendOtpBtn').classList.add('hidden');
-                document.getElementById('verifiedBadge').classList.remove('hidden');
-                btn.disabled = false; btn.classList.remove('bg-slate-300');
-            } else { btn.disabled = true; }
-        });
-
-        // CALCULATION ENGINE (NEW MATH)
+        // 🟢 CALCULATION ENGINE (Updated Slab Logic)
         function goToStep2() {
             if(document.getElementById('generateBtn').disabled) return;
             const name = document.getElementById('custName').value;
@@ -286,16 +300,16 @@
 
             const totalDepth = parseInt(document.getElementById('depthSlider').value);
             const quoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000+Math.random()*9000)}`;
-            
+
             // --- DRILLING CALCULATION ---
             let drillHtml = "";
             let drillCost = 0;
             let currentDepth = 0;
             let currentRate = PRICING_MODEL.base_rate; // 70
-            const jumps = PRICING_MODEL.jumps;
+            const jumps = PRICING_MODEL.increments;
             const bounds = PRICING_MODEL.boundaries;
 
-            // 1. First 100ft Block
+            // 1. Base (0-100)
             const firstChunk = Math.min(totalDepth, 100);
             if(firstChunk > 0) {
                 const cost = firstChunk * currentRate;
@@ -304,15 +318,14 @@
                 currentDepth += firstChunk;
             }
 
-            // 2. Loop for subsequent slabs (50ft each)
+            // 2. Loop 50ft Slabs
             while(currentDepth < totalDepth) {
-                // Determine Jump based on CURRENT DEPTH
-                let jump = jumps.phase_1; // Default +10 (101-200)
+                // Determine Increment Amount
+                let increment = jumps.phase_1; // +10
+                if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3; // +50
+                else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2; // +20
                 
-                if (currentDepth >= bounds.phase_3_start) jump = jumps.phase_3; // +50 (301+)
-                else if (currentDepth >= bounds.phase_2_start) jump = jumps.phase_2; // +20 (201-300)
-                
-                currentRate += jump; 
+                currentRate += increment; 
 
                 let nextChunk = Math.min(50, totalDepth - currentDepth);
                 let cost = nextChunk * currentRate;
@@ -324,7 +337,7 @@
                 currentDepth += nextChunk;
             }
 
-            // --- OPERATIONAL COSTS ---
+            // --- OPERATIONAL ---
             let opsHtml = "";
             let opsCost = 0;
             
@@ -337,8 +350,8 @@
                 opsCost += transCost;
             }
 
-            // Labour
-            opsHtml += `<tr><td>Labour Charges</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
+            // Labour (Heavy Handling)
+            opsHtml += `<tr><td>Rig Erection & Material Handling</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
             opsCost += LABOUR_CHARGE;
 
             const grandTotal = drillCost + opsCost;
@@ -348,28 +361,20 @@
                 document.getElementById('opsSection').style.display = 'block';
                 document.getElementById('opsBody').innerHTML = opsHtml;
                 document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
-            } else {
-                document.getElementById('opsSection').style.display = 'none';
             }
 
             document.getElementById('drillBody').innerHTML = drillHtml;
             document.getElementById('drillSubtotal').innerText = "₹" + drillCost.toLocaleString();
             document.getElementById('invTotal').innerText = "₹" + grandTotal.toLocaleString();
-
             document.getElementById('invLoc').innerText = loc;
             document.getElementById('invDepth').innerText = totalDepth + " ft";
             document.getElementById('invRef').innerText = quoteID;
 
-            // Store Data Globally
             leadData = { 
-                id: quoteID,
-                name, 
+                id: quoteID, name, 
                 mobile: "+91"+document.getElementById('custMobile').value, 
-                loc, 
-                depth: totalDepth, 
-                total: grandTotal, 
-                status: "Quote Generated",
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                loc, depth: totalDepth, total: grandTotal, 
+                status: "Quote Generated", timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             document.getElementById('step-1').classList.add('hidden');
@@ -377,103 +382,57 @@
             window.scrollTo(0,0);
         }
 
-        function goToStep1() {
-            document.getElementById('step-2').classList.add('hidden');
-            document.getElementById('step-1').classList.remove('hidden');
-        }
-
-        function confirmBooking() {
-            db.collection('leads').doc(leadData.id).set(leadData).then(() => {
-                document.getElementById('step-2').classList.add('hidden');
-                document.getElementById('step-3').classList.remove('hidden');
-            });
-        }
-
-        // --- UTILITIES ---
-        function sendOTP() {
-            const phone = document.getElementById('custMobile').value;
-            if (phone.length !== 10) return alert("Enter 10 digit number");
-            const btn = document.getElementById('sendOtpBtn');
-            btn.innerText = "...";
-            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
-            firebase.auth().signInWithPhoneNumber('+91' + phone, window.recaptchaVerifier).then((cr) => {
-                window.confirmationResult = cr; btn.classList.add('hidden'); document.getElementById('otpSection').classList.remove('hidden');
-            }).catch((e) => { console.error(e); alert("SMS Error"); btn.innerText="VERIFY"; });
-        }
-        function verifyOTP() {
-            window.confirmationResult.confirm(document.getElementById('otpInput').value).then(() => document.getElementById('otpSection').classList.add('hidden')).catch(() => alert("Invalid OTP"));
-        }
-
-        const slider = document.getElementById('depthSlider');
-        slider.addEventListener('input', function() {
-            document.getElementById('display-val').innerText = this.value;
-            const pct = ((this.value - this.min) / (this.max - this.min)) * 100;
-            this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
+        // --- BOILERPLATE FUNCTIONS ---
+        document.addEventListener("DOMContentLoaded", () => {
+            const matGrid = document.getElementById('materialsGrid');
+            if(matGrid) matGrid.innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
         });
 
-        function downloadPDF() {
-            const el = document.getElementById('invoice-capture');
-            const opt = { margin: 0.5, filename: `Estimate_${leadData.id}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
-            html2pdf().set(opt).from(el).save();
-        }
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
+                document.getElementById('custMobile').disabled = true;
+                document.getElementById('sendOtpBtn').classList.add('hidden');
+                document.getElementById('verifiedBadge').classList.remove('hidden');
+                document.getElementById('generateBtn').disabled = false;
+            }
+        });
 
-        function shareWhatsApp() {
-            const msg = `Estimate ${leadData.id}: ₹${leadData.total.toLocaleString()} for ${leadData.depth}ft at ${leadData.loc}`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
+        function confirmBooking() { db.collection('leads').doc(leadData.id).set(leadData).then(() => { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-3').classList.remove('hidden'); }); }
+        
+        function sendOTP() {
+            const p = document.getElementById('custMobile').value;
+            if(p.length!=10) return alert("Enter 10 digit number");
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
+            firebase.auth().signInWithPhoneNumber('+91'+p, window.recaptchaVerifier).then(cr=>{
+                window.confirmationResult=cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('sendOtpBtn').classList.add('hidden');
+            });
         }
+        function verifyOTP() { window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=>document.getElementById('otpSection').classList.add('hidden')); }
+        function downloadPDF() { const el = document.getElementById('invoice-capture'); html2pdf().from(el).save(`Estimate_${leadData.id}.pdf`); }
+        function shareWhatsApp() { window.open(`https://wa.me/?text=Estimate ${leadData.id}: ₹${leadData.total.toLocaleString()} for ${leadData.depth}ft`, '_blank'); }
 
-        // --- MAPS ---
+        // MAPS
         let qMap;
         function initMapTools() {
             const input = document.getElementById('locInput');
-            const autocomplete = new google.maps.places.Autocomplete(input, { types: ['geocode'] });
-            autocomplete.addListener('place_changed', () => {
-                const place = autocomplete.getPlace();
-                if (place.geometry) {
-                    siteCoords = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
-                    calcDistance();
-                }
-            });
+            const ac = new google.maps.places.Autocomplete(input);
+            ac.addListener('place_changed', () => { const p=ac.getPlace(); if(p.geometry) calculateDist(p.geometry.location.lat(), p.geometry.location.lng()); });
         }
-
-        function calcDistance() {
-            if(!siteCoords) return;
-            const R = 6371; 
-            const dLat = (siteCoords.lat - OFFICE_LOCATION.lat) * Math.PI/180;
-            const dLon = (siteCoords.lng - OFFICE_LOCATION.lng) * Math.PI/180;
-            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(siteCoords.lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
-            transportDist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            
-            const disp = document.getElementById('distDisplay');
-            if(transportDist > TRANSPORT_THRESHOLD_KM) {
-                disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Charges Apply)`;
-                disp.classList.add('text-orange-600');
-            } else {
-                disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Free Transport)`;
-                disp.classList.remove('text-orange-600');
-            }
+        function calculateDist(lat, lng) {
+            const R=6371, dLat=(lat-OFFICE_LOCATION.lat)*Math.PI/180, dLon=(lng-OFFICE_LOCATION.lng)*Math.PI/180;
+            const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+            transportDist=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+            const disp=document.getElementById('distDisplay');
+            if(transportDist>TRANSPORT_THRESHOLD_KM) { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Extra Charges)`; disp.className="text-xs text-right mt-1 font-bold font-mono text-orange-600"; }
+            else { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Free Transport)`; disp.className="text-xs text-right mt-1 font-bold font-mono text-emerald-600"; }
         }
+        function openMiniMap() { document.getElementById('miniMapModal').style.display='flex'; if(!qMap && typeof google!=='undefined') qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55},zoom:15}); setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); }
+        function confirmQuoteLocation() { const p=qMap.getCenter(); new google.maps.Geocoder().geocode({location:p},(r,s)=>{if(s==='OK'){document.getElementById('locInput').value=r[0].formatted_address; calculateDist(p.lat(),p.lng());}}); document.getElementById('miniMapModal').style.display='none'; }
+        function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{calculateDist(p.coords.latitude,p.coords.longitude); new google.maps.Geocoder().geocode({location:{lat:p.coords.latitude,lng:p.coords.longitude}},(r,s)=>{if(s==='OK')document.getElementById('locInput').value=r[0].formatted_address;});}); }
 
-        function openMiniMap() { document.getElementById('miniMapModal').style.display='flex'; if(!qMap && typeof google !=='undefined') qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55},zoom:15}); setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); }
-        function confirmQuoteLocation() { 
-            const pos = qMap.getCenter();
-            new google.maps.Geocoder().geocode({location:pos}, (res, status)=>{ if(status==='OK') document.getElementById('locInput').value = res[0].formatted_address; });
-            document.getElementById('miniMapModal').style.display='none';
-        }
-        function detectGPS() {
-            if(navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => {
-                const c = {lat:pos.coords.latitude, lng:pos.coords.longitude};
-                siteCoords = c; calcDistance();
-                new google.maps.Geocoder().geocode({location:c}, (res,status)=>{ if(status==='OK') document.getElementById('locInput').value=res[0].formatted_address; });
-            });
-        }
-
-        // Load Maps API
-        const s = document.createElement('script'); 
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
-        s.async = true; s.defer = true; 
-        document.body.appendChild(s);
-
+        const s = document.createElement('script'); s.src=`https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; s.async=true; s.defer=true; document.body.appendChild(s);
     </script>
 </body>
 </html>
