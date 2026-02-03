@@ -79,23 +79,23 @@
             </div>
 
             <div class="timeline-track">
-                <div class="t-step completed" id="step-booked">
+                <div class="t-step completed" id="step-Booked">
                     <div class="t-dot"><i class="ri-check-line"></i></div>
                     <div class="t-label">Booked</div>
                 </div>
-                <div class="t-step" id="step-survey">
+                <div class="t-step" id="step-Survey">
                     <div class="t-dot"><i class="ri-map-pin-user-line"></i></div>
                     <div class="t-label">Survey</div>
                 </div>
-                <div class="t-step" id="step-rig">
+                <div class="t-step" id="step-RigMove">
                     <div class="t-dot"><i class="ri-truck-line"></i></div>
                     <div class="t-label">Rig Move</div>
                 </div>
-                <div class="t-step" id="step-drill">
+                <div class="t-step" id="step-Drilling">
                     <div class="t-dot"><i class="ri-focus-3-line"></i></div>
                     <div class="t-label">Drilling</div>
                 </div>
-                <div class="t-step" id="step-water">
+                <div class="t-step" id="step-Water">
                     <div class="t-dot"><i class="ri-drop-line"></i></div>
                     <div class="t-label">Water</div>
                 </div>
@@ -212,14 +212,16 @@
                       docs.forEach(data => {
                           const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
                           
-                          if (data.status === 'Booked' && !activeBookingFound) {
+                          // Check for active booking to update Hero Tracker
+                          if (data.status !== 'Quote Generated' && !activeBookingFound) {
                               updateLiveTracker(data);
                               activeBookingFound = true;
                           }
 
+                          // 🟢 NEW CARD LAYOUT
                           const card = `
                             <div class="glass-panel p-6 flex flex-col justify-between h-full relative">
-                                ${data.status === 'Booked' ? '<span class="absolute top-4 right-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">BOOKED</span>' : ''}
+                                ${data.status !== 'Quote Generated' ? `<span class="absolute top-4 right-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded uppercase">${data.status}</span>` : ''}
                                 <div>
                                     <div class="text-xs font-bold text-slate-400 mb-1">${date}</div>
                                     <h3 class="font-bold text-slate-800 text-lg mb-1">${data.loc}</h3>
@@ -247,7 +249,7 @@
                           grid.innerHTML += card;
                       });
                   }
-              }).catch(e => console.error("Error fetching quotes:", e));
+              });
 
             // B. FETCH HISTORY (Completed Jobs)
             db.collection('projects').where('mobile', '==', phone).get()
@@ -293,11 +295,38 @@
               });
         }
 
+        // 🟢 4. HERO TRACKER LOGIC
         function updateLiveTracker(data) {
             const tracker = document.getElementById('live-tracker');
             tracker.classList.remove('hidden');
             document.getElementById('active-ref').innerText = `REF: ${data.id}`;
-            document.getElementById('step-booked').classList.add('active', 'completed');
+            
+            // Logic to activate steps based on status string
+            // Map status text to step IDs
+            const stages = {
+                'Booked': 1,
+                'Survey': 2,
+                'RigMove': 3,
+                'Drilling': 4,
+                'Water': 5
+            };
+            
+            // Normalize status (remove spaces if any)
+            let currentStatus = data.status.replace(/\s/g, ''); 
+            let level = stages[currentStatus] || 1; // Default to 1 (Booked)
+
+            // Loop through steps and activate them
+            const stepIds = ['Booked', 'Survey', 'RigMove', 'Drilling', 'Water'];
+            stepIds.forEach((id, index) => {
+                const el = document.getElementById('step-' + id);
+                if (index < level) {
+                    el.classList.add('active', 'completed'); // Past steps are completed
+                } else if (index === level - 1) {
+                    el.classList.add('active'); // Current step is active
+                } else {
+                    el.classList.remove('active', 'completed'); // Future steps are inactive
+                }
+            });
         }
 
         function recalc(loc, depth) {
