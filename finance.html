@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
+    <script src="assets/js/whatsapp_templates.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
@@ -138,11 +139,9 @@
         }
 
         function applyForLoan() {
-            const amt = document.getElementById('loanDisp').innerText;
-            // In a real app, this would open a modal to collect Phone/Name
-            if(confirm(`Connect with a loan agent for ${amt}?`)) {
-                window.location.href = "contact.html?reason=loan&amt=" + encodeURIComponent(amt);
-            }
+            const amount = document.getElementById('loanAmount').value; // Assuming you have this input
+            const msg = WA_MSG.finance_inquiry(amount || "Undecided");
+            window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
         }
     </script>
 </body>
