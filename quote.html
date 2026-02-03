@@ -70,7 +70,7 @@
         .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: none; font-family: inherit; }
         .pac-item { padding: 10px 15px; font-size: 14px; }
         
-        /* 🟢 MAP MARKER FIX */
+        /* 🟢 MAP MARKER CSS (Missing in your code) */
         .map-center-marker {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%);
             z-index: 10; font-size: 32px; color: #ef4444; pointer-events: none;
@@ -158,7 +158,6 @@
         </div>
 
         <div id="step-2" class="container mx-auto px-4 fade-in-up pb-12 hidden">
-            
             <div class="flex justify-between items-center max-w-4xl mx-auto mb-4">
                 <button onclick="goToStep1()" class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-1"><i class="ri-arrow-left-line"></i> Edit Details</button>
                 <div class="flex gap-2">
@@ -187,7 +186,6 @@
                 </div>
 
                 <div class="est-body">
-                    
                     <div class="section-title"><i class="ri-bar-chart-grouped-line"></i> Drilling Cost Structure</div>
                     <table class="est-table">
                         <thead><tr><th>Depth Range</th><th class="text-center">Rate / ft</th><th class="text-right">Amount</th></tr></thead>
@@ -210,12 +208,9 @@
                     </div>
 
                     <div class="text-center mt-10">
-                        <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">
-                            Confirm Booking
-                        </button>
+                        <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">Confirm Booking</button>
                         <p class="text-xs text-slate-400 mt-3 uppercase tracking-wide">Valid for 30 Days • Computer Generated Estimate</p>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -309,10 +304,12 @@
 
             const totalDepth = parseInt(slider.value);
             
+            // 1. Generate Persistent ID
             if (!currentQuoteID) {
                 currentQuoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
             }
 
+            // 2. Math Logic
             let drillHtml = "";
             let breakdownText = ""; 
             let drillCost = 0;
@@ -321,6 +318,7 @@
             const jumps = PRICING_MODEL.increments;
             const bounds = PRICING_MODEL.boundaries;
 
+            // Base 0-100
             const firstChunk = Math.min(totalDepth, 100);
             if(firstChunk > 0) {
                 const cost = firstChunk * currentRate;
@@ -330,6 +328,7 @@
                 currentDepth += firstChunk;
             }
 
+            // Loop Slabs
             while(currentDepth < totalDepth) {
                 let increment = jumps.phase_1; 
                 if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3; 
@@ -347,6 +346,7 @@
                 currentDepth += nextChunk;
             }
 
+            // Ops
             let opsHtml = "";
             let opsCost = 0;
             if (transportDist > TRANSPORT_THRESHOLD_KM) {
@@ -363,6 +363,7 @@
 
             const grandTotal = drillCost + opsCost;
 
+            // Render
             document.getElementById('opsSection').style.display = 'block';
             document.getElementById('opsBody').innerHTML = opsHtml;
             document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
@@ -373,6 +374,7 @@
             document.getElementById('invDepth').innerText = totalDepth + " ft";
             document.getElementById('invRef').innerText = currentQuoteID;
 
+            // Prepare Data
             leadData = { 
                 id: currentQuoteID, 
                 name, 
@@ -384,15 +386,20 @@
                 rows: drillHtml
             };
 
+            // 🟢 INTELLIGENCE: Log Silent Lead with QT ID (Once per session)
             if (!hasLoggedPrice) {
+                // 1. Save to DB (Silent)
                 db.collection('silent_leads').add({
                     ...leadData,
-                    type: "Window Shopper",
+                    type: "Window Shopper", 
                     status: "Viewed Price / Not Booked"
                 });
+
+                // 2. Send Telegram (New Template)
                 if(typeof NOTIFY_TEMPLATES !== 'undefined') {
                     sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
                 }
+                
                 hasLoggedPrice = true; 
             }
 
@@ -432,15 +439,14 @@
             document.getElementById('materialsGrid').innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
         });
 
-        // 🟢 AUTH STATE LISTENER (Unlocks button if logged in)
+        // 🟢 AUTH STATE LISTENER (Unlock button on Login)
         auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
                 document.getElementById('custMobile').disabled = true;
                 document.getElementById('sendOtpBtn').classList.add('hidden');
                 document.getElementById('verifiedBadge').classList.remove('hidden');
-                document.getElementById('generateBtn').disabled = false; // ENABLE BUTTON
-                document.getElementById('generateBtn').classList.remove('bg-gray-400');
+                document.getElementById('generateBtn').disabled = false; // 🟢 FORCE ENABLE
             }
         });
 
@@ -487,7 +493,14 @@
                 window.confirmationResult=cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('sendOtpBtn').classList.add('hidden');
             }).catch(e=>{ console.error(e); alert("SMS Error"); });
         }
-        function verifyOTP() { window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=>document.getElementById('otpSection').classList.add('hidden')); }
+        
+        // 🟢 FIX: UNLOCK BUTTON AFTER OTP VERIFICATION
+        function verifyOTP() { 
+            window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=> {
+                document.getElementById('otpSection').classList.add('hidden');
+                document.getElementById('generateBtn').disabled = false; // 🟢 FORCE ENABLE
+            }).catch(e => alert("Invalid OTP"));
+        }
 
         // MAPS
         let qMap;
