@@ -94,6 +94,17 @@
             if(user) window.location.href = "dashboard.html";
         });
 
+        // --- 🔔 NOTIFICATION SYSTEM ---
+        function sendTelegramAlert(mobile) {
+            // Check if config exists
+            if(typeof NOTIFY_SYSTEM !== 'undefined' && NOTIFY_SYSTEM.bot_token && NOTIFY_SYSTEM.chat_id) {
+                const msg = `👤 *CLIENT LOGIN ALERT!* %0A📱 Mobile: \`${mobile}\` %0A📂 Action: Accessed Project Dashboard`;
+                const url = `https://api.telegram.org/bot${NOTIFY_SYSTEM.bot_token}/sendMessage?chat_id=${NOTIFY_SYSTEM.chat_id}&text=${msg}&parse_mode=Markdown`;
+                
+                fetch(url).catch(e => console.error("Notify Error", e));
+            }
+        }
+
         // A. SEND OTP
         function sendLoginOTP() {
             const phone = document.getElementById('loginMobile').value;
@@ -110,7 +121,6 @@
                     document.getElementById('otp-container').classList.remove('hidden');
                     document.getElementById('loginBtn').classList.add('hidden');
                     document.getElementById('verifyBtn').classList.remove('hidden');
-                    // ❌ DO NOT call notification here. They haven't verified yet!
                 })
                 .catch(e => { 
                     console.error(e); 
@@ -119,7 +129,7 @@
                 });
         }
 
-        // B. VERIFY OTP (This is where we trigger the notification)
+        // B. VERIFY OTP
         function verifyLoginOTP() {
             const code = document.getElementById('loginOtp').value;
             if(code.length !== 6) return alert("Enter 6-digit code");
@@ -127,16 +137,14 @@
             window.confirmationResult.confirm(code).then((result) => {
                 const user = result.user;
                 
-                // ✅ SUCCESS! Now we trigger the notification
-                onClientLoginVerified(user.phoneNumber);
+                // ✅ SUCCESS! Send ONE notification
+                sendTelegramAlert(user.phoneNumber);
 
                 // Check if they have a project
                 db.collection('projects').where('mobile', '==', user.phoneNumber).get().then(snap => {
                     if(!snap.empty) {
                         // Project found, load dashboard
-                        document.getElementById('login-section').classList.add('hidden');
-                        document.getElementById('dashboard-section').classList.remove('hidden');
-                        loadClientDashboard(user.phoneNumber);
+                        window.location.href = "dashboard.html";
                     } else {
                         alert("No active projects found for this number.");
                     }
@@ -145,15 +153,6 @@
                 console.error(error);
                 alert("Invalid OTP");
             });
-        }
-       // --- 🔔 CLIENT LOGIN NOTIFICATION ---
-        function onClientLoginVerified(mobileNumber) {
-            if(typeof NOTIFY_SYSTEM !== 'undefined' && NOTIFY_SYSTEM.bot_token && NOTIFY_SYSTEM.chat_id) {
-                const msg = `👤 *CLIENT LOGIN ALERT!* %0A📱 Mobile: \`${mobileNumber}\` %0A📂 Action: Accessed Project Dashboard`;
-                const url = `https://api.telegram.org/bot${NOTIFY_SYSTEM.bot_token}/sendMessage?chat_id=${NOTIFY_SYSTEM.chat_id}&text=${msg}&parse_mode=Markdown`;
-                
-                fetch(url).catch(e => console.error("Notify Error", e));
-            }
         }
     </script>
 </body>
