@@ -36,6 +36,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     // --- 1. RENDER HEADER (Navigation) ---
+    // Note: Finance link is REMOVED as requested.
     const headerMount = document.getElementById('navbar-mount');
     if (headerMount) {
         headerMount.innerHTML = `
@@ -55,6 +56,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                     <div class="hidden md:flex items-center gap-8">
                         <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
+                        
                         <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
                         
                         <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
@@ -96,11 +98,20 @@ document.addEventListener("DOMContentLoaded", function() {
     // --- 2. RENDER FOOTER (With Socials & Address) ---
     const footerMount = document.getElementById('footer-mount');
     if (footerMount) {
-        // Safe access to config variables
-        const phone = (typeof CONTACT_INFO !== 'undefined') ? CONTACT_INFO.phone_display : '+91 96666 03888';
-        const email = (typeof CONTACT_INFO !== 'undefined') ? CONTACT_INFO.email : 'sagarborewells@gmail.com';
-        const address = (typeof CONTACT_INFO !== 'undefined' && CONTACT_INFO.address) ? CONTACT_INFO.address : 'Mangalagiri, Andhra Pradesh, India';
-        const whatsapp = (typeof CONTACT_INFO !== 'undefined') ? CONTACT_INFO.whatsapp_api : '919666603888';
+        // Safe access to config variables (Matches your config.js structure)
+        const C = (typeof CONTACT_INFO !== 'undefined') ? CONTACT_INFO : {};
+        
+        const phone = C.phone_display || '+91 96666 03888';
+        const email = C.email || 'support@sagarborewells.com';
+        
+        // Correctly combining line 1 and line 2 from your config
+        const addr1 = C.address_line1 || 'Mangalagiri';
+        const addr2 = C.address_line2 || 'Andhra Pradesh';
+        const fullAddress = `${addr1}, ${addr2}`;
+        
+        const wa = C.whatsapp_api || '919666603888';
+        const insta = C.social_instagram || '#';
+        const yt = C.social_youtube || '#';
 
         footerMount.innerHTML = `
         <footer class="bg-[#0f172a] pt-16 pb-8 border-t border-slate-800 text-slate-400 font-sans mt-auto">
@@ -114,10 +125,9 @@ document.addEventListener("DOMContentLoaded", function() {
                         Advanced geological sensor drilling. Delivering precision water solutions since 2010.
                     </p>
                     <div class="flex gap-4">
-                        <a href="https://wa.me/${whatsapp}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i class="ri-whatsapp-line"></i></a>
-                        <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition"><i class="ri-facebook-fill"></i></a>
-                        <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition"><i class="ri-instagram-line"></i></a>
-                        <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i class="ri-youtube-fill"></i></a>
+                        <a href="https://wa.me/${wa}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i class="ri-whatsapp-line"></i></a>
+                        <a href="${insta}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition"><i class="ri-instagram-line"></i></a>
+                        <a href="${yt}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i class="ri-youtube-fill"></i></a>
                     </div>
                 </div>
 
@@ -145,7 +155,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     <ul class="space-y-4 text-sm">
                         <li class="flex items-start gap-3">
                             <i class="ri-map-pin-line text-blue-500 mt-1"></i>
-                            <span>${address}</span>
+                            <span>${fullAddress}</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="ri-phone-line text-blue-500"></i> 
@@ -226,8 +236,5 @@ function checkAdminStatus() {
         if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // Console
         if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // View Source
     };
-
-    // 4. 🧹 CLEAR CONSOLE (Optional - Uncomment to hide logs)
-    // setInterval(function(){ console.clear(); }, 2000); 
 
 })();
