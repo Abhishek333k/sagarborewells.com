@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sagar Admin | Command OS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sagar Admin</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="manifest" href="manifest.json">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
@@ -21,237 +21,267 @@
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
-        /* CYBER THEME */
-        body { background-color: #0f172a; font-family: 'Inter', sans-serif; color: #e2e8f0; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        /* APP-LIKE FEEL */
+        :root { --cyber-black: #0f172a; --cyber-blue: #3b82f6; --glass: rgba(30, 41, 59, 0.7); }
+        body { background-color: var(--cyber-black); color: #e2e8f0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 80px; } /* Padding for bottom nav */
         
-        /* Glassmorphism & Utils */
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
-        .glass-modal { background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(20px); border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
-        .nav-item { display: flex; items-center; gap: 12px; padding: 10px 14px; color: #94a3b8; border-radius: 8px; transition: 0.2s; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
-        .nav-item:hover, .nav-item.active { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-left: 3px solid #3b82f6; }
-        .cyber-input { background: #1e293b; border: 1px solid #334155; color: white; padding: 8px 12px; border-radius: 6px; width: 100%; outline: none; font-size: 0.9rem; transition: 0.3s; }
-        .cyber-input:focus { border-color: #3b82f6; background: #0f172a; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
-        .cyber-select { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%233b82f6%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right .7rem top 50%; background-size: .65rem auto; }
-        .btn-pro { padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-primary { background: #2563eb; color: white; } .btn-primary:hover { background: #1d4ed8; }
-        .btn-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; } .btn-danger:hover { background: #ef4444; color: white; }
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
-        .modal-overlay.open { display: flex; opacity: 1; }
-        .map-wrapper { position: relative; width: 100%; height: 350px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
-        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none; display: flex; align-items: center; justify-content: center; }
-        .reticle-dot { width: 6px; height: 6px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 10px 2px #ef4444; z-index: 2; }
-        .reticle-ring { position: absolute; width: 60px; height: 60px; border: 2px dashed #0ea5e9; border-radius: 50%; box-shadow: 0 0 20px rgba(14, 165, 233, 0.3); animation: reticleSpin 10s linear infinite; }
-        @keyframes reticleSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
-		/* FORCE A4 PAPER LOOK IN PREVIEW */
-		#previewContent {
-			background-color: #525659; /* Adobe Reader Dark Gray */
-			display: flex;
-			justify-content: center;
-			padding: 40px;
-			overflow-y: auto;
-		}
+        /* GLASS CARDS */
+        .glass-card { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
+        
+        /* MOBILE NAV (Bottom Bar) */
+        .mobile-nav { 
+            position: fixed; bottom: 0; left: 0; width: 100%; 
+            background: #1e293b; border-top: 1px solid #334155; 
+            display: flex; justify-content: space-around; padding: 12px 0; 
+            z-index: 50; padding-bottom: env(safe-area-inset-bottom);
+        }
+        .nav-item { color: #64748b; flex-direction: column; align-items: center; display: flex; font-size: 10px; font-weight: 600; }
+        .nav-item i { font-size: 20px; margin-bottom: 2px; }
+        .nav-item.active { color: #3b82f6; }
+        
+        /* DESKTOP SIDEBAR (Hidden on Mobile) */
+        @media (min-width: 768px) {
+            body { padding-bottom: 0; display: flex; }
+            .mobile-nav { display: none; }
+            .desktop-sidebar { width: 260px; height: 100vh; position: fixed; border-right: 1px solid #334155; padding: 20px; }
+            .main-content { margin-left: 260px; width: calc(100% - 260px); padding: 30px; }
+        }
 
-		#previewContent > div {
-			/* Exact A4 Dimensions */
-			width: 210mm;
-			min-height: 297mm;
-			background: white;
-			box-shadow: 0 0 15px rgba(0,0,0,0.5);
-			/* Ensure content doesn't bleed */
-			box-sizing: border-box; 
-			overflow: hidden; 
-		}
+        /* UTILS */
+        .cyber-input { background: #0f172a; border: 1px solid #334155; color: white; padding: 12px; border-radius: 8px; width: 100%; outline: none; font-size: 14px; }
+        .cyber-input:focus { border-color: var(--cyber-blue); }
+        .btn-primary { background: var(--cyber-blue); color: white; padding: 12px 20px; border-radius: 8px; font-weight: 700; width: 100%; text-align: center; }
+        
+        /* MODAL ANIMATION */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal.open { display: flex; animation: fadeUp 0.2s ease-out; }
+        .modal-content { background: #1e293b; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 24px; position: relative; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* LOADING SPINNER */
+        .spinner { border: 3px solid #334155; border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden text-sm bg-[#0f172a]"> 
-    
-    <div id="system-loader" class="fixed inset-0 z-[1000] bg-[#0f172a] flex flex-col items-center justify-center text-white">
-        <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <div class="font-mono text-xs tracking-widest animate-pulse text-blue-400">INITIALIZING SAGAR OS...</div>
+<body>
+
+    <div id="login-overlay" class="fixed inset-0 bg-[#0f172a] z-[200] flex flex-col items-center justify-center p-6 transition-all duration-300">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-blue-600 rounded-xl mx-auto flex items-center justify-center text-3xl font-bold mb-4 shadow-lg shadow-blue-500/20">S</div>
+            <h1 class="text-2xl font-bold tracking-tight">System Access</h1>
+            <p class="text-slate-500 text-sm">Authorized Personnel Only</p>
+        </div>
+        
+        <div class="w-full max-w-sm space-y-4">
+            <input type="tel" id="adminPhone" class="cyber-input text-center tracking-widest text-lg" placeholder="Mobile Number" maxlength="10">
+            <button id="sendOtpBtn" onclick="sendAdminOTP()" class="btn-primary">AUTHENTICATE</button>
+            
+            <div id="otp-group" class="hidden space-y-4">
+                <input type="text" id="adminOtp" class="cyber-input text-center tracking-[1em] font-bold" placeholder="• • • • • •" maxlength="6">
+                <button id="verifyOtpBtn" onclick="verifyAdminOTP()" class="btn-primary bg-emerald-600">UNLOCK TERMINAL</button>
+            </div>
+            <div id="recaptcha-container"></div>
+        </div>
     </div>
 
-    <aside class="w-64 bg-[#0B1120] border-r border-slate-800 flex flex-col flex-shrink-0 z-20">
-        <div class="p-6 border-b border-slate-800">
-            <h1 class="text-xl font-black tracking-tight text-white">SAGAR<span class="text-blue-500 glow-text">OS</span></h1>
-            <div class="flex items-center gap-2 mt-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><p class="text-[10px] text-emerald-500 font-mono uppercase tracking-widest">v3.0 ONLINE</p></div>
+    <aside class="desktop-sidebar hidden md:flex flex-col bg-[#1e293b]">
+        <div class="mb-8 flex items-center gap-3 px-2">
+            <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold">S</div>
+            <div>
+                <h1 class="font-bold text-sm">ADMIN CONSOLE</h1>
+                <p class="text-[10px] text-slate-500">v2.4 Mobile Ready</p>
+            </div>
         </div>
-        <nav class="flex-grow p-4 space-y-1">
-            <div onclick="showSection('leads')" id="nav-leads" class="nav-item active"><i class="ri-radar-line"></i> <span>Live Leads</span></div>
-			<div onclick="showSection('silent')" id="nav-silent" class="nav-item text-yellow-400"><i class="ri-eye-line"></i> <span>Window Shoppers</span></div>
-            <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>BWBC Archives</span></div>
-            <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
-            <div onclick="showSection('maproom')" id="nav-maproom" class="nav-item text-purple-400"><i class="ri-map-2-line"></i> <span>Geo-Map Room</span></div>
-            <div onclick="showSection('dataops')" id="nav-dataops" class="nav-item text-orange-400"><i class="ri-database-line"></i> <span>Govt Data Sync</span></div>
+        
+        <nav class="flex-1 space-y-2">
+            <button onclick="showSection('leads')" class="nav-item-desk w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex gap-3 items-center" id="d-nav-leads">
+                <i class="ri-user-star-line"></i> Active Leads
+            </button>
+            <button onclick="showSection('projects')" class="nav-item-desk w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex gap-3 items-center" id="d-nav-projects">
+                <i class="ri-folder-shield-2-line"></i> Projects
+            </button>
+            <button onclick="showSection('silent')" class="nav-item-desk w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex gap-3 items-center" id="d-nav-silent">
+                <i class="ri-eye-2-line"></i> Window Shoppers
+            </button>
+            <button onclick="showSection('maproom')" class="nav-item-desk w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex gap-3 items-center" id="d-nav-maproom">
+                <i class="ri-map-pin-2-line"></i> Map Room
+            </button>
         </nav>
-        <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button></div>
+
+        <button onclick="logout()" class="p-3 text-red-400 hover:bg-red-900/20 rounded flex items-center gap-3 text-sm font-bold">
+            <i class="ri-logout-box-line"></i> Secure Exit
+        </button>
     </aside>
 
-    <main class="flex-grow overflow-y-auto p-8 relative bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
+    <main class="main-content w-full p-4 md:p-8">
         
-        <div id="login-overlay" class="modal-overlay" style="z-index: 999;">
-            <div class="glass-card p-8 w-80 text-center border-t-4 border-blue-600">
-                <h2 class="text-xl font-bold text-white mb-6">SECURE ACCESS</h2>
-                <div class="text-left mb-4"><label class="text-[10px] text-blue-400 font-bold uppercase block mb-1">ID Verification</label><div class="flex bg-slate-900 border border-slate-700 rounded overflow-hidden"><span class="px-3 py-2 text-slate-500 border-r border-slate-700 font-mono text-xs">+91</span><input type="tel" id="adminPhone" class="w-full bg-transparent px-3 py-2 text-white outline-none font-mono font-bold text-sm" placeholder="ACCESS ID" maxlength="10"></div></div>
-                <div id="otp-group" class="hidden text-left mb-6"><label class="text-[10px] text-emerald-400 font-bold uppercase block mb-1">Security Code</label><input type="tel" id="adminOtp" class="cyber-input text-center tracking-[0.5em] font-bold text-lg" placeholder="••••••" maxlength="6"></div>
-                <div id="recaptcha-container" class="mb-4 flex justify-center"></div>
-                <button id="sendOtpBtn" onclick="sendAdminOTP()" class="w-full btn-pro btn-primary">Authenticate</button>
-                <button id="verifyOtpBtn" onclick="verifyAdminOTP()" class="hidden w-full btn-pro bg-emerald-600 hover:bg-emerald-500 text-white">Unlock System</button>
+        <div class="flex justify-between items-center mb-6 md:hidden">
+            <h1 class="text-xl font-bold">Dashboard</h1>
+            <div class="w-8 h-8 bg-blue-900/30 rounded-full flex items-center justify-center text-blue-400" onclick="logout()">
+                <i class="ri-shut-down-line"></i>
             </div>
         </div>
 
-        <header class="flex justify-between items-center mb-6">
-            <div><h2 class="text-2xl font-bold text-white">Command Center</h2><p class="text-slate-500 text-xs mt-1">Real-time Data Stream</p></div>
-            <div class="glass-card px-3 py-1.5 flex items-center gap-2 border border-emerald-500/20"><i class="ri-server-line text-emerald-400 text-xs"></i><span class="text-[10px] font-mono text-emerald-400 font-bold">DB: CONNECTED</span></div>
-        </header>
-
-        <div id="ceo-dashboard" class="grid grid-cols-3 gap-4 mb-6 hidden">
-            <div class="glass-card p-4 border-l-4 border-blue-500">
-                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Pipeline</p>
-                <h3 class="text-2xl font-bold text-white" id="stat-revenue">₹0</h3>
-                <p class="text-[10px] text-blue-400 mt-1">Active Leads Value</p>
+        <div id="ceo-dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
+            <div class="glass-card p-4">
+                <div class="text-xs text-slate-400 uppercase font-bold">Total Revenue</div>
+                <div class="text-lg md:text-2xl font-bold text-emerald-400 mt-1" id="stat-revenue">₹0</div>
             </div>
-            <div class="glass-card p-4 border-l-4 border-emerald-500">
-                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Drilled Depth</p>
-                <h3 class="text-2xl font-bold text-white" id="stat-depth">0 ft</h3>
-                <p class="text-[10px] text-emerald-400 mt-1">All Time Total</p>
+            <div class="glass-card p-4">
+                <div class="text-xs text-slate-400 uppercase font-bold">Depth Drilled</div>
+                <div class="text-lg md:text-2xl font-bold text-blue-400 mt-1" id="stat-depth">0 ft</div>
             </div>
-            <div class="glass-card p-4 border-l-4 border-purple-500">
-                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Conversion</p>
-                <h3 class="text-2xl font-bold text-white" id="stat-conversion">0%</h3>
-                <p class="text-[10px] text-purple-400 mt-1">Win Rate</p>
-            </div>
-        </div>
-
-        <div id="filter-bar" class="mb-6 flex flex-wrap gap-3 hidden items-end bg-slate-900/50 p-3 rounded-xl border border-slate-800">
-            <div class="flex-grow"><label class="text-[10px] text-slate-500 uppercase font-bold ml-1 mb-1 block">Global Search</label><div class="relative"><i class="ri-search-line absolute left-3 top-2.5 text-slate-500"></i><input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input pl-9" placeholder="Search ID, Name, Mobile..."></div></div>
-            <div><label class="text-[10px] text-slate-500 uppercase font-bold ml-1 mb-1 block">Date Range</label><div class="flex items-center gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700"><input type="date" id="dateStart" onchange="filterData()" class="bg-transparent text-white text-xs outline-none px-2 py-1 w-28"><span class="text-slate-500 text-xs">to</span><input type="date" id="dateEnd" onchange="filterData()" class="bg-transparent text-white text-xs outline-none px-2 py-1 w-28"></div></div>
-            <button onclick="clearFilters()" class="h-[38px] px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700"><i class="ri-filter-off-line"></i></button>
-        </div>
-
-        <div id="section-leads" class="content-section"><div id="leads-list" class="space-y-3"></div></div>
-        <div id="section-projects" class="content-section hidden"><div id="projects-list" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div></div>
-
-        <div id="section-maproom" class="content-section hidden max-w-7xl mx-auto h-[85vh]">
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
-                <div class="lg:col-span-3 glass-card flex flex-col relative overflow-hidden">
-                    <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                        <div class="bg-slate-900/90 backdrop-blur border border-slate-700 p-2 rounded-lg shadow-xl">
-                            <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Zone Type</label>
-                            <select id="drawType" class="bg-slate-800 text-white text-xs p-1 rounded w-32 outline-none border border-slate-600 mb-2">
-                                <option value="rock">Hard Rock (Red)</option>
-                                <option value="water">High Yield (Green)</option>
-                                <option value="moderate">Moderate (Yellow)</option>
-                                <option value="saline">Saline/Salty (Blue)</option>
-                                <option value="silt">Loose Silt (Orange)</option>
-                            </select>
-                            <button onclick="enableDrawing()" id="btnDraw" class="w-full bg-white text-slate-900 font-bold text-xs py-2 rounded hover:bg-slate-200 flex items-center justify-center gap-1">
-                                <i class="ri-pencil-line"></i> DRAW SHAPE
-                            </button>
-                            <button onclick="cancelDrawing()" id="btnCancel" class="hidden w-full bg-red-500 text-white font-bold text-xs py-2 rounded hover:bg-red-600 mt-1">
-                                CANCEL
-                            </button>
-                        </div>
-                        <div class="bg-slate-900/90 backdrop-blur border border-slate-700 p-2 rounded-lg shadow-xl mt-2">
-                             <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Jump to Coords</label>
-                             <div class="flex gap-1">
-                                 <input type="text" id="manualLat" placeholder="Lat" class="w-16 bg-slate-800 text-white text-xs p-1 rounded border border-slate-600">
-                                 <input type="text" id="manualLng" placeholder="Lng" class="w-16 bg-slate-800 text-white text-xs p-1 rounded border border-slate-600">
-                                 <button onclick="jumpToCoords()" class="bg-blue-600 text-white p-1 rounded hover:bg-blue-500"><i class="ri-flight-takeoff-line"></i></button>
-                             </div>
-                        </div>
+            <div class="glass-card p-4 col-span-2 md:col-span-2">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-xs text-slate-400 uppercase font-bold">Conversion Rate</div>
+                        <div class="text-xl font-bold text-white mt-1" id="stat-conversion">0%</div>
                     </div>
-                    <div id="adminMap" class="w-full h-full bg-slate-900"></div>
-                    <div id="saveZonePanel" class="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900/95 border border-emerald-500 p-4 rounded-xl shadow-2xl z-20 w-80">
-                        <h4 class="text-white text-sm font-bold mb-2" id="zonePanelTitle">Save New Zone</h4>
-                        <input type="hidden" id="editDocId">
-                        <input type="text" id="newZoneName" class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-xs mb-2" placeholder="Zone Name (e.g. Mangalagiri North)">
-                        <div class="flex gap-2">
-                            <button onclick="saveCurrentZone()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded" id="btnSaveZone">CONFIRM SAVE</button>
-                            <button onclick="discardCurrentZone()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded"><i class="ri-close-line"></i></button>
-                        </div>
-                    </div>
-                </div>
-                <div class="glass-card p-4 flex flex-col h-full">
-                    <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-3">
-                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Saved Zones</h3>
-                        <button onclick="loadAdminZones()" class="text-xs text-blue-400 hover:text-white"><i class="ri-refresh-line"></i></button>
-                    </div>
-                    <div id="zonesList" class="flex-grow overflow-y-auto space-y-2 pr-1 custom-scrollbar"><div class="text-center text-slate-500 text-xs mt-10">Loading database...</div></div>
+                    <div class="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center animate-pulse"><i class="ri-flashlight-fill"></i></div>
                 </div>
             </div>
         </div>
 
-        <div id="section-dataops" class="content-section hidden max-w-5xl mx-auto">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass-card p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="p-3 bg-blue-900/30 rounded-lg text-blue-400"><i class="ri-cloud-windy-line text-xl"></i></div>
-                        <div><h3 class="text-lg font-bold text-white">WRIS Data Ingestion</h3><p class="text-xs text-slate-400">Import Groundwater Levels from Govt API/JSON</p></div>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="bg-slate-900 p-4 rounded border border-slate-700">
-                            <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 1: Direct API (Experimental)</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="wrisApiUrl" class="cyber-input text-xs" placeholder="https://indiawris.gov.in/api/..." value="https://indiawris.gov.in/api/groundwater/stations">
-                                <button onclick="fetchWrisApi()" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white text-xs">FETCH</button>
-                            </div>
-                            <p class="text-[10px] text-red-400 mt-2 italic">*Likely to fail due to Govt CORS security.</p>
-                        </div>
-                        <div class="bg-slate-900 p-4 rounded border border-slate-700">
-                            <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 2: JSON/CSV Upload (Reliable)</label>
-                            <p class="text-xs text-slate-400 mb-2">Download data from WRIS website, save as JSON, and upload here.</p>
-                            <input type="file" id="jsonUpload" accept=".json,.geojson" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-600"/>
-                            <button onclick="processJsonFile()" class="mt-3 w-full btn-pro bg-emerald-600 hover:bg-emerald-500 text-white">PROCESS & UPLOAD TO FIREBASE</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="glass-card p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="p-3 bg-red-900/30 rounded-lg text-red-400"><i class="ri-alert-line text-xl"></i></div>
-                        <div><h3 class="text-lg font-bold text-white">Regional Risk Mapper</h3><p class="text-xs text-slate-400">Map Districts/Mandals to CGWB Risk Scores</p></div>
-                    </div>
-                    <div class="bg-slate-900 p-4 rounded border border-slate-700 h-64 overflow-y-auto custom-scrollbar" id="riskConsole">
-                        <div class="text-[10px] font-mono text-slate-500">System Ready...</div>
-                    </div>
-                    <div class="mt-4 flex gap-2">
-                        <input type="text" id="riskRegion" class="cyber-input" placeholder="Region (e.g. Guntur)">
-                        <select id="riskLevel" class="cyber-input w-32"><option value="Safe">Safe</option><option value="Semi-Critical">Semi-Critical</option><option value="Critical">Critical</option><option value="Over-Exploited">Over-Exploited</option></select>
-                        <button onclick="addRiskRegion()" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white"><i class="ri-add-line"></i></button>
-                    </div>
-                </div>
+        <div id="filter-bar" class="flex gap-2 mb-6 hidden">
+            <div class="relative flex-1">
+                <i class="ri-search-line absolute left-3 top-3 text-slate-500"></i>
+                <input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input pl-10" placeholder="Search name, phone...">
             </div>
+            <button onclick="showSection('create')" class="bg-blue-600 text-white px-4 rounded-lg font-bold"><i class="ri-add-line"></i></button>
         </div>
-		
-		<div id="section-silent" class="content-section hidden">
-            <div class="glass-card p-6">
-                <h3 class="text-lg font-bold text-white mb-4">Window Shoppers (Verified but didn't book)</h3>
-                <div id="silent-list" class="space-y-3 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                    <div class="text-center text-slate-500">Loading...</div>
+
+        <div id="section-leads" class="content-section">
+            <h2 class="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Recent Inquiries</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="leads-list"></div>
+        </div>
+
+        <div id="section-projects" class="content-section hidden">
+            <h2 class="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Project Files</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="projects-list"></div>
+        </div>
+
+        <div id="section-silent" class="content-section hidden">
+            <h2 class="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Window Shoppers (Silent)</h2>
+            <p class="text-xs text-slate-400 mb-4">Users who verified OTP but didn't book.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="silent-list"></div>
+        </div>
+
+        <div id="section-create" class="content-section hidden">
+            <div class="glass-card p-4 md:p-6 max-w-2xl mx-auto">
+                <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                    <h2 class="font-bold text-lg text-white" id="form-mode-text">New Project Record</h2>
+                    <button onclick="showSection('projects')" class="text-slate-400"><i class="ri-close-line text-xl"></i></button>
                 </div>
-            </div>
-        </div>
-		
-        <div id="section-create" class="content-section hidden max-w-4xl mx-auto">
-            <div class="glass-card p-8">
-                <div class="flex justify-between items-center border-b border-slate-700 pb-4 mb-6"><div><h3 class="text-lg font-bold text-white">Certificate Manager</h3><p class="text-[10px] text-slate-400 font-mono mt-0.5" id="form-mode-text">CREATING NEW RECORD</p></div><div class="flex items-center gap-2"><span class="text-[10px] text-slate-500 font-bold uppercase">ID:</span><input type="text" id="p_id" class="bg-slate-900 border border-slate-700 text-emerald-400 font-mono font-bold px-2 py-1 rounded w-40 text-center text-xs" readonly></div></div>
-                <form id="projectForm" onsubmit="saveProject(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="col-span-full"><h4 class="text-[10px] text-blue-400 font-bold uppercase mb-2">Identity</h4><div class="grid md:grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-400 block mb-1">Mobile</label><div class="flex bg-slate-800 border border-slate-600 rounded"><span class="px-3 py-2 text-slate-400 border-r border-slate-600 font-mono text-xs">+91</span><input type="tel" id="p_mobile" class="w-full bg-transparent px-3 text-white outline-none text-sm" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"></div></div><div><label class="text-[10px] text-slate-400 block mb-1">Name</label><input type="text" id="p_name" class="cyber-input" required></div></div></div>
-                    <div class="col-span-full border-t border-slate-700 pt-4"><h4 class="text-[10px] text-purple-400 font-bold uppercase mb-2">Location</h4><div class="grid md:grid-cols-2 gap-4"><div class="col-span-full"><input type="text" id="p_loc" class="cyber-input" placeholder="Address..." required></div><div class="col-span-full flex gap-2"><input type="text" id="p_gps" class="cyber-input bg-slate-800 font-mono text-xs" readonly><button type="button" onclick="openMapPicker('p')" class="bg-purple-600 hover:bg-purple-500 text-white px-4 rounded font-bold text-xs flex items-center gap-1"><i class="ri-map-pin-line"></i> MAP</button></div></div></div>
-                    <div class="col-span-full border-t border-slate-700 pt-4"><h4 class="text-[10px] text-orange-400 font-bold uppercase mb-2">Technical</h4><div class="grid grid-cols-2 md:grid-cols-4 gap-3"><div><label class="text-[9px] text-slate-500 uppercase">Depth</label><input type="number" id="p_depth" class="cyber-input" required></div><div><label class="text-[9px] text-slate-500 uppercase">Yield</label><input type="text" id="p_yield" class="cyber-input" required></div><div><label class="text-[9px] text-slate-500 uppercase">Casing</label><input type="number" id="p_casing" class="cyber-input" required></div><div><label class="text-[9px] text-slate-500 uppercase">Type</label><select id="p_casingType" class="cyber-input"><option>PVC 6Kg</option><option>PVC 10Kg</option><option>MS Iron</option></select></div><div class="col-span-2"><label class="text-[9px] text-slate-500 uppercase">Rig</label><select id="p_rig" class="cyber-input"><option value="">-- None --</option><option>Sensor Robotic</option><option>Hydraulic</option></select></div><div class="col-span-2"><label class="text-[9px] text-slate-500 uppercase">Date</label><input type="date" id="p_date" class="cyber-input" required></div><div class="col-span-full"><label class="text-[9px] text-slate-500 uppercase">Motor</label><input type="text" id="p_motor" class="cyber-input"></div></div></div>
-                    <div class="col-span-full pt-6 flex justify-end gap-3"><button type="button" onclick="showSection('projects')" class="px-4 py-2 text-slate-500 font-bold text-xs hover:text-white transition">CANCEL</button><button type="submit" class="btn-pro btn-primary"><i class="ri-save-3-line"></i> <span id="save-btn-text">SAVE RECORD</span></button></div>
+                <form id="projectForm" onsubmit="saveProject(event)" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="text" id="p_id" class="cyber-input bg-slate-800 text-slate-400 cursor-not-allowed" readonly>
+                        <input type="date" id="p_date" class="cyber-input" required>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="tel" id="p_mobile" class="cyber-input" placeholder="Customer Mobile (10 digits)" required maxlength="10">
+                        <input type="text" id="p_name" class="cyber-input" placeholder="Customer Name" required>
+                    </div>
+                    <input type="text" id="p_loc" class="cyber-input" placeholder="Location / Address" required>
+                    <div class="flex gap-2">
+                        <input type="text" id="p_gps" class="cyber-input" placeholder="GPS Coordinates" required>
+                        <button type="button" onclick="openMapPicker()" class="bg-slate-700 px-4 rounded text-white"><i class="ri-map-pin-line"></i></button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-700">
+                        <div><label class="text-[10px] text-slate-500 uppercase">Depth (ft)</label><input type="number" id="p_depth" class="cyber-input"></div>
+                        <div><label class="text-[10px] text-slate-500 uppercase">Yield (Inch)</label><input type="text" id="p_yield" class="cyber-input"></div>
+                        <div><label class="text-[10px] text-slate-500 uppercase">Casing (ft)</label><input type="number" id="p_casing" class="cyber-input"></div>
+                        <div><label class="text-[10px] text-slate-500 uppercase">Casing Type</label>
+                            <select id="p_casingType" class="cyber-input"><option>PVC</option><option>MS</option><option>GI</option></select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-[10px] text-slate-500 uppercase">Rig Type</label><input type="text" id="p_rig" class="cyber-input" value="Sensor Rig"></div>
+                        <div><label class="text-[10px] text-slate-500 uppercase">Motor Rec.</label><input type="text" id="p_motor" class="cyber-input" value="7.5 HP Texmo"></div>
+                    </div>
+                    <button type="submit" class="btn-primary mt-6" id="save-btn-text">SAVE RECORD</button>
                 </form>
             </div>
         </div>
-    </main>
 
-    <div id="detailModal" class="modal-overlay" style="z-index: 100;"><div class="glass-modal p-6 w-full max-w-xl rounded-xl relative shadow-2xl overflow-y-auto max-h-[90vh]"><button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="ri-close-line text-xl"></i></button><div id="modalContent"></div></div></div>
-    <div id="previewModal" class="modal-overlay" style="z-index: 150;"><div class="glass-modal p-4 w-full max-w-2xl rounded-xl h-[85vh] flex flex-col"><div class="flex justify-between items-center mb-3 px-2"><h3 class="text-white font-bold text-sm">Preview</h3><div class="flex gap-2"><button onclick="confirmDownloadPDF()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-xs font-bold">Download PDF</button><button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-400 hover:text-white px-3 py-1.5 text-xs font-bold">Close</button></div></div><div id="previewContent" class="flex-grow bg-white overflow-y-auto rounded shadow-inner p-4 text-black"></div></div></div>
-    <div id="mapModal" class="modal-overlay" style="z-index: 200;"><div class="glass-card p-6 w-full max-w-2xl border border-slate-600 shadow-2xl"><h3 class="text-lg font-bold text-white mb-4 text-center">Satellite Targeting</h3><div class="map-wrapper"><div id="mapContainer" class="w-full h-full"></div><div class="target-reticle"><div class="reticle-dot"></div><div class="reticle-ring"></div><div class="absolute top-[30px] w-[1px] h-[20px] bg-gradient-to-b from-blue-400 to-transparent opacity-50"></div><div class="absolute w-[80px] h-[1px] bg-blue-500/30"></div><div class="absolute h-[80px] w-[1px] bg-blue-500/30"></div></div></div><div class="flex justify-center gap-4 mt-6"><button onclick="document.getElementById('mapModal').classList.remove('open')" class="text-slate-400 hover:text-white font-bold px-6 text-xs">ABORT</button><button onclick="confirmLocation()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded font-bold text-xs shadow-lg shadow-blue-900/50">LOCK COORDINATES</button></div></div></div>
+        <div id="section-maproom" class="content-section hidden h-[80vh] relative rounded-xl overflow-hidden border border-slate-700">
+            <div id="adminMap" class="w-full h-full"></div>
+            <div class="absolute top-2 left-2 right-2 flex flex-col gap-2 pointer-events-none">
+                <div class="bg-slate-900/90 p-2 rounded-lg pointer-events-auto flex gap-2 overflow-x-auto">
+                    <select id="drawType" class="bg-slate-800 text-white text-xs p-2 rounded border border-slate-600">
+                        <option value="rock">Hard Rock (Red)</option>
+                        <option value="water">High Yield (Green)</option>
+                        <option value="moderate">Moderate (Yellow)</option>
+                        <option value="saline">Saline (Blue)</option>
+                        <option value="silt">Silt/Collapse (Orange)</option>
+                    </select>
+                    <button id="btnDraw" onclick="enableDrawing()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold whitespace-nowrap">DRAW ZONE</button>
+                    <button id="btnCancel" onclick="cancelDrawing()" class="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold hidden whitespace-nowrap">CANCEL</button>
+                </div>
+            </div>
+            
+            <div id="saveZonePanel" class="absolute bottom-4 left-4 right-4 bg-slate-900 p-4 rounded-xl border border-slate-600 hidden z-10">
+                <h3 class="text-white font-bold text-sm mb-2" id="zonePanelTitle">Save New Zone</h3>
+                <input type="hidden" id="editDocId">
+                <div class="flex gap-2">
+                    <input type="text" id="newZoneName" class="cyber-input text-xs" placeholder="Zone Name (e.g. Mangalagiri North)">
+                    <button onclick="saveCurrentZone()" id="btnSaveZone" class="bg-emerald-600 text-white px-4 rounded text-xs font-bold">SAVE</button>
+                </div>
+            </div>
+            
+            <div class="absolute top-14 right-2 w-48 bg-slate-900/90 p-2 rounded-lg max-h-[50vh] overflow-y-auto pointer-events-auto border border-slate-700">
+                <h4 class="text-[10px] text-slate-400 uppercase font-bold mb-2">Active Layers</h4>
+                <div id="zonesList" class="space-y-1"></div>
+            </div>
+        </div>
+
+        <div class="h-20 md:h-0"></div> </main>
+
+    <nav class="mobile-nav md:hidden">
+        <div class="nav-item active" id="nav-leads" onclick="showSection('leads')">
+            <i class="ri-user-star-line"></i>
+            <span>Leads</span>
+        </div>
+        <div class="nav-item" id="nav-projects" onclick="showSection('projects')">
+            <i class="ri-folder-shield-2-line"></i>
+            <span>Projects</span>
+        </div>
+        <div class="nav-item" id="nav-silent" onclick="showSection('silent')">
+            <i class="ri-eye-2-line"></i>
+            <span>Shoppers</span>
+        </div>
+        <div class="nav-item" id="nav-maproom" onclick="showSection('maproom')">
+            <i class="ri-map-pin-2-line"></i>
+            <span>Maps</span>
+        </div>
+    </nav>
+
+    <div id="detailModal" class="modal">
+        <div class="modal-content relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="ri-close-circle-fill text-2xl"></i></button>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <div id="previewModal" class="modal">
+        <div class="modal-content max-w-3xl bg-white text-black p-0 overflow-hidden flex flex-col h-[90vh]">
+            <div class="bg-slate-100 p-3 flex justify-between items-center border-b">
+                <h3 class="font-bold text-slate-700">Document Preview</h3>
+                <div class="flex gap-2">
+                    <button onclick="confirmDownloadPDF()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">DOWNLOAD</button>
+                    <button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-500"><i class="ri-close-line text-xl"></i></button>
+                </div>
+            </div>
+            <div id="previewContent" class="flex-1 overflow-y-auto p-4 bg-gray-500"></div>
+        </div>
+    </div>
+
+    <div id="mapModal" class="modal">
+        <div class="modal-content h-[60vh] flex flex-col p-0 overflow-hidden">
+            <div id="mapContainer" class="flex-1 bg-slate-800"></div>
+            <button onclick="confirmLocation()" class="bg-blue-600 text-white py-4 font-bold tracking-widest hover:bg-blue-500">CONFIRM LOCATION</button>
+        </div>
+    </div>
 
     <script>
         if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
@@ -267,30 +297,25 @@
 
         // --- AUTH & SETUP ---
         auth.onAuthStateChanged(user => {
-            const loader = document.getElementById('system-loader');
             const loginModal = document.getElementById('login-overlay');
 
             if(user) {
                 db.collection('admins').doc(user.phoneNumber).get().then(doc => {
                     if (doc.exists) {
-                        if(loader) loader.style.display = 'none';
-                        if(loginModal) loginModal.classList.remove('open');
+                        loginModal.classList.add('hidden'); // Hide Login
                         showSection('leads'); 
                         loadAnalytics(); 
                     } else { 
                         notify("UNAUTHORIZED ACCESS", "error"); 
                         auth.signOut(); 
-                        if(loader) loader.style.display = 'none';
-                        loginModal.classList.add('open');
+                        loginModal.classList.remove('hidden');
                     }
                 }).catch(e => {
-                    notify("System Error: " + e.message, "error");
-                    if(loader) loader.style.display = 'none';
-                    loginModal.classList.add('open');
+                    notify("System Error", "error");
+                    loginModal.classList.remove('hidden');
                 });
             } else {
-                if(loader) loader.style.display = 'none';
-                loginModal.classList.add('open');
+                loginModal.classList.remove('hidden');
             }
         });
 
@@ -302,56 +327,65 @@
             auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier).then(cr => {
                 window.confirmationResult = cr; btn.classList.add('hidden');
                 document.getElementById('otp-group').classList.remove('hidden');
-                document.getElementById('verifyOtpBtn').classList.remove('hidden');
-            }).catch(e => notify("TRANSMISSION FAILED", "error"));
+            }).catch(e => { notify("SMS FAILED", "error"); btn.innerText = "RETRY"; });
         }
         function verifyAdminOTP() { window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => notify("INVALID CODE", "error")); }
         function logout() { auth.signOut(); window.location.reload(); }
 
-        // --- 🟢 FIXED NAVIGATION LOGIC ---
+        // --- 🟢 FIXED NAVIGATION ---
         function showSection(id) {
+            // Hide all content
             document.querySelectorAll('.content-section').forEach(e => e.classList.add('hidden'));
             document.getElementById('section-'+id).classList.remove('hidden');
-            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-            document.getElementById('nav-'+id).classList.add('active');
             
+            // Update Nav State (Mobile & Desktop)
+            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+            const navEl = document.getElementById('nav-'+id);
+            if(navEl) navEl.classList.add('active');
+            
+            // Update Desktop Sidebar Highlights
+            document.querySelectorAll('.nav-item-desk').forEach(e => e.classList.remove('bg-slate-800','text-white'));
+            const dNavEl = document.getElementById('d-nav-'+id);
+            if(dNavEl) dNavEl.classList.add('bg-slate-800','text-white');
+
+            // Dashboard & Search Visibility
             const filterBar = document.getElementById('filter-bar');
             const dashboard = document.getElementById('ceo-dashboard');
             
-            // UI Toggle Logic
             if(id === 'leads' || id === 'projects') {
-                filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
+                filterBar.classList.remove('hidden'); 
+                filterBar.classList.add('flex');
                 dashboard.classList.remove('hidden');
             } else {
-                filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
+                filterBar.classList.add('hidden'); 
+                filterBar.classList.remove('flex');
                 dashboard.classList.add('hidden');
             }
 
-            // Data Loading Logic
+            // Load Data
             if(id === 'leads') loadLeads(); 
             else if(id === 'projects') loadProjects();
-            else if(id === 'silent') loadSilentLeads(); // ✅ ADDED THIS MISSING LINE
+            else if(id === 'silent') loadSilentLeads(); // ✅ FIXED: Calls the correct function
             else if(id === 'maproom') initAdminMap();
         }
 
-        // --- 🟢 FIXED DELETE LOGIC (Now handles Silent Leads) ---
+        // --- 🟢 FIXED DELETE LOGIC ---
         function deleteRecord(collection, docId) {
             if(confirm("⚠ PERMANENT DELETE: Are you sure?")) {
                 db.collection(collection).doc(docId).delete().then(() => {
                     notify("RECORD DELETED", "error"); 
                     closeModal();
-                    // Refresh the correct list
                     if(collection === 'leads') loadLeads(); 
                     else if(collection === 'projects') loadProjects();
-                    else if(collection === 'silent_leads') loadSilentLeads(); // ✅ ADDED REFRESH FOR SILENT
+                    else if(collection === 'silent_leads') loadSilentLeads(); // ✅ REFRESHES SILENT LIST
                 });
             }
         }
 
-        // --- 🟢 FIXED SILENT LEADS LOADER (Added Delete Button) ---
+        // --- 🟢 SILENT LEADS (Mobile Optimized) ---
         function loadSilentLeads() {
             const list = document.getElementById('silent-list');
-            list.innerHTML = '<div class="text-center text-slate-500">Scanning...</div>';
+            list.innerHTML = '<div class="text-center text-slate-500 py-10"><div class="spinner mx-auto mb-2"></div>Scanning...</div>';
             
             db.collection('silent_leads').orderBy('timestamp', 'desc').limit(50).get().then(snap => {
                 list.innerHTML = "";
@@ -362,19 +396,18 @@
                     const time = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : "Just now";
                     
                     list.innerHTML += `
-                        <div class="bg-slate-900 p-4 rounded border border-slate-700 flex justify-between items-center group hover:border-yellow-500/50 transition">
+                        <div class="glass-card p-4 flex justify-between items-center group">
                             <div>
-                                <h4 class="text-xl font-mono font-bold text-yellow-400">${data.mobile}</h4>
-                                <p class="text-xs text-slate-500 flex items-center gap-2">
+                                <h4 class="text-lg font-mono font-bold text-yellow-400">${data.mobile}</h4>
+                                <p class="text-xs text-slate-500 flex items-center gap-2 mt-1">
                                     <i class="ri-time-line"></i> ${time}
-                                    <span class="bg-slate-800 px-1 rounded text-[9px] uppercase tracking-wider text-slate-400">Verified</span>
                                 </p>
                             </div>
                             <div class="flex gap-2">
-                                <a href="tel:${data.mobile}" class="bg-green-600 text-white px-4 py-2 rounded font-bold text-xs hover:bg-green-500 flex items-center gap-1">
-                                    <i class="ri-phone-line"></i> CALL
+                                <a href="tel:${data.mobile}" class="bg-green-600/20 text-green-400 border border-green-600/50 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-green-600 hover:text-white transition">
+                                    <i class="ri-phone-fill"></i>
                                 </a>
-                                <button onclick="deleteRecord('silent_leads', '${doc.id}')" class="bg-slate-800 text-slate-400 px-3 py-2 rounded font-bold text-xs hover:bg-red-900 hover:text-red-400 border border-slate-700">
+                                <button onclick="deleteRecord('silent_leads', '${doc.id}')" class="bg-red-600/20 text-red-400 border border-red-600/50 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-red-600 hover:text-white transition">
                                     <i class="ri-delete-bin-line"></i>
                                 </button>
                             </div>
@@ -384,133 +417,33 @@
             });
         }
 
-        // --- 🟢 MAPS & ZONES LOGIC (UNCHANGED & STABLE) ---
+        // --- 🟢 MAPS & ZONES (UNCHANGED logic) ---
         let adminMap, drawingManager, currentPoly;
         let mapPolygons = []; 
-
-        const ZONE_CONFIG = {
-            rock: { color: '#ef4444', label: 'Hard Rock' },
-            water: { color: '#10b981', label: 'High Yield' },
-            moderate: { color: '#eab308', label: 'Moderate' },
-            saline: { color: '#3b82f6', label: 'Saline' },
-            silt: { color: '#f97316', label: 'Loose Silt' }
-        };
+        const ZONE_CONFIG = { rock: { color: '#ef4444', label: 'Hard Rock' }, water: { color: '#10b981', label: 'High Yield' }, moderate: { color: '#eab308', label: 'Moderate' }, saline: { color: '#3b82f6', label: 'Saline' }, silt: { color: '#f97316', label: 'Loose Silt' } };
 
         function initAdminMap() {
             if(adminMap) { loadAdminZones(); return; }
-            
             const startLoc = { lat: 16.4410, lng: 80.5520 }; 
-            adminMap = new google.maps.Map(document.getElementById('adminMap'), {
-                center: startLoc, zoom: 13, mapTypeId: 'hybrid', disableDefaultUI: true, zoomControl: true
-            });
-
-            drawingManager = new google.maps.drawing.DrawingManager({
-                drawingMode: null, drawingControl: false,
-                polygonOptions: { strokeWeight: 2, fillOpacity: 0.35, editable: true, draggable: false }
-            });
+            adminMap = new google.maps.Map(document.getElementById('adminMap'), { center: startLoc, zoom: 13, mapTypeId: 'hybrid', disableDefaultUI: true, zoomControl: true });
+            drawingManager = new google.maps.drawing.DrawingManager({ drawingMode: null, drawingControl: false, polygonOptions: { strokeWeight: 2, fillOpacity: 0.35, editable: true, draggable: false } });
             drawingManager.setMap(adminMap);
-
-            google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) {
-                if(currentPoly) discardCurrentZone();
-                currentPoly = poly;
-                enableEditorUI("Save New Zone", "CONFIRM SAVE");
-                drawingManager.setDrawingMode(null);
-                toggleDrawButtons(false);
-            });
+            google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) { if(currentPoly) discardCurrentZone(); currentPoly = poly; enableEditorUI("Save New Zone", "CONFIRM SAVE"); drawingManager.setDrawingMode(null); toggleDrawButtons(false); });
             loadAdminZones();
         }
 
-        function enableDrawing() {
-            discardCurrentZone();
-            const type = document.getElementById('drawType').value;
-            const color = ZONE_CONFIG[type].color;
-            drawingManager.setOptions({
-                drawingMode: google.maps.drawing.OverlayType.POLYGON,
-                polygonOptions: { fillColor: color, strokeColor: color, fillOpacity: 0.35, strokeWeight: 2, editable: true }
-            });
-            toggleDrawButtons(true);
-            notify(`Draw Mode: ${ZONE_CONFIG[type].label}`);
-        }
-
+        function enableDrawing() { discardCurrentZone(); const type = document.getElementById('drawType').value; const color = ZONE_CONFIG[type].color; drawingManager.setOptions({ drawingMode: google.maps.drawing.OverlayType.POLYGON, polygonOptions: { fillColor: color, strokeColor: color, fillOpacity: 0.35, strokeWeight: 2, editable: true } }); toggleDrawButtons(true); notify(`Draw Mode: ${ZONE_CONFIG[type].label}`); }
         function cancelDrawing() { drawingManager.setDrawingMode(null); discardCurrentZone(); toggleDrawButtons(false); }
-        function discardCurrentZone() {
-            document.getElementById('saveZonePanel').classList.add('hidden');
-            document.getElementById('editDocId').value = ""; document.getElementById('newZoneName').value = "";
-            if (currentPoly) {
-                if (!currentPoly.docId) { currentPoly.setMap(null); } 
-                else { currentPoly.setEditable(false); currentPoly.setOptions({ strokeOpacity: 0.8, fillOpacity: 0.2 }); }
-                currentPoly = null;
-            }
-        }
-        function initEditZone(docId) {
-            discardCurrentZone(); 
-            const targetPoly = mapPolygons.find(p => p.docId === docId);
-            if(!targetPoly) return notify("Error: Zone data not synced.", "error");
-            targetPoly.setEditable(true); targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); 
-            currentPoly = targetPoly; 
-            const data = targetPoly.zoneData;
-            document.getElementById('newZoneName').value = data.name; document.getElementById('drawType').value = data.typeKey; document.getElementById('editDocId').value = docId;
-            enableEditorUI("Edit Existing Zone", "UPDATE SHAPE");
-        }
-        function saveCurrentZone() {
-            const nameRaw = document.getElementById('newZoneName').value; const type = document.getElementById('drawType').value; const editId = document.getElementById('editDocId').value;
-            if(!nameRaw) return notify("Enter Name", "error"); if(!currentPoly) return notify("No shape active", "error");
-            const path = currentPoly.getPath(); let coords = [];
-            for (let i = 0; i < path.getLength(); i++) { const xy = path.getAt(i); coords.push({ lat: xy.lat(), lng: xy.lng() }); }
-            const zoneData = { name: nameRaw, typeKey: type, typeName: ZONE_CONFIG[type].label, color: ZONE_CONFIG[type].color, coords: coords, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
-            const btn = document.getElementById('btnSaveZone'); const oldText = btn.innerText; btn.innerText = "SAVING...";
-            if(editId) { db.collection('geo_zones').doc(editId).update(zoneData).then(() => { notify("Zone Updated"); finalizeSave(btn, oldText); }); } 
-            else { const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_'); db.collection('geo_zones').doc(docId).set(zoneData).then(() => { notify("New Zone Created"); finalizeSave(btn, oldText); }); }
-        }
+        function discardCurrentZone() { document.getElementById('saveZonePanel').classList.add('hidden'); document.getElementById('editDocId').value = ""; document.getElementById('newZoneName').value = ""; if (currentPoly) { if (!currentPoly.docId) { currentPoly.setMap(null); } else { currentPoly.setEditable(false); currentPoly.setOptions({ strokeOpacity: 0.8, fillOpacity: 0.2 }); } currentPoly = null; } }
+        function initEditZone(docId) { discardCurrentZone(); const targetPoly = mapPolygons.find(p => p.docId === docId); if(!targetPoly) return notify("Error: Zone data not synced.", "error"); targetPoly.setEditable(true); targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); currentPoly = targetPoly; const data = targetPoly.zoneData; document.getElementById('newZoneName').value = data.name; document.getElementById('drawType').value = data.typeKey; document.getElementById('editDocId').value = docId; enableEditorUI("Edit Existing Zone", "UPDATE SHAPE"); }
+        function saveCurrentZone() { const nameRaw = document.getElementById('newZoneName').value; const type = document.getElementById('drawType').value; const editId = document.getElementById('editDocId').value; if(!nameRaw) return notify("Enter Name", "error"); if(!currentPoly) return notify("No shape active", "error"); const path = currentPoly.getPath(); let coords = []; for (let i = 0; i < path.getLength(); i++) { const xy = path.getAt(i); coords.push({ lat: xy.lat(), lng: xy.lng() }); } const zoneData = { name: nameRaw, typeKey: type, typeName: ZONE_CONFIG[type].label, color: ZONE_CONFIG[type].color, coords: coords, timestamp: firebase.firestore.FieldValue.serverTimestamp() }; const btn = document.getElementById('btnSaveZone'); const oldText = btn.innerText; btn.innerText = "SAVING..."; if(editId) { db.collection('geo_zones').doc(editId).update(zoneData).then(() => { notify("Zone Updated"); finalizeSave(btn, oldText); }); } else { const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_'); db.collection('geo_zones').doc(docId).set(zoneData).then(() => { notify("New Zone Created"); finalizeSave(btn, oldText); }); } }
         function finalizeSave(btn, oldText) { btn.innerText = oldText; if(currentPoly) currentPoly = null; document.getElementById('saveZonePanel').classList.add('hidden'); document.getElementById('editDocId').value = ""; document.getElementById('newZoneName').value = ""; loadAdminZones(); }
-        function deleteZone(collectionName, docId) {
-            if(!confirm(`PERMANENT DELETE from ${collectionName}?`)) return;
-            db.collection(collectionName).doc(docId).delete().then(() => {
-                notify("Object Deleted"); loadAdminZones(); 
-            }).catch(e => notify("Delete Failed", "error"));
-        }
-        function loadAdminZones() {
-            const listEl = document.getElementById('zonesList');
-            if(mapPolygons) mapPolygons.forEach(p => p.setMap(null)); mapPolygons = [];
-            listEl.innerHTML = '<div class="text-center text-slate-500 text-xs mt-4 animate-pulse">Scanning layers...</div>';
-            const layers = [ { id: 'geo_zones', label: 'Manual' }, { id: 'risk_map', label: 'Risk Zone' }, { id: 'layer_lithologs', label: 'Station' } ];
-            const promises = layers.map(l => db.collection(l.id).orderBy('timestamp', 'desc').limit(50).get().then(snap => ({ id: l.id, label: l.label, docs: snap.docs })));
-            Promise.all(promises).then(results => {
-                listEl.innerHTML = ""; let count = 0;
-                results.forEach(res => {
-                    res.docs.forEach(doc => {
-                        const data = doc.data(); const docId = doc.id; const collection = res.id; count++;
-                        let mapObj = null;
-                        if (data.lat && data.lng) {
-                            mapObj = new google.maps.Circle({ strokeColor: data.color||'#06b6d4', fillColor: data.color||'#06b6d4', fillOpacity:0.6, map:adminMap, center:{lat:data.lat,lng:data.lng}, radius:150, clickable:true });
-                        } else if (data.coords) {
-                            mapObj = new google.maps.Polygon({ paths: data.coords, strokeColor: data.color, fillColor: data.color, fillOpacity: 0.2, map: adminMap, clickable: true });
-                        }
-                        if(mapObj) {
-                            mapObj.docId = docId; mapObj.zoneData = data;
-                            mapObj.addListener('click', () => { notify(data.name); if(mapObj.getCenter) adminMap.panTo(mapObj.getCenter()); });
-                            mapPolygons.push(mapObj);
-                            listEl.innerHTML += `<div class="bg-slate-800 p-3 mb-2 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 cursor-pointer"><div><div class="text-xs font-bold text-white w-32 truncate">${data.name}</div><div class="text-[9px] text-slate-400">${res.label}</div></div><div class="flex gap-1">${collection === 'geo_zones' ? `<button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>` : ''}<button onclick="deleteZone('${collection}', '${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button></div></div>`;
-                        }
-                    });
-                });
-                if(count === 0) listEl.innerHTML = '<div class="text-center text-slate-600 text-xs mt-10">No Zones Found</div>';
-            });
-        }
-        function jumpToCoords() { const lat = parseFloat(document.getElementById('manualLat').value); const lng = parseFloat(document.getElementById('manualLng').value); if(!isNaN(lat) && !isNaN(lng)) { adminMap.setCenter({lat, lng}); adminMap.setZoom(16); } }
+        function deleteZone(collectionName, docId) { if(!confirm(`PERMANENT DELETE from ${collectionName}?`)) return; db.collection(collectionName).doc(docId).delete().then(() => { notify("Object Deleted"); loadAdminZones(); }).catch(e => notify("Delete Failed", "error")); }
+        function loadAdminZones() { const listEl = document.getElementById('zonesList'); if(mapPolygons) mapPolygons.forEach(p => p.setMap(null)); mapPolygons = []; listEl.innerHTML = '<div class="text-center text-slate-500 text-xs mt-4 animate-pulse">Scanning layers...</div>'; const layers = [ { id: 'geo_zones', label: 'Manual' }, { id: 'risk_map', label: 'Risk Zone' }, { id: 'layer_lithologs', label: 'Station' } ]; const promises = layers.map(l => db.collection(l.id).orderBy('timestamp', 'desc').limit(50).get().then(snap => ({ id: l.id, label: l.label, docs: snap.docs }))); Promise.all(promises).then(results => { listEl.innerHTML = ""; let count = 0; results.forEach(res => { res.docs.forEach(doc => { const data = doc.data(); const docId = doc.id; const collection = res.id; count++; let mapObj = null; if (data.lat && data.lng) { mapObj = new google.maps.Circle({ strokeColor: data.color||'#06b6d4', fillColor: data.color||'#06b6d4', fillOpacity:0.6, map:adminMap, center:{lat:data.lat,lng:data.lng}, radius:150, clickable:true }); } else if (data.coords) { mapObj = new google.maps.Polygon({ paths: data.coords, strokeColor: data.color, fillColor: data.color, fillOpacity: 0.2, map: adminMap, clickable: true }); } if(mapObj) { mapObj.docId = docId; mapObj.zoneData = data; mapObj.addListener('click', () => { notify(data.name); if(mapObj.getCenter) adminMap.panTo(mapObj.getCenter()); }); mapPolygons.push(mapObj); listEl.innerHTML += `<div class="bg-slate-800 p-3 mb-2 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 cursor-pointer"><div><div class="text-xs font-bold text-white w-32 truncate">${data.name}</div><div class="text-[9px] text-slate-400">${res.label}</div></div><div class="flex gap-1">${collection === 'geo_zones' ? `<button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>` : ''}<button onclick="deleteZone('${collection}', '${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button></div></div>`; } }); }); if(count === 0) listEl.innerHTML = '<div class="text-center text-slate-600 text-xs mt-10">No Zones Found</div>'; }); }
         function toggleDrawButtons(isDrawing) { document.getElementById('btnDraw').classList.toggle('hidden', isDrawing); document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing); }
         function enableEditorUI(title, btnText) { document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('zonePanelTitle').innerText = title; document.getElementById('btnSaveZone').innerText = btnText; }
 
-        // --- 🟢 DATA OPS (UNCHANGED) ---
-        function addRiskRegion() {
-            const region = document.getElementById('riskRegion').value; const status = document.getElementById('riskLevel').value; if(!region) return notify("Enter Region", "error");
-            db.collection('risk_map').doc(region.toLowerCase()).set({ region: region.toLowerCase(), status: status, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
-                document.getElementById('riskConsole').innerHTML += `<div class="text-green-400">✓ Mapped: ${region} -> ${status}</div>`; notify("Risk Region Added");
-            });
-        }
-        function processJsonFile() { notify("Upload feature ready. (Check main code for logic)", "info"); } // Placeholder to keep script short if not changed
-
-        // --- 🟢 CORE UTILS ---
+        // --- 🟢 CORE UTILS (UNCHANGED logic) ---
         function loadAnalytics() {
             let totalDepth = 0; let totalRevenue = 0; let leadCount = 0; let projectCount = 0;
             db.collection('projects').get().then(snap => { projectCount = snap.size; snap.forEach(doc => { totalDepth += parseInt(doc.data().depth || 0); }); document.getElementById('stat-depth').innerText = totalDepth.toLocaleString() + " ft"; updateConversion(); });
@@ -524,16 +457,15 @@
             const filtered = list.filter(item => (item.name + item.mobile + item.loc).toLowerCase().includes(term));
             if(currentView === 'leads') renderLeads(filtered); else renderProjects(filtered);
         }
-        function clearFilters() { document.getElementById('searchInput').value = ""; filterData(); }
         function loadLeads() { currentView = 'leads'; db.collection('leads').orderBy('timestamp','desc').limit(100).get().then(snap => { leadsCache = []; snap.forEach(d => { let data = d.data(); data.docId = d.id; leadsCache.push(data); }); renderLeads(leadsCache); }); }
         function renderLeads(list) {
             const el = document.getElementById('leads-list'); el.innerHTML = "";
-            list.forEach(data => { el.innerHTML += `<div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 flex justify-between items-center hover:bg-slate-800/50 cursor-pointer border border-slate-800/50 hover:border-blue-500/30"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><i class="ri-user-search-line"></i></div><div><div class="font-bold text-white text-sm">${data.name}</div><div class="text-[10px] text-slate-400 font-mono">${data.loc}</div></div></div><div class="text-right"><div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[9px] text-blue-400 font-mono font-bold uppercase">${data.status || 'Pending'}</div></div></div>`; });
+            list.forEach(data => { el.innerHTML += `<div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 flex justify-between items-center hover:bg-slate-800/50 cursor-pointer border border-slate-800/50 hover:border-blue-500/30"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center text-blue-400 shrink-0"><i class="ri-user-search-line"></i></div><div class="min-w-0"><div class="font-bold text-white text-sm truncate">${data.name}</div><div class="text-[10px] text-slate-400 font-mono truncate">${data.loc}</div></div></div><div class="text-right shrink-0"><div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[9px] text-blue-400 font-mono font-bold uppercase">${data.status || 'Pending'}</div></div></div>`; });
         }
         function loadProjects() { currentView = 'projects'; db.collection('projects').orderBy('projectId', 'desc').get().then(snap => { projectsCache = []; snap.forEach(d => { let data = d.data(); projectsCache.push(data); }); renderProjects(projectsCache); }); }
         function renderProjects(list) {
             const el = document.getElementById('projects-list'); el.innerHTML = "";
-            list.forEach(data => { el.innerHTML += `<div onclick="openProjectModal('${data.projectId}')" class="glass-card p-5 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition border-y border-r border-slate-800/50"><div class="absolute top-2 right-2 text-slate-600 text-[9px] font-mono">${data.date}</div><h3 class="font-bold text-base text-white mb-1">${data.location}</h3><p class="text-xs text-slate-400 mb-3 font-mono">${data.customerName}</p><div class="text-[10px] text-emerald-500 font-mono tracking-widest bg-emerald-900/20 inline-block px-2 py-0.5 rounded border border-emerald-900/50">${data.projectId}</div></div>`; });
+            list.forEach(data => { el.innerHTML += `<div onclick="openProjectModal('${data.projectId}')" class="glass-card p-5 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition border-y border-r border-slate-800/50"><div class="absolute top-2 right-2 text-slate-600 text-[9px] font-mono">${data.date}</div><h3 class="font-bold text-base text-white mb-1 truncate">${data.location}</h3><p class="text-xs text-slate-400 mb-3 font-mono">${data.customerName}</p><div class="text-[10px] text-emerald-500 font-mono tracking-widest bg-emerald-900/20 inline-block px-2 py-0.5 rounded border border-emerald-900/50">${data.projectId}</div></div>`; });
         }
         function startNewCertificate() { showSection('create'); resetForm(); }
         function resetForm() {
@@ -558,22 +490,31 @@
             const docRef = db.collection('projects').doc(id);
             docRef.get().then(doc => { if(doc.exists && !isEditing) { notify("ERROR: ID Exists.", "error"); resetForm(); } else { docRef.set(data, { merge: true }).then(() => { notify(isEditing ? "RECORD UPDATED" : "CERTIFICATE ISSUED"); resetForm(); showSection('projects'); }); } });
         }
+        
+        // --- 🟢 PDF & UTILS ---
         let currentPDFElement;
-        function previewQuote(encoded) { const data = JSON.parse(decodeURIComponent(encoded)); let rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`; const content = getInvoiceHTML({ name: data.name, mobile: data.mobile, loc: data.loc, total: data.total, rows: rows }); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); }
+        function previewQuote(encoded) { const data = JSON.parse(decodeURIComponent(encoded)); let rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`; const content = getInvoiceHTML({ id: data.docId, name: data.name, mobile: data.mobile, loc: data.loc, total: data.total, rows: rows }); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); }
         function previewCert(encoded) { const data = JSON.parse(decodeURIComponent(encoded)); const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType }; const content = getCertificateHTML(certData); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); }
         function confirmDownloadPDF() { const el = document.createElement('div'); el.innerHTML = currentPDFElement; document.body.appendChild(el); html2pdf().from(el).save('Document.pdf').then(() => document.body.removeChild(el)); }
-        function downloadAdminCert(encoded) { previewCert(encoded); }
+        
+        // Modals
+        function openProjectModal(projectId) { const data = projectsCache.find(p => p.projectId === projectId); const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Project File</h2><p class="text-emerald-400 font-mono text-xs">${data.projectId}</p></div><div class="space-y-4 mb-6"><div class="glass-card p-4"><h3 class="font-bold text-white mb-2">${data.location}</h3><div class="grid grid-cols-2 gap-2 text-xs text-slate-400"><div>Depth: <span class="text-white">${data.depth}ft</span></div><div>Yield: <span class="text-white">${data.yield}"</span></div><div>Casing: <span class="text-white">${data.casing_depth}ft</span></div><div>Motor: <span class="text-white">${data.motor}</span></div></div></div></div><div class="grid grid-cols-2 gap-3"><button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-primary bg-emerald-600"><i class="ri-file-download-line"></i> Certificate</button><button onclick="editProject('${data.projectId}')" class="btn-primary bg-blue-600"><i class="ri-edit-line"></i> Edit</button></div><div class="text-center mt-4"><button onclick="deleteRecord('projects', '${data.projectId}')" class="text-red-400 text-xs font-bold">DELETE RECORD</button></div>`; document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open'); }
         function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
+        
         function openLeadModal(docId) {
             const data = leadsCache.find(l => l.docId === docId); const notes = data.adminNotes || "";
-            const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Lead Details</h2><p class="text-slate-400 font-mono text-xs">Quote: ${data.docId}</p></div><div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.name}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.loc}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div></div><div class="mb-6 grid grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Status</label><select class="cyber-input cyber-select w-full text-xs" onchange="updateLeadStatus('${data.docId}', this.value)"><option ${data.status==='Pending'?'selected':''}>Pending</option><option ${data.status==='Contacted'?'selected':''}>Contacted</option><option ${data.status==='Site Visit'?'selected':''}>Site Visit</option><option ${data.status==='Closed'?'selected':''}>Closed</option></select></div><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Mission Log</label><div class="flex gap-2"><textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Notes...">${notes}</textarea><button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-2 rounded text-white"><i class="ri-save-line"></i></button></div></div></div><div class="grid grid-cols-2 gap-3 mb-4"><a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="btn-pro bg-green-600 hover:bg-green-500 text-white"><i class="ri-whatsapp-line"></i> Chat</a><a href="tel:${data.mobile}" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-phone-line"></i> Call</a><button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-eye-line"></i> View</button><button onclick="convertToProject('${data.docId}')" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white border border-purple-400/30"><i class="ri-magic-line"></i> Convert</button></div><div class="text-center pt-2"><button onclick="deleteRecord('leads', '${data.docId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE LEAD</button></div>`;
+            const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Lead Details</h2><p class="text-slate-400 font-mono text-xs">Quote: ${data.docId}</p></div><div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm truncate">${data.name}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm truncate">${data.loc}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div></div><div class="mb-6 grid grid-cols-1 gap-4"><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Status</label><select class="cyber-input w-full text-xs" onchange="updateLeadStatus('${data.docId}', this.value)"><option ${data.status==='Pending'?'selected':''}>Pending</option><option ${data.status==='Contacted'?'selected':''}>Contacted</option><option ${data.status==='Site Visit'?'selected':''}>Site Visit</option><option ${data.status==='Closed'?'selected':''}>Closed</option></select></div><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Mission Log</label><div class="flex gap-2"><textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Notes...">${notes}</textarea><button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-3 rounded text-white"><i class="ri-save-line"></i></button></div></div></div><div class="grid grid-cols-2 gap-3 mb-4"><a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="btn-primary bg-green-600"><i class="ri-whatsapp-line"></i> Chat</a><a href="tel:${data.mobile}" class="btn-primary bg-blue-600"><i class="ri-phone-line"></i> Call</a><button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="btn-primary bg-slate-700"><i class="ri-eye-line"></i> View</button><button onclick="convertToProject('${data.docId}')" class="btn-primary bg-purple-600"><i class="ri-magic-line"></i> Convert</button></div><div class="text-center pt-2"><button onclick="deleteRecord('leads', '${data.docId}')" class="text-red-400 text-xs font-bold">DELETE LEAD</button></div>`;
             document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open');
         }
+        
         function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }); }
         function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
+        
         function initMapTools() { const input = document.getElementById('p_loc'); if(input) { const ac = new google.maps.places.Autocomplete(input); ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); } }
-        function openMapPicker() { if(typeof google === 'undefined') { notify("System Initializing...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
+        function openMapPicker() { if(typeof google === 'undefined') { notify("Maps Loading...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
         function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
+        
+        // Maps Loader
         const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`; s.async = true; s.defer = true; document.body.appendChild(s);
     </script>
 </body>
