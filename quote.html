@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Get Quote | Sagar Borewells</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -21,6 +22,7 @@
     <script src="assets/js/whatsapp_templates.js"></script>
 
     <style>
+        /* BASE STYLES */
         :root { --primary: #1e3a8a; --bg: #f8fafc; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: #1e293b; }
         
@@ -43,7 +45,7 @@
         .expert-alert { display: none; margin-top: 15px; padding: 12px; background: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; color: #b91c1c; font-size: 0.85rem; font-weight: 600; text-align: center; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* RESULT */
+        /* RESULT CARD */
         .est-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px -10px rgba(0,0,0,0.15); margin-top: 20px; border: 1px solid #e2e8f0; }
         .est-header { background: #ffffff; padding: 30px; border-bottom: 2px solid #1e3a8a; }
         .est-total-block { text-align: right; }
@@ -119,11 +121,14 @@
                             <span id="display-val" class="text-6xl font-extrabold text-blue-800">100</span>
                             <span class="text-xl font-bold text-slate-400 align-top">FT</span>
                         </div>
+                        
                         <input type="range" id="depthSlider" class="range-slider" min="100" max="500" value="100" step="10">
+                        
                         <div class="flex justify-between text-xs font-bold text-slate-400 mt-2">
                             <span>100 FT</span>
                             <span id="maxLabel">500 FT</span>
                         </div>
+
                         <div id="expertAlert" class="expert-alert">
                             <div class="flex flex-col items-center gap-2">
                                 <div class="flex items-center text-red-600 font-bold">
@@ -146,8 +151,9 @@
         </div>
 
         <div id="step-2" class="container mx-auto px-4 fade-in-up pb-12 hidden">
+            
             <div class="flex justify-between items-center max-w-4xl mx-auto mb-4">
-                <button onclick="goToStep1()" class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-1"><i class="ri-arrow-left-line"></i> Edit</button>
+                <button onclick="goToStep1()" class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-1"><i class="ri-arrow-left-line"></i> Edit Details</button>
                 <div class="flex gap-2">
                     <button onclick="downloadPDF()" class="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-50"><i class="ri-file-download-line"></i> PDF</button>
                     <button onclick="shareWhatsApp()" class="bg-emerald-50 text-emerald-600 border border-emerald-200 px-4 py-2 rounded-lg font-bold text-sm hover:bg-emerald-100"><i class="ri-whatsapp-line"></i> Share</button>
@@ -174,6 +180,7 @@
                 </div>
 
                 <div class="est-body">
+                    
                     <div class="section-title"><i class="ri-bar-chart-grouped-line"></i> Drilling Cost Structure</div>
                     <table class="est-table">
                         <thead><tr><th>Depth Range</th><th class="text-center">Rate / ft</th><th class="text-right">Amount</th></tr></thead>
@@ -196,9 +203,12 @@
                     </div>
 
                     <div class="text-center mt-10">
-                        <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">Confirm Booking</button>
+                        <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">
+                            Confirm Booking
+                        </button>
                         <p class="text-xs text-slate-400 mt-3 uppercase tracking-wide">Valid for 30 Days • Computer Generated Estimate</p>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -209,7 +219,7 @@
                     <i class="ri-check-line text-4xl text-emerald-600"></i>
                 </div>
                 <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Booking Confirmed!</h1>
-                <p class="text-slate-500 mb-8">We have received your request. A representative will call you shortly.</p>
+                <p class="text-slate-500 mb-8">We have received your request. A representative will call you shortly to discuss site logistics.</p>
                 <div class="flex justify-center gap-4">
                     <a href="dashboard.html" class="py-3 px-6 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50">Dashboard</a>
                     <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}`, '_blank')" class="py-3 px-6 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">Chat Support</button>
@@ -235,14 +245,14 @@
     </div>
 
     <script>
-        // INIT
+        // 🟢 INIT FIREBASE
         if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
             if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
         }
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // CONFIG
+        // 🟢 LOAD CONSTANTS (Fallback to Safe Defaults)
         const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : {
             PRICING_MODEL: { base_rate: 70, increments: { phase_1: 10, phase_2: 20, phase_3: 50 }, boundaries: { phase_2_start: 200, phase_3_start: 300 } },
             MATERIALS: []
@@ -253,7 +263,10 @@
         let siteCoords = null;
         let leadData = {};
 
-        // SLIDER LOGIC
+        // 🟢 GLOBAL VARIABLE FOR QUOTE ID (Prevents changing ID on re-calc)
+        let currentQuoteID = null;
+
+        // 🟢 SLIDER LOGIC (Elastic + Expert Trigger)
         const slider = document.getElementById('depthSlider');
         const sliderBox = document.getElementById('sliderBox');
         const maxLabel = document.getElementById('maxLabel');
@@ -262,39 +275,53 @@
         slider.addEventListener('input', function() {
             let val = parseInt(this.value);
             let currentMax = parseInt(this.max);
+
             document.getElementById('display-val').innerText = val;
 
+            // Elastic Expansion
             if (val >= currentMax) {
                 if (currentMax === 500) { this.max = 900; maxLabel.innerText = "900 FT"; sliderBox.classList.add('expanded'); }
                 else if (currentMax === 900) { this.max = 1200; maxLabel.innerText = "1200 FT"; }
-            } else if (val < 400 && currentMax > 500) {
+            }
+            // Elastic Contraction
+            else if (val < 400 && currentMax > 500) {
                 this.max = 500; maxLabel.innerText = "500 FT"; sliderBox.classList.remove('expanded');
                 this.value = val; 
             }
+
+            // Expert Trigger (>600ft)
             expertAlert.style.display = (val > 600) ? 'block' : 'none';
+
+            // Visual Fill
             const pct = ((val - this.min) / (this.max - this.min)) * 100;
             this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
         });
 
-        // CALCULATION LOGIC
+        // 🟢 CALCULATION ENGINE (Updated Slab Logic + breakdown)
         function calculateEstimate() {
             if(document.getElementById('generateBtn').disabled) return;
             const name = document.getElementById('custName').value;
             const loc = document.getElementById('locInput').value;
+            
             if(!name || !loc) { alert("Please fill details"); return; }
 
             const totalDepth = parseInt(slider.value);
-            const quoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000+Math.random()*9000)}`;
+            
+            // 🟢 LOGIC FIX: Only generate ID once per session
+            if (!currentQuoteID) {
+                currentQuoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+            }
 
+            // --- DRILLING CALCULATION ---
             let drillHtml = "";
-            let breakdownText = "";
+            let breakdownText = ""; // 📝 For Telegram
             let drillCost = 0;
             let currentDepth = 0;
-            let currentRate = PRICING_MODEL.base_rate;
+            let currentRate = PRICING_MODEL.base_rate; // 70
             const jumps = PRICING_MODEL.increments;
             const bounds = PRICING_MODEL.boundaries;
 
-            // Base 0-100
+            // 1. Base (0-100)
             const firstChunk = Math.min(totalDepth, 100);
             if(firstChunk > 0) {
                 const cost = firstChunk * currentRate;
@@ -304,13 +331,14 @@
                 currentDepth += firstChunk;
             }
 
-            // Slabs
+            // 2. Loop Slabs
             while(currentDepth < totalDepth) {
-                let increment = jumps.phase_1;
-                if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3;
-                else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2;
+                let increment = jumps.phase_1; // +10
+                if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3; // +50
+                else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2; // +20
                 
                 currentRate += increment; 
+
                 let nextChunk = Math.min(50, totalDepth - currentDepth);
                 let cost = nextChunk * currentRate;
                 drillCost += cost;
@@ -318,13 +346,15 @@
                 const endDepth = currentDepth + nextChunk;
                 drillHtml += `<tr><td>${currentDepth + 1} - ${endDepth} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
                 breakdownText += `• ${currentDepth + 1}-${endDepth}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
+                
                 currentDepth += nextChunk;
             }
 
-            // Ops
+            // --- OPERATIONAL ---
             let opsHtml = "";
             let opsCost = 0;
             
+            // Transport
             if (transportDist > TRANSPORT_THRESHOLD_KM) {
                 const excessKm = transportDist - TRANSPORT_THRESHOLD_KM;
                 const blocks = Math.ceil(excessKm / 30);
@@ -334,29 +364,35 @@
                 opsCost += transCost;
             }
 
+            // Labour (Updated Label)
             opsHtml += `<tr><td>Rig Erection & Material Handling</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
             breakdownText += `• Labour: ₹${LABOUR_CHARGE.toLocaleString()}\n`;
             opsCost += LABOUR_CHARGE;
 
             const grandTotal = drillCost + opsCost;
 
+            // RENDER
             document.getElementById('opsSection').style.display = 'block';
             document.getElementById('opsBody').innerHTML = opsHtml;
             document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
+
             document.getElementById('drillBody').innerHTML = drillHtml;
             document.getElementById('drillSubtotal').innerText = "₹" + drillCost.toLocaleString();
             document.getElementById('invTotal').innerText = "₹" + grandTotal.toLocaleString();
             document.getElementById('invLoc').innerText = loc;
             document.getElementById('invDepth').innerText = totalDepth + " ft";
-            document.getElementById('invRef').innerText = quoteID;
+            document.getElementById('invRef').innerText = currentQuoteID; // 🟢 Use Persistent ID
 
+            // PREPARE DATA (With Integrity Fixes)
             leadData = { 
-                id: quoteID, name, 
+                id: currentQuoteID, // 🟢 Use Persistent ID
+                name, 
                 mobile: "+91"+document.getElementById('custMobile').value, 
                 loc, depth: totalDepth, total: grandTotal, 
                 status: "Quote Generated", 
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                summary: breakdownText
+                summary: breakdownText, // 📝 Save summary
+                rows: drillHtml // 🟢 Pass HTML to PDF Template for easy rendering
             };
 
             document.getElementById('step-1').classList.add('hidden');
@@ -364,27 +400,31 @@
             window.scrollTo(0,0);
         }
 
-        // BOOKING
+        // 🟢 CONFIRM BOOKING (Fixed: Saves userId for Dashboard)
         function confirmBooking() {
             const user = auth.currentUser;
-            const finalData = { ...leadData, userId: user ? user.uid : null, source: 'web_quote' };
+            const finalData = {
+                ...leadData,
+                userId: user ? user.uid : null, // Crucial for Dashboard history
+                source: 'web_quote'
+            };
 
+            // Use .set() with specific ID to ensure it matches the Ref ID shown
             db.collection('leads').doc(leadData.id).set(finalData).then(() => {
                 document.getElementById('step-2').classList.add('hidden');
                 document.getElementById('step-3').classList.remove('hidden');
-                // 🟢 NOTIFY TELEGRAM
-                sendTelegram(NOTIFY_TEMPLATES.booking(finalData));
+                
+                // 🟢 NEW: Send Telegram via Notification Engine
+                if(typeof NOTIFY_TEMPLATES !== 'undefined' && typeof TELEGRAM_BOT_TOKEN !== 'undefined') {
+                    const msg = NOTIFY_TEMPLATES.booking(finalData);
+                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
+                    fetch(url).catch(e => console.log("Telegram Error", e));
+                }
+
             }).catch(e => alert("Error saving booking: " + e.message));
         }
 
-        function sendTelegram(msg) {
-            if(typeof TELEGRAM_BOT_TOKEN !== 'undefined') {
-                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
-                fetch(url).catch(e => console.log("Notify Error"));
-            }
-        }
-
-        // UTILS
+        // --- UTILS ---
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('materialsGrid').innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
         });
@@ -400,11 +440,40 @@
         });
 
         function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
-        function downloadPDF() { const el = document.getElementById('invoice-capture'); html2pdf().from(el).save(`Estimate_${leadData.id}.pdf`); }
-        function shareWhatsApp() {
-            const msg = WA_MSG.booking_share(leadData);
-            window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+        
+        // 🟢 UPDATED: PDF Generation (Passes Data Object)
+        function downloadPDF() { 
+            // We use the PDF Template Engine if available
+            if(typeof getInvoiceHTML === 'function') {
+                const element = document.createElement('div');
+                element.innerHTML = getInvoiceHTML(leadData);
+                html2pdf().from(element).save(`Estimate_${leadData.id}.pdf`);
+            } else {
+                // Fallback to screenshot if template fails
+                const el = document.getElementById('invoice-capture'); 
+                html2pdf().from(el).save(`Estimate_${leadData.id}.pdf`); 
+            }
         }
+        
+        // 🟢 UPDATED: WA Share (Uses WhatsApp Templates)
+        function shareWhatsApp() { 
+            if(typeof WA_MSG !== 'undefined') {
+                const msg = WA_MSG.booking_share(leadData);
+                window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+            } else {
+                window.open(`https://wa.me/?text=Estimate ${leadData.id}: ₹${leadData.total.toLocaleString()} for ${leadData.depth}ft`, '_blank');
+            }
+        }
+        
+        // 🟢 UPDATED: Expert Consult (Uses WhatsApp Templates)
+        function consultExpert() {
+            const depth = document.getElementById('depthSlider').value;
+            if(typeof WA_MSG !== 'undefined') {
+                const msg = WA_MSG.deep_drill(depth);
+                window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+            }
+        }
+
         function sendOTP() {
             const p = document.getElementById('custMobile').value;
             if(p.length!=10) return alert("Enter 10 digit number");
@@ -435,11 +504,6 @@
         function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{calculateDist(p.coords.latitude,p.coords.longitude); new google.maps.Geocoder().geocode({location:{lat:p.coords.latitude,lng:p.coords.longitude}},(r,s)=>{if(s==='OK')document.getElementById('locInput').value=r[0].formatted_address;});}); }
 
         const s = document.createElement('script'); s.src=`https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; s.async=true; s.defer=true; document.body.appendChild(s);
-       function consultExpert() {
-            const depth = document.getElementById('depthSlider').value;
-            const msg = WA_MSG.deep_drill(depth);
-            window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
-        }
     </script>
 </body>
 </html>
