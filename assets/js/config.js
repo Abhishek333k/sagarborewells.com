@@ -1,5 +1,9 @@
 // FILENAME: assets/js/config.js
 
+// --- 🔔 NOTIFICATION SYSTEM CONFIG ---
+const TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"; // Get this from @BotFather
+const TELEGRAM_CHAT_ID = "YOUR_CHAT_ID_HERE";     // Get this from @userinfobot
+
 const CONTACT_INFO = {
     // --- MAIN CONTACT ---
     whatsapp_api: "916304094177", 
