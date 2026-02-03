@@ -457,7 +457,7 @@
 
         function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
         
-        // 🟢 ROBUST PDF GENERATION
+        // 🟢 ROBUST PDF GENERATION (Prevents silent failures)
         function downloadPDF() { 
             const element = document.createElement('div');
             // Check if Template Engine exists
@@ -477,7 +477,7 @@
             }
         }
         
-        // 🟢 ROBUST WHATSAPP SHARE
+        // 🟢 ROBUST WHATSAPP SHARE (Prevents dead clicks)
         function shareWhatsApp() { 
             let msg = "";
             let phone = CONTACT_INFO.whatsapp_api;
