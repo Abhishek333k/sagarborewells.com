@@ -253,6 +253,43 @@
     </div>
 
     <script>
+        // 🟢 0. PRE-FILL ENGINE (Handle Edit/Recalculate)
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            
+            // 1. Fill Location
+            if (params.has('loc')) {
+                const loc = decodeURIComponent(params.get('loc'));
+                document.getElementById('locInput').value = loc;
+                // If the user is logged in, the button will unlock automatically via auth listener
+            }
+
+            // 2. Fill Depth & Adjust Slider
+            if (params.has('depth')) {
+                const depth = parseInt(params.get('depth'));
+                const slider = document.getElementById('depthSlider');
+                const display = document.getElementById('display-val');
+                
+                // Update Values
+                slider.value = depth;
+                display.innerText = depth;
+
+                // Trigger visual update (Elastic logic)
+                if (depth > 500) { 
+                    slider.max = (depth > 900) ? 1200 : 900;
+                    document.getElementById('sliderBox').classList.add('expanded');
+                }
+                
+                // Force background color update
+                const pct = ((depth - slider.min) / (slider.max - slider.min)) * 100;
+                slider.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
+                
+                // Show alerts if needed
+                document.getElementById('expertAlert').style.display = (depth > 600) ? 'block' : 'none';
+            }
+        });
+
+        
         // 🟢 INIT FIREBASE
         if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
             if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
