@@ -186,12 +186,12 @@
             document.getElementById('tab-'+tab).classList.add('active');
         }
 
-        // 🟢 3. DATA ENGINE
+        // 🟢 3. DATA ENGINE (Fixed Sorting Issue)
         function loadDashboard(uid, phone) {
             
             // A. FETCH QUOTES
-            db.collection('leads').where('userId', '==', uid)
-              .orderBy('timestamp', 'desc').get()
+            // REMOVED .orderBy() to avoid Index Requirement Error
+            db.collection('leads').where('userId', '==', uid).get()
               .then(snap => {
                   const grid = document.getElementById('estimates-grid');
                   if(snap.empty) {
@@ -200,8 +200,16 @@
                       let activeBookingFound = false;
                       grid.innerHTML = "";
                       
-                      snap.forEach(doc => {
-                          const data = doc.data();
+                      // Client-Side Sorting (Newest First)
+                      let docs = [];
+                      snap.forEach(doc => docs.push(doc.data()));
+                      docs.sort((a, b) => {
+                          const timeA = a.timestamp ? a.timestamp.seconds : 0;
+                          const timeB = b.timestamp ? b.timestamp.seconds : 0;
+                          return timeB - timeA;
+                      });
+
+                      docs.forEach(data => {
                           const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
                           
                           if (data.status === 'Booked' && !activeBookingFound) {
@@ -209,7 +217,6 @@
                               activeBookingFound = true;
                           }
 
-                          // 🟢 NEW CARD LAYOUT
                           const card = `
                             <div class="glass-panel p-6 flex flex-col justify-between h-full relative">
                                 ${data.status === 'Booked' ? '<span class="absolute top-4 right-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">BOOKED</span>' : ''}
@@ -240,7 +247,7 @@
                           grid.innerHTML += card;
                       });
                   }
-              });
+              }).catch(e => console.error("Error fetching quotes:", e));
 
             // B. FETCH HISTORY (Completed Jobs)
             db.collection('projects').where('mobile', '==', phone).get()
