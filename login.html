@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Client Login | Sagar Borewells</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,9 +15,7 @@
     
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
-    <script src="assets/js/notifications.js"></script>
-
-    <style>
+    <script src="assets/js/notifications.js"></script> <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .login-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.05); }
     </style>
@@ -34,17 +33,32 @@
                 
                 <div class="space-y-6">
                     <div class="flex gap-4">
-                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl"><i class="ri-file-list-3-line"></i></div>
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="ri-file-list-3-line"></i>
+                        </div>
                         <div>
                             <h3 class="font-bold text-slate-800">Track Bookings</h3>
-                            <p class="text-sm text-slate-500">Live status of rig deployment.</p>
+                            <p class="text-sm text-slate-500">See real-time status of rig deployment and drilling progress.</p>
                         </div>
                     </div>
+                    
                     <div class="flex gap-4">
-                        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl"><i class="ri-award-line"></i></div>
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="ri-award-line"></i>
+                        </div>
                         <div>
-                            <h3 class="font-bold text-slate-800">Digital BWBC</h3>
-                            <p class="text-sm text-slate-500">Download official yield reports.</p>
+                            <h3 class="font-bold text-slate-800">Digital BWBC Certificates</h3>
+                            <p class="text-sm text-slate-500">Download official government-compliant yield reports for your property.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="ri-customer-service-2-line"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Priority Support</h3>
+                            <p class="text-sm text-slate-500">Direct line to site managers for active projects.</p>
                         </div>
                     </div>
                 </div>
@@ -84,13 +98,22 @@
     <div id="footer-mount"></div>
 
     <script>
+        // ==========================================
+        // 1. SYSTEM INITIALIZATION
+        // ==========================================
+        let db, auth;
+        
         if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
             if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+            db = firebase.firestore();
+            auth = firebase.auth();
+        } else {
+            console.error("Firebase Config Missing!");
         }
-        const db = firebase.firestore();
-        const auth = firebase.auth();
 
-        // 🟢 SEND OTP
+        // ==========================================
+        // 2. SEND OTP LOGIC
+        // ==========================================
         function sendLoginOTP() {
             const phone = document.getElementById('loginMobile').value;
             if(phone.length !== 10) return alert("Enter valid 10-digit number");
@@ -110,7 +133,9 @@
                 .catch(e => { console.error(e); alert("SMS Error. Try again."); btn.innerText = "Send OTP"; });
         }
 
-        // 🟢 INTELLIGENT VERIFY (OMNI-CHECK)
+        // ==========================================
+        // 3. INTELLIGENT VERIFY (THE OMNI-CHECK)
+        // ==========================================
         function verifyLoginOTP() {
             const code = document.getElementById('loginOtp').value;
             if(code.length !== 6) return alert("Enter 6-digit code");
@@ -126,26 +151,35 @@
                 const phone = user.phoneNumber; 
 
                 status.classList.remove('hidden');
+                status.innerText = "Scanning database...";
                 
-                // 🔎 PARALLEL CHECK: Leads (Online) AND Projects (Offline/Manual)
+                // 🔎 TRIPLE CHECK: Leads vs Projects vs Admins
                 const checkLeads = db.collection('leads').where('mobile', '==', phone).get();
                 const checkProjects = db.collection('projects').where('mobile', '==', phone).get();
+                const checkAdmin = db.collection('admins').doc(phone).get(); // Direct Doc Check
 
-                Promise.all([checkLeads, checkProjects])
-                .then(([leadsSnap, projectsSnap]) => {
+                Promise.all([checkLeads, checkProjects, checkAdmin])
+                .then(([leadsSnap, projectsSnap, adminSnap]) => {
                     
-                    if (!leadsSnap.empty || !projectsSnap.empty) {
+                    if (adminSnap.exists) {
+                        // 🛡️ CASE 0: ADMIN DETECTED
+                        status.innerText = "Command Access Granted.";
+                        status.className = "text-xs text-center mt-4 text-red-600 font-bold";
+                        setTimeout(() => window.location.href = "admin.html", 1000);
+                        
+                    } else if (!leadsSnap.empty || !projectsSnap.empty) {
                         // ✅ CASE A: EXISTING CUSTOMER (Found in either)
                         status.innerText = "Records found! Redirecting...";
                         status.className = "text-xs text-center mt-4 text-emerald-600 font-bold";
                         
-                        // Notify Admin
+                        // Notify Admin of Return
                         sendTelegram(NOTIFY_TEMPLATES.client_return({ mobile: phone }));
                         
                         setTimeout(() => window.location.href = "dashboard.html", 1000);
+                        
                     } else {
                         // ⚠️ CASE B: NEW / UNREGISTERED
-                        status.innerText = "Verified. Redirecting to Estimates...";
+                        status.innerText = "Account verified. Redirecting to Estimates...";
                         status.className = "text-xs text-center mt-4 text-blue-600 font-bold";
                         
                         logNewUser(phone);
@@ -154,7 +188,7 @@
                 })
                 .catch(e => {
                     console.error("DB Error", e);
-                    window.location.href = "dashboard.html"; // Fallback
+                    window.location.href = "dashboard.html"; // Safe fallback
                 });
 
             }).catch((error) => {
@@ -165,14 +199,26 @@
             });
         }
 
+        // ==========================================
+        // 4. LOGGING & NOTIFICATIONS
+        // ==========================================
         function logNewUser(phone) {
-            const data = { mobile: phone, source: "Login Page", status: "Unregistered", timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+            const data = { 
+                mobile: phone, 
+                source: "Login Page", 
+                status: "Unregistered", 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+            };
             db.collection('silent_leads').add(data);
-            sendTelegram(NOTIFY_TEMPLATES.silent_lead(data));
+            
+            // Send Alert via Engine
+            if(typeof NOTIFY_TEMPLATES !== 'undefined') {
+                sendTelegram(NOTIFY_TEMPLATES.silent_lead(data));
+            }
         }
 
         function sendTelegram(msg) {
-            if(typeof TELEGRAM_BOT_TOKEN !== 'undefined' && typeof TELEGRAM_CHAT_ID !== 'undefined') {
+            if(typeof TELEGRAM_BOT_TOKEN !== 'undefined') {
                 const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
                 fetch(url).catch(e => console.log("Notify Error"));
             }
