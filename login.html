@@ -10,6 +10,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
@@ -87,25 +88,18 @@
     <div id="footer-mount"></div>
 
     <script>
-        if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
-        
-        // Redirect if already logged in
-        firebase.auth().onAuthStateChanged(user => {
+        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
+            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        }
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // 🟢 AUTO-REDIRECT
+        auth.onAuthStateChanged(user => {
             if(user) window.location.href = "dashboard.html";
         });
 
-        // --- 🔔 NOTIFICATION SYSTEM ---
-        function sendTelegramAlert(mobile) {
-            // Check if config exists
-            if(typeof NOTIFY_SYSTEM !== 'undefined' && NOTIFY_SYSTEM.bot_token && NOTIFY_SYSTEM.chat_id) {
-                const msg = `👤 *CLIENT LOGIN ALERT!* %0A📱 Mobile: \`${mobile}\` %0A📂 Action: Accessed Project Dashboard`;
-                const url = `https://api.telegram.org/bot${NOTIFY_SYSTEM.bot_token}/sendMessage?chat_id=${NOTIFY_SYSTEM.chat_id}&text=${msg}&parse_mode=Markdown`;
-                
-                fetch(url).catch(e => console.error("Notify Error", e));
-            }
-        }
-
-        // A. SEND OTP
+        // 🟢 SEND OTP
         function sendLoginOTP() {
             const phone = document.getElementById('loginMobile').value;
             if(phone.length !== 10) return alert("Enter valid 10-digit number");
@@ -115,44 +109,54 @@
             
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
             
-            firebase.auth().signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier)
+            auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier)
                 .then(cr => {
                     window.confirmationResult = cr;
                     document.getElementById('otp-container').classList.remove('hidden');
                     document.getElementById('loginBtn').classList.add('hidden');
                     document.getElementById('verifyBtn').classList.remove('hidden');
                 })
-                .catch(e => { 
-                    console.error(e); 
-                    alert("SMS Error. Check Console."); 
-                    btn.innerText = "Send OTP"; 
-                });
+                .catch(e => { console.error(e); alert("SMS Error. Check Console."); btn.innerText = "Send OTP"; });
         }
 
-        // B. VERIFY OTP
+        // 🟢 VERIFY OTP + NOTIFY
         function verifyLoginOTP() {
             const code = document.getElementById('loginOtp').value;
             if(code.length !== 6) return alert("Enter 6-digit code");
 
+            const btn = document.getElementById('verifyBtn');
+            btn.innerText = "Verifying...";
+
             window.confirmationResult.confirm(code).then((result) => {
                 const user = result.user;
                 
-                // ✅ SUCCESS! Send ONE notification
-                sendTelegramAlert(user.phoneNumber);
+                // 1. SILENT NOTIFICATION (Log to DB + Telegram)
+                logLoginEvent(user.phoneNumber);
 
-                // Check if they have a project
-                db.collection('projects').where('mobile', '==', user.phoneNumber).get().then(snap => {
-                    if(!snap.empty) {
-                        // Project found, load dashboard
-                        window.location.href = "dashboard.html";
-                    } else {
-                        alert("No active projects found for this number.");
-                    }
-                });
+                // 2. Redirect (Auth state listener handles this, but we force it for speed)
+                setTimeout(() => window.location.href = "dashboard.html", 1000);
+
             }).catch((error) => {
                 console.error(error);
                 alert("Invalid OTP");
+                btn.innerText = "Verify & Login";
             });
+        }
+
+        function logLoginEvent(phone) {
+            // Save to Firestore
+            db.collection('silent_leads').add({
+                mobile: phone,
+                source: "Client Portal Login",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: "Login Detected"
+            });
+
+            // Send Telegram (Using Config)
+            if(typeof TELEGRAM_BOT_TOKEN !== 'undefined' && typeof TELEGRAM_CHAT_ID !== 'undefined') {
+                const msg = `🔑 *CLIENT LOGIN ALERT!*%0A📱 Mobile: \`${phone}\`%0A📍 Source: Web Portal`;
+                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${msg}&parse_mode=Markdown`);
+            }
         }
     </script>
 </body>
