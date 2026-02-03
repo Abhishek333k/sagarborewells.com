@@ -29,28 +29,28 @@
             
             <div class="flex flex-col justify-center">
                 <h1 class="text-3xl font-extrabold text-slate-900 mb-4">Client Portal</h1>
-                <p class="text-slate-500 mb-8">Access your project history and documents securely.</p>
+                <p class="text-slate-500 mb-8">Access your project history, invoices, and BWBC certificates.</p>
                 
                 <div class="space-y-6">
                     <div class="flex gap-4">
                         <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl"><i class="ri-file-list-3-line"></i></div>
                         <div>
                             <h3 class="font-bold text-slate-800">Track Bookings</h3>
-                            <p class="text-sm text-slate-500">See status of rig deployment and drilling progress.</p>
+                            <p class="text-sm text-slate-500">Live status of rig deployment.</p>
                         </div>
                     </div>
                     <div class="flex gap-4">
                         <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl"><i class="ri-award-line"></i></div>
                         <div>
-                            <h3 class="font-bold text-slate-800">Digital Certificates</h3>
-                            <p class="text-sm text-slate-500">Download official yield reports for your property.</p>
+                            <h3 class="font-bold text-slate-800">Digital BWBC</h3>
+                            <p class="text-sm text-slate-500">Download official yield reports & certificates.</p>
                         </div>
                     </div>
                     <div class="flex gap-4">
                         <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xl"><i class="ri-customer-service-2-line"></i></div>
                         <div>
                             <h3 class="font-bold text-slate-800">Priority Support</h3>
-                            <p class="text-sm text-slate-500">Direct line to site managers for active projects.</p>
+                            <p class="text-sm text-slate-500">Direct line to site managers.</p>
                         </div>
                     </div>
                 </div>
@@ -80,6 +80,8 @@
                 <button id="verifyBtn" onclick="verifyLoginOTP()" class="hidden w-full py-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-lg mt-2">
                     Verify & Login
                 </button>
+                
+                <p id="statusMsg" class="text-xs text-center mt-4 text-slate-400 font-bold hidden">Checking records...</p>
             </div>
 
         </div>
@@ -94,11 +96,9 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // 🟢 AUTO-REDIRECT
-        auth.onAuthStateChanged(user => {
-            if(user) window.location.href = "dashboard.html";
-        });
-
+        // 🟢 PREVENT LOOP: Allow page to load, logic handled in verify
+        // Only redirect if explicit user action, not just persistent session
+        
         // 🟢 SEND OTP
         function sendLoginOTP() {
             const phone = document.getElementById('loginMobile').value;
@@ -119,43 +119,71 @@
                 .catch(e => { console.error(e); alert("SMS Error. Check Console."); btn.innerText = "Send OTP"; });
         }
 
-        // 🟢 VERIFY OTP + NOTIFY
+        // 🟢 INTELLIGENT VERIFY (OMNI-CHECK)
         function verifyLoginOTP() {
             const code = document.getElementById('loginOtp').value;
             if(code.length !== 6) return alert("Enter 6-digit code");
 
             const btn = document.getElementById('verifyBtn');
+            const status = document.getElementById('statusMsg');
+            
             btn.innerText = "Verifying...";
+            btn.disabled = true;
 
             window.confirmationResult.confirm(code).then((result) => {
                 const user = result.user;
-                
-                // 1. SILENT NOTIFICATION (Log to DB + Telegram)
-                logLoginEvent(user.phoneNumber);
+                const phone = user.phoneNumber; 
 
-                // 2. Redirect (Auth state listener handles this, but we force it for speed)
-                setTimeout(() => window.location.href = "dashboard.html", 1000);
+                status.classList.remove('hidden');
+                
+                // 🔎 PARALLEL CHECK: Leads (Online) AND Projects (Offline/Manual)
+                const checkLeads = db.collection('leads').where('mobile', '==', phone).get();
+                const checkProjects = db.collection('projects').where('mobile', '==', phone).get();
+
+                Promise.all([checkLeads, checkProjects])
+                .then(([leadsSnap, projectsSnap]) => {
+                    
+                    if (!leadsSnap.empty || !projectsSnap.empty) {
+                        // ✅ CASE A: EXISTING CUSTOMER (Found in either)
+                        // This catches Offline customers (projects) AND Online quotes (leads)
+                        status.innerText = "Records found! Redirecting to Dashboard...";
+                        status.className = "text-xs text-center mt-4 text-emerald-600 font-bold";
+                        setTimeout(() => window.location.href = "dashboard.html", 1000);
+                    } else {
+                        // ⚠️ CASE B: NEW / UNREGISTERED
+                        status.innerText = "Account verified. Redirecting to Estimates...";
+                        status.className = "text-xs text-center mt-4 text-blue-600 font-bold";
+                        
+                        logNewUser(phone);
+                        setTimeout(() => window.location.href = "quote.html", 1500);
+                    }
+                })
+                .catch(e => {
+                    console.error("DB Error", e);
+                    // Safe Fallback: Go to Dashboard anyway just in case
+                    window.location.href = "dashboard.html";
+                });
 
             }).catch((error) => {
                 console.error(error);
                 alert("Invalid OTP");
                 btn.innerText = "Verify & Login";
+                btn.disabled = false;
             });
         }
 
-        function logLoginEvent(phone) {
-            // Save to Firestore
+        function logNewUser(phone) {
             db.collection('silent_leads').add({
                 mobile: phone,
-                source: "Client Portal Login",
+                source: "Login (No Record Found)",
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                status: "Login Detected"
+                status: "Verified Number"
             });
 
-            // Send Telegram (Using Config)
             if(typeof TELEGRAM_BOT_TOKEN !== 'undefined' && typeof TELEGRAM_CHAT_ID !== 'undefined') {
-                const msg = `🔑 *CLIENT LOGIN ALERT!*%0A📱 Mobile: \`${phone}\`%0A📍 Source: Web Portal`;
-                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${msg}&parse_mode=Markdown`);
+                const msg = `👤 *NEW LOGIN (NO RECORDS)* %0A📱 Mobile: \`${phone}\` %0A⚠️ Status: No Projects found.`;
+                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${msg}&parse_mode=Markdown`;
+                fetch(url).catch(e => console.log("Notify Error"));
             }
         }
     </script>
