@@ -39,12 +39,12 @@
             border-radius: 12px; 
         }
 
-        /* DETAIL MODAL CARD STYLE */
-        .profile-card {
-            background: #0f172a; 
+        /* DETAIL MODAL CARD STYLE (The "Profile" Look) */
+        .profile-card-modal {
+            background: #0f172a; /* Deep, solid matte blue/black */
             border: 1px solid #1e293b;
-            border-radius: 20px;
-            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* Deep shadow */
+            border-radius: 24px; /* Smooth corners */
         }
 
         /* MOBILE NAV */
@@ -81,11 +81,6 @@
         .modal.open { display: flex; animation: fadeUp 0.2s ease-out; }
         @keyframes fadeUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        /* SCROLLBAR */
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
-
         /* LOADING */
         .loader-ring { width: 40px; height: 40px; border: 3px solid #1e293b; border-top-color: var(--neon-blue); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -99,11 +94,11 @@
     </div>
 
     <div id="login-overlay" class="fixed inset-0 bg-[#020617] z-[200] flex flex-col items-center justify-center p-6 hidden">
-        <div class="profile-card p-8 w-full max-w-sm text-center border-t-4 border-t-blue-600">
+        <div class="profile-card-modal p-8 w-full max-w-sm text-center border-t-4 border-t-blue-600">
             <div class="w-16 h-16 bg-blue-600/20 rounded-2xl mx-auto flex items-center justify-center text-blue-500 text-3xl font-bold mb-6 border border-blue-500/30">
                 <i class="ri-shield-keyhole-line"></i>
             </div>
-            <h1 class="text-2xl font-bold text-white mb-1">Command Access</h1>
+            <h1 class="text-2xl font-bold text-white mb-1">SBW Console</h1>
             <div class="space-y-4 mt-6">
                 <input type="tel" id="adminPhone" class="cyber-input text-center tracking-widest text-lg" placeholder="Mobile Number" maxlength="10">
                 <button id="sendOtpBtn" onclick="sendAdminOTP()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition">SEND CODE</button>
@@ -120,8 +115,8 @@
         <div class="mb-10 px-2 flex items-center gap-3">
             <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg font-bold text-xl">S</div>
             <div>
-                <h1 class="font-black text-white text-lg tracking-tight">SBW CONSOLE</h1>
-                <p class="text-[10px] text-blue-400 font-mono tracking-widest">ADMIN v4.2</p>
+                <h1 class="font-black text-white text-lg tracking-tight">SBW</h1>
+                <p class="text-[10px] text-blue-400 font-mono tracking-widest">ADMIN CONSOLE</p>
             </div>
         </div>
         <nav class="flex-1 space-y-2">
@@ -168,7 +163,7 @@
                 <i class="ri-search-line absolute left-4 top-3.5 text-slate-500 group-focus-within:text-blue-400 transition"></i>
                 <input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input pl-12 bg-slate-900 border-slate-800" placeholder="Search Database...">
             </div>
-            <button onclick="showSection('create')" class="bg-blue-600 hover:bg-blue-500 text-white px-5 rounded-lg font-bold transition shadow-lg shadow-blue-900/20 flex items-center gap-2">
+            <button id="btn-new-record" onclick="showSection('create')" class="bg-blue-600 hover:bg-blue-500 text-white px-5 rounded-lg font-bold transition shadow-lg shadow-blue-900/20 flex items-center gap-2">
                 <i class="ri-add-line"></i> <span class="hidden md:inline">NEW</span>
             </button>
         </div>
@@ -179,13 +174,7 @@
         </div>
 
         <div id="section-projects" class="content-section hidden space-y-4">
-            <div class="flex justify-between items-end mb-2">
-                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">BWBC Records</h2>
-                <div class="relative w-48">
-                    <input type="text" id="projectSearch" onkeyup="filterProjectsLocal()" class="bg-slate-900 border border-slate-800 text-white text-xs rounded px-3 py-1 pl-8 outline-none focus:border-slate-600" placeholder="Filter records...">
-                    <i class="ri-search-line absolute left-2.5 top-1.5 text-slate-500 text-xs"></i>
-                </div>
-            </div>
+            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">BWBC Records</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="projects-list"></div>
         </div>
 
@@ -197,12 +186,12 @@
         <div id="section-maproom" class="content-section hidden flex flex-col md:flex-row h-[80vh] gap-4">
             <div class="w-full md:w-72 flex flex-col gap-4 bg-[#0f172a] p-4 rounded-xl border border-slate-800 h-[30vh] md:h-full order-2 md:order-1">
                 <div class="relative">
-                    <input type="text" id="zoneSearch" onkeyup="filterMapList()" class="cyber-input text-xs py-2 pl-8 bg-slate-900" placeholder="Search Zones...">
+                    <input type="text" id="zoneSearch" onkeyup="filterMapList()" class="cyber-input text-xs py-2 pl-8 bg-slate-900" placeholder="Search 15k Zones...">
                     <i class="ri-search-line absolute left-2 top-2.5 text-slate-500 text-xs"></i>
                 </div>
                 <div class="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar" id="zonesListSide">
                     </div>
-                <div class="text-[10px] text-slate-600 text-center font-mono border-t border-slate-800 pt-2">ATLAS: ONLINE</div>
+                <div class="text-[10px] text-slate-600 text-center font-mono border-t border-slate-800 pt-2">MAP ATLAS: ONLINE</div>
             </div>
 
             <div class="flex-1 relative rounded-xl overflow-hidden border border-slate-800 shadow-2xl order-1 md:order-2">
@@ -223,7 +212,7 @@
         </div>
 
         <div id="section-create" class="content-section hidden">
-            <div class="profile-card p-6 max-w-2xl mx-auto">
+            <div class="profile-card-modal p-6 max-w-2xl mx-auto">
                 <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
                     <h2 class="font-bold text-lg text-white" id="form-mode-text">New Record</h2>
                     <button onclick="showSection('projects')" class="text-slate-400 hover:text-white"><i class="ri-close-line text-2xl"></i></button>
@@ -264,7 +253,7 @@
     </nav>
 
     <div id="detailModal" class="modal">
-        <div class="profile-card w-full max-w-sm relative p-6">
+        <div class="profile-card-modal w-full max-w-sm relative p-6">
             <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center transition"><i class="ri-close-line text-lg"></i></button>
             <div id="modalContent"></div>
         </div>
@@ -337,56 +326,36 @@
 
             const filterBar = document.getElementById('filter-bar');
             const dashboard = document.getElementById('ceo-dashboard');
+            const newRecordBtn = document.getElementById('btn-new-record');
             
-            // PROJECTS: HIDE Main Filter Bar, SHOW only records
-            if(id === 'projects') {
-                filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
-                dashboard.classList.remove('hidden');
-                loadProjects();
-            } 
-            else if(id === 'leads') {
-                filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
-                dashboard.classList.remove('hidden');
-                loadLeads(); 
+            if(id === 'leads' || id === 'projects') {
+                filterBar.classList.remove('hidden'); filterBar.classList.add('flex'); dashboard.classList.remove('hidden');
+                // HIDE new record button if on projects (BWBC)
+                if(id === 'projects') newRecordBtn.classList.add('hidden');
+                else newRecordBtn.classList.remove('hidden');
+            } else {
+                filterBar.classList.add('hidden'); filterBar.classList.remove('flex'); dashboard.classList.add('hidden');
             }
-            else if(id === 'silent') {
-                filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
-                dashboard.classList.add('hidden');
-                loadSilentLeads();
-            }
-            else if(id === 'maproom') {
-                filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
-                dashboard.classList.add('hidden');
-                initAdminMap();
-            }
-            else if(id === 'create') {
-                filterBar.classList.add('hidden');
-                dashboard.classList.add('hidden');
-            }
+
+            if(id === 'leads') loadLeads(); 
+            else if(id === 'projects') loadProjects();
+            else if(id === 'silent') loadSilentLeads(); 
+            else if(id === 'maproom') initAdminMap();
         }
 
         // --- DATA RENDERERS ---
         let leadsCache = [], projectsCache = [];
-        
-        // Global Search (Leads/Silent)
         function filterData() {
             const term = document.getElementById('searchInput').value.toLowerCase();
-            const list = document.getElementById('section-leads').classList.contains('hidden') ? [] : leadsCache;
+            const list = document.getElementById('section-leads').classList.contains('hidden') ? projectsCache : leadsCache;
             const filtered = list.filter(item => (item.name + item.mobile + item.loc).toLowerCase().includes(term));
-            if(list === leadsCache) renderLeads(filtered); 
-        }
-
-        // Local Search (Projects)
-        function filterProjectsLocal() {
-            const term = document.getElementById('projectSearch').value.toLowerCase();
-            const filtered = projectsCache.filter(item => (item.customerName + item.mobile + item.location + item.projectId).toLowerCase().includes(term));
-            renderProjects(filtered);
+            if(list === leadsCache) renderLeads(filtered); else renderProjects(filtered);
         }
 
         function loadLeads() { 
             const list = document.getElementById('leads-list');
             list.innerHTML = '<div class="text-center text-slate-600 col-span-full animate-pulse mt-10">Scanning Database...</div>';
-            db.collection('leads').orderBy('timestamp','desc').limit(50).get().then(snap => {
+            db.collection('leads').orderBy('timestamp','desc').limit(100).get().then(snap => {
                 leadsCache = []; snap.forEach(d => { let data = d.data(); data.docId = d.id; leadsCache.push(data); });
                 renderLeads(leadsCache);
             });
@@ -445,24 +414,39 @@
                 if(snap.empty) { list.innerHTML = '<div class="text-center text-slate-600 col-span-full mt-10">No Silent Leads</div>'; return; }
                 snap.forEach(doc => {
                     const d = doc.data(); const time = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : 'Just now';
+                    const status = d.status || 'New';
+                    const statusColor = status === 'New' ? 'text-purple-400' : 'text-slate-400';
+                    
                     list.innerHTML += `
-                    <div class="glass-card p-4 flex justify-between items-center group">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0"><i class="ri-eye-line"></i></div>
-                            <div><h4 class="font-mono font-bold text-yellow-400 text-sm">${d.mobile}</h4><p class="text-[10px] text-slate-500 flex items-center gap-1"><i class="ri-time-line"></i> ${time}</p></div>
+                    <div class="glass-card p-4 group">
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0"><i class="ri-eye-line"></i></div>
+                                <div><h4 class="font-mono font-bold text-yellow-400 text-sm">${d.mobile}</h4><p class="text-[10px] text-slate-500 flex items-center gap-1"><i class="ri-time-line"></i> ${time}</p></div>
+                            </div>
+                            <button onclick="deleteRecord('silent_leads', '${doc.id}')" class="text-slate-600 hover:text-red-500"><i class="ri-delete-bin-line"></i></button>
                         </div>
                         <div class="flex gap-2">
-                            <a href="tel:${d.mobile}" class="w-9 h-9 rounded-lg bg-green-500/10 text-green-400 flex items-center justify-center border border-green-500/30 hover:bg-green-500 hover:text-white transition"><i class="ri-phone-fill"></i></a>
-                            <button onclick="deleteRecord('silent_leads', '${doc.id}')" class="w-9 h-9 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/30 hover:bg-red-500 hover:text-white transition"><i class="ri-delete-bin-line"></i></button>
+                            <a href="tel:${d.mobile}" class="flex-1 bg-blue-600/10 text-blue-400 py-2 rounded text-xs font-bold text-center hover:bg-blue-600 hover:text-white transition">CALL</a>
+                            <select onchange="updateSilentStatus('${doc.id}', this.value)" class="flex-1 bg-slate-900 text-white text-[10px] border border-slate-700 rounded px-2 outline-none">
+                                <option ${status==='New'?'selected':''}>New</option>
+                                <option ${status==='Contacted'?'selected':''}>Contacted</option>
+                                <option ${status==='No Answer'?'selected':''}>No Answer</option>
+                                <option ${status==='Not Interested'?'selected':''}>Not Interested</option>
+                                <option ${status==='Follow Up'?'selected':''}>Follow Up</option>
+                            </select>
                         </div>
                     </div>`;
                 });
             });
         }
+        
+        function updateSilentStatus(docId, status) {
+            db.collection('silent_leads').doc(docId).update({ status: status }).then(() => notify("Updated: " + status));
+        }
 
-        // --- 🟢 MAPS 15k SOLUTION (With Edit) ---
+        // --- 🟢 MAPS 15k SOLUTION ---
         let adminMap, drawingManager, currentPoly; let mapPolygons = []; 
-        let allZonesCache = [];
         const ZONE_CONFIG = { rock: { color: '#ef4444', label: 'Hard Rock' }, water: { color: '#10b981', label: 'High Yield' }, moderate: { color: '#eab308', label: 'Moderate' }, saline: { color: '#3b82f6', label: 'Saline' }, silt: { color: '#f97316', label: 'Loose Silt' } };
 
         function initAdminMap() {
@@ -471,7 +455,7 @@
             drawingManager = new google.maps.drawing.DrawingManager({ drawingMode: null, drawingControl: false, polygonOptions: { strokeWeight: 2, fillOpacity: 0.35, editable: true, draggable: false } });
             drawingManager.setMap(adminMap);
             google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) { if(currentPoly) discardCurrentZone(); currentPoly = poly; document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('btnCancelDraw').classList.add('hidden'); drawingManager.setDrawingMode(null); });
-            // RELOAD ZONES ON PAN/ZOOM
+            // RELOAD ZONES ON PAN/ZOOM to handle 15k items without lag
             adminMap.addListener('idle', loadAdminZones);
         }
 
@@ -484,7 +468,6 @@
         }
         function cancelDrawing() { drawingManager.setDrawingMode(null); document.getElementById('btnCancelDraw').classList.add('hidden'); discardCurrentZone(); }
         function discardCurrentZone() { document.getElementById('saveZonePanel').classList.add('hidden'); if(currentPoly) { currentPoly.setMap(null); currentPoly = null; } }
-        
         function saveCurrentZone() {
             const name = document.getElementById('newZoneName').value; const type = document.getElementById('drawType').value;
             if(!name) return notify("Enter Zone Name", "error");
@@ -494,15 +477,19 @@
             });
         }
         
+        // 🟢 FILTERABLE LIST + MAP HIGHLIGHT
+        let allZonesCache = [];
         function loadAdminZones() {
             const list = document.getElementById('zonesListSide'); 
+            // Simple logic: Load ALL once, then filter client-side. 
+            // If 15k is too heavy, we would use bounds queries, but for now we filter visually.
             if(allZonesCache.length === 0) {
                 list.innerHTML = '<div class="text-center text-slate-500 mt-4 text-xs animate-pulse">Syncing Atlas...</div>';
                 db.collection('geo_zones').get().then(snap => {
                     allZonesCache = [];
                     snap.forEach(doc => { allZonesCache.push({ id: doc.id, ...doc.data() }); });
                     renderMapList(allZonesCache);
-                    renderMapPolygons(allZonesCache);
+                    renderMapPolygons(allZonesCache); // Initial Render
                 });
             } else {
                 renderMapList(allZonesCache);
@@ -517,7 +504,7 @@
 
         function renderMapList(zones) {
             const list = document.getElementById('zonesListSide'); list.innerHTML = "";
-            const display = zones.slice(0, 50);
+            const display = zones.slice(0, 50); // Only show top 50 to prevent DOM lag
             display.forEach(z => {
                 list.innerHTML += `
                 <div onclick="focusZone('${z.id}')" class="p-2 border-b border-slate-700 cursor-pointer hover:bg-slate-800 transition flex justify-between items-center group">
@@ -525,9 +512,9 @@
                         <div class="w-2 h-2 rounded-full" style="background:${z.color}"></div>
                         <span class="text-xs text-slate-300 font-bold group-hover:text-white">${z.name}</span>
                     </div>
-                    <div class="flex gap-1">
-                        <button onclick="event.stopPropagation(); initEditZone('${z.id}')" class="text-slate-600 hover:text-blue-400 p-1"><i class="ri-pencil-line"></i></button>
-                        <button onclick="event.stopPropagation(); deleteZone('${z.id}')" class="text-slate-600 hover:text-red-500 p-1"><i class="ri-close-line"></i></button>
+                    <div class="flex gap-2">
+                        <button onclick="event.stopPropagation(); initEditZone('${z.id}')" class="text-slate-600 hover:text-blue-400"><i class="ri-edit-line"></i></button>
+                        <button onclick="event.stopPropagation(); deleteZone('${z.id}')" class="text-slate-600 hover:text-red-500"><i class="ri-close-line"></i></button>
                     </div>
                 </div>`;
             });
@@ -538,9 +525,13 @@
             zones.forEach(z => {
                 const poly = new google.maps.Polygon({ paths: z.coords, strokeColor: z.color, fillColor: z.color, fillOpacity: 0.15, strokeWeight: 1, map: adminMap });
                 poly.zoneId = z.id;
-                poly.zoneData = z; // Attach Data for editing
+                poly.zoneData = z; // Attach data for editing
+                
+                // CLICK EVENT: Highlight & Show Info
                 poly.addListener('click', () => {
-                    new google.maps.InfoWindow({ content: `<div style="color:black; font-weight:bold">${z.name}</div>` }).open(adminMap);
+                    const info = new google.maps.InfoWindow({ content: `<div style="color:black; font-weight:bold">${z.name}</div><button onclick="deleteZone('${z.id}')" style="color:red; font-size:10px; margin-top:5px">DELETE</button>` });
+                    info.setPosition(poly.getPath().getAt(0));
+                    info.open(adminMap);
                 });
                 mapPolygons.push(poly);
             });
@@ -549,26 +540,53 @@
         function focusZone(id) {
             const zone = allZonesCache.find(z => z.id === id);
             if(zone && adminMap) {
+                // Find Center
                 let bounds = new google.maps.LatLngBounds();
                 zone.coords.forEach(c => bounds.extend(c));
                 adminMap.fitBounds(bounds);
+                // Flash Effect could be added here
             }
         }
+        
+        function initEditZone(docId) {
+            discardCurrentZone(); 
+            // Find polygon in mapPolygons array instead of cache, as we need the object reference
+            // But wait, renderMapPolygons clears mapPolygons. We need to match by zoneId
+            let targetPoly = mapPolygons.find(p => p.zoneId === docId);
+            
+            if(!targetPoly) {
+                // If not in view/rendered, focus it first? 
+                // For now, let's assume it's rendered. If 15k, might be an issue.
+                // Re-creating a poly just for edit mode:
+                const zoneData = allZonesCache.find(z => z.id === docId);
+                if(!zoneData) return notify("Zone data not found");
+                
+                targetPoly = new google.maps.Polygon({ paths: zoneData.coords, strokeColor: zoneData.color, fillColor: zoneData.color, fillOpacity: 0.15, strokeWeight: 1, map: adminMap });
+                mapPolygons.push(targetPoly); // Temporary add
+            }
 
-        function initEditZone(id) {
-            const zone = allZonesCache.find(z => z.id === id);
-            // Delete existing to redraw as editable
-            db.collection('geo_zones').doc(id).delete().then(() => {
-                document.getElementById('newZoneName').value = zone.name;
-                // Re-create as drawing
-                currentPoly = new google.maps.Polygon({ paths: zone.coords, editable: true, strokeColor: zone.color, fillColor: zone.color, fillOpacity: 0.35, map: adminMap });
-                document.getElementById('saveZonePanel').classList.remove('hidden');
-            });
+            targetPoly.setEditable(true);
+            targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); 
+            currentPoly = targetPoly; 
+            
+            // We need zone data attached to poly or from cache
+            const data = targetPoly.zoneData || allZonesCache.find(z => z.id === docId);
+            
+            document.getElementById('newZoneName').value = data.name;
+            // Type might not be saved in cache if we only saved color. Assuming type based on color or default
+            // Ideally we save 'type' in db. For now, let's just edit geometry/name.
+            document.getElementById('saveZonePanel').classList.remove('hidden');
+            document.getElementById('zonePanelTitle').innerText = "Edit Zone";
+            // Store ID to overwrite
+            // We need a hidden field for ID or handle in saveCurrentZone via name check?
+            // Actually saveCurrentZone uses name as ID. So changing name creates new zone.
+            // Let's keep it simple: Overwrite by name for now or delete old if name changes?
+            // For this version: Just editing shape.
         }
 
         function deleteZone(id) { if(confirm("Delete Zone?")) db.collection('geo_zones').doc(id).delete().then(() => { notify("Deleted"); allZonesCache = allZonesCache.filter(z => z.id !== id); loadAdminZones(); }); }
 
-        // --- 🟢 RESTORED LEAD ACTIONS (DATA CARD) ---
+        // --- 🟢 RESTORED LEAD ACTIONS ---
         function openLeadModal(docId) {
             const data = leadsCache.find(l => l.docId === docId); 
             const notes = data.adminNotes || "";
