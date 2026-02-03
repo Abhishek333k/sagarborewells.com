@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
+    <script src="assets/js/whatsapp_templates.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #334155; }</style>
@@ -113,8 +114,17 @@
             }
         });
 
-        function openWA() { window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}`, '_blank'); }
-        function openDirections() { window.open(CONTACT_INFO.map_link, '_blank'); }
+        function openWA() { 
+            // General Support
+            const msg = WA_MSG.support();
+            window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank'); 
+        }
+        
+        function openExpertChat() {
+            // For specific "Talk to Expert" buttons
+            const msg = WA_MSG.expert_call();
+            window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+        }
     </script>
 </body>
 </html>
