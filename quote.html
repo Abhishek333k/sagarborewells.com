@@ -69,6 +69,8 @@
         /* MAPS */
         .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: none; font-family: inherit; }
         .pac-item { padding: 10px 15px; font-size: 14px; }
+        
+        /* 🟢 MAP MARKER CSS */
         .map-center-marker {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%);
             z-index: 10; font-size: 32px; color: #ef4444; pointer-events: none;
@@ -82,7 +84,7 @@
 
     <main class="flex-grow">
         
-        <div id="step-1" class="container mx-auto px-4 py-8">
+        <div id="step-1" class="container mx-auto px-4 py-8 fade-in-up">
             <div class="quote-card">
                 <div class="text-center mb-8">
                     <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Instant Quotation</h1>
@@ -155,7 +157,8 @@
             </div>
         </div>
 
-        <div id="step-2" class="container mx-auto px-4 pb-12 hidden">
+        <div id="step-2" class="container mx-auto px-4 fade-in-up pb-12 hidden">
+            
             <div class="flex justify-between items-center max-w-4xl mx-auto mb-4">
                 <button onclick="goToStep1()" class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-1"><i class="ri-arrow-left-line"></i> Edit Details</button>
                 <div class="flex gap-2">
@@ -184,6 +187,7 @@
                 </div>
 
                 <div class="est-body">
+                    
                     <div class="section-title"><i class="ri-bar-chart-grouped-line"></i> Drilling Cost Structure</div>
                     <table class="est-table">
                         <thead><tr><th>Depth Range</th><th class="text-center">Rate / ft</th><th class="text-right">Amount</th></tr></thead>
@@ -206,14 +210,17 @@
                     </div>
 
                     <div class="text-center mt-10">
-                        <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">Confirm Booking</button>
+                        <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">
+                            Confirm Booking
+                        </button>
                         <p class="text-xs text-slate-400 mt-3 uppercase tracking-wide">Valid for 30 Days • Computer Generated Estimate</p>
                     </div>
+
                 </div>
             </div>
         </div>
 
-        <div id="step-3" class="container mx-auto px-4 hidden py-12">
+        <div id="step-3" class="container mx-auto px-4 fade-in-up hidden py-12">
             <div class="quote-card text-center max-w-lg mx-auto">
                 <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
                     <i class="ri-check-line text-4xl text-emerald-600"></i>
@@ -246,14 +253,14 @@
     </div>
 
     <script>
-        // SYSTEM INIT
+        // 🟢 INIT FIREBASE
         if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
             if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
         }
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // CONSTANTS
+        // 🟢 LOAD CONSTANTS
         const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : {
             PRICING_MODEL: { base_rate: 70, increments: { phase_1: 10, phase_2: 20, phase_3: 50 }, boundaries: { phase_2_start: 200, phase_3_start: 300 } },
             MATERIALS: []
@@ -263,10 +270,12 @@
         let transportDist = 0;
         let siteCoords = null;
         let leadData = {};
-        let currentQuoteID = null;
-        let hasLoggedPrice = false;
 
-        // SLIDER
+        // 🟢 STATE VARIABLES
+        let currentQuoteID = null;   // Persist ID across slider moves
+        let hasLoggedPrice = false;  // Prevent spamming admin on every slider move
+
+        // 🟢 SLIDER LOGIC
         const slider = document.getElementById('depthSlider');
         const sliderBox = document.getElementById('sliderBox');
         const maxLabel = document.getElementById('maxLabel');
@@ -275,7 +284,9 @@
         slider.addEventListener('input', function() {
             let val = parseInt(this.value);
             let currentMax = parseInt(this.max);
+
             document.getElementById('display-val').innerText = val;
+
             if (val >= currentMax) {
                 if (currentMax === 500) { this.max = 900; maxLabel.innerText = "900 FT"; sliderBox.classList.add('expanded'); }
                 else if (currentMax === 900) { this.max = 1200; maxLabel.innerText = "1200 FT"; }
@@ -288,51 +299,61 @@
             this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
         });
 
-        // 🟢 SAFETY WRAPPER FOR TELEGRAM
-        function safeSendTelegram(templateFn, data) {
-            try {
-                if (typeof NOTIFY_TEMPLATES !== 'undefined' && typeof templateFn === 'function') {
-                    sendTelegram(templateFn(data));
-                }
-            } catch (e) { console.warn("Notify skipped:", e); }
-        }
-
-        // CALCULATION
+        // 🟢 CALCULATION ENGINE
         function calculateEstimate() {
             if(document.getElementById('generateBtn').disabled) return;
             const name = document.getElementById('custName').value;
             const loc = document.getElementById('locInput').value;
+            
             if(!name || !loc) { alert("Please fill details"); return; }
 
             const totalDepth = parseInt(slider.value);
-            if (!currentQuoteID) currentQuoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+            
+            // 1. Generate Persistent ID
+            if (!currentQuoteID) {
+                currentQuoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+            }
 
-            let drillHtml = "", breakdownText = "", drillCost = 0, currentDepth = 0;
-            let currentRate = PRICING_MODEL.base_rate;
-            const jumps = PRICING_MODEL.increments, bounds = PRICING_MODEL.boundaries;
+            // 2. Math Logic
+            let drillHtml = "";
+            let breakdownText = ""; 
+            let drillCost = 0;
+            let currentDepth = 0;
+            let currentRate = PRICING_MODEL.base_rate; 
+            const jumps = PRICING_MODEL.increments;
+            const bounds = PRICING_MODEL.boundaries;
 
-            // Math
+            // Base 0-100
             const firstChunk = Math.min(totalDepth, 100);
             if(firstChunk > 0) {
-                const cost = firstChunk * currentRate; drillCost += cost;
+                const cost = firstChunk * currentRate;
+                drillCost += cost;
                 drillHtml += `<tr><td>0 - ${firstChunk} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
                 breakdownText += `• 0-${firstChunk}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
                 currentDepth += firstChunk;
             }
+
+            // Loop Slabs
             while(currentDepth < totalDepth) {
-                let increment = jumps.phase_1;
-                if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3;
-                else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2;
-                currentRate += increment;
+                let increment = jumps.phase_1; 
+                if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3; 
+                else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2; 
+                
+                currentRate += increment; 
                 let nextChunk = Math.min(50, totalDepth - currentDepth);
-                let cost = nextChunk * currentRate; drillCost += cost;
+                let cost = nextChunk * currentRate;
+                drillCost += cost;
+                
                 const endDepth = currentDepth + nextChunk;
                 drillHtml += `<tr><td>${currentDepth + 1} - ${endDepth} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
                 breakdownText += `• ${currentDepth + 1}-${endDepth}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
+                
                 currentDepth += nextChunk;
             }
 
-            let opsHtml = "", opsCost = 0;
+            // Ops
+            let opsHtml = "";
+            let opsCost = 0;
             if (transportDist > TRANSPORT_THRESHOLD_KM) {
                 const excessKm = transportDist - TRANSPORT_THRESHOLD_KM;
                 const blocks = Math.ceil(excessKm / 30);
@@ -344,6 +365,7 @@
             opsHtml += `<tr><td>Rig Erection & Material Handling</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
             breakdownText += `• Labour: ₹${LABOUR_CHARGE.toLocaleString()}\n`;
             opsCost += LABOUR_CHARGE;
+
             const grandTotal = drillCost + opsCost;
 
             // Render
@@ -357,41 +379,57 @@
             document.getElementById('invDepth').innerText = totalDepth + " ft";
             document.getElementById('invRef').innerText = currentQuoteID;
 
+            // Prepare Data
             leadData = { 
-                id: currentQuoteID, name, mobile: "+91"+document.getElementById('custMobile').value, 
-                loc, depth: totalDepth, total: grandTotal, status: "Quote Generated", 
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(), summary: breakdownText, rows: drillHtml
+                id: currentQuoteID, 
+                name, 
+                mobile: "+91"+document.getElementById('custMobile').value, 
+                loc, depth: totalDepth, total: grandTotal, 
+                status: "Quote Generated", 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                summary: breakdownText,
+                rows: drillHtml
             };
 
-            // 🟢 INTELLIGENCE (SAFE MODE)
+            // 🟢 INTELLIGENCE: Log Silent Lead with QT ID (Once per session)
             if (!hasLoggedPrice) {
+                // 1. Save to DB (Silent) - 🟢 FIX: Use .doc().set()
                 db.collection('silent_leads').doc(leadData.id).set({
-                    ...leadData, type: "Window Shopper", status: "Viewed Price / Not Booked"
+                    ...leadData,
+                    type: "Window Shopper", 
+                    status: "Viewed Price / Not Booked"
                 });
-                
-                // Safe call that won't crash if template is missing
+
+                // 2. Send Telegram (New Template)
                 if(typeof NOTIFY_TEMPLATES !== 'undefined') {
-                    safeSendTelegram(NOTIFY_TEMPLATES.price_check, leadData);
+                    sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
                 }
-                hasLoggedPrice = true;
+                
+                hasLoggedPrice = true; 
             }
 
-            // 🟢 FORCE VIEW SWITCH (Guaranteed to run)
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
             window.scrollTo(0,0);
         }
 
+        // CONFIRM BOOKING
         function confirmBooking() {
             const user = auth.currentUser;
-            const finalData = { ...leadData, userId: user ? user.uid : null, source: 'web_quote', status: 'Booked' };
+            const finalData = { 
+                ...leadData, 
+                userId: user ? user.uid : null, 
+                source: 'web_quote',
+                status: 'Booked' 
+            };
+
             db.collection('leads').doc(leadData.id).set(finalData).then(() => {
                 document.getElementById('step-2').classList.add('hidden');
                 document.getElementById('step-3').classList.remove('hidden');
                 if(typeof NOTIFY_TEMPLATES !== 'undefined') {
-                    safeSendTelegram(NOTIFY_TEMPLATES.booking, finalData);
+                    sendTelegram(NOTIFY_TEMPLATES.booking(finalData));
                 }
-            }).catch(e => alert("Error saving: " + e.message));
+            }).catch(e => alert("Error saving booking: " + e.message));
         }
 
         function sendTelegram(msg) {
@@ -401,30 +439,56 @@
             }
         }
 
+        // UTILS
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('materialsGrid').innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
         });
 
+        // 🟢 AUTH STATE LISTENER (Unlock button on Login)
         auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
                 document.getElementById('custMobile').disabled = true;
                 document.getElementById('sendOtpBtn').classList.add('hidden');
                 document.getElementById('verifiedBadge').classList.remove('hidden');
-                document.getElementById('generateBtn').disabled = false;
+                document.getElementById('generateBtn').disabled = false; // 🟢 FORCE ENABLE
             }
         });
 
         function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
+        
         function downloadPDF() { 
             if(typeof getInvoiceHTML === 'function') {
-                const element = document.createElement('div'); element.innerHTML = getInvoiceHTML(leadData);
+                const element = document.createElement('div');
+                element.innerHTML = getInvoiceHTML(leadData);
                 html2pdf().from(element).save(`Estimate_${leadData.id}.pdf`);
-            } else { const el = document.getElementById('invoice-capture'); html2pdf().from(el).save(`Estimate_${leadData.id}.pdf`); }
+            } else {
+                const el = document.getElementById('invoice-capture'); 
+                html2pdf().from(el).save(`Estimate_${leadData.id}.pdf`); 
+            }
         }
-        function shareWhatsApp() { if(typeof WA_MSG !== 'undefined') window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, WA_MSG.booking_share(leadData)), '_blank'); }
-        function consultExpert() { if(typeof WA_MSG !== 'undefined') window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, WA_MSG.deep_drill(document.getElementById('depthSlider').value)), '_blank'); }
-        function openChatSupport() { if(typeof WA_MSG !== 'undefined') window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, WA_MSG.chat_support()), '_blank'); }
+        
+        function shareWhatsApp() { 
+            if(typeof WA_MSG !== 'undefined') {
+                const msg = WA_MSG.booking_share(leadData);
+                window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+            }
+        }
+        
+        function consultExpert() {
+            const depth = document.getElementById('depthSlider').value;
+            if(typeof WA_MSG !== 'undefined') {
+                const msg = WA_MSG.deep_drill(depth);
+                window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+            }
+        }
+        
+        function openChatSupport() {
+             if(typeof WA_MSG !== 'undefined') {
+                const msg = WA_MSG.chat_support();
+                window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+            }
+        }
 
         function sendOTP() {
             const p = document.getElementById('custMobile').value;
@@ -434,13 +498,16 @@
                 window.confirmationResult=cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('sendOtpBtn').classList.add('hidden');
             }).catch(e=>{ console.error(e); alert("SMS Error"); });
         }
+        
+        // 🟢 FIX: UNLOCK BUTTON AFTER OTP VERIFICATION
         function verifyOTP() { 
             window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=> {
                 document.getElementById('otpSection').classList.add('hidden');
-                document.getElementById('generateBtn').disabled = false;
+                document.getElementById('generateBtn').disabled = false; // 🟢 FORCE ENABLE
             }).catch(e => alert("Invalid OTP"));
         }
 
+        // MAPS
         let qMap;
         function initMapTools() {
             const input = document.getElementById('locInput');
@@ -455,7 +522,13 @@
             if(transportDist>TRANSPORT_THRESHOLD_KM) { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Extra Charges)`; disp.className="text-xs text-right mt-1 font-bold font-mono text-orange-600"; }
             else { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Free Transport)`; disp.className="text-xs text-right mt-1 font-bold font-mono text-emerald-600"; }
         }
-        function openMiniMap() { document.getElementById('miniMapModal').style.display='flex'; if(!qMap && typeof google!=='undefined') { qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55},zoom:15, disableDefaultUI: true}); } setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); }
+        function openMiniMap() { 
+            document.getElementById('miniMapModal').style.display='flex'; 
+            if(!qMap && typeof google!=='undefined') {
+                qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55},zoom:15, disableDefaultUI: true}); 
+            }
+            setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); 
+        }
         function confirmQuoteLocation() { const p=qMap.getCenter(); new google.maps.Geocoder().geocode({location:p},(r,s)=>{if(s==='OK'){document.getElementById('locInput').value=r[0].formatted_address; calculateDist(p.lat(),p.lng());}}); document.getElementById('miniMapModal').style.display='none'; }
         function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{calculateDist(p.coords.latitude,p.coords.longitude); new google.maps.Geocoder().geocode({location:{lat:p.coords.latitude,lng:p.coords.longitude}},(r,s)=>{if(s==='OK')document.getElementById('locInput').value=r[0].formatted_address;});}); }
 
