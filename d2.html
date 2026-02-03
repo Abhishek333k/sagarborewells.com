@@ -20,28 +20,23 @@
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
-        /* SMOOTH LOAD */
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; opacity: 0; transition: opacity 0.4s ease-in; }
         
-        /* CARD STYLING */
         .glass-panel { background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border-radius: 16px; overflow: hidden; transition: transform 0.2s; }
         .glass-panel:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
         
-        /* TIMELINE (Track Booking) */
+        /* TIMELINE (Updated for 6 Steps) */
         .timeline-track { display: flex; position: relative; margin: 30px 0 10px; }
         .timeline-track::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; height: 3px; background: #e2e8f0; z-index: 0; }
         .t-step { position: relative; z-index: 1; flex: 1; text-align: center; }
         .t-dot { width: 30px; height: 30px; background: #fff; border: 3px solid #cbd5e1; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #64748b; transition: all 0.3s; }
         .t-step.active .t-dot { border-color: #2563eb; background: #2563eb; color: white; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2); }
         .t-step.completed .t-dot { border-color: #10b981; background: #10b981; color: white; }
-        .t-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .t-label { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; } /* Smaller font for 6 items */
         .t-step.active .t-label { color: #2563eb; }
 
-        /* TAB UI */
         .nav-pill { cursor: pointer; padding: 10px 20px; border-radius: 100px; font-weight: 600; color: #64748b; transition: 0.2s; }
         .nav-pill.active { background: #1e293b; color: white; shadow: 0 4px 10px rgba(0,0,0,0.2); }
-
-        /* PREVIEW MODAL */
         #previewContent { transform: scale(0.85); transform-origin: top center; }
     </style>
 </head>
@@ -99,6 +94,10 @@
                     <div class="t-dot"><i class="ri-drop-line"></i></div>
                     <div class="t-label">Water</div>
                 </div>
+                <div class="t-step" id="step-Certification">
+                    <div class="t-dot"><i class="ri-file-certificate-line"></i></div>
+                    <div class="t-label">Cert/BWBC</div>
+                </div>
             </div>
         </div>
 
@@ -108,8 +107,7 @@
         </div>
 
         <div id="view-estimates" class="tab-view">
-            <div id="estimates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                </div>
+            <div id="estimates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             <div id="empty-estimates" class="hidden text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
                 <div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                     <i class="ri-file-paper-line"></i>
@@ -123,8 +121,7 @@
         </div>
 
         <div id="view-history" class="tab-view hidden">
-            <div id="history-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                </div>
+            <div id="history-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
             <div id="empty-history" class="hidden text-center py-20">
                 <p class="text-slate-400">No completed borewell records found.</p>
             </div>
@@ -143,28 +140,23 @@
                         <button id="modalDownloadBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700">
                             <i class="ri-download-line mr-1"></i> Download
                         </button>
-                        <button onclick="closePreview()" class="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-300">
-                            Close
-                        </button>
+                        <button onclick="closePreview()" class="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-300">Close</button>
                     </div>
                 </div>
                 <div class="p-8 bg-gray-500 overflow-auto max-h-[80vh] flex justify-center">
-                    <div id="previewContent" class="bg-white shadow-lg origin-top">
-                        </div>
+                    <div id="previewContent" class="bg-white shadow-lg origin-top"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 🟢 1. SYSTEM INIT
         if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
             if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
         }
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // 🟢 2. AUTH GUARD
         auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('userPhone').innerText = user.phoneNumber;
@@ -186,11 +178,9 @@
             document.getElementById('tab-'+tab).classList.add('active');
         }
 
-        // 🟢 3. DATA ENGINE (Fixed Sorting Issue)
         function loadDashboard(uid, phone) {
             
             // A. FETCH QUOTES
-            // REMOVED .orderBy() to avoid Index Requirement Error
             db.collection('leads').where('userId', '==', uid).get()
               .then(snap => {
                   const grid = document.getElementById('estimates-grid');
@@ -200,25 +190,20 @@
                       let activeBookingFound = false;
                       grid.innerHTML = "";
                       
-                      // Client-Side Sorting (Newest First)
                       let docs = [];
                       snap.forEach(doc => docs.push(doc.data()));
-                      docs.sort((a, b) => {
-                          const timeA = a.timestamp ? a.timestamp.seconds : 0;
-                          const timeB = b.timestamp ? b.timestamp.seconds : 0;
-                          return timeB - timeA;
-                      });
+                      // Sort by time (client side)
+                      docs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
                       docs.forEach(data => {
                           const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
                           
-                          // Check for active booking to update Hero Tracker
-                          if (data.status !== 'Quote Generated' && !activeBookingFound) {
+                          // 🟢 HERO LOGIC: Show ONLY if NOT Completed
+                          if (data.status !== 'Quote Generated' && data.status !== 'Completed' && !activeBookingFound) {
                               updateLiveTracker(data);
                               activeBookingFound = true;
                           }
 
-                          // 🟢 NEW CARD LAYOUT
                           const card = `
                             <div class="glass-panel p-6 flex flex-col justify-between h-full relative">
                                 ${data.status !== 'Quote Generated' ? `<span class="absolute top-4 right-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded uppercase">${data.status}</span>` : ''}
@@ -249,7 +234,7 @@
                           grid.innerHTML += card;
                       });
                   }
-              });
+              }).catch(e => console.error(e));
 
             // B. FETCH HISTORY (Completed Jobs)
             db.collection('projects').where('mobile', '==', phone).get()
@@ -261,9 +246,7 @@
                       grid.innerHTML = "";
                       snap.forEach(doc => {
                           const data = doc.data();
-                          // Ensure ID exists for naming
                           data.id = data.id || `BWBC-${Math.floor(Math.random()*10000)}`; 
-                          
                           const card = `
                             <div class="glass-panel p-6 border-l-4 border-l-emerald-500">
                                 <div class="flex justify-between items-start mb-4">
@@ -277,7 +260,7 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-4 text-sm bg-slate-50 p-4 rounded-xl mb-4">
                                     <div><p class="text-[10px] text-slate-400 uppercase">Total Depth</p><p class="font-bold text-slate-700">${data.depth} ft</p></div>
-                                    <div><p class="text-[10px] text-slate-400 uppercase">Water Yield</p><p class="font-bold text-emerald-600">${data.yield}</p></div>
+                                    <div><p class="text-[10px] text-slate-400 uppercase">Yield</p><p class="font-bold text-emerald-600">${data.yield}</p></div>
                                 </div>
                                 <div class="flex gap-2">
                                     <button onclick="handleDocAction('preview', 'cert', '${encodeURIComponent(JSON.stringify(data))}')" class="flex-1 bg-indigo-50 text-indigo-600 font-bold py-2 rounded-lg text-sm hover:bg-indigo-100">
@@ -295,36 +278,35 @@
               });
         }
 
-        // 🟢 4. HERO TRACKER LOGIC
+        // 🟢 4. UPDATED HERO TRACKER (With Certification Step)
         function updateLiveTracker(data) {
             const tracker = document.getElementById('live-tracker');
             tracker.classList.remove('hidden');
             document.getElementById('active-ref').innerText = `REF: ${data.id}`;
             
-            // Logic to activate steps based on status string
             // Map status text to step IDs
             const stages = {
                 'Booked': 1,
                 'Survey': 2,
                 'RigMove': 3,
                 'Drilling': 4,
-                'Water': 5
+                'Water': 5,
+                'Certification': 6 // 🟢 New Status
             };
             
-            // Normalize status (remove spaces if any)
             let currentStatus = data.status.replace(/\s/g, ''); 
-            let level = stages[currentStatus] || 1; // Default to 1 (Booked)
+            let level = stages[currentStatus] || 1; 
 
-            // Loop through steps and activate them
-            const stepIds = ['Booked', 'Survey', 'RigMove', 'Drilling', 'Water'];
+            // If status is Certification, mark it active
+            const stepIds = ['Booked', 'Survey', 'RigMove', 'Drilling', 'Water', 'Certification'];
             stepIds.forEach((id, index) => {
                 const el = document.getElementById('step-' + id);
                 if (index < level) {
-                    el.classList.add('active', 'completed'); // Past steps are completed
+                    el.classList.add('active', 'completed'); 
                 } else if (index === level - 1) {
-                    el.classList.add('active'); // Current step is active
+                    el.classList.add('active'); 
                 } else {
-                    el.classList.remove('active', 'completed'); // Future steps are inactive
+                    el.classList.remove('active', 'completed'); 
                 }
             });
         }
@@ -333,15 +315,13 @@
             window.location.href = `quote.html?loc=${encodeURIComponent(loc)}&depth=${depth}`;
         }
 
-        // 🟢 UNIFIED DOCUMENT HANDLER (Preview & Download)
+        // 🟢 UNIFIED DOCUMENT HANDLER
         function handleDocAction(action, type, encodedData) {
             const data = JSON.parse(decodeURIComponent(encodedData));
             let htmlContent = "";
             let fileName = "";
 
-            // 1. GENERATE CONTENT & NAME
             if (type === 'quote') {
-                // Reconstruct rows logic
                 let rows = "";
                 let remaining = parseInt(data.depth); 
                 let floor = 0; 
@@ -353,14 +333,12 @@
                     remaining -= chunk; floor += chunk; currentRate += 10;
                 }
                 data.rows = rows;
-                
                 if(typeof getInvoiceHTML === 'function') {
                     htmlContent = getInvoiceHTML(data);
-                    fileName = `${data.id}.pdf`; // 🟢 Smart Name
+                    fileName = `${data.id}.pdf`; 
                 }
             } else if (type === 'cert') {
                 if(typeof getCertificateHTML === 'function') {
-                    // Normalize data structure for cert template
                     htmlContent = getCertificateHTML({
                         id: data.id,
                         name: "Valued Customer",
@@ -370,17 +348,15 @@
                         yield: data.yield,
                         motor: data.motor
                     });
-                    fileName = `${data.id}.pdf`; // 🟢 Smart Name (BWBC-xxxx)
+                    fileName = `${data.id}.pdf`; 
                 }
             }
 
             if (!htmlContent) return alert("Template Engine Error");
 
-            // 2. EXECUTE ACTION
             if (action === 'preview') {
                 document.getElementById('previewContent').innerHTML = htmlContent;
                 document.getElementById('previewModal').style.display = 'flex';
-                // Bind Download button in modal to the specific file
                 document.getElementById('modalDownloadBtn').onclick = function() {
                     downloadFromHTML(htmlContent, fileName);
                 };
