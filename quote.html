@@ -157,7 +157,7 @@
             </div>
         </div>
 
-        <div id="step-2" class="container mx-auto px-4 fade-in-up pb-12 hidden">
+        <div id="step-2" class="container mx-auto px-4 pb-12 hidden">
             
             <div class="flex justify-between items-center max-w-4xl mx-auto mb-4">
                 <button onclick="goToStep1()" class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-1"><i class="ri-arrow-left-line"></i> Edit Details</button>
@@ -457,36 +457,60 @@
 
         function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
         
+        // 🟢 ROBUST PDF GENERATION
         function downloadPDF() { 
+            const element = document.createElement('div');
+            // Check if Template Engine exists
             if(typeof getInvoiceHTML === 'function') {
-                const element = document.createElement('div');
                 element.innerHTML = getInvoiceHTML(leadData);
+            } else {
+                // Fallback: Clone the current view
+                element.innerHTML = document.getElementById('invoice-capture').innerHTML;
+                element.innerHTML += '<br><br><h3>Generated via Sagar Borewells Online</h3>';
+            }
+
+            // Check if PDF Engine exists
+            if(typeof html2pdf !== 'undefined') {
                 html2pdf().from(element).save(`Estimate_${leadData.id}.pdf`);
             } else {
-                const el = document.getElementById('invoice-capture'); 
-                html2pdf().from(el).save(`Estimate_${leadData.id}.pdf`); 
+                alert("PDF System Loading... Please wait 5 seconds and try again, or check your internet connection.");
             }
         }
         
+        // 🟢 ROBUST WHATSAPP SHARE
         function shareWhatsApp() { 
+            let msg = "";
+            let phone = CONTACT_INFO.whatsapp_api;
+
+            // Check if Template Engine exists
             if(typeof WA_MSG !== 'undefined') {
-                const msg = WA_MSG.booking_share(leadData);
-                window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+                msg = WA_MSG.booking_share(leadData);
+                window.open(WA_MSG.link(phone, msg), '_blank');
+            } else {
+                // Fallback: Manual Message Construction
+                msg = `*ESTIMATE: ${leadData.id}*\n\nDepth: ${leadData.depth} ft\nTotal: ₹${leadData.total.toLocaleString()}\n\nI want to proceed.`;
+                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
             }
         }
         
+        // 🟢 EXPERT CONSULT FALLBACK
         function consultExpert() {
             const depth = document.getElementById('depthSlider').value;
             if(typeof WA_MSG !== 'undefined') {
                 const msg = WA_MSG.deep_drill(depth);
                 window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+            } else {
+                window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=I need expert advice for ${depth}ft drilling.`, '_blank');
             }
         }
         
+        // 🟢 CHAT SUPPORT FALLBACK
         function openChatSupport() {
              if(typeof WA_MSG !== 'undefined') {
                 const msg = WA_MSG.chat_support();
                 window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+            } else {
+                window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=Support Request`, '_blank');
             }
         }
 
