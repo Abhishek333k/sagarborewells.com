@@ -8,11 +8,11 @@ const QUOTE_CONFIG = {
     // --- 1. OPERATIONAL CONSTANTS ---
     OFFICE_LOCATION: { lat: 16.4410, lng: 80.5520 }, // Mangalagiri
     TRANSPORT_THRESHOLD_KM: 30, // First 30km is Free
-    TRANSPORT_BASE_RATE: 2000,  // Charge per 30km block after threshold
+    TRANSPORT_BASE_RATE: 1000,  // Charge per 30km block after threshold
     
     // LABOUR: Heavy work (Mast erection, Casing installation, Loading/Unloading)
     // NOT site cleaning.
-    LABOUR_CHARGE: 2500,        
+    LABOUR_CHARGE: 1000,        
     
     // --- 2. DRILLING RATES (The "Jumping" Logic) ---
     PRICING_MODEL: {
