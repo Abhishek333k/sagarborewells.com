@@ -38,10 +38,6 @@
         .nav-pill { cursor: pointer; padding: 10px 20px; border-radius: 100px; font-weight: 600; color: #64748b; transition: 0.2s; }
         .nav-pill.active { background: #1e293b; color: white; shadow: 0 4px 10px rgba(0,0,0,0.2); }
         
-        /* CUSTOM SELECT */
-        .status-select { font-size: 10px; padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: 700; color: #475569; cursor: pointer; }
-        .status-select:hover { border-color: #2563eb; color: #2563eb; }
-        
         #previewContent { transform: scale(0.85); transform-origin: top center; }
     </style>
 </head>
@@ -96,8 +92,14 @@
         <div id="view-estimates" class="tab-view">
             <div id="estimates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             <div id="empty-estimates" class="hidden text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
+                <div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                    <i class="ri-file-paper-line"></i>
+                </div>
                 <h3 class="text-slate-800 font-bold mb-1">No Estimates Yet</h3>
-                <a href="quote.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow-lg mt-4 inline-block">Get Quote</a>
+                <p class="text-slate-400 text-sm mb-6">Create a price estimation to see it here.</p>
+                <a href="quote.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow-lg shadow-blue-100">
+                    <i class="ri-calculator-line mr-2"></i> Get Quote
+                </a>
             </div>
         </div>
 
@@ -171,26 +173,14 @@
                       docs.forEach(data => {
                           const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
                           
-                          // Hero Tracker Logic
                           if (data.status !== 'Quote Generated' && data.status !== 'Completed' && !activeBookingFound) {
                               updateLiveTracker(data);
                               activeBookingFound = true;
                           }
 
-                          // 🟢 STATUS CHANGER (MANAGER CONTROLS)
-                          // This dropdown is visible on every card. 
-                          const statusOptions = ['Quote Generated', 'Booked', 'Survey', 'Rig Move', 'Drilling', 'Water', 'Certification', 'Completed'];
-                          let statusDropdown = `<select onchange="updateStatus('${data.id}', this.value)" class="status-select">`;
-                          statusOptions.forEach(opt => {
-                              statusDropdown += `<option value="${opt}" ${data.status === opt ? 'selected' : ''}>${opt}</option>`;
-                          });
-                          statusDropdown += `</select>`;
-
                           const card = `
-                            <div class="glass-panel p-6 flex flex-col justify-between h-full relative group">
-                                <div class="absolute top-4 right-4 flex gap-2 items-center">
-                                    ${statusDropdown}
-                                </div>
+                            <div class="glass-panel p-6 flex flex-col justify-between h-full relative">
+                                ${data.status !== 'Quote Generated' ? `<span class="absolute top-4 right-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded uppercase">${data.status}</span>` : ''}
                                 <div>
                                     <div class="text-xs font-bold text-slate-400 mb-1">${date}</div>
                                     <h3 class="font-bold text-slate-800 text-lg mb-1">${data.loc}</h3>
@@ -256,17 +246,6 @@
                 else if (index === level - 1) el.classList.add('active');
                 else el.classList.remove('active', 'completed');
             });
-        }
-
-        // 🟢 STATUS UPDATER
-        function updateStatus(id, newStatus) {
-            if(confirm(`Update status to ${newStatus}?`)) {
-                db.collection('leads').doc(id).update({ status: newStatus })
-                .then(() => {
-                    // Refresh dashboard to show new status effect (e.g. moving timeline)
-                    location.reload(); 
-                }).catch(e => alert("Update failed: " + e.message));
-            }
         }
 
         function recalc(loc, depth) { window.location.href = `quote.html?loc=${encodeURIComponent(loc)}&depth=${depth}`; }
