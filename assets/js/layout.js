@@ -55,10 +55,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                     <div class="hidden md:flex items-center gap-8">
                         <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
-                        
                         <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
-
-                        <a href="finance.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Finance</a>
                         
                         <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
                             <i class="ri-user-line"></i> Account
@@ -84,7 +81,6 @@ document.addEventListener("DOMContentLoaded", function() {
             <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 p-4 absolute w-full shadow-lg left-0">
                 <a href="index.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Home</a>
                 <a href="dashboard.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">My Account</a>
-              //  <a href="finance.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Finance & Loans</a>
                 <a href="contact.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Contact</a>
                 <a href="admin.html" id="mobile-admin-link" class="hidden block py-3 font-bold text-red-600 border-b border-slate-50">Admin Panel</a>
                 <a href="quote.html" class="block py-3 mt-4 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md">Get Quote</a>
@@ -97,12 +93,19 @@ document.addEventListener("DOMContentLoaded", function() {
         checkAdminStatus();
     }
 
-    // --- 2. RENDER FOOTER (Updated Links) ---
+    // --- 2. RENDER FOOTER (With Socials & Address) ---
     const footerMount = document.getElementById('footer-mount');
     if (footerMount) {
+        // Safe access to config variables
+        const phone = (typeof CONTACT_INFO !== 'undefined') ? CONTACT_INFO.phone_display : '+91 96666 03888';
+        const email = (typeof CONTACT_INFO !== 'undefined') ? CONTACT_INFO.email : 'sagarborewells@gmail.com';
+        const address = (typeof CONTACT_INFO !== 'undefined' && CONTACT_INFO.address) ? CONTACT_INFO.address : 'Mangalagiri, Andhra Pradesh, India';
+        const whatsapp = (typeof CONTACT_INFO !== 'undefined') ? CONTACT_INFO.whatsapp_api : '919666603888';
+
         footerMount.innerHTML = `
         <footer class="bg-[#0f172a] pt-16 pb-8 border-t border-slate-800 text-slate-400 font-sans mt-auto">
             <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                
                 <div class="col-span-1 md:col-span-1">
                     <a href="index.html" class="text-xl font-extrabold text-white flex items-center gap-2 mb-4">
                         SAGAR <span class="text-blue-500">BOREWELLS</span>
@@ -110,31 +113,51 @@ document.addEventListener("DOMContentLoaded", function() {
                     <p class="text-xs leading-relaxed mb-6">
                         Advanced geological sensor drilling. Delivering precision water solutions since 2010.
                     </p>
+                    <div class="flex gap-4">
+                        <a href="https://wa.me/${whatsapp}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i class="ri-whatsapp-line"></i></a>
+                        <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition"><i class="ri-facebook-fill"></i></a>
+                        <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition"><i class="ri-instagram-line"></i></a>
+                        <a href="#" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i class="ri-youtube-fill"></i></a>
+                    </div>
                 </div>
+
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Quick Access</h4>
                     <ul class="space-y-2 text-sm">
                         <li><a href="index.html" class="hover:text-blue-400 transition">Home</a></li>
                         <li><a href="quote.html" class="hover:text-blue-400 transition">Get Estimate</a></li>
-                        //<li><a href="finance.html" class="hover:text-blue-400 transition">Finance / Loans</a></li> <li><a href="dashboard.html" class="hover:text-blue-400 transition">Client Login</a></li>
-                        <li><a href="admin.html" class="hover:text-blue-400 transition">Admin</a></li>
+                        <li><a href="dashboard.html" class="hover:text-blue-400 transition">Client Login</a></li>
+                        <li><a href="admin.html" class="hover:text-blue-400 transition">Admin Portal</a></li>
                     </ul>
                 </div>
+
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Legal</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="terms.html" class="hover:text-blue-400 transition">Terms</a></li>
-                        <li><a href="privacy.html" class="hover:text-blue-400 transition">Privacy</a></li>
-                        <li><a href="refund.html" class="hover:text-blue-400 transition">Refunds</a></li>
+                        <li><a href="terms.html" class="hover:text-blue-400 transition">Terms of Service</a></li>
+                        <li><a href="privacy.html" class="hover:text-blue-400 transition">Privacy Policy</a></li>
+                        <li><a href="refund.html" class="hover:text-blue-400 transition">Refund Policy</a></li>
                     </ul>
                 </div>
+
                 <div>
-                    <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Contact</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li class="flex items-center gap-3"><i class="ri-phone-line text-blue-500"></i> ${typeof CONTACT_INFO !== 'undefined' ? CONTACT_INFO.phone_display : '+91 96666 03888'}</li>
-                        <li class="flex items-center gap-3"><i class="ri-mail-line text-blue-500"></i> ${typeof CONTACT_INFO !== 'undefined' ? CONTACT_INFO.email : 'sagarborewells@gmail.com'}</li>
+                    <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Contact Us</h4>
+                    <ul class="space-y-4 text-sm">
+                        <li class="flex items-start gap-3">
+                            <i class="ri-map-pin-line text-blue-500 mt-1"></i>
+                            <span>${address}</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="ri-phone-line text-blue-500"></i> 
+                            <a href="tel:${phone}" class="hover:text-white">${phone}</a>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="ri-mail-line text-blue-500"></i> 
+                            <a href="mailto:${email}" class="hover:text-white">${email}</a>
+                        </li>
                     </ul>
                 </div>
+
             </div>
             <div class="border-t border-slate-800 pt-8 text-center text-xs">
                 <p>© ${new Date().getFullYear()} Sagar Borewells. All rights reserved.</p>
@@ -164,7 +187,7 @@ function checkAdminStatus() {
 
 // --- 🛡️ SITE PROTECTION SUITE (CSS + JS) 🛡️ ---
 (function() {
-    // 1. 🎨 INJECT CSS PROTECTION (Prevents Highlighting & Dragging)
+    // 1. 🎨 INJECT CSS PROTECTION
     const style = document.createElement('style');
     style.innerHTML = `
         /* Disable Text Selection Globally */
@@ -174,51 +197,37 @@ function checkAdminStatus() {
             user-select: none;
         }
         
-        /* Re-enable Selection for Inputs (Important for Forms!) */
+        /* Re-enable Selection for Inputs */
         input, textarea {
             -webkit-user-select: text;
             -ms-user-select: text;
             user-select: text;
         }
 
-        /* Prevent Image Dragging (So they can't drag images to desktop) */
+        /* Prevent Image Dragging */
         img {
             -webkit-user-drag: none;
             user-drag: none;
-            pointer-events: none; /* Also stops right-clicking images */
+            pointer-events: none;
         }
     `;
     document.head.appendChild(style);
 
-
     // 2. 🚫 DISABLE RIGHT CLICK
     document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
-        // Optional: specific alert, or just fail silently
-        // alert("🔒 Copyright © Sagar Borewells. All rights reserved."); 
     });
 
-
-    // 3. ⌨️ DISABLE SHORTCUTS (F12, Ctrl+U, Inspect)
+    // 3. ⌨️ DISABLE SHORTCUTS
     document.onkeydown = function(e) {
-        // F12
-        if (event.keyCode == 123) return false;
-        
-        // Ctrl+Shift+I (Inspect)
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
-        
-        // Ctrl+Shift+C (Inspect Element)
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
-        
-        // Ctrl+Shift+J (Console)
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
-        
-        // Ctrl+U (View Source)
-        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+        if (event.keyCode == 123) return false; // F12
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Inspect
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Inspect Element
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // Console
+        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // View Source
     };
 
-    // 4. 🧹 CLEAR CONSOLE (Hides any errors or logs)
+    // 4. 🧹 CLEAR CONSOLE (Optional - Uncomment to hide logs)
     // setInterval(function(){ console.clear(); }, 2000); 
-    // (Uncomment line 4 if you want to aggressively clear console)
 
 })();
