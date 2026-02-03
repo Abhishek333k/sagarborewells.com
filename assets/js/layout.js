@@ -36,7 +36,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     // --- 1. RENDER HEADER (Navigation) ---
-    // Note: Finance link is REMOVED as requested.
     const headerMount = document.getElementById('navbar-mount');
     if (headerMount) {
         headerMount.innerHTML = `
@@ -56,15 +55,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
                     <div class="hidden md:flex items-center gap-8">
                         <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
-                        
                         <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
                         
                         <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
                             <i class="ri-user-line"></i> Account
-                        </a>
-
-                        <a href="admin.html" id="admin-link" class="hidden font-bold text-red-600 border border-red-200 bg-red-50 px-3 py-1 rounded-lg hover:bg-red-100 transition flex items-center gap-2">
-                            <i class="ri-shield-user-line"></i> Admin
                         </a>
 
                         <a href="quote.html" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-lg shadow-blue-200 flex items-center gap-2">
@@ -84,30 +78,27 @@ document.addEventListener("DOMContentLoaded", function() {
                 <a href="index.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Home</a>
                 <a href="dashboard.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">My Account</a>
                 <a href="contact.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Contact</a>
-                <a href="admin.html" id="mobile-admin-link" class="hidden block py-3 font-bold text-red-600 border-b border-slate-50">Admin Panel</a>
                 <a href="quote.html" class="block py-3 mt-4 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md">Get Quote</a>
             </div>
         </nav>`;
 
         const btn = document.getElementById('mobile-menu-btn');
         if(btn) btn.addEventListener('click', () => document.getElementById('mobile-menu').classList.toggle('hidden'));
-        
-        checkAdminStatus();
     }
 
-    // --- 2. RENDER FOOTER (With Socials & Address) ---
+    // --- 2. RENDER FOOTER (Dynamic from Config) ---
     const footerMount = document.getElementById('footer-mount');
     if (footerMount) {
-        // Safe access to config variables (Matches your config.js structure)
+        // Safe Config Access
         const C = (typeof CONTACT_INFO !== 'undefined') ? CONTACT_INFO : {};
         
         const phone = C.phone_display || '+91 96666 03888';
         const email = C.email || 'support@sagarborewells.com';
         
-        // Correctly combining line 1 and line 2 from your config
+        // Construct Address (Combines Line 1 & 2)
         const addr1 = C.address_line1 || 'Mangalagiri';
         const addr2 = C.address_line2 || 'Andhra Pradesh';
-        const fullAddress = `${addr1}, ${addr2}`;
+        const fullAddress = `${addr1},<br>${addr2}`;
         
         const wa = C.whatsapp_api || '919666603888';
         const insta = C.social_instagram || '#';
@@ -137,7 +128,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         <li><a href="index.html" class="hover:text-blue-400 transition">Home</a></li>
                         <li><a href="quote.html" class="hover:text-blue-400 transition">Get Estimate</a></li>
                         <li><a href="dashboard.html" class="hover:text-blue-400 transition">Client Login</a></li>
-                        <li><a href="admin.html" class="hover:text-blue-400 transition">Admin Portal</a></li>
+                        <li><a href="contact.html" class="hover:text-blue-400 transition">Contact Us</a></li>
                     </ul>
                 </div>
 
@@ -155,7 +146,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     <ul class="space-y-4 text-sm">
                         <li class="flex items-start gap-3">
                             <i class="ri-map-pin-line text-blue-500 mt-1"></i>
-                            <span>${fullAddress}</span>
+                            <span class="leading-tight">${fullAddress}</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="ri-phone-line text-blue-500"></i> 
@@ -176,65 +167,26 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-// --- HELPER: ADMIN CHECK ---
-function checkAdminStatus() {
-    if(typeof firebase === 'undefined' || !firebase.auth) return;
-    firebase.auth().onAuthStateChanged(user => {
-        if(user) {
-            const db = firebase.firestore();
-            db.collection('admins').doc(user.phoneNumber).get()
-            .then(doc => {
-                if (doc.exists) {
-                    const deskLink = document.getElementById('admin-link');
-                    const mobLink = document.getElementById('mobile-admin-link');
-                    if(deskLink) deskLink.classList.remove('hidden');
-                    if(mobLink) mobLink.classList.remove('hidden');
-                }
-            }).catch(e => console.log("User is not admin")); 
-        }
-    });
-}
 
 // --- 🛡️ SITE PROTECTION SUITE (CSS + JS) 🛡️ ---
 (function() {
     // 1. 🎨 INJECT CSS PROTECTION
     const style = document.createElement('style');
     style.innerHTML = `
-        /* Disable Text Selection Globally */
-        body {
-            -webkit-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
-        
-        /* Re-enable Selection for Inputs */
-        input, textarea {
-            -webkit-user-select: text;
-            -ms-user-select: text;
-            user-select: text;
-        }
-
-        /* Prevent Image Dragging */
-        img {
-            -webkit-user-drag: none;
-            user-drag: none;
-            pointer-events: none;
-        }
+        body { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
+        input, textarea { -webkit-user-select: text; -ms-user-select: text; user-select: text; }
+        img { -webkit-user-drag: none; user-drag: none; pointer-events: none; }
     `;
     document.head.appendChild(style);
 
     // 2. 🚫 DISABLE RIGHT CLICK
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-    });
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 
     // 3. ⌨️ DISABLE SHORTCUTS
     document.onkeydown = function(e) {
         if (event.keyCode == 123) return false; // F12
         if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Inspect
         if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Inspect Element
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // Console
         if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // View Source
     };
-
 })();
