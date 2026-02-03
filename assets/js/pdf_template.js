@@ -1,14 +1,13 @@
 // FILENAME: assets/js/pdf_template.js
 
 function getInvoiceHTML(data) {
-    // Current Date (or use data.timestamp if you prefer the quote date)
+    // Current Date
     const date = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
     const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-    // Ensure we use the REAL ID, or fallback if missing
-    const quoteRef = data.id || `WEB-${Math.floor(1000 + Math.random() * 9000)}`;
+    // 🟢 FIX: Use the actual Quote ID passed from data, do not generate random
+    const quoteRef = data.id || `QT-${new Date().getFullYear()}-GEN`;
 
-    // YOU CAN EDIT THE HTML BELOW TO CHANGE THE PDF DESIGN
     return `
     <div style="font-family: 'Helvetica', sans-serif; max-width: 800px; margin: 0 auto; color: #333; background: #fff; padding: 40px;">
         
@@ -19,7 +18,7 @@ function getInvoiceHTML(data) {
             </div>
             <div style="text-align: right;">
                 <h2 style="margin: 0; color: #333; font-size: 20px;">ESTIMATE</h2>
-                <p style="margin: 5px 0 0; font-size: 12px; color: #666;">Ref: ${quoteRef}</p>
+                <p style="margin: 5px 0 0; font-size: 12px; color: #666; font-weight:bold;">${quoteRef}</p>
             </div>
         </div>
 
@@ -44,19 +43,14 @@ function getInvoiceHTML(data) {
                 </tr>
             </thead>
             <tbody>
-                ${data.rows}
-                <tr>
-                    <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px;">Fixed Operational Costs (Transport/Setup)</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; text-align: right; font-weight: bold;">₹7,000</td>
-                </tr>
-            </tbody>
+                ${data.rows || ''} </tbody>
         </table>
 
         <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
             <div style="width: 250px; background: #f1f5f9; padding: 20px; border-radius: 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">Estimated Total</span>
-                    <span style="font-size: 24px; color: #2563eb; font-weight: 800;">₹${data.total.toLocaleString()}</span>
+                    <span style="font-size: 24px; color: #2563eb; font-weight: 800;">₹${data.total ? data.total.toLocaleString() : '0'}</span>
                 </div>
                 <p style="font-size: 10px; color: #94a3b8; margin-top: 10px; text-align: right;">*Excludes GST & Material Costs</p>
             </div>
@@ -72,8 +66,7 @@ function getInvoiceHTML(data) {
         </div>
 
         <div style="margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end;">
-            <div>
-                </div>
+            <div></div>
             <div style="text-align: center;">
                 <div style="width: 150px; border-bottom: 1px solid #ccc; margin-bottom: 10px;"></div>
                 <p style="margin: 0; font-size: 12px; color: #999;">Authorized Signatory</p>
