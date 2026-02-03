@@ -1,6 +1,7 @@
 /**
- * SAGAR BOREWELLS - CONFIGURATION
+ * SAGAR BOREWELLS - QUOTATION ENGINE CONFIGURATION
  * Logic: Cumulative Jumping Rates (Slabs)
+ * Updated: Latest Pricing Model
  */
 
 const QUOTE_CONFIG = {
@@ -11,7 +12,6 @@ const QUOTE_CONFIG = {
     TRANSPORT_BASE_RATE: 1000,  // Charge per 30km block after threshold
     
     // LABOUR: Heavy work (Mast erection, Casing installation, Loading/Unloading)
-    // NOT site cleaning.
     LABOUR_CHARGE: 1000,        
     
     // --- 2. DRILLING RATES (The "Jumping" Logic) ---
