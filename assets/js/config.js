@@ -2,7 +2,7 @@
 
 // --- 🔔 NOTIFICATION SYSTEM CONFIG ---
 const TELEGRAM_BOT_TOKEN = "8101404237:AAGvl3yqhK66t8KZMyg3Pn8x4hW2SnAp8cI"; // Get this from @BotFather
-const TELEGRAM_CHAT_ID = "1056358465";     // Get this from @userinfobot
+const TELEGRAM_CHAT_ID = "-5133561829";     // Get this from @userinfobot
 
 const CONTACT_INFO = {
     // --- MAIN CONTACT ---
