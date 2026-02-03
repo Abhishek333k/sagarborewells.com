@@ -57,6 +57,8 @@ document.addEventListener("DOMContentLoaded", function() {
                         <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
                         
                         <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
+
+                        <a href="finance.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Finance</a>
                         
                         <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
                             <i class="ri-user-line"></i> Account
@@ -82,6 +84,7 @@ document.addEventListener("DOMContentLoaded", function() {
             <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 p-4 absolute w-full shadow-lg left-0">
                 <a href="index.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Home</a>
                 <a href="dashboard.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">My Account</a>
+              //  <a href="finance.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Finance & Loans</a>
                 <a href="contact.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Contact</a>
                 <a href="admin.html" id="mobile-admin-link" class="hidden block py-3 font-bold text-red-600 border-b border-slate-50">Admin Panel</a>
                 <a href="quote.html" class="block py-3 mt-4 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md">Get Quote</a>
@@ -113,7 +116,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     <ul class="space-y-2 text-sm">
                         <li><a href="index.html" class="hover:text-blue-400 transition">Home</a></li>
                         <li><a href="quote.html" class="hover:text-blue-400 transition">Get Estimate</a></li>
-                        <li><a href="dashboard.html" class="hover:text-blue-400 transition">Client Login</a></li>
+                        //<li><a href="finance.html" class="hover:text-blue-400 transition">Finance / Loans</a></li> <li><a href="dashboard.html" class="hover:text-blue-400 transition">Client Login</a></li>
                         <li><a href="admin.html" class="hover:text-blue-400 transition">Admin</a></li>
                     </ul>
                 </div>
@@ -128,8 +131,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Contact</h4>
                     <ul class="space-y-3 text-sm">
-                        <li class="flex items-center gap-3"><i class="ri-phone-line text-blue-500"></i> ${CONTACT_INFO.phone_display}</li>
-                        <li class="flex items-center gap-3"><i class="ri-mail-line text-blue-500"></i> ${CONTACT_INFO.email}</li>
+                        <li class="flex items-center gap-3"><i class="ri-phone-line text-blue-500"></i> ${typeof CONTACT_INFO !== 'undefined' ? CONTACT_INFO.phone_display : '+91 96666 03888'}</li>
+                        <li class="flex items-center gap-3"><i class="ri-mail-line text-blue-500"></i> ${typeof CONTACT_INFO !== 'undefined' ? CONTACT_INFO.email : 'sagarborewells@gmail.com'}</li>
                     </ul>
                 </div>
             </div>
@@ -191,6 +194,8 @@ function checkAdminStatus() {
     // 2. 🚫 DISABLE RIGHT CLICK
     document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
+        // Optional: specific alert, or just fail silently
+        // alert("🔒 Copyright © Sagar Borewells. All rights reserved."); 
     });
 
 
@@ -211,4 +216,9 @@ function checkAdminStatus() {
         // Ctrl+U (View Source)
         if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
     };
+
+    // 4. 🧹 CLEAR CONSOLE (Hides any errors or logs)
+    // setInterval(function(){ console.clear(); }, 2000); 
+    // (Uncomment line 4 if you want to aggressively clear console)
+
 })();
