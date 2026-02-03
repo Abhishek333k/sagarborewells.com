@@ -39,6 +39,19 @@ ${data.summary}
 📂 *Account Type:* Existing Customer
 📍 *Action:* Accessed Dashboard
 `.trim();
+    },
+
+    // 🟢 4. PRICE CHECK (The Missing Link)
+    price_check: (data) => {
+        return `
+👀 *PRICE CHECKED*
+🆔 *Ref:* \`${data.id}\`
+👤 *Name:* ${data.name}
+📱 *Mobile:* \`${data.mobile}\`
+📏 *Depth:* ${data.depth} ft
+💰 *Shown:* ₹${parseInt(data.total).toLocaleString('en-IN')}
+⚠️ *Status:* Viewing Estimate (Not Booked)
+`.trim();
     }
 
 };
