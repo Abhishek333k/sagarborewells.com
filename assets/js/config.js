@@ -1,8 +1,10 @@
 // FILENAME: assets/js/config.js
 
-// --- 🔔 NOTIFICATION SYSTEM CONFIG ---
-const TELEGRAM_BOT_TOKEN = "8101404237:AAGvl3yqhK66t8KZMyg3Pn8x4hW2SnAp8cI"; // Get this from @BotFather
-const TELEGRAM_CHAT_ID = "-5133561829";     // Get this from @userinfobot
+// --- 🔔 NOTIFICATION SYSTEM CONFIG (Correct Structure) ---
+const NOTIFY_SYSTEM = {
+    bot_token: "8101404237:AAGvl3yqhK66t8KZMyg3Pn8x4hW2SnAp8cI", // @BotFather
+    chat_id: "-5133561829" // Group ID (Make sure bot is added to this group!)
+};
 
 const CONTACT_INFO = {
     // --- MAIN CONTACT ---
@@ -22,15 +24,13 @@ const CONTACT_INFO = {
     
     // Maps Links
     map_link: "https://maps.app.goo.gl/VGqQCjRQCx729Qmd6", 
-    // Just the link inside quotes. No HTML tags here.
     map_embed_url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3826.917849365705!2d80.56584199999999!3d16.428998099999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a35f1606165d7b7%3A0xc31ff66a47bd70ce!2sSAGAR%20BOREWELLS!5e0!3m2!1sen!2sin!4v1769782593951!5m2!1sen!2sin",
 
     // Socials
     social_instagram: "https://www.instagram.com/sagar_bore_wells/",
     social_youtube: "https://www.youtube.com/@Sagar_Bore_Wells",
 
-    // --- FIREBASE CONFIG (CORRECT FORMAT) ---
-    // Note: It is "key: value", NOT "const key = value"
+    // --- FIREBASE CONFIG ---
     firebase_config: {
         apiKey: "AIzaSyAp3D__eHpiOaPoQmO2eXL25C2evR0yqfQ",
         authDomain: "sbw-ops-956b1.firebaseapp.com",
@@ -46,18 +46,23 @@ const CONTACT_INFO = {
     database_url: "https://script.google.com/macros/s/AKfycbwMJ16yDE-PsghDqyBa6mS4J-QXrMn10OYSEthKZEMRhv9uw6N1NpBN3_FgNX7PsmeSig/exec"
 };
 
-// HELPER: Injects details
+// HELPER: Injects details into HTML automatically
 function loadContactDetails() {
+    // 1. Update Phones
     document.querySelectorAll('.dynamic-phone').forEach(el => {
         el.innerText = CONTACT_INFO.phone_display;
         if(el.tagName === 'A') el.href = `tel:+${CONTACT_INFO.whatsapp_api}`;
     });
+    // 2. Update Emails
     document.querySelectorAll('.dynamic-email').forEach(el => {
         el.innerText = CONTACT_INFO.email;
         if(el.tagName === 'A') el.href = `mailto:${CONTACT_INFO.email}`;
     });
+    // 3. Update Address
     document.querySelectorAll('.dynamic-address').forEach(el => {
         el.innerHTML = `${CONTACT_INFO.address_line1}<br>${CONTACT_INFO.address_line2}`;
     });
 }
+
+// Run when page loads
 document.addEventListener("DOMContentLoaded", loadContactDetails);
