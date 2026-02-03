@@ -19,10 +19,9 @@
     <script src="assets/js/pdf_template.js"></script>
 
     <style>
-        :root { --primary: #1e3a8a; --text-main: #1e293b; --bg: #f8fafc; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text-main); }
-        .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        /* BASE STYLES from Old Version */
+        :root { --primary: #1e3a8a; --bg: #f8fafc; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: #1e293b; }
         
         .quote-card { background: #ffffff; border-radius: 24px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); padding: 40px; max-width: 800px; margin: 40px auto; }
         .form-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
@@ -33,43 +32,41 @@
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); }
         .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        /* SLIDER STYLES */
+        /* SLIDER & ALERTS */
         .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; transition: all 0.3s ease; }
-        .slider-container.expanded { border-color: #f59e0b; background: #fffbeb; } /* Visual cue for expansion */
+        .slider-container.expanded { border-color: #f59e0b; background: #fffbeb; }
         
         .range-slider { width: 100%; height: 12px; border-radius: 6px; background: #cbd5e1; outline: none; -webkit-appearance: none; }
         .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: var(--primary); border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.1s; }
         .range-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
 
-        /* EXPERT ALERT BOX */
-        .expert-alert {
-            display: none; /* Hidden by default */
-            margin-top: 15px; padding: 15px; 
-            background: #fff1f2; border: 1px solid #fda4af; 
-            border-radius: 12px; text-align: center; 
-            animation: fadeIn 0.5s;
-        }
+        .expert-alert { display: none; margin-top: 15px; padding: 12px; background: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; color: #b91c1c; font-size: 0.85rem; font-weight: 600; text-align: center; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ESTIMATE CARD & TABLE */
+        /* RESULT CARD */
         .est-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px -10px rgba(0,0,0,0.15); margin-top: 20px; border: 1px solid #e2e8f0; }
         .est-header { background: #ffffff; padding: 30px; border-bottom: 2px solid #1e3a8a; }
         .est-total-block { text-align: right; }
         .est-amount { font-size: 2.2rem; font-weight: 800; color: #1e3a8a; line-height: 1; margin-top: 5px; }
+        
+        .est-meta { display: flex; justify-content: space-between; margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; }
+        .est-meta-item strong { display: block; font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
+        .est-meta-item span { font-size: 0.95rem; font-weight: 700; color: #334155; }
+
         .est-body { padding: 30px; }
         .est-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 0.9rem; }
         .est-table th { text-align: left; padding: 8px; color: #64748b; font-size: 0.7rem; text-transform: uppercase; font-weight: 700; }
         .est-table td { padding: 10px 8px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; color: #334155; }
         .est-table tfoot td { border-top: 2px solid #e2e8f0; font-weight: 800; color: #1e3a8a; padding-top: 15px; font-size: 1rem; border-bottom: none; }
         
-        .var-box { background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 12px; padding: 20px; }
+        .var-box { background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 12px; padding: 20px; margin-top: 20px; }
         .var-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 30px; font-size: 0.85rem; }
         .var-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed #dbeafe; }
-        
-        /* Map Styles */
+        .var-badge { background: #fff; color: #1e40af; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #bfdbfe; }
+
+        /* MAPS */
         .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: none; font-family: inherit; }
-        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; }
-        .reticle-dot { width: 10px; height: 10px; background: red; border-radius: 50%; }
+        .pac-item { padding: 10px 15px; font-size: 14px; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -78,7 +75,7 @@
 
     <main class="flex-grow">
         
-        <div id="step-1" class="container mx-auto px-4 fade-in-up py-8">
+        <div id="step-1" class="container mx-auto px-4 py-8 fade-in-up">
             <div class="quote-card">
                 <div class="text-center mb-8">
                     <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Instant Quotation</h1>
@@ -131,18 +128,13 @@
                         </div>
 
                         <div id="expertAlert" class="expert-alert">
-                            <div class="flex items-center justify-center gap-2 text-red-600 font-bold mb-1">
-                                <i class="ri-alarm-warning-fill"></i> High Depth Detected
-                            </div>
-                            <p class="text-xs text-slate-600 mb-2">Depths beyond 600ft involve complex geology. We recommend a verified expert consultation.</p>
-                            <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=I need expert advice for deep drilling`, '_blank')" class="bg-white border border-red-200 text-red-600 px-4 py-1 rounded-full text-xs font-bold hover:bg-red-50">
-                                <i class="ri-whatsapp-line"></i> Consult Expert
-                            </button>
+                            <i class="ri-error-warning-fill mr-1"></i> 
+                            High Depth Zone (>600ft). Recommended to Consult Expert.
                         </div>
                     </div>
                 </div>
 
-                <button id="generateBtn" onclick="goToStep2()" class="btn-primary" disabled>
+                <button id="generateBtn" onclick="calculateEstimate()" class="btn-primary" disabled>
                     <i class="ri-calculator-line mr-2"></i> Calculate Estimate
                 </button>
             </div>
@@ -161,9 +153,9 @@
             <div class="est-card max-w-4xl mx-auto" id="invoice-capture">
                 <div class="est-header">
                     <div class="flex justify-between items-start">
-                        <div>
-                            <h2 class="text-2xl font-black text-blue-900">SAGAR BOREWELLS</h2>
-                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Estimation Summary</p>
+                        <div class="est-brand">
+                            <h2>SAGAR BOREWELLS</h2>
+                            <p>Advanced Geological Infrastructure</p>
                         </div>
                         <div class="est-total-block">
                             <div class="est-label">ESTIMATED TOTAL</div>
@@ -181,7 +173,7 @@
                     
                     <div class="section-title"><i class="ri-bar-chart-grouped-line"></i> Drilling Cost Structure</div>
                     <table class="est-table">
-                        <thead><tr><th>Depth Slab (Feet)</th><th class="text-center">Rate / ft</th><th class="text-right">Amount</th></tr></thead>
+                        <thead><tr><th>Depth Range</th><th class="text-center">Rate / ft</th><th class="text-right">Amount</th></tr></thead>
                         <tbody id="drillBody"></tbody>
                         <tfoot><tr><td colspan="2">Drilling Subtotal</td><td class="text-right" id="drillSubtotal">₹0</td></tr></tfoot>
                     </table>
@@ -194,9 +186,9 @@
                         </table>
                     </div>
 
-                    <div class="var-box mt-6">
-                        <div class="var-title"><i class="ri-tools-line"></i> Material Estimates (On Actuals)</div>
-                        <p class="text-xs text-slate-500 mb-4">Casing pipes are charged based on actual depth required.</p>
+                    <div class="var-box">
+                        <div class="var-title"><i class="ri-tools-line"></i> Material Estimates (Actuals)</div>
+                        <p class="text-xs text-slate-500 mb-4">Prices apply based on actual measurements at site.</p>
                         <div class="var-grid" id="materialsGrid"></div>
                     </div>
 
@@ -204,7 +196,7 @@
                         <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">
                             Confirm Booking
                         </button>
-                        <p class="text-xs text-slate-400 mt-3 uppercase tracking-wide">Prices subject to geological conditions.</p>
+                        <p class="text-xs text-slate-400 mt-3 uppercase tracking-wide">Valid for 30 Days • Computer Generated Estimate</p>
                     </div>
 
                 </div>
@@ -217,7 +209,7 @@
                     <i class="ri-check-line text-4xl text-emerald-600"></i>
                 </div>
                 <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Booking Confirmed!</h1>
-                <p class="text-slate-500 mb-8">Your request has been logged. Our team will contact you shortly.</p>
+                <p class="text-slate-500 mb-8">We have received your request. A representative will call you shortly to discuss site logistics.</p>
                 <div class="flex justify-center gap-4">
                     <a href="dashboard.html" class="py-3 px-6 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50">Dashboard</a>
                     <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}`, '_blank')" class="py-3 px-6 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">Chat Support</button>
@@ -234,7 +226,6 @@
             <h3 class="font-bold text-slate-800 mb-2 text-center">Pinpoint Location</h3>
             <div style="position: relative; width: 100%; height: 300px; background: #eee; border-radius: 10px; overflow: hidden;">
                 <div id="quoteMapContainer" style="width:100%; height:100%;"></div>
-                <div class="target-reticle"><div class="reticle-dot"></div><div class="reticle-ring"></div></div>
             </div>
             <div class="flex justify-end gap-2 mt-4">
                 <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-500">Cancel</button>
@@ -244,46 +235,49 @@
     </div>
 
     <script>
-        // INIT
+        // 🟢 INIT FIREBASE
         if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
             if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
         }
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
-        // 🟢 LOAD CONSTANTS
-        const { OFFICE_LOCATION, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, MATERIALS, PRICING_MODEL } = QUOTE_CONFIG;
+        // 🟢 LOAD CONSTANTS (Fallback to Safe Defaults)
+        const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : {
+            PRICING_MODEL: { base_rate: 70, increments: { phase_1: 10, phase_2: 20, phase_3: 50 }, boundaries: { phase_2_start: 200, phase_3_start: 300 } },
+            MATERIALS: []
+        };
+        const { PRICING_MODEL, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, OFFICE_LOCATION } = CFG;
 
         let transportDist = 0;
         let siteCoords = null;
         let leadData = {};
 
-        // 🟢 DYNAMIC SLIDER LOGIC
+        // 🟢 SLIDER LOGIC (Elastic + Expert Trigger)
         const slider = document.getElementById('depthSlider');
-        const maxLabel = document.getElementById('maxLabel');
         const sliderBox = document.getElementById('sliderBox');
-        const alertBox = document.getElementById('expertAlert');
+        const maxLabel = document.getElementById('maxLabel');
+        const expertAlert = document.getElementById('expertAlert');
 
         slider.addEventListener('input', function() {
             let val = parseInt(this.value);
             let currentMax = parseInt(this.max);
 
-            // 1. Update Display
             document.getElementById('display-val').innerText = val;
-            
-            // 2. Dynamic Expansion (Elastic Scale)
+
+            // Elastic Expansion
             if (val >= currentMax) {
                 if (currentMax === 500) { this.max = 900; maxLabel.innerText = "900 FT"; sliderBox.classList.add('expanded'); }
                 else if (currentMax === 900) { this.max = 1200; maxLabel.innerText = "1200 FT"; }
-            } 
-            // 3. Dynamic Contraction (Reverse Elastic)
+            }
+            // Elastic Contraction
             else if (val < 400 && currentMax > 500) {
                 this.max = 500; maxLabel.innerText = "500 FT"; sliderBox.classList.remove('expanded');
-                this.value = val; // Force retain value
+                this.value = val; 
             }
 
-            // 4. Expert Alert Trigger (at 600ft)
-            if (val >= 600) alertBox.style.display = 'block';
-            else alertBox.style.display = 'none';
+            // Expert Trigger (>600ft)
+            expertAlert.style.display = (val > 600) ? 'block' : 'none';
 
             // Visual Fill
             const pct = ((val - this.min) / (this.max - this.min)) * 100;
@@ -291,17 +285,17 @@
         });
 
         // 🟢 CALCULATION ENGINE (Updated Slab Logic)
-        function goToStep2() {
+        function calculateEstimate() {
             if(document.getElementById('generateBtn').disabled) return;
             const name = document.getElementById('custName').value;
             const loc = document.getElementById('locInput').value;
             
-            if(!name || !loc) { alert("Please fill all details"); return; }
+            if(!name || !loc) { alert("Please fill details"); return; }
 
-            const totalDepth = parseInt(document.getElementById('depthSlider').value);
+            const totalDepth = parseInt(slider.value);
             const quoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000+Math.random()*9000)}`;
 
-            // --- DRILLING CALCULATION ---
+            // --- DRILLING COST ---
             let drillHtml = "";
             let drillCost = 0;
             let currentDepth = 0;
@@ -318,9 +312,8 @@
                 currentDepth += firstChunk;
             }
 
-            // 2. Loop 50ft Slabs
+            // 2. Loop Slabs
             while(currentDepth < totalDepth) {
-                // Determine Increment Amount
                 let increment = jumps.phase_1; // +10
                 if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3; // +50
                 else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2; // +20
@@ -350,18 +343,16 @@
                 opsCost += transCost;
             }
 
-            // Labour (Heavy Handling)
+            // Labour (Updated Label)
             opsHtml += `<tr><td>Rig Erection & Material Handling</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
             opsCost += LABOUR_CHARGE;
 
             const grandTotal = drillCost + opsCost;
 
             // RENDER
-            if(opsCost > 0) {
-                document.getElementById('opsSection').style.display = 'block';
-                document.getElementById('opsBody').innerHTML = opsHtml;
-                document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
-            }
+            document.getElementById('opsSection').style.display = 'block';
+            document.getElementById('opsBody').innerHTML = opsHtml;
+            document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
 
             document.getElementById('drillBody').innerHTML = drillHtml;
             document.getElementById('drillSubtotal').innerText = "₹" + drillCost.toLocaleString();
@@ -370,6 +361,7 @@
             document.getElementById('invDepth').innerText = totalDepth + " ft";
             document.getElementById('invRef').innerText = quoteID;
 
+            // PREPARE DATA (With Integrity Fixes)
             leadData = { 
                 id: quoteID, name, 
                 mobile: "+91"+document.getElementById('custMobile').value, 
@@ -382,13 +374,28 @@
             window.scrollTo(0,0);
         }
 
-        // --- BOILERPLATE FUNCTIONS ---
+        // 🟢 CONFIRM BOOKING (Fixed: Saves userId for Dashboard)
+        function confirmBooking() {
+            const user = auth.currentUser;
+            const finalData = {
+                ...leadData,
+                userId: user ? user.uid : null, // Crucial for Dashboard history
+                source: 'web_quote'
+            };
+
+            // Use .set() with specific ID to ensure it matches the Ref ID shown
+            db.collection('leads').doc(leadData.id).set(finalData).then(() => {
+                document.getElementById('step-2').classList.add('hidden');
+                document.getElementById('step-3').classList.remove('hidden');
+            }).catch(e => alert("Error saving booking: " + e.message));
+        }
+
+        // --- UTILS ---
         document.addEventListener("DOMContentLoaded", () => {
-            const matGrid = document.getElementById('materialsGrid');
-            if(matGrid) matGrid.innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
+            document.getElementById('materialsGrid').innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
         });
 
-        firebase.auth().onAuthStateChanged((user) => {
+        auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
                 document.getElementById('custMobile').disabled = true;
@@ -399,19 +406,18 @@
         });
 
         function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
-        function confirmBooking() { db.collection('leads').doc(leadData.id).set(leadData).then(() => { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-3').classList.remove('hidden'); }); }
-        
+        function downloadPDF() { const el = document.getElementById('invoice-capture'); html2pdf().from(el).save(`Estimate_${leadData.id}.pdf`); }
+        function shareWhatsApp() { window.open(`https://wa.me/?text=Estimate ${leadData.id}: ₹${leadData.total.toLocaleString()} for ${leadData.depth}ft`, '_blank'); }
+
         function sendOTP() {
             const p = document.getElementById('custMobile').value;
             if(p.length!=10) return alert("Enter 10 digit number");
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
-            firebase.auth().signInWithPhoneNumber('+91'+p, window.recaptchaVerifier).then(cr=>{
+            auth.signInWithPhoneNumber('+91'+p, window.recaptchaVerifier).then(cr=>{
                 window.confirmationResult=cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('sendOtpBtn').classList.add('hidden');
-            });
+            }).catch(e=>{ console.error(e); alert("SMS Error"); });
         }
         function verifyOTP() { window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=>document.getElementById('otpSection').classList.add('hidden')); }
-        function downloadPDF() { const el = document.getElementById('invoice-capture'); html2pdf().from(el).save(`Estimate_${leadData.id}.pdf`); }
-        function shareWhatsApp() { window.open(`https://wa.me/?text=Estimate ${leadData.id}: ₹${leadData.total.toLocaleString()} for ${leadData.depth}ft`, '_blank'); }
 
         // MAPS
         let qMap;
