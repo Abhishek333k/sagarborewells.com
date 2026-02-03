@@ -114,23 +114,12 @@
                     <p id="distDisplay" class="text-xs text-right mt-1 text-slate-400 font-mono"></p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-6 mb-8 mt-6">
-                    <div>
-                        <label class="form-label">Purpose</label>
-                        <select id="purposeInput" class="custom-select cursor-pointer">
-                            <option value="residential">Residential Use</option>
-                            <option value="agriculture">Agriculture / Farm</option>
-                            <option value="commercial">Commercial / Industrial</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="mb-10">
+                <div class="mb-10 mt-8">
                     <label class="form-label text-center mb-4">ESTIMATED DEPTH REQUIRED</label>
                     <div class="slider-container">
                         <div class="text-center mb-2"><span id="display-val" class="text-6xl font-extrabold text-blue-800">100</span><span class="text-xl font-bold text-slate-400 align-top">FT</span></div>
-                        <input type="range" id="depthSlider" class="range-slider" min="100" max="1500" value="100" step="10">
-                        <div class="flex justify-between text-xs font-bold text-slate-400 mt-2"><span>100 FT</span><span id="maxLabel">1500 FT</span></div>
+                        <input type="range" id="depthSlider" class="range-slider" min="100" max="1200" value="100" step="10">
+                        <div class="flex justify-between text-xs font-bold text-slate-400 mt-2"><span>100 FT</span><span id="maxLabel">1200 FT</span></div>
                     </div>
                 </div>
 
@@ -165,6 +154,7 @@
                     <div class="est-meta">
                         <div class="est-meta-item"><strong>Location</strong><span id="invLoc">--</span></div>
                         <div class="est-meta-item"><strong>Depth</strong><span id="invDepth">--</span></div>
+                        <div class="est-meta-item"><strong>Ref ID</strong><span id="invRef">--</span></div>
                     </div>
                 </div>
 
@@ -188,8 +178,7 @@
                     <div class="var-box mt-6">
                         <div class="var-title"><i class="ri-tools-line"></i> Material Estimates (Actuals)</div>
                         <p class="text-xs text-slate-500 mb-4">Prices apply based on actual measurements at site.</p>
-                        <div class="var-grid" id="materialsGrid">
-                            </div>
+                        <div class="var-grid" id="materialsGrid"></div>
                     </div>
 
                     <div class="text-center mt-10">
@@ -242,26 +231,33 @@
         }
         const db = firebase.firestore();
 
-        // 🟢 LOAD CONSTANTS (Safe Fallback)
-        const { OFFICE_LOCATION, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, MATERIALS, DEFAULT_RATES } = QUOTE_CONFIG || {
-            DEFAULT_RATES: { base_rate: 70, jumps: { phase_1: 10, phase_2: 20, phase_3: 30 } },
+        // 🟢 LOAD CONSTANTS (Fallback included for safety)
+        const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : {
+            OFFICE_LOCATION: { lat: 16.4410, lng: 80.5520 },
+            TRANSPORT_THRESHOLD_KM: 30,
+            TRANSPORT_BASE_RATE: 2000,
+            LABOUR_CHARGE: 1500,
+            PRICING_MODEL: {
+                base_rate: 70,
+                jumps: { phase_1: 10, phase_2: 20, phase_3: 50 },
+                boundaries: { phase_2_start: 200, phase_3_start: 300 }
+            },
             MATERIALS: []
         };
 
-        let globalRates = DEFAULT_RATES;
+        const { PRICING_MODEL, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, OFFICE_LOCATION } = CFG;
+
         let transportDist = 0;
         let siteCoords = null;
+        let leadData = {};
 
         document.addEventListener("DOMContentLoaded", () => {
-            // Load Rates from Settings
-            db.collection('settings').doc('rates').get().then(doc => { if(doc.exists) globalRates = { ...globalRates, ...doc.data() }; });
-            
-            // 🟢 LOAD MATERIALS GRID (FROM ASSET FILE)
+            // Load Materials
             const matGrid = document.getElementById('materialsGrid');
             if(matGrid) {
                 matGrid.innerHTML = MATERIALS.map(m => `
                     <div class="var-item">
-                        <span class="font-bold text-slate-700">${m.label}</span>
+                        <span class="font-bold text-slate-700 text-xs">${m.label}</span>
                         <span class="var-badge">₹${m.price}${m.unit}</span>
                     </div>
                 `).join('');
@@ -280,41 +276,7 @@
             } else { btn.disabled = true; }
         });
 
-        // MAPS & LOGIC
-        let autocomplete;
-        function initMapTools() {
-            const input = document.getElementById('locInput');
-            autocomplete = new google.maps.places.Autocomplete(input, { types: ['geocode'] });
-            autocomplete.addListener('place_changed', () => {
-                const place = autocomplete.getPlace();
-                if (place.geometry) {
-                    siteCoords = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
-                    calcDistance();
-                }
-            });
-        }
-
-        function calcDistance() {
-            if(!siteCoords) return;
-            const R = 6371; 
-            const dLat = (siteCoords.lat - OFFICE_LOCATION.lat) * Math.PI/180;
-            const dLon = (siteCoords.lng - OFFICE_LOCATION.lng) * Math.PI/180;
-            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(siteCoords.lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
-            transportDist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            
-            const disp = document.getElementById('distDisplay');
-            if(transportDist > TRANSPORT_THRESHOLD_KM) {
-                disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Transport Charges Apply)`;
-                disp.classList.add('text-orange-600');
-            } else {
-                disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Free Transport)`;
-                disp.classList.remove('text-orange-600');
-            }
-        }
-
-        // CALCULATION ENGINE
-        let leadData = {};
-
+        // CALCULATION ENGINE (NEW MATH)
         function goToStep2() {
             if(document.getElementById('generateBtn').disabled) return;
             const name = document.getElementById('custName').value;
@@ -323,13 +285,15 @@
             if(!name || !loc) { alert("Please fill all details"); return; }
 
             const totalDepth = parseInt(document.getElementById('depthSlider').value);
+            const quoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000+Math.random()*9000)}`;
             
-            // 🟢 SLAB CALCULATION (OPTIMIZED)
+            // --- DRILLING CALCULATION ---
             let drillHtml = "";
             let drillCost = 0;
             let currentDepth = 0;
-            let currentRate = globalRates.base_rate; // 70
-            const jumps = globalRates.jumps; // { phase_1: 10, ... }
+            let currentRate = PRICING_MODEL.base_rate; // 70
+            const jumps = PRICING_MODEL.jumps;
+            const bounds = PRICING_MODEL.boundaries;
 
             // 1. First 100ft Block
             const firstChunk = Math.min(totalDepth, 100);
@@ -340,33 +304,34 @@
                 currentDepth += firstChunk;
             }
 
-            // 2. Loop for 50ft slabs with Jump Logic
+            // 2. Loop for subsequent slabs (50ft each)
             while(currentDepth < totalDepth) {
-                // Determine which jump to apply
-                let jumpAmount = jumps.phase_1; // Default +10
-                if(currentDepth >= 450) jumpAmount = jumps.phase_3; // +30
-                else if(currentDepth >= 200) jumpAmount = jumps.phase_2; // +20
+                // Determine Jump based on CURRENT DEPTH
+                let jump = jumps.phase_1; // Default +10 (101-200)
                 
-                currentRate += jumpAmount; 
+                if (currentDepth >= bounds.phase_3_start) jump = jumps.phase_3; // +50 (301+)
+                else if (currentDepth >= bounds.phase_2_start) jump = jumps.phase_2; // +20 (201-300)
+                
+                currentRate += jump; 
 
                 let nextChunk = Math.min(50, totalDepth - currentDepth);
                 let cost = nextChunk * currentRate;
                 drillCost += cost;
                 
                 const endDepth = currentDepth + nextChunk;
-                drillHtml += `<tr><td>${currentDepth} - ${endDepth} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                drillHtml += `<tr><td>${currentDepth + 1} - ${endDepth} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
                 
                 currentDepth += nextChunk;
             }
 
-            // B. OPERATIONAL COSTS
+            // --- OPERATIONAL COSTS ---
             let opsHtml = "";
             let opsCost = 0;
             
-            // Transport Logic (Block Based)
+            // Transport
             if (transportDist > TRANSPORT_THRESHOLD_KM) {
                 const excessKm = transportDist - TRANSPORT_THRESHOLD_KM;
-                const blocks = Math.ceil(excessKm / 30); // 1 charge per 30km
+                const blocks = Math.ceil(excessKm / 30);
                 const transCost = blocks * TRANSPORT_BASE_RATE; 
                 opsHtml += `<tr><td>Transport (${excessKm.toFixed(1)} km extra)</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
                 opsCost += transCost;
@@ -393,8 +358,19 @@
 
             document.getElementById('invLoc').innerText = loc;
             document.getElementById('invDepth').innerText = totalDepth + " ft";
+            document.getElementById('invRef').innerText = quoteID;
 
-            leadData = { name, mobile: "+91"+document.getElementById('custMobile').value, loc, depth: totalDepth, total: grandTotal, status: "Quote Generated" };
+            // Store Data Globally
+            leadData = { 
+                id: quoteID,
+                name, 
+                mobile: "+91"+document.getElementById('custMobile').value, 
+                loc, 
+                depth: totalDepth, 
+                total: grandTotal, 
+                status: "Quote Generated",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
 
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
@@ -407,17 +383,13 @@
         }
 
         function confirmBooking() {
-            const year = new Date().getFullYear();
-            const rand = Math.floor(1000 + Math.random() * 9000);
-            const leadId = `QT-${year}-${rand}`;
-            const data = { ...leadData, id: leadId, timestamp: firebase.firestore.FieldValue.serverTimestamp(), userId: firebase.auth().currentUser.uid };
-            db.collection('leads').doc(leadId).set(data).then(() => {
+            db.collection('leads').doc(leadData.id).set(leadData).then(() => {
                 document.getElementById('step-2').classList.add('hidden');
                 document.getElementById('step-3').classList.remove('hidden');
             });
         }
 
-        // OTP & MAPS
+        // --- UTILITIES ---
         function sendOTP() {
             const phone = document.getElementById('custMobile').value;
             if (phone.length !== 10) return alert("Enter 10 digit number");
@@ -441,21 +413,47 @@
 
         function downloadPDF() {
             const el = document.getElementById('invoice-capture');
-            const opt = { margin: 0.5, filename: `Estimate_${leadData.loc}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+            const opt = { margin: 0.5, filename: `Estimate_${leadData.id}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
             html2pdf().set(opt).from(el).save();
         }
 
         function shareWhatsApp() {
-            const msg = `Here is the estimate for ${leadData.loc} (${leadData.depth} ft). Total: ₹${leadData.total.toLocaleString()}`;
+            const msg = `Estimate ${leadData.id}: ₹${leadData.total.toLocaleString()} for ${leadData.depth}ft at ${leadData.loc}`;
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        const s = document.createElement('script'); 
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
-        s.async = true; s.defer = true; 
-        document.body.appendChild(s);
-        
+        // --- MAPS ---
         let qMap;
+        function initMapTools() {
+            const input = document.getElementById('locInput');
+            const autocomplete = new google.maps.places.Autocomplete(input, { types: ['geocode'] });
+            autocomplete.addListener('place_changed', () => {
+                const place = autocomplete.getPlace();
+                if (place.geometry) {
+                    siteCoords = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
+                    calcDistance();
+                }
+            });
+        }
+
+        function calcDistance() {
+            if(!siteCoords) return;
+            const R = 6371; 
+            const dLat = (siteCoords.lat - OFFICE_LOCATION.lat) * Math.PI/180;
+            const dLon = (siteCoords.lng - OFFICE_LOCATION.lng) * Math.PI/180;
+            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(siteCoords.lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+            transportDist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            
+            const disp = document.getElementById('distDisplay');
+            if(transportDist > TRANSPORT_THRESHOLD_KM) {
+                disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Charges Apply)`;
+                disp.classList.add('text-orange-600');
+            } else {
+                disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Free Transport)`;
+                disp.classList.remove('text-orange-600');
+            }
+        }
+
         function openMiniMap() { document.getElementById('miniMapModal').style.display='flex'; if(!qMap && typeof google !=='undefined') qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55},zoom:15}); setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); }
         function confirmQuoteLocation() { 
             const pos = qMap.getCenter();
@@ -469,6 +467,13 @@
                 new google.maps.Geocoder().geocode({location:c}, (res,status)=>{ if(status==='OK') document.getElementById('locInput').value=res[0].formatted_address; });
             });
         }
+
+        // Load Maps API
+        const s = document.createElement('script'); 
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
+        s.async = true; s.defer = true; 
+        document.body.appendChild(s);
+
     </script>
 </body>
 </html>
