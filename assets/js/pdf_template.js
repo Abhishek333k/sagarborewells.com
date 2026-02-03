@@ -1,9 +1,12 @@
 // FILENAME: assets/js/pdf_template.js
 
 function getInvoiceHTML(data) {
-    // Current Date
+    // Current Date (or use data.timestamp if you prefer the quote date)
     const date = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
     const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    // Ensure we use the REAL ID, or fallback if missing
+    const quoteRef = data.id || `WEB-${Math.floor(1000 + Math.random() * 9000)}`;
 
     // YOU CAN EDIT THE HTML BELOW TO CHANGE THE PDF DESIGN
     return `
@@ -16,7 +19,7 @@ function getInvoiceHTML(data) {
             </div>
             <div style="text-align: right;">
                 <h2 style="margin: 0; color: #333; font-size: 20px;">ESTIMATE</h2>
-                <p style="margin: 5px 0 0; font-size: 12px; color: #666;">#WEB-${Math.floor(1000 + Math.random() * 9000)}</p>
+                <p style="margin: 5px 0 0; font-size: 12px; color: #666;">Ref: ${quoteRef}</p>
             </div>
         </div>
 
