@@ -159,34 +159,63 @@ function checkAdminStatus() {
     });
 }
 
-
-// --- 🛡️ SITE PROTECTION SUITE 🛡️ ---
+// --- 🛡️ SITE PROTECTION SUITE (CSS + JS) 🛡️ ---
 (function() {
-    // 1. Disable Right Click
+    // 1. 🎨 INJECT CSS PROTECTION (Prevents Highlighting & Dragging)
+    const style = document.createElement('style');
+    style.innerHTML = `
+        /* Disable Text Selection Globally */
+        body {
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Re-enable Selection for Inputs (Important for Forms!) */
+        input, textarea {
+            -webkit-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
+        /* Prevent Image Dragging (So they can't drag images to desktop) */
+        img {
+            -webkit-user-drag: none;
+            user-drag: none;
+            pointer-events: none; /* Also stops right-clicking images */
+        }
+    `;
+    document.head.appendChild(style);
+
+
+    // 2. 🚫 DISABLE RIGHT CLICK
     document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
-        alert("🔒 Content is Protected by Copyright © Sagar Borewells");
+        // Optional: specific alert, or just fail silently
+        // alert("🔒 Copyright © Sagar Borewells. All rights reserved."); 
     });
 
-    // 2. Disable Keyboard Shortcuts (F12, Ctrl+U, Ctrl+Shift+I)
+
+    // 3. ⌨️ DISABLE SHORTCUTS (F12, Ctrl+U, Inspect)
     document.onkeydown = function(e) {
-        if (event.keyCode == 123) { // F12
-            return false;
-        }
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { // Ctrl+Shift+I
-            return false;
-        }
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { // Ctrl+Shift+C
-            return false;
-        }
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { // Ctrl+Shift+J
-            return false;
-        }
-        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { // Ctrl+U
-            return false;
-        }
+        // F12
+        if (event.keyCode == 123) return false;
+        
+        // Ctrl+Shift+I (Inspect)
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+        
+        // Ctrl+Shift+C (Inspect Element)
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
+        
+        // Ctrl+Shift+J (Console)
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
+        
+        // Ctrl+U (View Source)
+        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
     };
 
-    // 3. Clear Console (To hide errors/logs from prying eyes)
-    setInterval(function(){ console.clear(); }, 1000);
+    // 4. 🧹 CLEAR CONSOLE (Hides any errors or logs)
+    // setInterval(function(){ console.clear(); }, 2000); 
+    // (Uncomment line 4 if you want to aggressively clear console)
+
 })();
