@@ -226,7 +226,16 @@
                 </div>
             </div>
         </div>
-
+		
+		<div id="section-silent" class="content-section hidden">
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-bold text-white mb-4">Window Shoppers (Verified but didn't book)</h3>
+                <div id="silent-list" class="space-y-3 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    <div class="text-center text-slate-500">Loading...</div>
+                </div>
+            </div>
+        </div>
+		
         <div id="section-create" class="content-section hidden max-w-4xl mx-auto">
             <div class="glass-card p-8">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-4 mb-6"><div><h3 class="text-lg font-bold text-white">Certificate Manager</h3><p class="text-[10px] text-slate-400 font-mono mt-0.5" id="form-mode-text">CREATING NEW RECORD</p></div><div class="flex items-center gap-2"><span class="text-[10px] text-slate-500 font-bold uppercase">ID:</span><input type="text" id="p_id" class="bg-slate-900 border border-slate-700 text-emerald-400 font-mono font-bold px-2 py-1 rounded w-40 text-center text-xs" readonly></div></div>
@@ -1128,6 +1137,34 @@
         s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`;
         s.async = true; s.defer = true;
         document.body.appendChild(s);
+		function loadSilentLeads() {
+            const list = document.getElementById('silent-list');
+            list.innerHTML = "Loading...";
+            
+            db.collection('silent_leads').orderBy('timestamp', 'desc').limit(50).get().then(snap => {
+                list.innerHTML = "";
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const time = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : "Just now";
+                    
+                    list.innerHTML += `
+                        <div class="bg-slate-900 p-4 rounded border border-slate-700 flex justify-between items-center">
+                            <div>
+                                <h4 class="text-xl font-mono font-bold text-yellow-400">${data.mobile}</h4>
+                                <p class="text-xs text-slate-500">${time}</p>
+                            </div>
+                            <a href="tel:${data.mobile}" class="bg-green-600 text-white px-4 py-2 rounded font-bold text-xs hover:bg-green-500">
+                                <i class="ri-phone-line"></i> CALL NOW
+                            </a>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        // UPDATE showSection function to handle 'silent'
+        // Find your existing showSection and add this line inside the if/else chain:
+        // if(id === 'silent') loadSilentLeads();
     </script>
 </body>
 </html>
