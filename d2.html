@@ -25,18 +25,23 @@
         .glass-panel { background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border-radius: 16px; overflow: hidden; transition: transform 0.2s; }
         .glass-panel:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
         
-        /* TIMELINE (Updated for 6 Steps) */
+        /* TIMELINE */
         .timeline-track { display: flex; position: relative; margin: 30px 0 10px; }
         .timeline-track::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; height: 3px; background: #e2e8f0; z-index: 0; }
         .t-step { position: relative; z-index: 1; flex: 1; text-align: center; }
         .t-dot { width: 30px; height: 30px; background: #fff; border: 3px solid #cbd5e1; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #64748b; transition: all 0.3s; }
         .t-step.active .t-dot { border-color: #2563eb; background: #2563eb; color: white; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2); }
         .t-step.completed .t-dot { border-color: #10b981; background: #10b981; color: white; }
-        .t-label { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; } /* Smaller font for 6 items */
+        .t-label { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
         .t-step.active .t-label { color: #2563eb; }
 
         .nav-pill { cursor: pointer; padding: 10px 20px; border-radius: 100px; font-weight: 600; color: #64748b; transition: 0.2s; }
         .nav-pill.active { background: #1e293b; color: white; shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        
+        /* CUSTOM SELECT */
+        .status-select { font-size: 10px; padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: 700; color: #475569; cursor: pointer; }
+        .status-select:hover { border-color: #2563eb; color: #2563eb; }
+        
         #previewContent { transform: scale(0.85); transform-origin: top center; }
     </style>
 </head>
@@ -74,30 +79,12 @@
             </div>
 
             <div class="timeline-track">
-                <div class="t-step completed" id="step-Booked">
-                    <div class="t-dot"><i class="ri-check-line"></i></div>
-                    <div class="t-label">Booked</div>
-                </div>
-                <div class="t-step" id="step-Survey">
-                    <div class="t-dot"><i class="ri-map-pin-user-line"></i></div>
-                    <div class="t-label">Survey</div>
-                </div>
-                <div class="t-step" id="step-RigMove">
-                    <div class="t-dot"><i class="ri-truck-line"></i></div>
-                    <div class="t-label">Rig Move</div>
-                </div>
-                <div class="t-step" id="step-Drilling">
-                    <div class="t-dot"><i class="ri-focus-3-line"></i></div>
-                    <div class="t-label">Drilling</div>
-                </div>
-                <div class="t-step" id="step-Water">
-                    <div class="t-dot"><i class="ri-drop-line"></i></div>
-                    <div class="t-label">Water</div>
-                </div>
-                <div class="t-step" id="step-Certification">
-                    <div class="t-dot"><i class="ri-file-certificate-line"></i></div>
-                    <div class="t-label">Cert/BWBC</div>
-                </div>
+                <div class="t-step completed" id="step-Booked"><div class="t-dot"><i class="ri-check-line"></i></div><div class="t-label">Booked</div></div>
+                <div class="t-step" id="step-Survey"><div class="t-dot"><i class="ri-map-pin-user-line"></i></div><div class="t-label">Survey</div></div>
+                <div class="t-step" id="step-RigMove"><div class="t-dot"><i class="ri-truck-line"></i></div><div class="t-label">Rig Move</div></div>
+                <div class="t-step" id="step-Drilling"><div class="t-dot"><i class="ri-focus-3-line"></i></div><div class="t-label">Drilling</div></div>
+                <div class="t-step" id="step-Water"><div class="t-dot"><i class="ri-drop-line"></i></div><div class="t-label">Water</div></div>
+                <div class="t-step" id="step-Certification"><div class="t-dot"><i class="ri-file-certificate-line"></i></div><div class="t-label">Cert/BWBC</div></div>
             </div>
         </div>
 
@@ -109,22 +96,14 @@
         <div id="view-estimates" class="tab-view">
             <div id="estimates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             <div id="empty-estimates" class="hidden text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
-                <div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-                    <i class="ri-file-paper-line"></i>
-                </div>
                 <h3 class="text-slate-800 font-bold mb-1">No Estimates Yet</h3>
-                <p class="text-slate-400 text-sm mb-6">Create a price estimation to see it here.</p>
-                <a href="quote.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow-lg shadow-blue-100">
-                    <i class="ri-calculator-line mr-2"></i> Get Quote
-                </a>
+                <a href="quote.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow-lg mt-4 inline-block">Get Quote</a>
             </div>
         </div>
 
         <div id="view-history" class="tab-view hidden">
             <div id="history-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
-            <div id="empty-history" class="hidden text-center py-20">
-                <p class="text-slate-400">No completed borewell records found.</p>
-            </div>
+            <div id="empty-history" class="hidden text-center py-20"><p class="text-slate-400">No completed borewell records found.</p></div>
         </div>
 
     </main>
@@ -137,9 +116,7 @@
                 <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
                     <h3 class="font-bold text-gray-700">Document Preview</h3>
                     <div class="flex gap-2">
-                        <button id="modalDownloadBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700">
-                            <i class="ri-download-line mr-1"></i> Download
-                        </button>
+                        <button id="modalDownloadBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700"><i class="ri-download-line mr-1"></i> Download</button>
                         <button onclick="closePreview()" class="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-300">Close</button>
                     </div>
                 </div>
@@ -167,9 +144,7 @@
             }
         });
 
-        function logout() {
-            auth.signOut().then(() => window.location.href = "index.html");
-        }
+        function logout() { auth.signOut().then(() => window.location.href = "index.html"); }
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
@@ -178,11 +153,10 @@
             document.getElementById('tab-'+tab).classList.add('active');
         }
 
+        // 🟢 3. DATA ENGINE
         function loadDashboard(uid, phone) {
-            
-            // A. FETCH QUOTES
-            db.collection('leads').where('userId', '==', uid).get()
-              .then(snap => {
+            // A. QUOTES
+            db.collection('leads').where('userId', '==', uid).get().then(snap => {
                   const grid = document.getElementById('estimates-grid');
                   if(snap.empty) {
                       document.getElementById('empty-estimates').classList.remove('hidden');
@@ -192,21 +166,31 @@
                       
                       let docs = [];
                       snap.forEach(doc => docs.push(doc.data()));
-                      // Sort by time (client side)
                       docs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
                       docs.forEach(data => {
                           const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
                           
-                          // 🟢 HERO LOGIC: Show ONLY if NOT Completed
+                          // Hero Tracker Logic
                           if (data.status !== 'Quote Generated' && data.status !== 'Completed' && !activeBookingFound) {
                               updateLiveTracker(data);
                               activeBookingFound = true;
                           }
 
+                          // 🟢 STATUS CHANGER (MANAGER CONTROLS)
+                          // This dropdown is visible on every card. 
+                          const statusOptions = ['Quote Generated', 'Booked', 'Survey', 'Rig Move', 'Drilling', 'Water', 'Certification', 'Completed'];
+                          let statusDropdown = `<select onchange="updateStatus('${data.id}', this.value)" class="status-select">`;
+                          statusOptions.forEach(opt => {
+                              statusDropdown += `<option value="${opt}" ${data.status === opt ? 'selected' : ''}>${opt}</option>`;
+                          });
+                          statusDropdown += `</select>`;
+
                           const card = `
-                            <div class="glass-panel p-6 flex flex-col justify-between h-full relative">
-                                ${data.status !== 'Quote Generated' ? `<span class="absolute top-4 right-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded uppercase">${data.status}</span>` : ''}
+                            <div class="glass-panel p-6 flex flex-col justify-between h-full relative group">
+                                <div class="absolute top-4 right-4 flex gap-2 items-center">
+                                    ${statusDropdown}
+                                </div>
                                 <div>
                                     <div class="text-xs font-bold text-slate-400 mb-1">${date}</div>
                                     <h3 class="font-bold text-slate-800 text-lg mb-1">${data.loc}</h3>
@@ -234,42 +218,22 @@
                           grid.innerHTML += card;
                       });
                   }
-              }).catch(e => console.error(e));
+              });
 
-            // B. FETCH HISTORY (Completed Jobs)
-            db.collection('projects').where('mobile', '==', phone).get()
-              .then(snap => {
+            // B. HISTORY (Completed)
+            db.collection('projects').where('mobile', '==', phone).get().then(snap => {
                   const grid = document.getElementById('history-grid');
-                  if(snap.empty) {
-                      document.getElementById('empty-history').classList.remove('hidden');
-                  } else {
+                  if(snap.empty) { document.getElementById('empty-history').classList.remove('hidden'); } 
+                  else {
                       grid.innerHTML = "";
                       snap.forEach(doc => {
                           const data = doc.data();
                           data.id = data.id || `BWBC-${Math.floor(Math.random()*10000)}`; 
                           const card = `
                             <div class="glass-panel p-6 border-l-4 border-l-emerald-500">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 class="font-bold text-slate-800 text-lg">${data.location}</h3>
-                                        <p class="text-xs text-slate-500">Completed: ${data.date}</p>
-                                    </div>
-                                    <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
-                                        <i class="ri-checkbox-circle-line text-xl"></i>
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4 text-sm bg-slate-50 p-4 rounded-xl mb-4">
-                                    <div><p class="text-[10px] text-slate-400 uppercase">Total Depth</p><p class="font-bold text-slate-700">${data.depth} ft</p></div>
-                                    <div><p class="text-[10px] text-slate-400 uppercase">Yield</p><p class="font-bold text-emerald-600">${data.yield}</p></div>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button onclick="handleDocAction('preview', 'cert', '${encodeURIComponent(JSON.stringify(data))}')" class="flex-1 bg-indigo-50 text-indigo-600 font-bold py-2 rounded-lg text-sm hover:bg-indigo-100">
-                                        <i class="ri-eye-line mr-1"></i> Preview
-                                    </button>
-                                    <button onclick="handleDocAction('download', 'cert', '${encodeURIComponent(JSON.stringify(data))}')" class="flex-1 bg-emerald-50 text-emerald-600 font-bold py-2 rounded-lg text-sm hover:bg-emerald-100">
-                                        <i class="ri-download-line mr-1"></i> Download
-                                    </button>
-                                </div>
+                                <h3 class="font-bold text-slate-800 text-lg">${data.location}</h3>
+                                <p class="text-xs text-slate-500 mb-4">Completed: ${data.date}</p>
+                                <button onclick="handleDocAction('download', 'cert', '${encodeURIComponent(JSON.stringify(data))}')" class="w-full bg-slate-900 text-white font-bold py-3 rounded-lg text-sm hover:bg-black shadow-lg">Download Certificate</button>
                             </div>
                           `;
                           grid.innerHTML += card;
@@ -278,103 +242,66 @@
               });
         }
 
-        // 🟢 4. UPDATED HERO TRACKER (With Certification Step)
         function updateLiveTracker(data) {
             const tracker = document.getElementById('live-tracker');
             tracker.classList.remove('hidden');
             document.getElementById('active-ref').innerText = `REF: ${data.id}`;
-            
-            // Map status text to step IDs
-            const stages = {
-                'Booked': 1,
-                'Survey': 2,
-                'RigMove': 3,
-                'Drilling': 4,
-                'Water': 5,
-                'Certification': 6 // 🟢 New Status
-            };
-            
+            const stages = {'Booked':1,'Survey':2,'RigMove':3,'Drilling':4,'Water':5,'Certification':6};
             let currentStatus = data.status.replace(/\s/g, ''); 
             let level = stages[currentStatus] || 1; 
-
-            // If status is Certification, mark it active
             const stepIds = ['Booked', 'Survey', 'RigMove', 'Drilling', 'Water', 'Certification'];
             stepIds.forEach((id, index) => {
                 const el = document.getElementById('step-' + id);
-                if (index < level) {
-                    el.classList.add('active', 'completed'); 
-                } else if (index === level - 1) {
-                    el.classList.add('active'); 
-                } else {
-                    el.classList.remove('active', 'completed'); 
-                }
+                if (index < level) el.classList.add('active', 'completed');
+                else if (index === level - 1) el.classList.add('active');
+                else el.classList.remove('active', 'completed');
             });
         }
 
-        function recalc(loc, depth) {
-            window.location.href = `quote.html?loc=${encodeURIComponent(loc)}&depth=${depth}`;
+        // 🟢 STATUS UPDATER
+        function updateStatus(id, newStatus) {
+            if(confirm(`Update status to ${newStatus}?`)) {
+                db.collection('leads').doc(id).update({ status: newStatus })
+                .then(() => {
+                    // Refresh dashboard to show new status effect (e.g. moving timeline)
+                    location.reload(); 
+                }).catch(e => alert("Update failed: " + e.message));
+            }
         }
 
-        // 🟢 UNIFIED DOCUMENT HANDLER
+        function recalc(loc, depth) { window.location.href = `quote.html?loc=${encodeURIComponent(loc)}&depth=${depth}`; }
+
         function handleDocAction(action, type, encodedData) {
             const data = JSON.parse(decodeURIComponent(encodedData));
-            let htmlContent = "";
-            let fileName = "";
-
+            let htmlContent = "", fileName = "";
             if (type === 'quote') {
-                let rows = "";
-                let remaining = parseInt(data.depth); 
-                let floor = 0; 
-                let currentRate = 70;
+                let rows = "", remaining = parseInt(data.depth), floor = 0, currentRate = 70;
                 while(remaining > 0) {
                     let chunk = (remaining >= 50) ? 50 : remaining;
-                    let cost = chunk * currentRate;
-                    rows += `<tr><td>${floor}-${floor+chunk}ft</td><td style="text-align:right">₹${cost.toLocaleString()}</td></tr>`;
+                    rows += `<tr><td>${floor}-${floor+chunk}ft</td><td style="text-align:right">₹${(chunk * currentRate).toLocaleString()}</td></tr>`;
                     remaining -= chunk; floor += chunk; currentRate += 10;
                 }
                 data.rows = rows;
-                if(typeof getInvoiceHTML === 'function') {
-                    htmlContent = getInvoiceHTML(data);
-                    fileName = `${data.id}.pdf`; 
-                }
+                if(typeof getInvoiceHTML === 'function') { htmlContent = getInvoiceHTML(data); fileName = `${data.id}.pdf`; }
             } else if (type === 'cert') {
                 if(typeof getCertificateHTML === 'function') {
-                    htmlContent = getCertificateHTML({
-                        id: data.id,
-                        name: "Valued Customer",
-                        loc: data.location,
-                        date: data.date,
-                        depth: data.depth,
-                        yield: data.yield,
-                        motor: data.motor
-                    });
-                    fileName = `${data.id}.pdf`; 
+                    htmlContent = getCertificateHTML({ id: data.id, name: "Valued Customer", loc: data.location, date: data.date, depth: data.depth, yield: data.yield, motor: data.motor });
+                    fileName = `${data.id}.pdf`;
                 }
             }
-
-            if (!htmlContent) return alert("Template Engine Error");
-
+            if (!htmlContent) return alert("Template Error");
             if (action === 'preview') {
                 document.getElementById('previewContent').innerHTML = htmlContent;
                 document.getElementById('previewModal').style.display = 'flex';
-                document.getElementById('modalDownloadBtn').onclick = function() {
-                    downloadFromHTML(htmlContent, fileName);
-                };
-            } else {
-                downloadFromHTML(htmlContent, fileName);
-            }
+                document.getElementById('modalDownloadBtn').onclick = function() { downloadFromHTML(htmlContent, fileName); };
+            } else { downloadFromHTML(htmlContent, fileName); }
         }
 
         function downloadFromHTML(html, filename) {
-            const element = document.createElement('div');
-            element.innerHTML = html;
+            const element = document.createElement('div'); element.innerHTML = html;
             html2pdf().from(element).save(filename);
         }
-
-        function closePreview() {
-            document.getElementById('previewModal').style.display = 'none';
-        }
-
+        function closePreview() { document.getElementById('previewModal').style.display = 'none'; }
     </script>
 </body>
 </html>
