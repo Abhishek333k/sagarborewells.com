@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sagar Admin</title>
+    <title>Command Center | Sagar Borewells</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -21,228 +21,260 @@
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
-        /* APP-LIKE FEEL */
-        :root { --cyber-black: #0f172a; --cyber-blue: #3b82f6; --glass: rgba(30, 41, 59, 0.7); }
-        html, body { height: 100%; overflow-x: hidden; }
-        body { background-color: var(--cyber-black); color: #e2e8f0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        /* GLASS CARDS */
-        .glass-card { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden; }
-        
-        /* MOBILE NAV (Bottom Bar) */
-        .mobile-nav { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: #1e293b; border-top: 1px solid #334155; 
-            display: flex; justify-content: space-around; padding: 10px 0; 
-            z-index: 50; padding-bottom: env(safe-area-inset-bottom);
+        /* 🌑 COMMAND CENTER THEME */
+        :root { 
+            --bg-deep: #050b14; 
+            --glass-panel: rgba(15, 23, 42, 0.85); 
+            --glass-border: rgba(56, 189, 248, 0.1);
+            --neon-blue: #0ea5e9;
+            --neon-green: #10b981;
+            --neon-red: #ef4444;
         }
-        .nav-item { color: #64748b; flex-direction: column; align-items: center; display: flex; font-size: 10px; font-weight: 600; padding: 4px; }
-        .nav-item i { font-size: 20px; margin-bottom: 2px; }
-        .nav-item.active { color: #3b82f6; }
         
+        body { background-color: var(--bg-deep); color: #e2e8f0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
+        
+        /* ULTRA GLASS CARD */
+        .glass-card { 
+            background: var(--glass-panel); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 16px; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* MOBILE NAV (iOS Style) */
+        .mobile-nav { 
+            position: fixed; bottom: 20px; left: 20px; right: 20px;
+            background: rgba(15, 23, 42, 0.95); 
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            display: flex; justify-content: space-around; padding: 14px 0; 
+            z-index: 50; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+        }
+        .nav-item { color: #64748b; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; width: 50px; }
+        .nav-item i { font-size: 22px; transition: 0.2s; }
+        .nav-item.active i { color: var(--neon-blue); transform: translateY(-2px); text-shadow: 0 0 15px var(--neon-blue); }
+        .nav-item.active::after { content: ''; position: absolute; bottom: -6px; width: 4px; height: 4px; background: var(--neon-blue); border-radius: 50%; }
+
         /* DESKTOP SIDEBAR */
         @media (min-width: 768px) {
             .mobile-nav { display: none; }
-            .desktop-sidebar { width: 260px; height: 100vh; position: fixed; border-right: 1px solid #334155; padding: 20px; }
-            .main-content { margin-left: 260px; width: calc(100% - 260px); padding: 30px; }
+            .desktop-sidebar { width: 280px; height: 100vh; position: fixed; border-right: 1px solid #1e293b; background: #020617; padding: 24px; }
+            .main-content { margin-left: 280px; width: calc(100% - 280px); padding: 40px; }
         }
         @media (max-width: 767px) {
-            .main-content { padding: 16px; padding-bottom: 90px; }
+            .main-content { padding: 16px; padding-bottom: 120px; }
         }
 
-        /* UTILS */
-        .cyber-input { background: #0f172a; border: 1px solid #334155; color: white; padding: 12px; border-radius: 8px; width: 100%; outline: none; font-size: 14px; }
-        .cyber-input:focus { border-color: var(--cyber-blue); }
-        .btn-primary { background: var(--cyber-blue); color: white; padding: 12px 20px; border-radius: 8px; font-weight: 700; width: 100%; text-align: center; }
+        /* MAP ROOM UI */
+        .map-tool-btn { width: 40px; height: 40px; border-radius: 10px; background: #1e293b; color: white; display: flex; align-items: center; justify-content: center; border: 1px solid #334155; transition: 0.2s; }
+        .map-tool-btn.active { background: var(--neon-blue); border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(14, 165, 233, 0.4); }
         
-        /* MODAL ANIMATION */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal.open { display: flex; animation: fadeUp 0.2s ease-out; }
-        .modal-content { background: #1e293b; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 24px; position: relative; }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .zone-chip { background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 20px; font-size: 10px; color: white; display: flex; items-center; gap: 6px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(4px); }
 
-        /* SPINNER */
-        .spinner { border: 3px solid #334155; border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* INPUTS */
+        .cyber-input { background: #0f172a; border: 1px solid #334155; color: white; padding: 14px; border-radius: 12px; width: 100%; outline: none; font-size: 14px; transition: 0.2s; font-family: 'JetBrains Mono', monospace; }
+        .cyber-input:focus { border-color: var(--neon-blue); box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2); }
+        
+        /* MODAL */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
+        .modal.open { display: flex; animation: zoomIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-content { background: #0f172a; width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto; border-radius: 24px; padding: 24px; position: relative; border: 1px solid #1e293b; }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* LOADING */
+        .loader-ring { width: 40px; height: 40px; border: 3px solid #1e293b; border-top-color: var(--neon-blue); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="init-screen" class="fixed inset-0 bg-[#0f172a] z-[300] flex items-center justify-center">
-        <div class="text-center">
-            <div class="w-12 h-12 border-4 border-blue-900 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-blue-500 font-mono text-xs tracking-widest animate-pulse">ESTABLISHING LINK...</p>
-        </div>
+    <div id="init-screen" class="fixed inset-0 bg-[#020617] z-[300] flex flex-col items-center justify-center">
+        <div class="loader-ring mb-4"></div>
+        <p class="text-slate-500 font-mono text-xs tracking-[0.2em]">INITIALIZING UPLINK</p>
     </div>
 
-    <div id="login-overlay" class="fixed inset-0 bg-[#0f172a] z-[200] flex flex-col items-center justify-center p-6 hidden">
-        <div class="text-center mb-8">
-            <div class="w-16 h-16 bg-blue-600 rounded-xl mx-auto flex items-center justify-center text-3xl font-bold mb-4 shadow-lg shadow-blue-500/20">S</div>
-            <h1 class="text-2xl font-bold tracking-tight">System Access</h1>
-            <p class="text-slate-500 text-sm">Authorized Personnel Only</p>
-        </div>
-        
-        <div class="w-full max-w-sm space-y-4">
-            <input type="tel" id="adminPhone" class="cyber-input text-center tracking-widest text-lg" placeholder="Mobile Number" maxlength="10">
-            <button id="sendOtpBtn" onclick="sendAdminOTP()" class="btn-primary">AUTHENTICATE</button>
+    <div id="login-overlay" class="fixed inset-0 bg-[#020617] z-[200] flex flex-col items-center justify-center p-6 hidden">
+        <div class="glass-card p-8 w-full max-w-sm text-center border-t-4 border-t-blue-600">
+            <div class="w-16 h-16 bg-blue-600/20 rounded-2xl mx-auto flex items-center justify-center text-blue-500 text-3xl font-bold mb-6 border border-blue-500/30">
+                <i class="ri-shield-keyhole-line"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-white mb-1">Command Access</h1>
+            <p class="text-slate-500 text-xs font-mono mb-8">SECURE TERMINAL v4.0</p>
             
-            <div id="otp-group" class="hidden space-y-4">
-                <input type="text" id="adminOtp" class="cyber-input text-center tracking-[1em] font-bold" placeholder="• • • • • •" maxlength="6">
-                <button id="verifyOtpBtn" onclick="verifyAdminOTP()" class="btn-primary bg-emerald-600">UNLOCK TERMINAL</button>
+            <div class="space-y-4">
+                <input type="tel" id="adminPhone" class="cyber-input text-center tracking-widest text-lg" placeholder="Mobile Number" maxlength="10">
+                <button id="sendOtpBtn" onclick="sendAdminOTP()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-900/50">SEND CODE</button>
+                
+                <div id="otp-group" class="hidden space-y-4 pt-2 border-t border-slate-800 mt-4">
+                    <input type="text" id="adminOtp" class="cyber-input text-center tracking-[1em] font-bold text-emerald-400" placeholder="000000" maxlength="6">
+                    <button id="verifyOtpBtn" onclick="verifyAdminOTP()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-900/50">UNLOCK</button>
+                </div>
             </div>
             <div id="recaptcha-container"></div>
         </div>
     </div>
 
-    <aside class="desktop-sidebar hidden md:flex flex-col bg-[#1e293b]">
-        <div class="mb-8 flex items-center gap-3 px-2">
-            <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold">S</div>
+    <aside class="desktop-sidebar hidden md:flex flex-col">
+        <div class="mb-10 px-2 flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-lg">S</div>
             <div>
-                <h1 class="font-bold text-sm">ADMIN CONSOLE</h1>
-                <p class="text-[10px] text-slate-500">v3.0 Secure</p>
+                <h1 class="font-black text-white text-lg tracking-tight">SAGAR</h1>
+                <p class="text-[10px] text-blue-400 font-mono tracking-widest">ADMIN CONSOLE</p>
             </div>
         </div>
         
         <nav class="flex-1 space-y-2">
-            <button onclick="showSection('leads')" class="nav-item-desk w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex gap-3 items-center" id="d-nav-leads">
-                <i class="ri-user-star-line"></i> Active Leads
+            <button onclick="showSection('leads')" class="w-full text-left p-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition flex items-center gap-3 font-medium group" id="d-nav-leads">
+                <span class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center group-hover:bg-blue-600/20 group-hover:text-blue-400 transition"><i class="ri-user-star-line"></i></span>
+                Active Leads
             </button>
-            <button onclick="showSection('projects')" class="nav-item-desk w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex gap-3 items-center" id="d-nav-projects">
-                <i class="ri-folder-shield-2-line"></i> Projects
+            <button onclick="showSection('projects')" class="w-full text-left p-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition flex items-center gap-3 font-medium group" id="d-nav-projects">
+                <span class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center group-hover:bg-emerald-600/20 group-hover:text-emerald-400 transition"><i class="ri-folder-shield-2-line"></i></span>
+                Projects
             </button>
-            <button onclick="showSection('silent')" class="nav-item-desk w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex gap-3 items-center" id="d-nav-silent">
-                <i class="ri-eye-2-line"></i> Window Shoppers
+            <button onclick="showSection('silent')" class="w-full text-left p-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition flex items-center gap-3 font-medium group" id="d-nav-silent">
+                <span class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center group-hover:bg-purple-600/20 group-hover:text-purple-400 transition"><i class="ri-spy-line"></i></span>
+                Window Shoppers
             </button>
-            <button onclick="showSection('maproom')" class="nav-item-desk w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex gap-3 items-center" id="d-nav-maproom">
-                <i class="ri-map-pin-2-line"></i> Map Room
+            <button onclick="showSection('maproom')" class="w-full text-left p-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition flex items-center gap-3 font-medium group" id="d-nav-maproom">
+                <span class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center group-hover:bg-orange-600/20 group-hover:text-orange-400 transition"><i class="ri-map-2-line"></i></span>
+                War Room (Maps)
             </button>
         </nav>
 
-        <button onclick="logout()" class="p-3 text-red-400 hover:bg-red-900/20 rounded flex items-center gap-3 text-sm font-bold">
-            <i class="ri-logout-box-line"></i> Secure Exit
+        <button onclick="logout()" class="w-full py-3 border border-red-900/30 bg-red-900/10 text-red-400 rounded-xl hover:bg-red-900/30 transition flex items-center justify-center gap-2 text-sm font-bold">
+            <i class="ri-shut-down-line"></i> SECURE LOGOUT
         </button>
     </aside>
 
-    <main class="main-content w-full">
+    <main class="main-content">
         
-        <div class="flex justify-between items-center mb-6 md:hidden">
-            <h1 class="text-xl font-bold">Dashboard</h1>
-            <div class="w-8 h-8 bg-blue-900/30 rounded-full flex items-center justify-center text-blue-400" onclick="logout()">
-                <i class="ri-shut-down-line"></i>
+        <div class="flex justify-between items-center mb-8 md:hidden">
+            <div>
+                <h1 class="text-2xl font-black text-white">Dashboard</h1>
+                <p class="text-xs text-slate-500 font-mono" id="system-status">SYSTEM ONLINE</p>
             </div>
+            <button onclick="logout()" class="w-10 h-10 rounded-full bg-slate-800 text-red-400 flex items-center justify-center hover:bg-slate-700">
+                <i class="ri-shut-down-line"></i>
+            </button>
         </div>
 
-        <div id="ceo-dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
-            <div class="glass-card p-4">
-                <div class="text-xs text-slate-400 uppercase font-bold">Total Revenue</div>
-                <div class="text-lg md:text-2xl font-bold text-emerald-400 mt-1" id="stat-revenue">₹0</div>
+        <div id="ceo-dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="glass-card p-5 relative overflow-hidden group">
+                <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition"><i class="ri-money-dollar-circle-line text-6xl text-emerald-500"></i></div>
+                <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">Revenue</div>
+                <div class="text-2xl font-black text-white mt-1" id="stat-revenue">--</div>
             </div>
-            <div class="glass-card p-4">
-                <div class="text-xs text-slate-400 uppercase font-bold">Depth Drilled</div>
-                <div class="text-lg md:text-2xl font-bold text-blue-400 mt-1" id="stat-depth">0 ft</div>
+            <div class="glass-card p-5 relative overflow-hidden group">
+                <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition"><i class="ri-drill-line text-6xl text-blue-500"></i></div>
+                <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Depth</div>
+                <div class="text-2xl font-black text-white mt-1" id="stat-depth">--</div>
             </div>
-            <div class="glass-card p-4 col-span-2 md:col-span-2">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <div class="text-xs text-slate-400 uppercase font-bold">Conversion Rate</div>
-                        <div class="text-xl font-bold text-white mt-1" id="stat-conversion">0%</div>
-                    </div>
-                    <div class="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center animate-pulse"><i class="ri-flashlight-fill"></i></div>
+            <div class="glass-card p-5 col-span-2 md:col-span-2 flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">Conversion Rate</div>
+                    <div class="text-2xl font-black text-white mt-1" id="stat-conversion">--%</div>
+                </div>
+                <div class="h-2 w-24 bg-slate-800 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500 rounded-full" id="stat-bar" style="width: 0%"></div>
                 </div>
             </div>
         </div>
 
-        <div id="filter-bar" class="flex gap-2 mb-6 hidden">
-            <div class="relative flex-1">
-                <i class="ri-search-line absolute left-3 top-3 text-slate-500"></i>
-                <input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input pl-10" placeholder="Search name, phone...">
+        <div id="filter-bar" class="flex gap-3 mb-6 hidden">
+            <div class="relative flex-1 group">
+                <i class="ri-search-line absolute left-4 top-3.5 text-slate-500 group-focus-within:text-blue-400 transition"></i>
+                <input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input pl-12" placeholder="Search Database...">
             </div>
-            <button onclick="showSection('create')" class="bg-blue-600 text-white px-4 rounded-lg font-bold"><i class="ri-add-line"></i></button>
+            <button onclick="showSection('create')" class="bg-blue-600 hover:bg-blue-500 text-white px-5 rounded-xl font-bold transition shadow-lg shadow-blue-900/40 flex items-center gap-2">
+                <i class="ri-add-line"></i> <span class="hidden md:inline">NEW RECORD</span>
+            </button>
         </div>
 
-        <div id="section-leads" class="content-section">
-            <h2 class="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Recent Inquiries</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="leads-list"></div>
+        <div id="section-leads" class="content-section space-y-4">
+            <div class="flex justify-between items-end mb-2">
+                <h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest">Incoming Leads</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="leads-list"></div>
         </div>
 
-        <div id="section-projects" class="content-section hidden">
-            <h2 class="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Project Files</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="projects-list"></div>
+        <div id="section-projects" class="content-section hidden space-y-4">
+            <h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest">Active Projects</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="projects-list"></div>
         </div>
 
-        <div id="section-silent" class="content-section hidden">
-            <h2 class="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Window Shoppers (Silent)</h2>
-            <p class="text-xs text-slate-400 mb-4">Users who verified OTP but didn't book.</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="silent-list"></div>
+        <div id="section-silent" class="content-section hidden space-y-4">
+            <h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest">Window Shoppers</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="silent-list"></div>
+        </div>
+
+        <div id="section-maproom" class="content-section hidden h-[75vh] relative rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
+            <div id="adminMap" class="w-full h-full bg-slate-900"></div>
+            
+            <div class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-slate-900/90 backdrop-blur p-2 rounded-2xl border border-slate-700 flex gap-2 shadow-xl">
+                <button onclick="setDrawMode('rock')" class="map-tool-btn" title="Hard Rock"><div class="w-4 h-4 rounded-full bg-red-500 border border-white/20"></div></button>
+                <button onclick="setDrawMode('water')" class="map-tool-btn" title="High Yield"><div class="w-4 h-4 rounded-full bg-emerald-500 border border-white/20"></div></button>
+                <button onclick="setDrawMode('moderate')" class="map-tool-btn" title="Moderate"><div class="w-4 h-4 rounded-full bg-yellow-500 border border-white/20"></div></button>
+                <button onclick="setDrawMode('saline')" class="map-tool-btn" title="Saline"><div class="w-4 h-4 rounded-full bg-blue-500 border border-white/20"></div></button>
+                
+                <div class="w-px h-8 bg-slate-700 mx-1"></div>
+                
+                <button onclick="cancelDrawing()" id="btnCancelDraw" class="hidden px-3 h-10 rounded-xl bg-red-500/20 text-red-400 font-bold text-xs border border-red-500/50">CANCEL</button>
+            </div>
+
+            <div id="saveZonePanel" class="absolute bottom-20 left-4 right-4 md:left-auto md:right-auto md:w-96 md:bottom-8 bg-slate-900 p-4 rounded-2xl border border-slate-600 shadow-2xl z-20 hidden">
+                <h3 class="text-white font-bold text-xs uppercase mb-2" id="zonePanelTitle">Save Zone</h3>
+                <input type="hidden" id="editDocId">
+                <input type="hidden" id="drawType">
+                <div class="flex gap-2">
+                    <input type="text" id="newZoneName" class="cyber-input text-xs py-2" placeholder="Name (e.g. Zone A)">
+                    <button onclick="saveCurrentZone()" id="btnSaveZone" class="bg-emerald-600 text-white px-4 rounded-lg text-xs font-bold shadow-lg shadow-emerald-900/50">SAVE</button>
+                </div>
+            </div>
+
+            <div class="absolute bottom-4 left-4 right-4 overflow-x-auto flex gap-2 pb-2 scrollbar-hide" id="zonesList">
+                </div>
         </div>
 
         <div id="section-create" class="content-section hidden">
-            <div class="glass-card p-4 md:p-6 max-w-2xl mx-auto">
+            <div class="glass-card p-6 max-w-2xl mx-auto">
                 <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
-                    <h2 class="font-bold text-lg text-white" id="form-mode-text">New Project Record</h2>
-                    <button onclick="showSection('projects')" class="text-slate-400"><i class="ri-close-line text-xl"></i></button>
+                    <h2 class="font-bold text-lg text-white" id="form-mode-text">New Record</h2>
+                    <button onclick="showSection('projects')" class="text-slate-400 hover:text-white"><i class="ri-close-circle-fill text-2xl"></i></button>
                 </div>
                 <form id="projectForm" onsubmit="saveProject(event)" class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
-                        <input type="text" id="p_id" class="cyber-input bg-slate-800 text-slate-400 cursor-not-allowed" readonly>
-                        <input type="date" id="p_date" class="cyber-input" required>
+                        <div><label class="text-[10px] text-slate-500 uppercase font-bold">Ref ID</label><input type="text" id="p_id" class="cyber-input bg-slate-900 text-slate-500 cursor-not-allowed border-dashed" readonly></div>
+                        <div><label class="text-[10px] text-slate-500 uppercase font-bold">Date</label><input type="date" id="p_date" class="cyber-input" required></div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="tel" id="p_mobile" class="cyber-input" placeholder="Customer Mobile (10 digits)" required maxlength="10">
-                        <input type="text" id="p_name" class="cyber-input" placeholder="Customer Name" required>
+                        <div><label class="text-[10px] text-slate-500 uppercase font-bold">Mobile</label><input type="tel" id="p_mobile" class="cyber-input" placeholder="10 Digits" required maxlength="10"></div>
+                        <div><label class="text-[10px] text-slate-500 uppercase font-bold">Name</label><input type="text" id="p_name" class="cyber-input" placeholder="Customer Name" required></div>
                     </div>
-                    <input type="text" id="p_loc" class="cyber-input" placeholder="Location / Address" required>
-                    <div class="flex gap-2">
-                        <input type="text" id="p_gps" class="cyber-input" placeholder="GPS Coordinates" required>
-                        <button type="button" onclick="openMapPicker()" class="bg-slate-700 px-4 rounded text-white"><i class="ri-map-pin-line"></i></button>
-                    </div>
+                    <div><label class="text-[10px] text-slate-500 uppercase font-bold">Site Location</label><input type="text" id="p_loc" class="cyber-input" placeholder="Full Address" required></div>
                     
-                    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-700">
-                        <div><label class="text-[10px] text-slate-500 uppercase">Depth (ft)</label><input type="number" id="p_depth" class="cyber-input"></div>
-                        <div><label class="text-[10px] text-slate-500 uppercase">Yield (Inch)</label><input type="text" id="p_yield" class="cyber-input"></div>
-                        <div><label class="text-[10px] text-slate-500 uppercase">Casing (ft)</label><input type="number" id="p_casing" class="cyber-input"></div>
-                        <div><label class="text-[10px] text-slate-500 uppercase">Casing Type</label>
-                            <select id="p_casingType" class="cyber-input"><option>PVC</option><option>MS</option><option>GI</option></select>
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                        <label class="text-[10px] text-slate-500 uppercase font-bold block mb-2">Technical Specs</label>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <input type="number" id="p_depth" class="cyber-input text-xs" placeholder="Depth (ft)">
+                            <input type="text" id="p_yield" class="cyber-input text-xs" placeholder="Yield (inch)">
+                        </div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <input type="number" id="p_casing" class="cyber-input text-xs col-span-2" placeholder="Casing (ft)">
+                            <select id="p_casingType" class="cyber-input text-xs p-2"><option>PVC</option><option>MS</option><option>GI</option></select>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="text-[10px] text-slate-500 uppercase">Rig Type</label><input type="text" id="p_rig" class="cyber-input" value="Sensor Rig"></div>
-                        <div><label class="text-[10px] text-slate-500 uppercase">Motor Rec.</label><input type="text" id="p_motor" class="cyber-input" value="7.5 HP Texmo"></div>
-                    </div>
-                    <button type="submit" class="btn-primary mt-6" id="save-btn-text">SAVE RECORD</button>
-                </form>
-            </div>
-        </div>
 
-        <div id="section-maproom" class="content-section hidden h-[75vh] relative rounded-xl overflow-hidden border border-slate-700">
-            <div id="adminMap" class="w-full h-full"></div>
-            
-            <div class="absolute top-2 left-2 right-2 flex flex-col gap-2 pointer-events-none">
-                <div class="bg-slate-900/90 p-2 rounded-lg pointer-events-auto flex gap-2 overflow-x-auto shadow-lg">
-                    <select id="drawType" class="bg-slate-800 text-white text-xs p-2 rounded border border-slate-600">
-                        <option value="rock">Hard Rock (Red)</option>
-                        <option value="water">High Yield (Green)</option>
-                        <option value="moderate">Moderate (Yellow)</option>
-                        <option value="saline">Saline (Blue)</option>
-                        <option value="silt">Silt/Collapse (Orange)</option>
-                    </select>
-                    <button id="btnDraw" onclick="enableDrawing()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold whitespace-nowrap">DRAW</button>
-                    <button id="btnCancel" onclick="cancelDrawing()" class="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold hidden whitespace-nowrap">CANCEL</button>
-                </div>
-            </div>
-            
-            <div id="saveZonePanel" class="absolute top-16 left-4 right-4 bg-slate-900 p-4 rounded-xl border border-slate-600 hidden z-10 shadow-2xl">
-                <h3 class="text-white font-bold text-sm mb-2" id="zonePanelTitle">Save New Zone</h3>
-                <input type="hidden" id="editDocId">
-                <div class="flex gap-2">
-                    <input type="text" id="newZoneName" class="cyber-input text-xs" placeholder="Zone Name">
-                    <button onclick="saveCurrentZone()" id="btnSaveZone" class="bg-emerald-600 text-white px-4 rounded text-xs font-bold">SAVE</button>
-                </div>
-            </div>
-            
-            <div class="absolute bottom-2 left-2 right-2 pointer-events-none">
-                <div class="flex gap-2 overflow-x-auto pb-1" id="zonesList">
+                    <div class="flex gap-2">
+                        <input type="text" id="p_gps" class="cyber-input" placeholder="GPS Coordinates" required>
+                        <button type="button" onclick="openMapPicker()" class="bg-slate-700 px-4 rounded-xl text-white hover:bg-slate-600"><i class="ri-map-pin-2-fill"></i></button>
                     </div>
+                    <input type="hidden" id="p_rig" value="Sensor Rig"><input type="hidden" id="p_motor" value="7.5 HP Texmo">
+                    
+                    <button type="submit" class="btn-primary mt-4 w-full bg-emerald-600 hover:bg-emerald-500 text-lg shadow-lg shadow-emerald-900/40" id="save-btn-text">SAVE RECORD</button>
+                </form>
             </div>
         </div>
 
@@ -251,46 +283,42 @@
     <nav class="mobile-nav md:hidden">
         <div class="nav-item active" id="nav-leads" onclick="showSection('leads')">
             <i class="ri-user-star-line"></i>
-            <span>Leads</span>
         </div>
         <div class="nav-item" id="nav-projects" onclick="showSection('projects')">
             <i class="ri-folder-shield-2-line"></i>
-            <span>Projects</span>
         </div>
         <div class="nav-item" id="nav-silent" onclick="showSection('silent')">
             <i class="ri-eye-2-line"></i>
-            <span>Shoppers</span>
         </div>
         <div class="nav-item" id="nav-maproom" onclick="showSection('maproom')">
-            <i class="ri-map-pin-2-line"></i>
-            <span>Maps</span>
+            <i class="ri-map-2-line"></i>
         </div>
     </nav>
 
     <div id="detailModal" class="modal">
-        <div class="modal-content relative">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="ri-close-circle-fill text-2xl"></i></button>
+        <div class="modal-content">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="ri-close-circle-fill text-2xl"></i></button>
             <div id="modalContent"></div>
         </div>
     </div>
 
     <div id="previewModal" class="modal">
-        <div class="modal-content max-w-3xl bg-white text-black p-0 overflow-hidden flex flex-col h-[90vh]">
-            <div class="bg-slate-100 p-3 flex justify-between items-center border-b">
-                <h3 class="font-bold text-slate-700">Document Preview</h3>
+        <div class="bg-white w-full max-w-3xl h-[90vh] rounded-xl overflow-hidden flex flex-col shadow-2xl">
+            <div class="bg-slate-100 p-3 flex justify-between items-center border-b border-slate-200">
+                <span class="text-slate-800 font-bold text-xs uppercase tracking-widest">Document Preview</span>
                 <div class="flex gap-2">
-                    <button onclick="confirmDownloadPDF()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">DOWNLOAD</button>
-                    <button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-500"><i class="ri-close-line text-xl"></i></button>
+                    <button onclick="confirmDownloadPDF()" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700">DOWNLOAD PDF</button>
+                    <button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-400 hover:text-slate-600"><i class="ri-close-line text-2xl"></i></button>
                 </div>
             </div>
-            <div id="previewContent" class="flex-1 overflow-y-auto p-4 bg-gray-500"></div>
+            <div id="previewContent" class="flex-1 overflow-y-auto p-4 bg-slate-500 shadow-inner"></div>
         </div>
     </div>
 
     <div id="mapModal" class="modal">
-        <div class="modal-content h-[60vh] flex flex-col p-0 overflow-hidden">
-            <div id="mapContainer" class="flex-1 bg-slate-800"></div>
-            <button onclick="confirmLocation()" class="bg-blue-600 text-white py-4 font-bold tracking-widest hover:bg-blue-500">CONFIRM LOCATION</button>
+        <div class="w-full h-[60vh] max-w-lg bg-slate-900 rounded-2xl overflow-hidden flex flex-col border border-slate-700">
+            <div id="mapContainer" class="flex-1"></div>
+            <button onclick="confirmLocation()" class="bg-blue-600 text-white py-4 font-bold tracking-widest hover:bg-blue-500">SET LOCATION</button>
         </div>
     </div>
 
@@ -300,41 +328,26 @@
         const auth = firebase.auth();
 
         function notify(msg, type='success') {
-            Toastify({ text: msg, duration: 3000, gravity: "top", position: "right", style: { background: type==='success' ? "#059669" : "#dc2626", borderRadius: "8px", boxShadow: "0 4px 15px rgba(0,0,0,0.3)", fontSize: "12px", fontWeight: "bold" } }).showToast();
+            Toastify({ text: msg, duration: 3000, gravity: "top", position: "center", style: { background: type==='success' ? "#10b981" : "#ef4444", borderRadius: "12px", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", fontSize: "12px", fontWeight: "bold", padding: "12px 24px" } }).showToast();
         }
 
-        // --- AUTH & SETUP ---
+        // --- AUTH ---
         auth.onAuthStateChanged(user => {
             const loginModal = document.getElementById('login-overlay');
             const initScreen = document.getElementById('init-screen');
-
             if(user) {
                 db.collection('admins').doc(user.phoneNumber).get().then(doc => {
                     if (doc.exists) {
-                        initScreen.style.display = 'none'; // ✅ HIDE LOADER
-                        loginModal.classList.add('hidden');
-                        showSection('leads'); 
-                        loadAnalytics(); 
-                    } else { 
-                        notify("UNAUTHORIZED ACCESS", "error"); 
-                        auth.signOut(); 
-                        initScreen.style.display = 'none';
-                        loginModal.classList.remove('hidden');
-                    }
-                }).catch(e => {
-                    notify("System Error", "error");
-                    initScreen.style.display = 'none';
-                    loginModal.classList.remove('hidden');
-                });
-            } else {
-                initScreen.style.display = 'none';
-                loginModal.classList.remove('hidden');
-            }
+                        initScreen.style.display = 'none'; loginModal.classList.add('hidden');
+                        showSection('leads'); loadAnalytics(); 
+                    } else { notify("ACCESS DENIED", "error"); auth.signOut(); initScreen.style.display = 'none'; loginModal.classList.remove('hidden'); }
+                }).catch(e => { notify("Connection Error", "error"); initScreen.style.display = 'none'; loginModal.classList.remove('hidden'); });
+            } else { initScreen.style.display = 'none'; loginModal.classList.remove('hidden'); }
         });
 
         function sendAdminOTP() {
             const phone = document.getElementById('adminPhone').value;
-            if(phone.length !== 10) return notify("INVALID ID", "error");
+            if(phone.length !== 10) return notify("ENTER 10 DIGIT NUMBER", "error");
             const btn = document.getElementById('sendOtpBtn'); btn.innerText = "TRANSMITTING...";
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
             auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier).then(cr => {
@@ -342,7 +355,7 @@
                 document.getElementById('otp-group').classList.remove('hidden');
             }).catch(e => { notify("SMS FAILED", "error"); btn.innerText = "RETRY"; });
         }
-        function verifyAdminOTP() { window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => notify("INVALID CODE", "error")); }
+        function verifyAdminOTP() { window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => notify("WRONG CODE", "error")); }
         function logout() { auth.signOut(); window.location.reload(); }
 
         // --- NAVIGATION ---
@@ -351,7 +364,7 @@
             document.getElementById('section-'+id).classList.remove('hidden');
             document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
             const navEl = document.getElementById('nav-'+id); if(navEl) navEl.classList.add('active');
-            document.querySelectorAll('.nav-item-desk').forEach(e => e.classList.remove('bg-slate-800','text-white'));
+            document.querySelectorAll('#d-nav-leads, #d-nav-projects, #d-nav-silent, #d-nav-maproom').forEach(e => e.classList.remove('bg-slate-800','text-white'));
             const dNavEl = document.getElementById('d-nav-'+id); if(dNavEl) dNavEl.classList.add('bg-slate-800','text-white');
 
             const filterBar = document.getElementById('filter-bar');
@@ -369,168 +382,220 @@
             else if(id === 'maproom') initAdminMap();
         }
 
-        function deleteRecord(collection, docId) {
-            if(confirm("⚠ PERMANENT DELETE: Are you sure?")) {
-                db.collection(collection).doc(docId).delete().then(() => {
-                    notify("RECORD DELETED", "error"); closeModal();
-                    if(collection === 'leads') loadLeads(); else if(collection === 'projects') loadProjects(); else if(collection === 'silent_leads') loadSilentLeads();
+        // --- DATA RENDERERS ---
+        function loadLeads() { 
+            const list = document.getElementById('leads-list');
+            list.innerHTML = '<div class="text-center text-slate-600 col-span-full animate-pulse mt-10">Scanning Database...</div>';
+            db.collection('leads').orderBy('timestamp','desc').limit(50).get().then(snap => {
+                list.innerHTML = "";
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    // GRID LAYOUT FOR MOBILE: grid-cols-[1fr_auto]
+                    list.innerHTML += `
+                    <div onclick="openLeadModal('${doc.id}')" class="glass-card p-4 grid grid-cols-[1fr_auto] gap-3 items-center hover:border-blue-500/50 cursor-pointer transition group">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0 group-hover:bg-blue-500 group-hover:text-white transition">
+                                <i class="ri-user-star-line"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-white text-sm truncate">${d.name}</h4>
+                                <p class="text-[10px] text-slate-400 font-mono truncate">${d.loc}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-mono font-bold text-emerald-400 text-sm">₹${parseInt(d.total).toLocaleString()}</div>
+                            <div class="text-[9px] text-slate-500 uppercase tracking-wider font-bold">${d.status||'PENDING'}</div>
+                        </div>
+                    </div>`;
                 });
-            }
+            });
         }
 
-        // --- DATA LOADERS (FIXED CARD LAYOUT) ---
-        function loadLeads() { currentView = 'leads'; db.collection('leads').orderBy('timestamp','desc').limit(100).get().then(snap => { leadsCache = []; snap.forEach(d => { let data = d.data(); data.docId = d.id; leadsCache.push(data); }); renderLeads(leadsCache); }); }
-        function renderLeads(list) {
-            const el = document.getElementById('leads-list'); el.innerHTML = "";
-            list.forEach(data => { 
-                // ✅ CARD FIX: Used CSS Grid to strictly separate Content from Status, preventing overlapping
-                el.innerHTML += `
-                <div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 grid grid-cols-[1fr_auto] gap-4 items-center hover:bg-slate-800/50 cursor-pointer border border-slate-800/50 hover:border-blue-500/30">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center text-blue-400 shrink-0">
-                            <i class="ri-user-search-line"></i>
+        function loadProjects() {
+            const list = document.getElementById('projects-list');
+            list.innerHTML = '<div class="text-center text-slate-600 col-span-full animate-pulse mt-10">Loading Files...</div>';
+            db.collection('projects').orderBy('timestamp','desc').limit(50).get().then(snap => {
+                list.innerHTML = "";
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    list.innerHTML += `
+                    <div onclick="openProjectModal('${d.projectId}')" class="glass-card p-5 relative overflow-hidden group cursor-pointer border-l-4 border-l-emerald-500">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-white truncate max-w-[70%]">${d.location}</h3>
+                            <span class="text-[9px] font-mono text-slate-500">${d.date}</span>
                         </div>
-                        <div class="min-w-0 overflow-hidden">
-                            <div class="font-bold text-white text-sm truncate">${data.name}</div>
-                            <div class="text-[10px] text-slate-400 font-mono truncate">${data.loc}</div>
+                        <p class="text-xs text-slate-400 mb-4 font-mono">${d.customerName}</p>
+                        <div class="flex justify-between items-end">
+                            <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-[10px] font-mono tracking-widest">${d.projectId}</span>
+                            <i class="ri-arrow-right-line text-slate-600 group-hover:text-white transition"></i>
                         </div>
-                    </div>
-                    <div class="text-right shrink-0">
-                        <div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div>
-                        <div class="text-[9px] text-blue-400 font-mono font-bold uppercase">${data.status || 'Pending'}</div>
-                    </div>
-                </div>`; 
+                    </div>`;
+                });
             });
         }
 
         function loadSilentLeads() {
             const list = document.getElementById('silent-list');
-            list.innerHTML = '<div class="text-center text-slate-500 py-10"><div class="spinner mx-auto mb-2"></div>Scanning...</div>';
+            list.innerHTML = '<div class="text-center text-slate-600 col-span-full animate-pulse mt-10">Scanning...</div>';
             db.collection('silent_leads').orderBy('timestamp', 'desc').limit(50).get().then(snap => {
                 list.innerHTML = "";
-                if(snap.empty) { list.innerHTML = '<div class="text-center text-slate-600 mt-10">No Window Shoppers found.</div>'; return; }
+                if(snap.empty) { list.innerHTML = '<div class="text-center text-slate-600 col-span-full mt-10">No Silent Leads</div>'; return; }
                 snap.forEach(doc => {
-                    const data = doc.data();
-                    const time = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : "Just now";
+                    const d = doc.data();
+                    const time = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : 'Just now';
                     list.innerHTML += `
-                        <div class="glass-card p-4 flex justify-between items-center group">
-                            <div><h4 class="text-lg font-mono font-bold text-yellow-400">${data.mobile}</h4><p class="text-xs text-slate-500 flex items-center gap-2 mt-1"><i class="ri-time-line"></i> ${time}</p></div>
-                            <div class="flex gap-2">
-                                <a href="tel:${data.mobile}" class="bg-green-600/20 text-green-400 border border-green-600/50 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i class="ri-phone-fill"></i></a>
-                                <button onclick="deleteRecord('silent_leads', '${doc.id}')" class="bg-red-600/20 text-red-400 border border-red-600/50 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i class="ri-delete-bin-line"></i></button>
+                    <div class="glass-card p-4 flex justify-between items-center group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
+                                <i class="ri-eye-line"></i>
                             </div>
-                        </div>`;
+                            <div>
+                                <h4 class="font-mono font-bold text-yellow-400 text-sm">${d.mobile}</h4>
+                                <p class="text-[10px] text-slate-500 flex items-center gap-1"><i class="ri-time-line"></i> ${time}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="tel:${d.mobile}" class="w-9 h-9 rounded-lg bg-green-500/10 text-green-400 flex items-center justify-center border border-green-500/30 hover:bg-green-500 hover:text-white transition"><i class="ri-phone-fill"></i></a>
+                            <button onclick="deleteRecord('silent_leads', '${doc.id}')" class="w-9 h-9 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/30 hover:bg-red-500 hover:text-white transition"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                    </div>`;
                 });
             });
         }
 
-        // --- MAPS ---
+        // --- MAPS RELOADED ---
         let adminMap, drawingManager, currentPoly; let mapPolygons = []; 
         const ZONE_CONFIG = { rock: { color: '#ef4444', label: 'Hard Rock' }, water: { color: '#10b981', label: 'High Yield' }, moderate: { color: '#eab308', label: 'Moderate' }, saline: { color: '#3b82f6', label: 'Saline' }, silt: { color: '#f97316', label: 'Loose Silt' } };
 
         function initAdminMap() {
             if(adminMap) { loadAdminZones(); return; }
-            const startLoc = { lat: 16.4410, lng: 80.5520 }; 
-            adminMap = new google.maps.Map(document.getElementById('adminMap'), { center: startLoc, zoom: 13, mapTypeId: 'hybrid', disableDefaultUI: true, zoomControl: true });
+            adminMap = new google.maps.Map(document.getElementById('adminMap'), { center: { lat: 16.4410, lng: 80.5520 }, zoom: 13, mapTypeId: 'hybrid', disableDefaultUI: true });
             drawingManager = new google.maps.drawing.DrawingManager({ drawingMode: null, drawingControl: false, polygonOptions: { strokeWeight: 2, fillOpacity: 0.35, editable: true, draggable: false } });
             drawingManager.setMap(adminMap);
-            google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) { if(currentPoly) discardCurrentZone(); currentPoly = poly; enableEditorUI("Save New Zone", "CONFIRM SAVE"); drawingManager.setDrawingMode(null); toggleDrawButtons(false); });
+            google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) { if(currentPoly) discardCurrentZone(); currentPoly = poly; document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('btnCancelDraw').classList.add('hidden'); drawingManager.setDrawingMode(null); });
             loadAdminZones();
         }
-        function enableDrawing() { discardCurrentZone(); const type = document.getElementById('drawType').value; const color = ZONE_CONFIG[type].color; drawingManager.setOptions({ drawingMode: google.maps.drawing.OverlayType.POLYGON, polygonOptions: { fillColor: color, strokeColor: color, fillOpacity: 0.35, strokeWeight: 2, editable: true } }); toggleDrawButtons(true); notify(`Draw Mode: ${ZONE_CONFIG[type].label}`); }
-        function cancelDrawing() { drawingManager.setDrawingMode(null); discardCurrentZone(); toggleDrawButtons(false); }
-        function discardCurrentZone() { document.getElementById('saveZonePanel').classList.add('hidden'); document.getElementById('editDocId').value = ""; document.getElementById('newZoneName').value = ""; if (currentPoly) { if (!currentPoly.docId) { currentPoly.setMap(null); } else { currentPoly.setEditable(false); currentPoly.setOptions({ strokeOpacity: 0.8, fillOpacity: 0.2 }); } currentPoly = null; } }
-        function initEditZone(docId) { discardCurrentZone(); const targetPoly = mapPolygons.find(p => p.docId === docId); if(!targetPoly) return notify("Error: Zone data not synced.", "error"); targetPoly.setEditable(true); targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); currentPoly = targetPoly; const data = targetPoly.zoneData; document.getElementById('newZoneName').value = data.name; document.getElementById('drawType').value = data.typeKey; document.getElementById('editDocId').value = docId; enableEditorUI("Edit Existing Zone", "UPDATE SHAPE"); }
-        function saveCurrentZone() { const nameRaw = document.getElementById('newZoneName').value; const type = document.getElementById('drawType').value; const editId = document.getElementById('editDocId').value; if(!nameRaw) return notify("Enter Name", "error"); if(!currentPoly) return notify("No shape active", "error"); const path = currentPoly.getPath(); let coords = []; for (let i = 0; i < path.getLength(); i++) { const xy = path.getAt(i); coords.push({ lat: xy.lat(), lng: xy.lng() }); } const zoneData = { name: nameRaw, typeKey: type, typeName: ZONE_CONFIG[type].label, color: ZONE_CONFIG[type].color, coords: coords, timestamp: firebase.firestore.FieldValue.serverTimestamp() }; const btn = document.getElementById('btnSaveZone'); const oldText = btn.innerText; btn.innerText = "SAVING..."; if(editId) { db.collection('geo_zones').doc(editId).update(zoneData).then(() => { notify("Zone Updated"); finalizeSave(btn, oldText); }); } else { const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_'); db.collection('geo_zones').doc(docId).set(zoneData).then(() => { notify("New Zone Created"); finalizeSave(btn, oldText); }); } }
-        function finalizeSave(btn, oldText) { btn.innerText = oldText; if(currentPoly) currentPoly = null; document.getElementById('saveZonePanel').classList.add('hidden'); document.getElementById('editDocId').value = ""; document.getElementById('newZoneName').value = ""; loadAdminZones(); }
-        function deleteZone(collectionName, docId) { if(!confirm(`PERMANENT DELETE from ${collectionName}?`)) return; db.collection(collectionName).doc(docId).delete().then(() => { notify("Object Deleted"); loadAdminZones(); }).catch(e => notify("Delete Failed", "error")); }
-        
-        // ✅ NEW LAYERS DISPLAY (Bottom Chips)
-        function loadAdminZones() { 
-            const listEl = document.getElementById('zonesList'); 
-            if(mapPolygons) mapPolygons.forEach(p => p.setMap(null)); mapPolygons = []; 
-            listEl.innerHTML = '<div class="text-white text-[10px] animate-pulse">Syncing...</div>'; 
-            
-            const layers = [ { id: 'geo_zones', label: 'Manual' }, { id: 'risk_map', label: 'Risk Zone' }, { id: 'layer_lithologs', label: 'Station' } ]; 
-            const promises = layers.map(l => db.collection(l.id).orderBy('timestamp', 'desc').limit(50).get().then(snap => ({ id: l.id, label: l.label, docs: snap.docs }))); 
-            
-            Promise.all(promises).then(results => { 
-                listEl.innerHTML = ""; let count = 0; 
-                results.forEach(res => { 
-                    res.docs.forEach(doc => { 
-                        const data = doc.data(); const docId = doc.id; const collection = res.id; count++; 
-                        let mapObj = null; 
-                        if (data.lat && data.lng) { mapObj = new google.maps.Circle({ strokeColor: data.color||'#06b6d4', fillColor: data.color||'#06b6d4', fillOpacity:0.6, map:adminMap, center:{lat:data.lat,lng:data.lng}, radius:150, clickable:true }); } 
-                        else if (data.coords) { mapObj = new google.maps.Polygon({ paths: data.coords, strokeColor: data.color, fillColor: data.color, fillOpacity: 0.2, map: adminMap, clickable: true }); } 
-                        if(mapObj) { 
-                            mapObj.docId = docId; mapObj.zoneData = data; 
-                            mapObj.addListener('click', () => { notify(data.name); if(mapObj.getCenter) adminMap.panTo(mapObj.getCenter()); }); 
-                            mapPolygons.push(mapObj); 
-                            // Render Chip
-                            listEl.innerHTML += `<div class="bg-slate-900/80 backdrop-blur border border-slate-700 rounded-full px-3 py-1 text-[10px] text-white whitespace-nowrap flex items-center gap-2 pointer-events-auto shadow-lg hover:border-blue-500 transition"><span class="w-2 h-2 rounded-full" style="background:${data.color||'#ccc'}"></span>${data.name} ${collection==='geo_zones' ? `<i onclick="initEditZone('${docId}')" class="ri-pencil-line cursor-pointer hover:text-blue-400 ml-1"></i>` : ''}<i onclick="deleteZone('${collection}', '${docId}')" class="ri-close-line cursor-pointer hover:text-red-400 ml-1"></i></div>`; 
-                        } 
-                    }); 
-                }); 
-                if(count === 0) listEl.innerHTML = '<div class="text-white text-[10px] opacity-50">No Active Layers</div>'; 
-            }); 
-        }
-        function toggleDrawButtons(isDrawing) { document.getElementById('btnDraw').classList.toggle('hidden', isDrawing); document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing); }
-        function enableEditorUI(title, btnText) { document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('zonePanelTitle').innerText = title; document.getElementById('btnSaveZone').innerText = btnText; }
 
-        // --- UTILS ---
+        function setDrawMode(type) {
+            discardCurrentZone(); document.getElementById('drawType').value = type;
+            const color = ZONE_CONFIG[type].color;
+            drawingManager.setOptions({ drawingMode: google.maps.drawing.OverlayType.POLYGON, polygonOptions: { fillColor: color, strokeColor: color, fillOpacity: 0.35, strokeWeight: 2, editable: true } });
+            document.getElementById('btnCancelDraw').classList.remove('hidden');
+            notify(`Draw Mode: ${ZONE_CONFIG[type].label}`);
+        }
+        function cancelDrawing() { drawingManager.setDrawingMode(null); document.getElementById('btnCancelDraw').classList.add('hidden'); discardCurrentZone(); }
+        function discardCurrentZone() { document.getElementById('saveZonePanel').classList.add('hidden'); if(currentPoly) { currentPoly.setMap(null); currentPoly = null; } }
+        function saveCurrentZone() {
+            const name = document.getElementById('newZoneName').value; const type = document.getElementById('drawType').value;
+            if(!name) return notify("Enter Zone Name", "error");
+            const path = currentPoly.getPath(); let coords = []; for(let i=0; i<path.getLength(); i++) { coords.push({ lat: path.getAt(i).lat(), lng: path.getAt(i).lng() }); }
+            db.collection('geo_zones').doc(name.replace(/\s+/g, '_').toLowerCase()).set({ name, type, color: ZONE_CONFIG[type].color, coords, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
+                notify("Zone Saved"); discardCurrentZone(); loadAdminZones();
+            });
+        }
+        function loadAdminZones() {
+            const list = document.getElementById('zonesList'); list.innerHTML = "";
+            if(mapPolygons) mapPolygons.forEach(p => p.setMap(null)); mapPolygons = [];
+            db.collection('geo_zones').get().then(snap => {
+                if(snap.empty) list.innerHTML = '<span class="text-white text-xs opacity-50 px-2">No active layers</span>';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const poly = new google.maps.Polygon({ paths: d.coords, strokeColor: d.color, fillColor: d.color, fillOpacity: 0.2, map: adminMap });
+                    mapPolygons.push(poly);
+                    // CHIP UI
+                    list.innerHTML += `
+                    <div class="zone-chip">
+                        <div class="w-2 h-2 rounded-full" style="background:${d.color}"></div>
+                        ${d.name}
+                        <i onclick="deleteZone('${doc.id}')" class="ri-close-circle-fill text-slate-400 hover:text-red-400 cursor-pointer ml-1"></i>
+                    </div>`;
+                });
+            });
+        }
+        function deleteZone(id) { if(confirm("Delete Zone?")) db.collection('geo_zones').doc(id).delete().then(() => { notify("Deleted"); loadAdminZones(); }); }
+
+        // --- UTILS & MODALS ---
+        function deleteRecord(col, id) { if(confirm("Delete Record?")) db.collection(col).doc(id).delete().then(() => { notify("Deleted"); if(col==='leads') loadLeads(); else if(col==='projects') loadProjects(); else loadSilentLeads(); }); }
+        function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
         function loadAnalytics() {
-            let totalDepth = 0; let totalRevenue = 0; let leadCount = 0; let projectCount = 0;
-            db.collection('projects').get().then(snap => { projectCount = snap.size; snap.forEach(doc => { totalDepth += parseInt(doc.data().depth || 0); }); document.getElementById('stat-depth').innerText = totalDepth.toLocaleString() + " ft"; updateConversion(); });
-            db.collection('leads').get().then(snap => { leadCount = snap.size; snap.forEach(doc => { totalRevenue += parseInt(doc.data().total || 0); }); document.getElementById('stat-revenue').innerText = "₹" + (totalRevenue/100000).toFixed(1) + "L"; updateConversion(); });
-            function updateConversion() { if(leadCount > 0) document.getElementById('stat-conversion').innerText = ((projectCount / leadCount) * 100).toFixed(1) + "%"; }
+            db.collection('leads').get().then(s => { 
+                let rev=0; s.forEach(d=> rev+=parseInt(d.data().total||0)); 
+                document.getElementById('stat-revenue').innerText = "₹" + (rev/100000).toFixed(1) + "L";
+            });
+            db.collection('projects').get().then(s => {
+                let d=0; s.forEach(doc=> d+=parseInt(doc.data().depth||0));
+                document.getElementById('stat-depth').innerText = d.toLocaleString() + " ft";
+            });
         }
-        let leadsCache = [], projectsCache = []; let currentView = 'leads';
-        function filterData() {
-            const term = document.getElementById('searchInput').value.toLowerCase();
-            const list = currentView === 'leads' ? leadsCache : projectsCache;
-            const filtered = list.filter(item => (item.name + item.mobile + item.loc).toLowerCase().includes(term));
-            if(currentView === 'leads') renderLeads(filtered); else renderProjects(filtered);
+
+        // --- 🟢 MODAL CONTENTS ---
+        function openLeadModal(docId) {
+            leadsCache = []; // refresh safety
+            db.collection('leads').doc(docId).get().then(doc => {
+                const data = doc.data(); data.docId = doc.id;
+                const content = `
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-500 text-3xl"><i class="ri-user-star-line"></i></div>
+                    <h2 class="text-xl font-bold text-white">${data.name}</h2>
+                    <p class="text-slate-400 font-mono text-xs">${data.mobile}</p>
+                </div>
+                <div class="glass-card p-4 mb-6 space-y-3">
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Location</span> <span class="text-white text-right w-1/2">${data.loc}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Depth</span> <span class="text-emerald-400 font-bold">${data.depth} ft</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Est. Total</span> <span class="text-white font-bold">₹${parseInt(data.total).toLocaleString()}</span></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <a href="https://wa.me/${data.mobile.replace('+','')}" class="btn-primary bg-emerald-600 flex items-center justify-center gap-2"><i class="ri-whatsapp-line"></i> Chat</a>
+                    <a href="tel:${data.mobile}" class="btn-primary bg-blue-600 flex items-center justify-center gap-2"><i class="ri-phone-line"></i> Call</a>
+                </div>
+                <button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold mb-4 border border-slate-700 hover:bg-slate-700">VIEW QUOTE PDF</button>
+                <div class="text-center"><button onclick="deleteRecord('leads', '${doc.id}')" class="text-red-500 text-xs font-bold py-2">DELETE LEAD</button></div>
+                `;
+                document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open');
+            });
         }
-        function loadProjects() { currentView = 'projects'; db.collection('projects').orderBy('projectId', 'desc').get().then(snap => { projectsCache = []; snap.forEach(d => { let data = d.data(); projectsCache.push(data); }); renderProjects(projectsCache); }); }
-        function renderProjects(list) {
-            const el = document.getElementById('projects-list'); el.innerHTML = "";
-            list.forEach(data => { el.innerHTML += `<div onclick="openProjectModal('${data.projectId}')" class="glass-card p-5 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition border-y border-r border-slate-800/50"><div class="absolute top-2 right-2 text-slate-600 text-[9px] font-mono">${data.date}</div><h3 class="font-bold text-base text-white mb-1 truncate">${data.location}</h3><p class="text-xs text-slate-400 mb-3 font-mono">${data.customerName}</p><div class="text-[10px] text-emerald-500 font-mono tracking-widest bg-emerald-900/20 inline-block px-2 py-0.5 rounded border border-emerald-900/50">${data.projectId}</div></div>`; });
+
+        function openProjectModal(id) {
+            db.collection('projects').doc(id).get().then(doc => {
+                const data = doc.data();
+                const content = `
+                <div class="text-center mb-6">
+                    <h2 class="text-xl font-bold text-white tracking-wide">PROJECT FILE</h2>
+                    <p class="text-emerald-500 font-mono text-xs tracking-widest bg-emerald-500/10 inline-block px-3 py-1 rounded-full mt-2 border border-emerald-500/20">${data.projectId}</p>
+                </div>
+                <div class="glass-card p-5 mb-6 space-y-4">
+                    <div class="border-b border-slate-700 pb-2 mb-2">
+                        <p class="text-[10px] text-slate-500 uppercase font-bold">Customer</p>
+                        <p class="text-white font-bold">${data.customerName}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><p class="text-[10px] text-slate-500 uppercase font-bold">Depth</p><p class="text-white font-mono text-lg">${data.depth} ft</p></div>
+                        <div><p class="text-[10px] text-slate-500 uppercase font-bold">Yield</p><p class="text-white font-mono text-lg">${data.yield}"</p></div>
+                        <div><p class="text-[10px] text-slate-500 uppercase font-bold">Casing</p><p class="text-white font-mono">${data.casing_depth} ft</p></div>
+                        <div><p class="text-[10px] text-slate-500 uppercase font-bold">Motor</p><p class="text-white font-mono">${data.motor}</p></div>
+                    </div>
+                </div>
+                
+                <button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 text-white py-4 rounded-xl font-black tracking-widest shadow-xl shadow-emerald-900/40 mb-4 flex items-center justify-center gap-2 hover:scale-[1.02] transition">
+                    <i class="ri-file-shield-2-fill text-xl"></i> VIEW CERTIFICATE
+                </button>
+                
+                <div class="flex gap-2">
+                    <button onclick="editProject('${data.projectId}')" class="flex-1 bg-slate-800 text-slate-300 py-3 rounded-xl font-bold border border-slate-700">EDIT</button>
+                    <button onclick="deleteRecord('projects', '${data.projectId}')" class="flex-1 bg-red-900/20 text-red-400 py-3 rounded-xl font-bold border border-red-900/30">DELETE</button>
+                </div>`;
+                document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open');
+            });
         }
-        function startNewCertificate() { showSection('create'); resetForm(); }
-        function resetForm() {
-            document.getElementById('projectForm').reset(); isEditing = false;
-            document.getElementById('form-mode-text').innerText = "CREATING NEW RECORD"; document.getElementById('save-btn-text').innerText = "SAVE RECORD";
-            const now = new Date(); const yy = now.getFullYear().toString().substr(-2); const mm = (now.getMonth() + 1).toString().padStart(2, '0'); const rand = Math.random().toString(36).substr(2, 4).toUpperCase();
-            document.getElementById('p_id').value = `SBW-${yy}${mm}-${rand}`;
-        }
-        function editProject(projectId) {
-            const data = projectsCache.find(p => p.projectId === projectId); closeModal(); showSection('create'); isEditing = true;
-            document.getElementById('form-mode-text').innerText = "EDITING RECORD: " + projectId; document.getElementById('save-btn-text').innerText = "UPDATE RECORD";
-            document.getElementById('p_id').value = data.projectId; document.getElementById('p_mobile').value = data.mobile.replace('+91',''); document.getElementById('p_name').value = data.customerName; document.getElementById('p_loc').value = data.location; document.getElementById('p_gps').value = data.gps; document.getElementById('p_depth').value = data.depth; document.getElementById('p_yield').value = data.yield; document.getElementById('p_casing').value = data.casing_depth; document.getElementById('p_casingType').value = data.casing_type; document.getElementById('p_rig').value = data.rigType; document.getElementById('p_motor').value = data.motor; document.getElementById('p_date').value = data.date ? new Date(data.date).toISOString().split('T')[0] : '';
-        }
-        function convertToProject(docId) {
-            const lead = leadsCache.find(l => l.docId === docId); startNewCertificate(); closeModal();
-            document.getElementById('p_mobile').value = lead.mobile.replace('+91', ''); document.getElementById('p_name').value = lead.name; document.getElementById('p_loc').value = lead.loc; document.getElementById('p_depth').value = lead.depth;
-            document.getElementById('projectForm').scrollIntoView({behavior: "smooth"});
-        }
-        function saveProject(e) {
-            e.preventDefault(); const id = document.getElementById('p_id').value;
-            const data = { projectId: id, mobile: "+91" + document.getElementById('p_mobile').value, customerName: document.getElementById('p_name').value, location: document.getElementById('p_loc').value, gps: document.getElementById('p_gps').value, depth: document.getElementById('p_depth').value, yield: document.getElementById('p_yield').value, casing_depth: document.getElementById('p_casing').value, casing_type: document.getElementById('p_casingType').value, rigType: document.getElementById('p_rig').value, motor: document.getElementById('p_motor').value, date: document.getElementById('p_date').value, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
-            const docRef = db.collection('projects').doc(id);
-            docRef.get().then(doc => { if(doc.exists && !isEditing) { notify("ERROR: ID Exists.", "error"); resetForm(); } else { docRef.set(data, { merge: true }).then(() => { notify(isEditing ? "RECORD UPDATED" : "CERTIFICATE ISSUED"); resetForm(); showSection('projects'); }); } });
-        }
-        let currentPDFElement;
+
+        // --- MAP UTILS ---
+        function initMapTools() { const input = document.getElementById('p_loc'); if(input) { const ac = new google.maps.places.Autocomplete(input); ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); } }
+        function openMapPicker() { if(typeof google === 'undefined') { notify("Maps Loading...", "error"); return; } document.getElementById('mapModal').classList.add('open'); setTimeout(() => { if(!window.pMap) window.pMap = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true }); google.maps.event.trigger(window.pMap, 'resize'); }, 200); }
+        function confirmLocation() { const c = window.pMap.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
         function previewQuote(encoded) { const data = JSON.parse(decodeURIComponent(encoded)); let rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`; const content = getInvoiceHTML({ id: data.docId, name: data.name, mobile: data.mobile, loc: data.loc, total: data.total, rows: rows }); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); }
         function previewCert(encoded) { const data = JSON.parse(decodeURIComponent(encoded)); const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType }; const content = getCertificateHTML(certData); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); }
         function confirmDownloadPDF() { const el = document.createElement('div'); el.innerHTML = currentPDFElement; document.body.appendChild(el); html2pdf().from(el).save('Document.pdf').then(() => document.body.removeChild(el)); }
-        function openProjectModal(projectId) { const data = projectsCache.find(p => p.projectId === projectId); const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Project File</h2><p class="text-emerald-400 font-mono text-xs">${data.projectId}</p></div><div class="space-y-4 mb-6"><div class="glass-card p-4"><h3 class="font-bold text-white mb-2">${data.location}</h3><div class="grid grid-cols-2 gap-2 text-xs text-slate-400"><div>Depth: <span class="text-white">${data.depth}ft</span></div><div>Yield: <span class="text-white">${data.yield}"</span></div><div>Casing: <span class="text-white">${data.casing_depth}ft</span></div><div>Motor: <span class="text-white">${data.motor}</span></div></div></div></div><div class="grid grid-cols-2 gap-3"><button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-primary bg-emerald-600"><i class="ri-file-download-line"></i> Certificate</button><button onclick="editProject('${data.projectId}')" class="btn-primary bg-blue-600"><i class="ri-edit-line"></i> Edit</button></div><div class="text-center mt-4"><button onclick="deleteRecord('projects', '${data.projectId}')" class="text-red-400 text-xs font-bold">DELETE RECORD</button></div>`; document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open'); }
-        function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
-        function openLeadModal(docId) { const data = leadsCache.find(l => l.docId === docId); const notes = data.adminNotes || ""; const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Lead Details</h2><p class="text-slate-400 font-mono text-xs">Quote: ${data.docId}</p></div><div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm truncate">${data.name}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm truncate">${data.loc}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div></div><div class="mb-6 grid grid-cols-1 gap-4"><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Status</label><select class="cyber-input w-full text-xs" onchange="updateLeadStatus('${data.docId}', this.value)"><option ${data.status==='Pending'?'selected':''}>Pending</option><option ${data.status==='Contacted'?'selected':''}>Contacted</option><option ${data.status==='Site Visit'?'selected':''}>Site Visit</option><option ${data.status==='Closed'?'selected':''}>Closed</option></select></div><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Mission Log</label><div class="flex gap-2"><textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Notes...">${notes}</textarea><button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-3 rounded text-white"><i class="ri-save-line"></i></button></div></div></div><div class="grid grid-cols-2 gap-3 mb-4"><a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="btn-primary bg-green-600"><i class="ri-whatsapp-line"></i> Chat</a><a href="tel:${data.mobile}" class="btn-primary bg-blue-600"><i class="ri-phone-line"></i> Call</a><button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="btn-primary bg-slate-700"><i class="ri-eye-line"></i> View</button><button onclick="convertToProject('${data.docId}')" class="btn-primary bg-purple-600"><i class="ri-magic-line"></i> Convert</button></div><div class="text-center pt-2"><button onclick="deleteRecord('leads', '${data.docId}')" class="text-red-400 text-xs font-bold">DELETE LEAD</button></div>`; document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open'); }
-        function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }); }
-        function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
-        function initMapTools() { const input = document.getElementById('p_loc'); if(input) { const ac = new google.maps.places.Autocomplete(input); ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); } }
-        function openMapPicker() { if(typeof google === 'undefined') { notify("Maps Loading...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
-        function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
+
         const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`; s.async = true; s.defer = true; document.body.appendChild(s);
     </script>
 </body>
