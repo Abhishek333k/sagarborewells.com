@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Estimate | Sagar Borewells</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/layout.js"></script>
+    <script src="assets/js/quote_constants.js"></script> 
+    <script src="assets/js/pdf_template.js"></script>
+
+    <style>
+        :root { --primary: #1e3a8a; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #e2e8f0; overflow-x: hidden; }
+        
+        /* --- 1. INDUSTRIAL DTH HAMMER (High Fidelity SVG) --- */
+        .drill-assembly {
+            position: absolute; left: 50%; top: 0;
+            width: 60px; height: 160px; 
+            transform: translateX(-50%) translateY(-100%);
+            z-index: 20; cursor: grab;
+            filter: drop-shadow(0 15px 25px rgba(0,0,0,0.8));
+            transition: top 0.1s linear;
+        }
+        .drill-assembly:active { cursor: grabbing; transform: translateX(-50%) translateY(-100%) scale(1.02); }
+
+        .hammer-visual {
+            width: 100%; height: 100%;
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position: center bottom;
+            /* Detailed Machined Steel SVG with Tungsten Buttons */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 280'%3E%3Cdefs%3E%3ClinearGradient id='steel' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%231a202c'/%3E%3Cstop offset='20%25' stop-color='%234a5568'/%3E%3Cstop offset='50%25' stop-color='%23a0aec0'/%3E%3Cstop offset='80%25' stop-color='%234a5568'/%3E%3Cstop offset='100%25' stop-color='%231a202c'/%3E%3C/linearGradient%3E%3C/defs%3E%3C!-- Hammer Body --%3E%3Crect x='20' y='0' width='60' height='220' rx='2' fill='url(%23steel)' stroke='%23000' stroke-width='1'/%3E%3C!-- Air Splines --%3E%3Crect x='30' y='20' width='8' height='180' fill='rgba(0,0,0,0.3)' rx='4'/%3E%3Crect x='62' y='20' width='8' height='180' fill='rgba(0,0,0,0.3)' rx='4'/%3E%3C!-- Bit Head --%3E%3Cpath d='M15 220 L85 220 L95 270 L5 270 Z' fill='url(%23steel)' stroke='%23000' stroke-width='1'/%3E%3C!-- Tungsten Buttons --%3E%3Ccircle cx='25' cy='270' r='7' fill='%23ef4444' stroke='%237f1d1d' stroke-width='2'/%3E%3Ccircle cx='50' cy='275' r='8' fill='%23ef4444' stroke='%237f1d1d' stroke-width='2'/%3E%3Ccircle cx='75' cy='270' r='7' fill='%23ef4444' stroke='%237f1d1d' stroke-width='2'/%3E%3Ccircle cx='35' cy='240' r='6' fill='%23ef4444' stroke='%237f1d1d' stroke-width='2'/%3E%3Ccircle cx='65' cy='240' r='6' fill='%23ef4444' stroke='%237f1d1d' stroke-width='2'/%3E%3C/svg%3E");
+        }
+
+        .drilling-active { animation: percussionDrill 0.08s infinite linear; }
+        @keyframes percussionDrill {
+            0% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(3px) rotate(1deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(-3px) rotate(-1deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+
+        /* --- 2. DYNAMIC GEOLOGY --- */
+        .drill-track-container { 
+            position: relative; height: 600px; width: 160px; margin: 20px 0; 
+            border-radius: 12px; border: 4px solid #334155; 
+            background: #0f172a; overflow: hidden; 
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.9);
+        }
+        
+        #geoGradient {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            /* Default start */
+            background: linear-gradient(to bottom, #5d4037 0%, #d7ccc8 20%, #78909c 50%, #37474f 100%);
+            transition: background 0.5s ease;
+        }
+        
+        .geo-texture {
+            position: absolute; inset: 0; opacity: 0.3; pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .borehole { 
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%); 
+            width: 24px; background: #020617; height: 0%; 
+            z-index: 10; 
+            box-shadow: inset 8px 0 10px rgba(0,0,0,1), inset -8px 0 10px rgba(0,0,0,1);
+            border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
+            transition: height 0.1s linear;
+        }
+
+        .depth-marker { position: absolute; right: 10px; font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.6); transform: translateY(-50%); text-shadow: 0 1px 3px black; pointer-events: none; z-index: 15; font-family: monospace; }
+
+        /* --- 3. UI LAYOUT --- */
+        .quote-container { 
+            max-width: 1200px; margin: 40px auto; 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 0; 
+            background: #1e293b; border-radius: 24px; 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); 
+            overflow: hidden; border: 1px solid #334155;
+        }
+        .form-col { padding: 50px; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 30; background: #0f172a; }
+        .drill-col { background: #1e293b; padding: 40px; border-left: 1px solid #334155; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; background-image: radial-gradient(#334155 1px, transparent 1px); background-size: 20px 20px; }
+
+        .form-label { font-weight: 800; font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; display: block; letter-spacing: 1px; }
+        .custom-input { width: 100%; padding: 16px; border: 2px solid #334155; border-radius: 12px; font-weight: 600; font-size: 1rem; color: white; background: #1e293b; transition: 0.3s; }
+        .custom-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); outline: none; background: #0f172a; }
+        
+        .input-group { position: relative; }
+        .input-action-btn { position: absolute; top: 50%; transform: translateY(-50%); padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+        .btn-map { right: 8px; color: #94a3b8; background: #334155; font-size: 1.2rem; padding: 6px 10px; border: 1px solid #475569; }
+        .btn-map:hover { background: #475569; color: white; }
+
+        .btn-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; font-weight: 700; padding: 20px; border-radius: 16px; width: 100%; font-size: 1.2rem; transition: 0.2s; margin-top: 30px; box-shadow: 0 10px 30px -5px rgba(37, 99, 235, 0.4); cursor: pointer; text-align: center; border: 1px solid #3b82f6; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 35px -5px rgba(37, 99, 235, 0.5); }
+        .btn-primary:disabled { background: #334155; cursor: not-allowed; transform: none; box-shadow: none; border-color: #475569; color: #64748b; }
+
+        .depth-readout { text-align: center; color: white; margin-bottom: 20px; text-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+        .depth-val { font-size: 5rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+        .depth-lbl { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 3px; }
+
+        /* RESULT TABLE */
+        .est-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; color: #cbd5e1; }
+        .est-table th { text-align: left; padding: 10px; color: #64748b; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #334155; }
+        .est-table td { padding: 12px 10px; border-bottom: 1px dashed #334155; font-weight: 600; }
+        
+        /* MODALS */
+        #miniMapModal, #depthAlertModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(5px); }
+        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 100; pointer-events: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
+        .pin-head { width: 40px; height: 40px; background: #2563eb; border: 3px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
+        .pin-head::after { content: ''; width: 12px; height: 12px; background: white; border-radius: 50%; }
+        
+        .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #334155; background: #1e293b; color: white; font-family: inherit; z-index: 10000; }
+        .pac-item { color: #cbd5e1; border-top: 1px solid #334155; }
+        .pac-item:hover { background: #334155; }
+        .pac-item-query { color: white; }
+
+        @media (max-width: 768px) { 
+            .quote-container { grid-template-columns: 1fr; margin: 10px; } 
+            .drill-col { padding: 40px 20px; border-left: none; border-top: 5px solid #0f172a; order: -1; } 
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <div id="navbar-mount"></div>
+
+    <main class="flex-grow">
+        
+        <div id="step-1" class="fade-in-up">
+            <div class="quote-container">
+                
+                <div class="form-col">
+                    <div class="mb-10">
+                        <h1 class="text-4xl font-extrabold text-white">Get Quote</h1>
+                        <p class="text-sm text-slate-400 font-bold mt-2">Configure your borewell requirements.</p>
+                    </div>
+
+                    <div class="space-y-8">
+                        <div>
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="custName" class="custom-input" placeholder="Your Name">
+                        </div>
+                        <div>
+                            <label class="form-label">Mobile Number</label>
+                            <div class="input-group">
+                                <input type="tel" id="custMobile" class="custom-input" style="padding-right: 90px;" placeholder="98765 43210" maxlength="10">
+                                <button id="sendOtpBtn" onclick="sendOTP()" class="input-action-btn bg-blue-600 text-white hover:bg-blue-500" style="right: 8px;">VERIFY</button>
+                                <div id="verifiedBadge" class="hidden absolute right-4 top-4 text-emerald-400 font-bold text-xs flex items-center gap-1"><i class="ri-checkbox-circle-fill"></i> VERIFIED</div>
+                            </div>
+                            <div id="otpSection" class="hidden mt-3 flex gap-2">
+                                <input type="text" id="otpInput" class="custom-input text-center tracking-widest" placeholder="OTP" maxlength="6">
+                                <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold hover:bg-emerald-500">Confirm</button>
+                            </div>
+                            <div id="recaptcha-container"></div>
+                        </div>
+                        <div>
+                            <label class="form-label">Site Location</label>
+                            <div class="input-group">
+                                <input type="text" id="locInput" class="custom-input" style="padding-right: 120px;" placeholder="Start typing address...">
+                                <button onclick="detectGPS()" class="input-action-btn bg-slate-700 text-blue-400 hover:bg-slate-600" style="right: 50px;"><i class="ri-gps-fill"></i> Detect</button>
+                                <button onclick="openMiniMap()" class="input-action-btn btn-map" title="Open Map"><i class="ri-map-2-line"></i></button>
+                            </div>
+                            <p id="distDisplay" class="text-xs text-right mt-2 text-slate-500 font-bold h-4"></p>
+                        </div>
+                    </div>
+
+                    <button id="generateBtn" onclick="calculateQuote()" class="btn-primary" disabled>
+                        GENERATE ESTIMATE <i class="ri-arrow-right-line ml-2"></i>
+                    </button>
+                </div>
+
+                <div class="drill-col">
+                    <div class="depth-readout">
+                        <div class="depth-val" id="depthDisplayMain">100</div>
+                        <div class="depth-lbl">Target Depth (FT)</div>
+                    </div>
+
+                    <div class="drill-track-container" id="drillTrack">
+                        <div id="geoGradient"></div>
+                        <div class="geo-texture"></div>
+
+                        <div class="borehole" id="boreHole"></div>
+                        
+                        <div id="scaleMarkers"></div>
+
+                        <div class="drill-assembly" id="drillBit">
+                            <div class="hammer-visual"></div>
+                        </div>
+                    </div>
+
+                    <div class="w-full max-w-xs mt-8 space-y-4">
+                        <div class="grid grid-cols-4 gap-2">
+                            <button class="bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:border-blue-500 rounded p-2 text-xs font-bold transition" onclick="setDepth(150)">150</button>
+                            <button class="bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:border-blue-500 rounded p-2 text-xs font-bold transition" onclick="setDepth(200)">200</button>
+                            <button class="bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:border-blue-500 rounded p-2 text-xs font-bold transition" onclick="setDepth(300)">300</button>
+                            <button class="bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:border-blue-500 rounded p-2 text-xs font-bold transition" onclick="setDepth(500)">500</button>
+                        </div>
+                        <div class="flex items-center gap-3 bg-slate-800 p-3 rounded-xl border border-slate-700">
+                            <span class="text-xs font-bold text-slate-400 pl-2">MANUAL:</span>
+                            <input type="number" id="manualDepth" class="w-full outline-none font-bold text-white bg-transparent text-right pr-2 text-lg" value="100" oninput="setDepth(this.value)">
+                            <span class="text-xs font-bold text-slate-500">FT</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="step-2" class="container mx-auto px-4 fade-in-up py-12 hidden">
+            <div class="flex justify-between items-center max-w-3xl mx-auto mb-6">
+                <button onclick="goToStep1()" class="text-slate-400 hover:text-white font-bold text-sm flex items-center gap-2"><i class="ri-arrow-left-line"></i> Edit</button>
+                <div class="flex gap-3">
+                    <button onclick="downloadPDF()" class="bg-slate-800 border border-slate-700 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-700"><i class="ri-file-download-line mr-2"></i> PDF</button>
+                    <button onclick="shareWhatsApp()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-emerald-500"><i class="ri-whatsapp-line mr-2"></i> Share</button>
+                </div>
+            </div>
+
+            <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden" id="invoice-capture">
+                <div class="bg-slate-900 p-8 flex justify-between items-center text-white border-b-4 border-blue-600">
+                    <div>
+                        <h2 class="text-2xl font-black tracking-tight">ESTIMATE</h2>
+                        <p class="text-xs text-slate-400 font-mono mt-1" id="resId">QT-2024-XXXX</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-4xl font-extrabold text-white" id="resTotal">₹0</div>
+                        <div class="text-xs text-slate-400 uppercase tracking-widest">Estimated Total</div>
+                    </div>
+                </div>
+                
+                <div class="p-8 bg-white text-slate-800" id="invoice-content">
+                    <div class="flex justify-between mb-8 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div><span class="text-xs font-bold text-slate-400 uppercase block">Location</span><span class="font-bold text-slate-900 text-sm" id="resLoc">--</span></div>
+                        <div class="text-right"><span class="text-xs font-bold text-slate-400 uppercase block">Depth</span><span class="font-bold text-blue-600 text-xl" id="resDepth">--</span></div>
+                    </div>
+
+                    <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-2 mb-2">Drilling Breakdown</h3>
+                    <table class="est-table w-full text-sm text-slate-600">
+                        <tbody id="breakdownBody"></tbody>
+                    </table>
+
+                    <div class="bg-blue-50 p-6 rounded-xl border border-blue-100 mt-8">
+                        <h3 class="text-xs font-bold text-blue-800 uppercase mb-3">Variable Costs (Materials)</h3>
+                        <div class="grid grid-cols-2 gap-3 text-sm" id="matList"></div>
+                    </div>
+
+                    <div class="text-center mt-10">
+                        <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">Confirm Booking</button>
+                        <p class="text-[10px] text-slate-400 mt-4 uppercase">This is a computer generated estimate.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="step-3" class="container mx-auto px-4 fade-in-up hidden py-12">
+            <div class="quote-card text-center max-w-lg mx-auto bg-slate-800 p-10 rounded-2xl shadow-xl border border-slate-700">
+                <div class="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="ri-check-line text-5xl text-emerald-400"></i>
+                </div>
+                <h1 class="text-3xl font-extrabold text-white mb-2">Booking Confirmed!</h1>
+                <p class="text-slate-400 mb-8">We have received your request. A representative will call you shortly.</p>
+                <div class="flex justify-center gap-4">
+                    <a href="dashboard.html" class="py-3 px-6 bg-slate-700 border border-slate-600 text-white font-bold rounded-xl hover:bg-slate-600">Dashboard</a>
+                    <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}`, '_blank')" class="py-3 px-6 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-500">Chat Support</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="footer-mount"></div>
+
+    <div id="depthAlertModal">
+        <div class="bg-slate-900 border border-red-500 p-8 rounded-2xl w-full max-w-md shadow-2xl animate-bounce-in text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
+            <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500 text-3xl"><i class="ri-alarm-warning-fill"></i></div>
+            <h3 class="text-2xl font-extrabold text-white mb-2">DEEP DRILLING ALERT</h3>
+            <p class="text-slate-400 text-sm mb-8 leading-relaxed">Depths beyond <strong>600 ft</strong> require specialized high-pressure rigs and geological surveys. Costs may vary.</p>
+            <button onclick="dismissDepthAlert()" class="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl uppercase tracking-wider text-sm transition">I Understand, Continue</button>
+        </div>
+    </div>
+
+    <div id="miniMapModal">
+        <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl w-full max-w-lg shadow-2xl animate-bounce-in">
+            <h3 class="font-bold text-white mb-4 text-center uppercase text-sm tracking-wide">Pinpoint Location</h3>
+            <div style="position: relative; width: 100%; height: 350px; background: #334155; border-radius: 12px; overflow: hidden; border: 2px solid #475569;">
+                <div id="quoteMapContainer" style="width:100%; height:100%;"></div>
+                <div class="target-reticle"><div class="pin-head"></div></div>
+            </div>
+            <div class="flex justify-end gap-2 mt-4">
+                <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-400 text-xs hover:text-white">CANCEL</button>
+                <button onclick="confirmQuoteLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg text-xs hover:bg-blue-500">CONFIRM LOCATION</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🟢 FIREBASE INIT
+        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
+            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        }
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // 🟢 AUTH
+        auth.onAuthStateChanged(user => {
+            const btn = document.getElementById('generateBtn');
+            const verifyBtn = document.getElementById('sendOtpBtn');
+            if(user) {
+                document.getElementById('custMobile').value = user.phoneNumber.replace('+91','');
+                verifyBtn.classList.add('hidden');
+                document.getElementById('verifiedBadge').classList.remove('hidden');
+                btn.disabled = false;
+            } else {
+                btn.disabled = true;
+                verifyBtn.classList.remove('hidden');
+            }
+        });
+
+        function sendOTP() {
+            const p = document.getElementById('custMobile').value;
+            if(p.length!=10) return alert("Enter 10 digit number");
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
+            auth.signInWithPhoneNumber('+91'+p, window.recaptchaVerifier).then(cr=>{
+                window.confirmationResult=cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('sendOtpBtn').classList.add('hidden');
+            });
+        }
+        function verifyOTP() { window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=>document.getElementById('otpSection').classList.add('hidden')); }
+
+        // 🟢 DRILL RIG LOGIC
+        const drillTrack = document.getElementById('drillTrack');
+        const drillBit = document.getElementById('drillBit');
+        const boreHole = document.getElementById('boreHole');
+        const geoGradient = document.getElementById('geoGradient');
+        
+        let isDragging = false;
+        let currentMaxScale = 500; 
+        let currentDepth = 100;
+        let alertShown = false;
+
+        function initDrillRig() {
+            renderScaleMarkers();
+            updateDrillPosition();
+            updateGeology();
+            drillBit.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', stopDrag);
+            drillBit.addEventListener('touchstart', startDrag);
+            document.addEventListener('touchmove', onDrag);
+            document.addEventListener('touchend', stopDrag);
+        }
+
+        // Dynamic Soil Gradient
+        function updateGeology() {
+            const max = currentMaxScale;
+            const layers = [{c:'#5d4037',l:50}, {c:'#d7ccc8',l:200}, {c:'#78909c',l:600}, {c:'#37474f',l:2000}];
+            let gradientStr = "linear-gradient(to bottom, "; let prev=0;
+            layers.forEach(l => { const pct = Math.min((l.l/max)*100, 100); gradientStr += `${l.c} ${prev}% ${pct}%, `; prev=pct; });
+            geoGradient.style.background
