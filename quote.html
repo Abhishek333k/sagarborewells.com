@@ -253,7 +253,8 @@
     </div>
 
     <script>
-        // 🟢 0. PRE-FILL ENGINE (Handle Edit/Recalculate)
+        
+       // 🟢 0. PRE-FILL ENGINE (Handle Edit/Recalculate)
         window.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
             
@@ -261,7 +262,6 @@
             if (params.has('loc')) {
                 const loc = decodeURIComponent(params.get('loc'));
                 document.getElementById('locInput').value = loc;
-                // If the user is logged in, the button will unlock automatically via auth listener
             }
 
             // 2. Fill Depth & Adjust Slider
