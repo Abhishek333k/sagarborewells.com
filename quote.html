@@ -69,6 +69,13 @@
         /* MAPS */
         .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: none; font-family: inherit; }
         .pac-item { padding: 10px 15px; font-size: 14px; }
+        
+        /* 🟢 MAP MARKER FIX */
+        .map-center-marker {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%);
+            z-index: 10; font-size: 32px; color: #ef4444; pointer-events: none;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -222,7 +229,7 @@
                 <p class="text-slate-500 mb-8">We have received your request. A representative will call you shortly to discuss site logistics.</p>
                 <div class="flex justify-center gap-4">
                     <a href="dashboard.html" class="py-3 px-6 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50">Dashboard</a>
-                    <button onclick="window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}`, '_blank')" class="py-3 px-6 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">Chat Support</button>
+                    <button onclick="openChatSupport()" class="py-3 px-6 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">Chat Support</button>
                 </div>
             </div>
         </div>
@@ -232,10 +239,11 @@
     <div id="footer-mount"></div>
 
     <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
-        <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl">
+        <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl relative">
             <h3 class="font-bold text-slate-800 mb-2 text-center">Pinpoint Location</h3>
             <div style="position: relative; width: 100%; height: 300px; background: #eee; border-radius: 10px; overflow: hidden;">
                 <div id="quoteMapContainer" style="width:100%; height:100%;"></div>
+                <i class="ri-map-pin-fill map-center-marker"></i>
             </div>
             <div class="flex justify-end gap-2 mt-4">
                 <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-500">Cancel</button>
@@ -301,12 +309,10 @@
 
             const totalDepth = parseInt(slider.value);
             
-            // 1. Generate Persistent ID
             if (!currentQuoteID) {
                 currentQuoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
             }
 
-            // 2. Math Logic
             let drillHtml = "";
             let breakdownText = ""; 
             let drillCost = 0;
@@ -315,7 +321,6 @@
             const jumps = PRICING_MODEL.increments;
             const bounds = PRICING_MODEL.boundaries;
 
-            // Base 0-100
             const firstChunk = Math.min(totalDepth, 100);
             if(firstChunk > 0) {
                 const cost = firstChunk * currentRate;
@@ -325,7 +330,6 @@
                 currentDepth += firstChunk;
             }
 
-            // Loop Slabs
             while(currentDepth < totalDepth) {
                 let increment = jumps.phase_1; 
                 if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3; 
@@ -343,7 +347,6 @@
                 currentDepth += nextChunk;
             }
 
-            // Ops
             let opsHtml = "";
             let opsCost = 0;
             if (transportDist > TRANSPORT_THRESHOLD_KM) {
@@ -360,7 +363,6 @@
 
             const grandTotal = drillCost + opsCost;
 
-            // Render
             document.getElementById('opsSection').style.display = 'block';
             document.getElementById('opsBody').innerHTML = opsHtml;
             document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
@@ -371,7 +373,6 @@
             document.getElementById('invDepth').innerText = totalDepth + " ft";
             document.getElementById('invRef').innerText = currentQuoteID;
 
-            // Prepare Data
             leadData = { 
                 id: currentQuoteID, 
                 name, 
@@ -383,21 +384,16 @@
                 rows: drillHtml
             };
 
-            // 🟢 INTELLIGENCE: Log Silent Lead with QT ID (Once per session)
             if (!hasLoggedPrice) {
-                // 1. Save to DB (Silent)
                 db.collection('silent_leads').add({
                     ...leadData,
-                    type: "Window Shopper", // Distinguishes from just logging in
+                    type: "Window Shopper",
                     status: "Viewed Price / Not Booked"
                 });
-
-                // 2. Send Telegram (New Template)
                 if(typeof NOTIFY_TEMPLATES !== 'undefined') {
                     sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
                 }
-                
-                hasLoggedPrice = true; // Lock it so we don't spam
+                hasLoggedPrice = true; 
             }
 
             document.getElementById('step-1').classList.add('hidden');
@@ -412,14 +408,12 @@
                 ...leadData, 
                 userId: user ? user.uid : null, 
                 source: 'web_quote',
-                status: 'Booked' // Update status from Quote Generated
+                status: 'Booked' 
             };
 
             db.collection('leads').doc(leadData.id).set(finalData).then(() => {
                 document.getElementById('step-2').classList.add('hidden');
                 document.getElementById('step-3').classList.remove('hidden');
-                
-                // Notify Booking
                 if(typeof NOTIFY_TEMPLATES !== 'undefined') {
                     sendTelegram(NOTIFY_TEMPLATES.booking(finalData));
                 }
@@ -438,13 +432,15 @@
             document.getElementById('materialsGrid').innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
         });
 
+        // 🟢 AUTH STATE LISTENER (Unlocks button if logged in)
         auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
                 document.getElementById('custMobile').disabled = true;
                 document.getElementById('sendOtpBtn').classList.add('hidden');
                 document.getElementById('verifiedBadge').classList.remove('hidden');
-                document.getElementById('generateBtn').disabled = false;
+                document.getElementById('generateBtn').disabled = false; // ENABLE BUTTON
+                document.getElementById('generateBtn').classList.remove('bg-gray-400');
             }
         });
 
@@ -508,7 +504,13 @@
             if(transportDist>TRANSPORT_THRESHOLD_KM) { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Extra Charges)`; disp.className="text-xs text-right mt-1 font-bold font-mono text-orange-600"; }
             else { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Free Transport)`; disp.className="text-xs text-right mt-1 font-bold font-mono text-emerald-600"; }
         }
-        function openMiniMap() { document.getElementById('miniMapModal').style.display='flex'; if(!qMap && typeof google!=='undefined') qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55},zoom:15}); setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); }
+        function openMiniMap() { 
+            document.getElementById('miniMapModal').style.display='flex'; 
+            if(!qMap && typeof google!=='undefined') {
+                qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55},zoom:15, disableDefaultUI: true}); 
+            }
+            setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); 
+        }
         function confirmQuoteLocation() { const p=qMap.getCenter(); new google.maps.Geocoder().geocode({location:p},(r,s)=>{if(s==='OK'){document.getElementById('locInput').value=r[0].formatted_address; calculateDist(p.lat(),p.lng());}}); document.getElementById('miniMapModal').style.display='none'; }
         function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{calculateDist(p.coords.latitude,p.coords.longitude); new google.maps.Geocoder().geocode({location:{lat:p.coords.latitude,lng:p.coords.longitude}},(r,s)=>{if(s==='OK')document.getElementById('locInput').value=r[0].formatted_address;});}); }
 
