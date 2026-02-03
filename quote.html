@@ -19,7 +19,7 @@
     <script src="assets/js/pdf_template.js"></script>
 
     <style>
-        /* BASE STYLES from Old Version */
+        /* BASE STYLES */
         :root { --primary: #1e3a8a; --bg: #f8fafc; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: #1e293b; }
         
@@ -387,6 +387,8 @@
             db.collection('leads').doc(leadData.id).set(finalData).then(() => {
                 document.getElementById('step-2').classList.add('hidden');
                 document.getElementById('step-3').classList.remove('hidden');
+                // Send Notification on Booking
+                sendAdminNotification(`✅ NEW BOOKING!\n👤 ${finalData.name}\n📱 ${finalData.mobile}\n📍 ${finalData.loc}\n💰 ₹${finalData.total}`);
             }).catch(e => alert("Error saving booking: " + e.message));
         }
 
@@ -409,6 +411,7 @@
         function downloadPDF() { const el = document.getElementById('invoice-capture'); html2pdf().from(el).save(`Estimate_${leadData.id}.pdf`); }
         function shareWhatsApp() { window.open(`https://wa.me/?text=Estimate ${leadData.id}: ₹${leadData.total.toLocaleString()} for ${leadData.depth}ft`, '_blank'); }
 
+        // OTP & TELEGRAM WIRE-UP
         function sendOTP() {
             const p = document.getElementById('custMobile').value;
             if(p.length!=10) return alert("Enter 10 digit number");
@@ -417,41 +420,34 @@
                 window.confirmationResult=cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('sendOtpBtn').classList.add('hidden');
             }).catch(e=>{ console.error(e); alert("SMS Error"); });
         }
-
-        // 🟢 VERIFY OTP (Updated with Silent Lead Logic)
+        
         function verifyOTP() { 
-            const code = document.getElementById('otpInput').value;
-            window.confirmationResult.confirm(code).then((result) => {
-                // UI Updates
+            const otp = document.getElementById('otpInput').value;
+            window.confirmationResult.confirm(otp).then((res) => {
                 document.getElementById('otpSection').classList.add('hidden');
-                document.getElementById('verifiedBadge').classList.remove('hidden');
-                document.getElementById('generateBtn').disabled = false;
-                document.getElementById('custMobile').disabled = true;
-
-                // 🔔 TRIGGER NOTIFICATION
-                onOtpVerified(result.user.phoneNumber);
-
-            }).catch(err => {
-                alert("Invalid OTP");
-                console.error(err);
-            });
+                // 🟢 TRIGGER SILENT NOTIFICATION HERE
+                const phone = res.user.phoneNumber;
+                onOtpVerified(phone); 
+            }).catch(() => alert("Invalid OTP")); 
         }
 
-        // --- 🔔 NOTIFICATION SYSTEM ---
-        function onOtpVerified(mobile) {
-            // 1. Save to Database (Silent Lead)
+        // SILENT LEAD HANDLER
+        function onOtpVerified(mobileNumber) {
+            // A. Save to Silent Leads
             db.collection('silent_leads').add({
-                mobile: mobile,
-                status: "Verified / Window Shopping",
+                mobile: mobileNumber,
+                status: "Verified / Not Booked",
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 source: "Quote Page"
             });
+            // B. Send Telegram
+            sendAdminNotification(`🔔 NEW LEAD VERIFIED!\n📱 Mobile: ${mobileNumber}\n📍 Status: Browsing Quotes`);
+        }
 
-            // 2. Send Telegram Alert (Using Config)
-            if(typeof NOTIFY_SYSTEM !== 'undefined' && NOTIFY_SYSTEM.bot_token && NOTIFY_SYSTEM.chat_id) {
-                const msg = `🔔 *NEW LEAD ALERT!* %0A📱 Mobile: \`${mobile}\` %0A📍 Status: Number Verified (Checking Prices)`;
-                const url = `https://api.telegram.org/bot${NOTIFY_SYSTEM.bot_token}/sendMessage?chat_id=${NOTIFY_SYSTEM.chat_id}&text=${msg}&parse_mode=Markdown`;
-                fetch(url).catch(e => console.error(e));
+        function sendAdminNotification(msg) {
+            if(typeof TELEGRAM_BOT_TOKEN !== 'undefined') {
+                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}`;
+                fetch(url).catch(e => console.log("Notify Error", e));
             }
         }
 
