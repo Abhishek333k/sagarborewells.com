@@ -44,14 +44,7 @@
                         <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl"><i class="ri-award-line"></i></div>
                         <div>
                             <h3 class="font-bold text-slate-800">Digital BWBC</h3>
-                            <p class="text-sm text-slate-500">Download official yield reports & certificates.</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-4">
-                        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xl"><i class="ri-customer-service-2-line"></i></div>
-                        <div>
-                            <h3 class="font-bold text-slate-800">Priority Support</h3>
-                            <p class="text-sm text-slate-500">Direct line to site managers.</p>
+                            <p class="text-sm text-slate-500">Download official yield reports.</p>
                         </div>
                     </div>
                 </div>
@@ -114,7 +107,7 @@
                     document.getElementById('loginBtn').classList.add('hidden');
                     document.getElementById('verifyBtn').classList.remove('hidden');
                 })
-                .catch(e => { console.error(e); alert("SMS Error. Check Console."); btn.innerText = "Send OTP"; });
+                .catch(e => { console.error(e); alert("SMS Error. Try again."); btn.innerText = "Send OTP"; });
         }
 
         // 🟢 INTELLIGENT VERIFY (OMNI-CHECK)
@@ -142,28 +135,26 @@
                 .then(([leadsSnap, projectsSnap]) => {
                     
                     if (!leadsSnap.empty || !projectsSnap.empty) {
-                        // ✅ CASE A: EXISTING CUSTOMER
-                        status.innerText = "Records found! Redirecting to Dashboard...";
+                        // ✅ CASE A: EXISTING CUSTOMER (Found in either)
+                        status.innerText = "Records found! Redirecting...";
                         status.className = "text-xs text-center mt-4 text-emerald-600 font-bold";
                         
-                        // 🟢 Notify Admin: Existing Client Login
-                        sendTelegramAlert(NOTIFY_TEMPLATES.client_return({ mobile: phone }));
+                        // Notify Admin
+                        sendTelegram(NOTIFY_TEMPLATES.client_return({ mobile: phone }));
                         
                         setTimeout(() => window.location.href = "dashboard.html", 1000);
                     } else {
                         // ⚠️ CASE B: NEW / UNREGISTERED
-                        status.innerText = "Account verified. Redirecting to Estimates...";
+                        status.innerText = "Verified. Redirecting to Estimates...";
                         status.className = "text-xs text-center mt-4 text-blue-600 font-bold";
                         
-                        // Log Silent Lead + Notify
                         logNewUser(phone);
-                        
                         setTimeout(() => window.location.href = "quote.html", 1500);
                     }
                 })
                 .catch(e => {
                     console.error("DB Error", e);
-                    window.location.href = "dashboard.html";
+                    window.location.href = "dashboard.html"; // Fallback
                 });
 
             }).catch((error) => {
@@ -177,12 +168,10 @@
         function logNewUser(phone) {
             const data = { mobile: phone, source: "Login Page", status: "Unregistered", timestamp: firebase.firestore.FieldValue.serverTimestamp() };
             db.collection('silent_leads').add(data);
-            
-            // 🟢 Notify Admin: New Lead
-            sendTelegramAlert(NOTIFY_TEMPLATES.silent_lead(data));
+            sendTelegram(NOTIFY_TEMPLATES.silent_lead(data));
         }
 
-        function sendTelegramAlert(msg) {
+        function sendTelegram(msg) {
             if(typeof TELEGRAM_BOT_TOKEN !== 'undefined' && typeof TELEGRAM_CHAT_ID !== 'undefined') {
                 const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
                 fetch(url).catch(e => console.log("Notify Error"));
