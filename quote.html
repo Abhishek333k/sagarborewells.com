@@ -18,6 +18,7 @@
     <script src="assets/js/quote_constants.js"></script> 
     <script src="assets/js/pdf_template.js"></script>
     <script src="assets/js/notifications.js"></script>
+    <script src="assets/js/whatsapp_templates.js"></script>
 
     <style>
         :root { --primary: #1e3a8a; --bg: #f8fafc; }
@@ -124,8 +125,16 @@
                             <span id="maxLabel">500 FT</span>
                         </div>
                         <div id="expertAlert" class="expert-alert">
-                            <i class="ri-error-warning-fill mr-1"></i> 
-                            High Depth Zone (>600ft). Recommended to Consult Expert.
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="flex items-center text-red-600 font-bold">
+                                    <i class="ri-error-warning-fill mr-2"></i> 
+                                    High Depth Zone (>600ft)
+                                </div>
+                                <p class="text-xs text-slate-500 font-medium">Complex geology detected. Technical consultation recommended.</p>
+                                <button onclick="consultExpert()" class="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-100 transition shadow-sm uppercase tracking-wide">
+                                    <i class="ri-whatsapp-line mr-1"></i> Request Geological Assessment
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -392,8 +401,10 @@
 
         function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
         function downloadPDF() { const el = document.getElementById('invoice-capture'); html2pdf().from(el).save(`Estimate_${leadData.id}.pdf`); }
-        function shareWhatsApp() { window.open(`https://wa.me/?text=Estimate ${leadData.id}: ₹${leadData.total.toLocaleString()} for ${leadData.depth}ft`, '_blank'); }
-
+        function shareWhatsApp() {
+            const msg = WA_MSG.booking_share(leadData);
+            window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+        }
         function sendOTP() {
             const p = document.getElementById('custMobile').value;
             if(p.length!=10) return alert("Enter 10 digit number");
@@ -424,6 +435,11 @@
         function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{calculateDist(p.coords.latitude,p.coords.longitude); new google.maps.Geocoder().geocode({location:{lat:p.coords.latitude,lng:p.coords.longitude}},(r,s)=>{if(s==='OK')document.getElementById('locInput').value=r[0].formatted_address;});}); }
 
         const s = document.createElement('script'); s.src=`https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; s.async=true; s.defer=true; document.body.appendChild(s);
+       function consultExpert() {
+            const depth = document.getElementById('depthSlider').value;
+            const msg = WA_MSG.deep_drill(depth);
+            window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+        }
     </script>
 </body>
 </html>
