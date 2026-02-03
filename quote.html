@@ -284,7 +284,7 @@
             this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
         });
 
-        // 🟢 CALCULATION ENGINE (Updated Slab Logic)
+        // 🟢 CALCULATION ENGINE (Detailed Breakdown Logic)
         function calculateEstimate() {
             if(document.getElementById('generateBtn').disabled) return;
             const name = document.getElementById('custName').value;
@@ -295,8 +295,9 @@
             const totalDepth = parseInt(slider.value);
             const quoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000+Math.random()*9000)}`;
 
-            // --- DRILLING COST ---
+            // --- DRILLING CALCULATION ---
             let drillHtml = "";
+            let breakdownText = ""; // 📝 For Telegram
             let drillCost = 0;
             let currentDepth = 0;
             let currentRate = PRICING_MODEL.base_rate; // 70
@@ -309,6 +310,7 @@
                 const cost = firstChunk * currentRate;
                 drillCost += cost;
                 drillHtml += `<tr><td>0 - ${firstChunk} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                breakdownText += `• 0-${firstChunk}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
                 currentDepth += firstChunk;
             }
 
@@ -326,6 +328,7 @@
                 
                 const endDepth = currentDepth + nextChunk;
                 drillHtml += `<tr><td>${currentDepth + 1} - ${endDepth} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                breakdownText += `• ${currentDepth + 1}-${endDepth}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
                 
                 currentDepth += nextChunk;
             }
@@ -340,11 +343,13 @@
                 const blocks = Math.ceil(excessKm / 30);
                 const transCost = blocks * TRANSPORT_BASE_RATE; 
                 opsHtml += `<tr><td>Transport (${excessKm.toFixed(1)} km extra)</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
+                breakdownText += `• Transport: ₹${transCost.toLocaleString()}\n`;
                 opsCost += transCost;
             }
 
             // Labour (Updated Label)
             opsHtml += `<tr><td>Rig Erection & Material Handling</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
+            breakdownText += `• Labour: ₹${LABOUR_CHARGE.toLocaleString()}\n`;
             opsCost += LABOUR_CHARGE;
 
             const grandTotal = drillCost + opsCost;
@@ -366,7 +371,9 @@
                 id: quoteID, name, 
                 mobile: "+91"+document.getElementById('custMobile').value, 
                 loc, depth: totalDepth, total: grandTotal, 
-                status: "Quote Generated", timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                status: "Quote Generated", 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                summary: breakdownText // 📝 Save summary
             };
 
             document.getElementById('step-1').classList.add('hidden');
@@ -387,9 +394,18 @@
             db.collection('leads').doc(leadData.id).set(finalData).then(() => {
                 document.getElementById('step-2').classList.add('hidden');
                 document.getElementById('step-3').classList.remove('hidden');
-                // Send Notification on Booking
-                sendAdminNotification(`✅ NEW BOOKING!\n👤 ${finalData.name}\n📱 ${finalData.mobile}\n📍 ${finalData.loc}\n💰 ₹${finalData.total}`);
+                // Send Notification on Booking (Enhanced)
+                const msg = `✅ NEW BOOKING!\n👤 ${finalData.name}\n📱 ${finalData.mobile}\n📍 ${finalData.loc}\n📏 Depth: ${finalData.depth} ft\n💰 TOTAL: ₹${finalData.total.toLocaleString()}\n\n📝 DETAILS:\n${finalData.summary}`;
+                sendAdminNotification(msg);
             }).catch(e => alert("Error saving booking: " + e.message));
+        }
+
+        // 🔔 NOTIFICATION SENDER (Method A Support)
+        function sendAdminNotification(msg) {
+            if(typeof TELEGRAM_BOT_TOKEN !== 'undefined' && typeof TELEGRAM_CHAT_ID !== 'undefined') {
+                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}`;
+                fetch(url).catch(e => console.log("Notify Error", e));
+            }
         }
 
         // --- UTILS ---
@@ -411,7 +427,6 @@
         function downloadPDF() { const el = document.getElementById('invoice-capture'); html2pdf().from(el).save(`Estimate_${leadData.id}.pdf`); }
         function shareWhatsApp() { window.open(`https://wa.me/?text=Estimate ${leadData.id}: ₹${leadData.total.toLocaleString()} for ${leadData.depth}ft`, '_blank'); }
 
-        // OTP & TELEGRAM WIRE-UP
         function sendOTP() {
             const p = document.getElementById('custMobile').value;
             if(p.length!=10) return alert("Enter 10 digit number");
@@ -420,36 +435,7 @@
                 window.confirmationResult=cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('sendOtpBtn').classList.add('hidden');
             }).catch(e=>{ console.error(e); alert("SMS Error"); });
         }
-        
-        function verifyOTP() { 
-            const otp = document.getElementById('otpInput').value;
-            window.confirmationResult.confirm(otp).then((res) => {
-                document.getElementById('otpSection').classList.add('hidden');
-                // 🟢 TRIGGER SILENT NOTIFICATION HERE
-                const phone = res.user.phoneNumber;
-                onOtpVerified(phone); 
-            }).catch(() => alert("Invalid OTP")); 
-        }
-
-        // SILENT LEAD HANDLER
-        function onOtpVerified(mobileNumber) {
-            // A. Save to Silent Leads
-            db.collection('silent_leads').add({
-                mobile: mobileNumber,
-                status: "Verified / Not Booked",
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                source: "Quote Page"
-            });
-            // B. Send Telegram
-            sendAdminNotification(`🔔 NEW LEAD VERIFIED!\n📱 Mobile: ${mobileNumber}\n📍 Status: Browsing Quotes`);
-        }
-
-        function sendAdminNotification(msg) {
-            if(typeof TELEGRAM_BOT_TOKEN !== 'undefined') {
-                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}`;
-                fetch(url).catch(e => console.log("Notify Error", e));
-            }
-        }
+        function verifyOTP() { window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=>document.getElementById('otpSection').classList.add('hidden')); }
 
         // MAPS
         let qMap;
