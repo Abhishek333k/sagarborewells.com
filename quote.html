@@ -252,7 +252,7 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // 🟢 LOAD CONSTANTS (Fallback to Safe Defaults)
+        // 🟢 LOAD CONSTANTS
         const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : {
             PRICING_MODEL: { base_rate: 70, increments: { phase_1: 10, phase_2: 20, phase_3: 50 }, boundaries: { phase_2_start: 200, phase_3_start: 300 } },
             MATERIALS: []
@@ -263,10 +263,11 @@
         let siteCoords = null;
         let leadData = {};
 
-        // 🟢 GLOBAL VARIABLE FOR QUOTE ID (Prevents changing ID on re-calc)
-        let currentQuoteID = null;
+        // 🟢 STATE VARIABLES
+        let currentQuoteID = null;   // Persist ID across slider moves
+        let hasLoggedPrice = false;  // Prevent spamming admin on every slider move
 
-        // 🟢 SLIDER LOGIC (Elastic + Expert Trigger)
+        // 🟢 SLIDER LOGIC
         const slider = document.getElementById('depthSlider');
         const sliderBox = document.getElementById('sliderBox');
         const maxLabel = document.getElementById('maxLabel');
@@ -278,26 +279,19 @@
 
             document.getElementById('display-val').innerText = val;
 
-            // Elastic Expansion
             if (val >= currentMax) {
                 if (currentMax === 500) { this.max = 900; maxLabel.innerText = "900 FT"; sliderBox.classList.add('expanded'); }
                 else if (currentMax === 900) { this.max = 1200; maxLabel.innerText = "1200 FT"; }
-            }
-            // Elastic Contraction
-            else if (val < 400 && currentMax > 500) {
+            } else if (val < 400 && currentMax > 500) {
                 this.max = 500; maxLabel.innerText = "500 FT"; sliderBox.classList.remove('expanded');
                 this.value = val; 
             }
-
-            // Expert Trigger (>600ft)
             expertAlert.style.display = (val > 600) ? 'block' : 'none';
-
-            // Visual Fill
             const pct = ((val - this.min) / (this.max - this.min)) * 100;
             this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
         });
 
-        // 🟢 CALCULATION ENGINE (Updated Slab Logic + breakdown)
+        // 🟢 CALCULATION ENGINE
         function calculateEstimate() {
             if(document.getElementById('generateBtn').disabled) return;
             const name = document.getElementById('custName').value;
@@ -307,21 +301,21 @@
 
             const totalDepth = parseInt(slider.value);
             
-            // 🟢 LOGIC FIX: Only generate ID once per session
+            // 1. Generate Persistent ID
             if (!currentQuoteID) {
                 currentQuoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
             }
 
-            // --- DRILLING CALCULATION ---
+            // 2. Math Logic
             let drillHtml = "";
-            let breakdownText = ""; // 📝 For Telegram
+            let breakdownText = ""; 
             let drillCost = 0;
             let currentDepth = 0;
-            let currentRate = PRICING_MODEL.base_rate; // 70
+            let currentRate = PRICING_MODEL.base_rate; 
             const jumps = PRICING_MODEL.increments;
             const bounds = PRICING_MODEL.boundaries;
 
-            // 1. Base (0-100)
+            // Base 0-100
             const firstChunk = Math.min(totalDepth, 100);
             if(firstChunk > 0) {
                 const cost = firstChunk * currentRate;
@@ -331,14 +325,13 @@
                 currentDepth += firstChunk;
             }
 
-            // 2. Loop Slabs
+            // Loop Slabs
             while(currentDepth < totalDepth) {
-                let increment = jumps.phase_1; // +10
-                if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3; // +50
-                else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2; // +20
+                let increment = jumps.phase_1; 
+                if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3; 
+                else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2; 
                 
                 currentRate += increment; 
-
                 let nextChunk = Math.min(50, totalDepth - currentDepth);
                 let cost = nextChunk * currentRate;
                 drillCost += cost;
@@ -350,11 +343,9 @@
                 currentDepth += nextChunk;
             }
 
-            // --- OPERATIONAL ---
+            // Ops
             let opsHtml = "";
             let opsCost = 0;
-            
-            // Transport
             if (transportDist > TRANSPORT_THRESHOLD_KM) {
                 const excessKm = transportDist - TRANSPORT_THRESHOLD_KM;
                 const blocks = Math.ceil(excessKm / 30);
@@ -363,68 +354,86 @@
                 breakdownText += `• Transport: ₹${transCost.toLocaleString()}\n`;
                 opsCost += transCost;
             }
-
-            // Labour (Updated Label)
             opsHtml += `<tr><td>Rig Erection & Material Handling</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
             breakdownText += `• Labour: ₹${LABOUR_CHARGE.toLocaleString()}\n`;
             opsCost += LABOUR_CHARGE;
 
             const grandTotal = drillCost + opsCost;
 
-            // RENDER
+            // Render
             document.getElementById('opsSection').style.display = 'block';
             document.getElementById('opsBody').innerHTML = opsHtml;
             document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
-
             document.getElementById('drillBody').innerHTML = drillHtml;
             document.getElementById('drillSubtotal').innerText = "₹" + drillCost.toLocaleString();
             document.getElementById('invTotal').innerText = "₹" + grandTotal.toLocaleString();
             document.getElementById('invLoc').innerText = loc;
             document.getElementById('invDepth').innerText = totalDepth + " ft";
-            document.getElementById('invRef').innerText = currentQuoteID; // 🟢 Use Persistent ID
+            document.getElementById('invRef').innerText = currentQuoteID;
 
-            // PREPARE DATA (With Integrity Fixes)
+            // Prepare Data
             leadData = { 
-                id: currentQuoteID, // 🟢 Use Persistent ID
+                id: currentQuoteID, 
                 name, 
                 mobile: "+91"+document.getElementById('custMobile').value, 
                 loc, depth: totalDepth, total: grandTotal, 
                 status: "Quote Generated", 
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                summary: breakdownText, // 📝 Save summary
-                rows: drillHtml // 🟢 Pass HTML to PDF Template for easy rendering
+                summary: breakdownText,
+                rows: drillHtml
             };
+
+            // 🟢 INTELLIGENCE: Log Silent Lead with QT ID (Once per session)
+            if (!hasLoggedPrice) {
+                // 1. Save to DB (Silent)
+                db.collection('silent_leads').add({
+                    ...leadData,
+                    type: "Window Shopper", // Distinguishes from just logging in
+                    status: "Viewed Price / Not Booked"
+                });
+
+                // 2. Send Telegram (New Template)
+                if(typeof NOTIFY_TEMPLATES !== 'undefined') {
+                    sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
+                }
+                
+                hasLoggedPrice = true; // Lock it so we don't spam
+            }
 
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
             window.scrollTo(0,0);
         }
 
-        // 🟢 CONFIRM BOOKING (Fixed: Saves userId for Dashboard)
+        // CONFIRM BOOKING
         function confirmBooking() {
             const user = auth.currentUser;
-            const finalData = {
-                ...leadData,
-                userId: user ? user.uid : null, // Crucial for Dashboard history
-                source: 'web_quote'
+            const finalData = { 
+                ...leadData, 
+                userId: user ? user.uid : null, 
+                source: 'web_quote',
+                status: 'Booked' // Update status from Quote Generated
             };
 
-            // Use .set() with specific ID to ensure it matches the Ref ID shown
             db.collection('leads').doc(leadData.id).set(finalData).then(() => {
                 document.getElementById('step-2').classList.add('hidden');
                 document.getElementById('step-3').classList.remove('hidden');
                 
-                // 🟢 NEW: Send Telegram via Notification Engine
-                if(typeof NOTIFY_TEMPLATES !== 'undefined' && typeof TELEGRAM_BOT_TOKEN !== 'undefined') {
-                    const msg = NOTIFY_TEMPLATES.booking(finalData);
-                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
-                    fetch(url).catch(e => console.log("Telegram Error", e));
+                // Notify Booking
+                if(typeof NOTIFY_TEMPLATES !== 'undefined') {
+                    sendTelegram(NOTIFY_TEMPLATES.booking(finalData));
                 }
-
             }).catch(e => alert("Error saving booking: " + e.message));
         }
 
-        // --- UTILS ---
+        function sendTelegram(msg) {
+            if(typeof TELEGRAM_BOT_TOKEN !== 'undefined') {
+                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
+                fetch(url).catch(e => console.log("Notify Error"));
+            }
+        }
+
+        // UTILS
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('materialsGrid').innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
         });
@@ -441,35 +450,35 @@
 
         function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
         
-        // 🟢 UPDATED: PDF Generation (Passes Data Object)
         function downloadPDF() { 
-            // We use the PDF Template Engine if available
             if(typeof getInvoiceHTML === 'function') {
                 const element = document.createElement('div');
                 element.innerHTML = getInvoiceHTML(leadData);
                 html2pdf().from(element).save(`Estimate_${leadData.id}.pdf`);
             } else {
-                // Fallback to screenshot if template fails
                 const el = document.getElementById('invoice-capture'); 
                 html2pdf().from(el).save(`Estimate_${leadData.id}.pdf`); 
             }
         }
         
-        // 🟢 UPDATED: WA Share (Uses WhatsApp Templates)
         function shareWhatsApp() { 
             if(typeof WA_MSG !== 'undefined') {
                 const msg = WA_MSG.booking_share(leadData);
                 window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
-            } else {
-                window.open(`https://wa.me/?text=Estimate ${leadData.id}: ₹${leadData.total.toLocaleString()} for ${leadData.depth}ft`, '_blank');
             }
         }
         
-        // 🟢 UPDATED: Expert Consult (Uses WhatsApp Templates)
         function consultExpert() {
             const depth = document.getElementById('depthSlider').value;
             if(typeof WA_MSG !== 'undefined') {
                 const msg = WA_MSG.deep_drill(depth);
+                window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+            }
+        }
+        
+        function openChatSupport() {
+             if(typeof WA_MSG !== 'undefined') {
+                const msg = WA_MSG.chat_support();
                 window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
             }
         }
