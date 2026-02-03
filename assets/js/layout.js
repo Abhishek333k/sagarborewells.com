@@ -158,3 +158,35 @@ function checkAdminStatus() {
         }
     });
 }
+
+
+// --- 🛡️ SITE PROTECTION SUITE 🛡️ ---
+(function() {
+    // 1. Disable Right Click
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        alert("🔒 Content is Protected by Copyright © Sagar Borewells");
+    });
+
+    // 2. Disable Keyboard Shortcuts (F12, Ctrl+U, Ctrl+Shift+I)
+    document.onkeydown = function(e) {
+        if (event.keyCode == 123) { // F12
+            return false;
+        }
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { // Ctrl+Shift+I
+            return false;
+        }
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { // Ctrl+Shift+C
+            return false;
+        }
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { // Ctrl+Shift+J
+            return false;
+        }
+        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { // Ctrl+U
+            return false;
+        }
+    };
+
+    // 3. Clear Console (To hide errors/logs from prying eyes)
+    setInterval(function(){ console.clear(); }, 1000);
+})();
