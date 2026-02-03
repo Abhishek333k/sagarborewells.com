@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Command Center | Sagar Borewells</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/layout.js"></script>
+    <script src="assets/js/pdf_template.js"></script> 
+    <script src="assets/js/certificate_template.js"></script>
+
+    <style>
+        /* SMOOTH LOAD */
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; opacity: 0; transition: opacity 0.4s ease-in; }
+        
+        /* CARD STYLING */
+        .glass-panel { background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border-radius: 16px; overflow: hidden; transition: transform 0.2s; }
+        .glass-panel:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+        
+        /* TIMELINE (Track Booking) */
+        .timeline-track { display: flex; position: relative; margin: 30px 0 10px; }
+        .timeline-track::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; height: 3px; background: #e2e8f0; z-index: 0; }
+        .t-step { position: relative; z-index: 1; flex: 1; text-align: center; }
+        .t-dot { width: 30px; height: 30px; background: #fff; border: 3px solid #cbd5e1; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #64748b; transition: all 0.3s; }
+        .t-step.active .t-dot { border-color: #2563eb; background: #2563eb; color: white; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2); }
+        .t-step.completed .t-dot { border-color: #10b981; background: #10b981; color: white; }
+        .t-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .t-step.active .t-label { color: #2563eb; }
+
+        /* TAB UI */
+        .nav-pill { cursor: pointer; padding: 10px 20px; border-radius: 100px; font-weight: 600; color: #64748b; transition: 0.2s; }
+        .nav-pill.active { background: #1e293b; color: white; shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <div id="navbar-mount"></div>
+
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-6xl">
+        
+        <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Mission Control</h1>
+                <p class="text-slate-500 font-medium mt-1">Welcome back, <span id="userPhone" class="text-blue-600 font-mono">--</span></p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="logout()" class="text-sm font-bold text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg border border-red-100 transition">
+                    <i class="ri-shut-down-line mr-1"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <div id="live-tracker" class="hidden mb-10 bg-white border border-blue-100 rounded-2xl p-6 shadow-lg shadow-blue-50 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl animate-pulse">
+                        <i class="ri-radar-line"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg">Active Project</h3>
+                        <p class="text-xs text-slate-500 font-mono" id="active-ref">REF: --</p>
+                    </div>
+                </div>
+                <span class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Live</span>
+            </div>
+
+            <div class="timeline-track">
+                <div class="t-step completed" id="step-booked">
+                    <div class="t-dot"><i class="ri-check-line"></i></div>
+                    <div class="t-label">Booked</div>
+                </div>
+                <div class="t-step" id="step-survey">
+                    <div class="t-dot"><i class="ri-map-pin-user-line"></i></div>
+                    <div class="t-label">Survey</div>
+                </div>
+                <div class="t-step" id="step-rig">
+                    <div class="t-dot"><i class="ri-truck-line"></i></div>
+                    <div class="t-label">Rig Move</div>
+                </div>
+                <div class="t-step" id="step-drill">
+                    <div class="t-dot"><i class="ri-focus-3-line"></i></div>
+                    <div class="t-label">Drilling</div>
+                </div>
+                <div class="t-step" id="step-water">
+                    <div class="t-dot"><i class="ri-drop-line"></i></div>
+                    <div class="t-label">Water</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-2 mb-6 bg-slate-200 p-1 rounded-full w-fit">
+            <div onclick="switchTab('estimates')" id="tab-estimates" class="nav-pill active">Estimates & Quotes</div>
+            <div onclick="switchTab('history')" id="tab-history" class="nav-pill">Project History</div>
+        </div>
+
+        <div id="view-estimates" class="tab-view">
+            <div id="estimates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            <div id="empty-estimates" class="hidden text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
+                <div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                    <i class="ri-file-paper-line"></i>
+                </div>
+                <h3 class="text-slate-800 font-bold mb-1">No Estimates Yet</h3>
+                <p class="text-slate-400 text-sm mb-6">Create a price estimation to see it here.</p>
+                <a href="quote.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow-lg shadow-blue-100">
+                    <i class="ri-calculator-line mr-2"></i> Get Quote
+                </a>
+            </div>
+        </div>
+
+        <div id="view-history" class="tab-view hidden">
+            <div id="history-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                </div>
+            <div id="empty-history" class="hidden text-center py-20">
+                <p class="text-slate-400">No completed borewell records found.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="footer-mount"></div>
+
+    <script>
+        // 🟢 1. SYSTEM INIT
+        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
+            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        }
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // 🟢 2. AUTH GUARD
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                document.getElementById('userPhone').innerText = user.phoneNumber;
+                document.body.style.opacity = '1';
+                loadDashboard(user.uid, user.phoneNumber);
+            } else {
+                window.location.replace("login.html");
+            }
+        });
+
+        function logout() {
+            auth.signOut().then(() => window.location.href = "index.html");
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-pill').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-'+tab).classList.remove('hidden');
+            document.getElementById('tab-'+tab).classList.add('active');
+        }
+
+        // 🟢 3. DATA ENGINE
+        function loadDashboard(uid, phone) {
+            
+            // A. FETCH QUOTES (From 'leads' collection)
+            db.collection('leads').where('userId', '==', uid)
+              .orderBy('timestamp', 'desc').get()
+              .then(snap => {
+                  const grid = document.getElementById('estimates-grid');
+                  if(snap.empty) {
+                      document.getElementById('empty-estimates').classList.remove('hidden');
+                  } else {
+                      let activeBookingFound = false;
+                      grid.innerHTML = "";
+                      
+                      snap.forEach(doc => {
+                          const data = doc.data();
+                          const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                          
+                          // Check if this is an active booking for the Hero Tracker
+                          if (data.status === 'Booked' && !activeBookingFound) {
+                              updateLiveTracker(data);
+                              activeBookingFound = true;
+                          }
+
+                          // Render Card
+                          const card = `
+                            <div class="glass-panel p-6 flex flex-col justify-between h-full relative">
+                                ${data.status === 'Booked' ? '<span class="absolute top-4 right-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">BOOKED</span>' : ''}
+                                <div>
+                                    <div class="text-xs font-bold text-slate-400 mb-1">${date}</div>
+                                    <h3 class="font-bold text-slate-800 text-lg mb-1">${data.loc}</h3>
+                                    <div class="flex items-baseline gap-1 mb-4">
+                                        <span class="text-2xl font-extrabold text-blue-900">₹${parseInt(data.total).toLocaleString()}</span>
+                                        <span class="text-sm text-slate-500 font-medium">/ ${data.depth}ft</span>
+                                    </div>
+                                    <div class="space-y-2 mb-6">
+                                        <div class="flex justify-between text-xs text-slate-500 border-b border-slate-50 pb-1"><span>Ref ID</span><span class="font-mono text-slate-700">${data.id}</span></div>
+                                        <div class="flex justify-between text-xs text-slate-500 border-b border-slate-50 pb-1"><span>Zone</span><span>Standard</span></div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 mt-auto">
+                                    <button onclick="downloadQuotePDF('${encodeURIComponent(JSON.stringify(data))}')" class="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-2 rounded-lg text-sm border border-slate-200 transition">
+                                        <i class="ri-file-download-line"></i> PDF
+                                    </button>
+                                    <button onclick="recalc('${data.loc}', ${data.depth})" class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2 rounded-lg text-sm border border-blue-200 transition">
+                                        <i class="ri-refresh-line"></i> Edit
+                                    </button>
+                                </div>
+                            </div>
+                          `;
+                          grid.innerHTML += card;
+                      });
+                  }
+              });
+
+            // B. FETCH HISTORY (From 'projects' collection - Completed Jobs)
+            db.collection('projects').where('mobile', '==', phone).get()
+              .then(snap => {
+                  const grid = document.getElementById('history-grid');
+                  if(snap.empty) {
+                      document.getElementById('empty-history').classList.remove('hidden');
+                  } else {
+                      grid.innerHTML = "";
+                      snap.forEach(doc => {
+                          const data = doc.data();
+                          const card = `
+                            <div class="glass-panel p-6 border-l-4 border-l-emerald-500">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="font-bold text-slate-800 text-lg">${data.location}</h3>
+                                        <p class="text-xs text-slate-500">Completed: ${data.date}</p>
+                                    </div>
+                                    <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+                                        <i class="ri-checkbox-circle-line text-xl"></i>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 text-sm bg-slate-50 p-4 rounded-xl mb-4">
+                                    <div><p class="text-[10px] text-slate-400 uppercase">Total Depth</p><p class="font-bold text-slate-700">${data.depth} ft</p></div>
+                                    <div><p class="text-[10px] text-slate-400 uppercase">Water Yield</p><p class="font-bold text-emerald-600">${data.yield}</p></div>
+                                </div>
+                                <button onclick="downloadCert('${encodeURIComponent(JSON.stringify(data))}')" class="w-full bg-slate-900 text-white font-bold py-3 rounded-lg text-sm hover:bg-black transition shadow-lg">
+                                    <i class="ri-honor-of-kings-line mr-2 text-yellow-400"></i> Download Certificate
+                                </button>
+                            </div>
+                          `;
+                          grid.innerHTML += card;
+                      });
+                  }
+              });
+        }
+
+        // 🟢 4. HERO TRACKER LOGIC
+        function updateLiveTracker(data) {
+            const tracker = document.getElementById('live-tracker');
+            tracker.classList.remove('hidden');
+            document.getElementById('active-ref').innerText = `REF: ${data.id}`;
+            
+            // Simple Logic: If booked, light up step 1. 
+            // In future, you can add a 'stage' field to DB (e.g., stage: 'drilling') to light up others.
+            // For now, we assume 'Booked' is stage 1.
+            document.getElementById('step-booked').classList.add('active', 'completed');
+        }
+
+        // 🟢 5. ACTION FUNCTIONS
+        function recalc(loc, depth) {
+            // Redirect to quote page with params
+            window.location.href = `quote.html?loc=${encodeURIComponent(loc)}&depth=${depth}`; // You can handle these params in quote.html later if needed
+        }
+
+        function downloadQuotePDF(encodedData) {
+            const data = JSON.parse(decodeURIComponent(encodedData));
+            
+            // Reconstruct rows for PDF (since we didn't save HTML string in DB)
+            let rows = "";
+            let remaining = parseInt(data.depth); 
+            let floor = 0; 
+            let currentRate = 70; // Default base
+            
+            // Simple reconstruction logic (approximate for display)
+            while(remaining > 0) {
+                let chunk = (remaining >= 50) ? 50 : remaining;
+                let cost = chunk * currentRate;
+                rows += `<tr><td>${floor}-${floor+chunk}ft</td><td style="text-align:right">₹${cost.toLocaleString()}</td></tr>`;
+                remaining -= chunk; floor += chunk; currentRate += 10;
+            }
+
+            if(typeof getInvoiceHTML === 'function') {
+                const element = document.createElement('div');
+                // Merge reconstructed rows into data object
+                data.rows = rows;
+                element.innerHTML = getInvoiceHTML(data);
+                html2pdf().from(element).save(`Estimate_${data.id}.pdf`);
+            } else {
+                alert("PDF Template Engine Loading...");
+            }
+        }
+
+        function downloadCert(encodedData) {
+            const data = JSON.parse(decodeURIComponent(encodedData));
+            if(typeof getCertificateHTML === 'function') {
+                const element = document.createElement('div');
+                element.innerHTML = getCertificateHTML({
+                    id: data.id || `CERT-${Math.floor(Math.random()*1000)}`,
+                    name: "Valued Customer", // You might want to save customer name in 'projects' too
+                    loc: data.location,
+                    date: data.date,
+                    depth: data.depth,
+                    yield: data.yield,
+                    motor: data.motor
+                });
+                html2pdf().from(element).save(`Certificate_${data.location}.pdf`);
+            } else {
+                alert("Certificate Engine Loading...");
+            }
+        }
+
+    </script>
+</body>
+</html>
