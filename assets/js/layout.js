@@ -2,10 +2,18 @@
 
 document.addEventListener("DOMContentLoaded", function() {
     
-    // --- 1. HEAD INJECTION (Assets & Analytics) ---
+    // --- 1. HEAD INJECTION (Self-Healing Assets) ---
     const head = document.head;
 
-    // Favicon
+    // 🟢 FIX: Auto-Inject RemixIcon if missing (Fixes invisible Mobile Menu & Social Icons)
+    if (!document.querySelector("link[href*='remixicon']")) {
+        const ri = document.createElement('link');
+        ri.rel = 'stylesheet';
+        ri.href = 'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css';
+        head.appendChild(ri);
+    }
+
+    // Auto-Inject Favicon
     if (!document.querySelector("link[rel*='icon']")) {
         const link = document.createElement('link');
         link.type = 'image/png';
@@ -14,28 +22,31 @@ document.addEventListener("DOMContentLoaded", function() {
         head.appendChild(link);
     }
 
-    // Google Analytics 4
+    // Google Analytics 4 (Standard)
     const gaId = 'G-LRKE2HG1RN'; 
-    const gaScript = document.createElement('script');
-    gaScript.async = true;
-    gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
-    head.appendChild(gaScript);
+    if (!document.querySelector(`script[src*='${gaId}']`)) {
+        const gaScript = document.createElement('script');
+        gaScript.async = true;
+        gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+        head.appendChild(gaScript);
 
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', gaId);
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', gaId);
+    }
 
-    // Microsoft Clarity
-    (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "vatt3qahek");
+    // Microsoft Clarity (Heatmaps)
+    if (!window.clarity) {
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "vatt3qahek");
+    }
 
 
     // --- 2. DYNAMIC NAVBAR ---
-    // Uses 'navbar-mount' which exists in your HTML files
     const headerMount = document.getElementById('navbar-mount');
     if (headerMount) {
         headerMount.innerHTML = `
@@ -65,23 +76,47 @@ document.addEventListener("DOMContentLoaded", function() {
                     </div>
 
                     <div class="md:hidden flex items-center">
-                        <button id="mobile-menu-btn" class="text-slate-600 text-2xl p-2 rounded hover:bg-slate-100">
+                        <button id="mobile-menu-btn" class="text-slate-600 text-2xl p-2 rounded hover:bg-slate-100 transition">
                             <i class="ri-menu-line"></i>
                         </button>
                     </div>
                 </div>
             </div>
             
-            <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 p-4 absolute w-full shadow-lg left-0">
-                <a href="index.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Home</a>
-                <a href="dashboard.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">My Account</a>
-                <a href="contact.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50">Contact</a>
-                <a href="quote.html" class="block py-3 mt-4 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md">Get Quote</a>
+            <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 p-4 absolute w-full shadow-lg left-0 top-20 z-40">
+                <a href="index.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">Home</a>
+                <a href="dashboard.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">My Account</a>
+                <a href="contact.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">Contact</a>
+                <a href="quote.html" class="block py-3 mt-4 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700">Get Quote</a>
             </div>
         </nav>`;
 
-        const btn = document.getElementById('mobile-menu-btn');
-        if(btn) btn.addEventListener('click', () => document.getElementById('mobile-menu').classList.toggle('hidden'));
+        // Re-attach listener because we just overwrote the HTML
+        setTimeout(() => {
+            const btn = document.getElementById('mobile-menu-btn');
+            const menu = document.getElementById('mobile-menu');
+            if(btn && menu) {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    menu.classList.toggle('hidden');
+                    // Toggle Icon
+                    const icon = btn.querySelector('i');
+                    if(menu.classList.contains('hidden')) {
+                        icon.className = 'ri-menu-line';
+                    } else {
+                        icon.className = 'ri-close-line';
+                    }
+                });
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+                        menu.classList.add('hidden');
+                        btn.querySelector('i').className = 'ri-menu-line';
+                    }
+                });
+            }
+        }, 100);
     }
 
     // --- 3. DYNAMIC FOOTER ---
@@ -89,6 +124,11 @@ document.addEventListener("DOMContentLoaded", function() {
     if (footerMount && typeof CONTACT_INFO !== 'undefined') {
         const { whatsapp_api, social, address_line1, address_line2, phone_display, email } = CONTACT_INFO;
         
+        // Safety check for social links
+        const igLink = social && social.instagram ? social.instagram : "#";
+        const ytLink = social && social.youtube ? social.youtube : "#";
+        const waLink = whatsapp_api ? `https://wa.me/${whatsapp_api}` : "#";
+
         footerMount.innerHTML = `
         <footer class="bg-[#0f172a] pt-16 pb-8 border-t border-slate-800 text-slate-400 font-sans mt-auto">
             <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
@@ -101,9 +141,9 @@ document.addEventListener("DOMContentLoaded", function() {
                         Advanced geological sensor drilling. Delivering precision water solutions since 2010.
                     </p>
                     <div class="flex gap-4">
-                        <a href="https://wa.me/${whatsapp_api}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i class="ri-whatsapp-line"></i></a>
-                        <a href="${social.instagram}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition"><i class="ri-instagram-line"></i></a>
-                        <a href="${social.youtube}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i class="ri-youtube-fill"></i></a>
+                        <a href="${waLink}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i class="ri-whatsapp-line"></i></a>
+                        <a href="${igLink}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition"><i class="ri-instagram-line"></i></a>
+                        <a href="${ytLink}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i class="ri-youtube-fill"></i></a>
                     </div>
                 </div>
 
