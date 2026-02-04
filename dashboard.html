@@ -341,18 +341,22 @@
 
             // 1. GENERATE CONTENT & NAME
             if (type === 'quote') {
-                // Reconstruct rows logic
-                let rows = "";
-                let remaining = parseInt(data.depth); 
-                let floor = 0; 
-                let currentRate = 70;
-                while(remaining > 0) {
-                    let chunk = (remaining >= 50) ? 50 : remaining;
-                    let cost = chunk * currentRate;
-                    rows += `<tr><td>${floor}-${floor+chunk}ft</td><td style="text-align:right">₹${cost.toLocaleString()}</td></tr>`;
-                    remaining -= chunk; floor += chunk; currentRate += 10;
+                // 🟢 SAFE: Check if rows already exist (Saved Snapshot)
+                // This ensures the PDF matches exactly what the customer saw originally.
+                if (!data.rows) {
+                    // Fallback ONLY for old legacy data that didn't save rows
+                    let rows = "";
+                    let remaining = parseInt(data.depth); 
+                    let floor = 0; 
+                    let currentRate = 70;
+                    while(remaining > 0) {
+                        let chunk = (remaining >= 50) ? 50 : remaining;
+                        let cost = chunk * currentRate;
+                        rows += `<tr><td>${floor}-${floor+chunk}ft</td><td style="text-align:right">₹${cost.toLocaleString()}</td></tr>`;
+                        remaining -= chunk; floor += chunk; currentRate += 10;
+                    }
+                    data.rows = rows;
                 }
-                data.rows = rows;
                 
                 if(typeof getInvoiceHTML === 'function') {
                     htmlContent = getInvoiceHTML(data);
