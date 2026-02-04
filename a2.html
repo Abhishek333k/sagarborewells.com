@@ -25,7 +25,6 @@
         body { background-color: #0f172a; font-family: 'Inter', sans-serif; color: #e2e8f0; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         
-        /* Glassmorphism & Utils */
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
         .glass-modal { background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(20px); border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
         .nav-item { display: flex; items-center; gap: 12px; padding: 10px 14px; color: #94a3b8; border-radius: 8px; transition: 0.2s; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
@@ -39,10 +38,6 @@
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
         .modal-overlay.open { display: flex; opacity: 1; }
         .map-wrapper { position: relative; width: 100%; height: 350px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
-        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none; display: flex; align-items: center; justify-content: center; }
-        .reticle-dot { width: 6px; height: 6px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 10px 2px #ef4444; z-index: 2; }
-        .reticle-ring { position: absolute; width: 60px; height: 60px; border: 2px dashed #0ea5e9; border-radius: 50%; box-shadow: 0 0 20px rgba(14, 165, 233, 0.3); animation: reticleSpin 10s linear infinite; }
-        @keyframes reticleSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
@@ -149,14 +144,6 @@
                                 CANCEL
                             </button>
                         </div>
-                        <div class="bg-slate-900/90 backdrop-blur border border-slate-700 p-2 rounded-lg shadow-xl mt-2">
-                             <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Jump to Coords</label>
-                             <div class="flex gap-1">
-                                 <input type="text" id="manualLat" placeholder="Lat" class="w-16 bg-slate-800 text-white text-xs p-1 rounded border border-slate-600">
-                                 <input type="text" id="manualLng" placeholder="Lng" class="w-16 bg-slate-800 text-white text-xs p-1 rounded border border-slate-600">
-                                 <button onclick="jumpToCoords()" class="bg-blue-600 text-white p-1 rounded hover:bg-blue-500"><i class="ri-flight-takeoff-line"></i></button>
-                             </div>
-                        </div>
                     </div>
                     <div id="adminMap" class="w-full h-full bg-slate-900"></div>
                     <div id="saveZonePanel" class="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900/95 border border-emerald-500 p-4 rounded-xl shadow-2xl z-20 w-80">
@@ -188,16 +175,8 @@
                     </div>
                     <div class="space-y-4">
                         <div class="bg-slate-900 p-4 rounded border border-slate-700">
-                            <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 1: Direct API (Experimental)</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="wrisApiUrl" class="cyber-input text-xs" placeholder="https://indiawris.gov.in/api/..." value="https://indiawris.gov.in/api/groundwater/stations">
-                                <button onclick="fetchWrisApi()" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white text-xs">FETCH</button>
-                            </div>
-                            <p class="text-[10px] text-red-400 mt-2 italic">*Likely to fail due to Govt CORS security.</p>
-                        </div>
-                        <div class="bg-slate-900 p-4 rounded border border-slate-700">
                             <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 2: JSON/CSV Upload (Reliable)</label>
-                            <p class="text-xs text-slate-400 mb-2">Download data from WRIS website, save as JSON, and upload here.</p>
+                            <p class="text-xs text-slate-400 mb-2">Download data from WRIS website, save as JSON, and upload here. (Auto-Chunking Enabled)</p>
                             <input type="file" id="jsonUpload" accept=".json,.geojson" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-600"/>
                             <button onclick="processJsonFile()" class="mt-3 w-full btn-pro bg-emerald-600 hover:bg-emerald-500 text-white">PROCESS & UPLOAD TO FIREBASE</button>
                         </div>
@@ -308,7 +287,7 @@
                 dashboard.classList.remove('hidden');
             } else if(id === 'projects') {
                 filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
-                dashboard.classList.add('hidden'); // Hide stats for archives
+                dashboard.classList.add('hidden'); 
             } else {
                 filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
                 dashboard.classList.add('hidden');
@@ -330,13 +309,11 @@
                 db.collection(collection).doc(docId).delete().then(() => {
                     notify("RECORD DELETED", "error"); 
                     closeModal();
-                    // Auto-refresh handled by onSnapshot
                 });
             }
         }
 
         // --- 🟢 REAL-TIME DATA LOADERS (No Refresh Needed) ---
-        
         let leadsUnsubscribe, projectsUnsubscribe, silentUnsubscribe;
         let leadsCache = [], projectsCache = []; let currentView = 'leads';
 
@@ -345,13 +322,13 @@
             const el = document.getElementById('leads-list');
             el.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Connecting to live feed...</div>';
             
-            if(leadsUnsubscribe) leadsUnsubscribe(); // Unsubscribe prev listener
+            if(leadsUnsubscribe) leadsUnsubscribe(); 
             
             leadsUnsubscribe = db.collection('leads').orderBy('timestamp','desc').limit(100)
                 .onSnapshot(snap => {
                     leadsCache = [];
                     snap.forEach(d => { let data = d.data(); data.docId = d.id; leadsCache.push(data); });
-                    filterData(); // Render with current filters
+                    filterData(); 
                 });
         }
 
@@ -645,44 +622,59 @@
         function toggleDrawButtons(isDrawing) { document.getElementById('btnDraw').classList.toggle('hidden', isDrawing); document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing); }
         function enableEditorUI(title, btnText) { document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('zonePanelTitle').innerText = title; document.getElementById('btnSaveZone').innerText = btnText; }
 
-        // --- DATA OPS ---
+        // --- 🟢 FIXED: DATA OPS (BATCH CHUNKING) ---
         function addRiskRegion() {
             const region = document.getElementById('riskRegion').value; const status = document.getElementById('riskLevel').value; if(!region) return notify("Enter Region", "error");
             db.collection('risk_map').doc(region.toLowerCase()).set({ region: region.toLowerCase(), status: status, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
                 document.getElementById('riskConsole').innerHTML += `<div class="text-green-400">✓ Mapped: ${region} -> ${status}</div>`; notify("Risk Region Added");
             });
         }
+        
         function processJsonFile() {
             const fileInput = document.getElementById('jsonUpload');
             if(!fileInput.files.length) return notify("Select a file first", "error");
             const file = fileInput.files[0];
             const reader = new FileReader();
             notify("Parsing Data...", "info");
-            reader.onload = function(e) {
+            
+            reader.onload = async function(e) {
                 try {
                     const json = JSON.parse(e.target.result);
-                    const batch = db.batch();
-                    let count = 0;
                     const collectionRef = db.collection('layer_waterbodies'); 
                     const items = Array.isArray(json) ? json : (json.features || []);
-                    items.forEach((item) => {
-                        const docId = 'wb_' + Math.random().toString(36).substr(2, 9);
-                        const docRef = collectionRef.doc(docId);
-                        const payload = {
-                            name: item.properties?.name || "Unknown Waterbody",
-                            type: "Waterbody",
-                            coords: item.geometry?.coordinates[0]?.map(c => ({lat: c[1], lng: c[0]})) || [], 
-                            color: "#3b82f6", 
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        };
-                        if(payload.coords.length > 0) {
-                            batch.set(docRef, payload);
-                            count++;
-                        }
-                    });
-                    batch.commit().then(() => {
-                        notify(`SUCCESS: Ingested ${count} records!`, "success");
-                    }).catch(err => notify("Batch Write Failed: " + err.message, "error"));
+                    
+                    if(items.length === 0) return notify("Empty Data", "error");
+
+                    // 🟢 CHUNKING LOGIC: Firestore Batch limit is 500
+                    const chunkSize = 400; 
+                    let totalIngested = 0;
+
+                    for (let i = 0; i < items.length; i += chunkSize) {
+                        const chunk = items.slice(i, i + chunkSize);
+                        const batch = db.batch();
+                        
+                        chunk.forEach(item => {
+                            const docId = 'wb_' + Math.random().toString(36).substr(2, 9);
+                            const docRef = collectionRef.doc(docId);
+                            const payload = {
+                                name: item.properties?.name || "Unknown Waterbody",
+                                type: "Waterbody",
+                                coords: item.geometry?.coordinates[0]?.map(c => ({lat: c[1], lng: c[0]})) || [], 
+                                color: "#3b82f6", 
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            };
+                            if(payload.coords.length > 0) {
+                                batch.set(docRef, payload);
+                            }
+                        });
+
+                        await batch.commit();
+                        totalIngested += chunk.length;
+                        notify(`Ingested ${totalIngested} / ${items.length}...`);
+                    }
+
+                    notify(`COMPLETE: ${totalIngested} records synced!`, "success");
+
                 } catch (error) {
                     notify("Invalid JSON File", "error");
                     console.error(error);
@@ -729,9 +721,23 @@
             const data = JSON.parse(decodeURIComponent(encoded)); 
             
             // 🛑 BUG FIX: Pass full data to generator so it has access to rows, id, etc.
-            // If rows are missing (old data), generate them on the fly for display
             if (!data.rows) {
-                data.rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`;
+                // If rows are missing (old data), generate them on the fly for display
+                // 🟢 SAFE: Use 0 fallback to prevent infinite loop
+                let remaining = parseInt(data.depth || 0); 
+                let rows = "";
+                let floor = 0; 
+                let currentRate = 70;
+                
+                if (remaining > 0) {
+                    while(remaining > 0) {
+                        let chunk = (remaining >= 50) ? 50 : remaining;
+                        let cost = chunk * currentRate;
+                        rows += `<tr><td>${floor}-${floor+chunk}ft</td><td style="text-align:right">₹${cost.toLocaleString()}</td></tr>`;
+                        remaining -= chunk; floor += chunk; currentRate += 10;
+                    }
+                }
+                data.rows = rows;
             }
             
             // Call template with FULL data object
@@ -754,7 +760,6 @@
         function confirmDownloadPDF() { const el = document.createElement('div'); el.innerHTML = currentPDFElement; document.body.appendChild(el); html2pdf().from(el).save('Document.pdf').then(() => document.body.removeChild(el)); }
         function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
         
-        // 🟢 FIXED: PROJECT MODAL HANDLER
         function openProjectModal(projectId) {
             const data = projectsCache.find(p => p.projectId === projectId);
             const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Project Archive</h2><p class="text-slate-400 font-mono text-xs">${data.projectId}</p></div><div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.customerName}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.location}</div></div></div><div class="grid grid-cols-3 gap-2 mb-6 text-center"> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">DEPTH</span><span class="text-white font-bold">${data.depth}ft</span></div> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">YIELD</span><span class="text-emerald-400 font-bold">${data.yield}</span></div> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">DATE</span><span class="text-white font-bold">${data.date}</span></div> </div><div class="grid grid-cols-2 gap-3 mb-4"><button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-file-paper-line"></i> Certificate</button><button onclick="editProject('${data.projectId}')" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-edit-line"></i> Edit Record</button></div><div class="text-center pt-2"><button onclick="deleteRecord('projects', '${data.projectId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE ARCHIVE</button></div>`;
