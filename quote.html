@@ -499,23 +499,32 @@
                     rows: drillHtml
                 };
 
-                // 🟢 INTELLIGENCE: Log Silent Lead
+                // 🟢 INTELLIGENCE: Log Silent Lead (With History Tracking)
                 const statusLog = hasLoggedPrice ? "Updated Price Check" : "Viewed Price / Not Booked";
+                
                 if (hasLoggedPrice) {
                      leadData.summary = "🔄 *UPDATED QUOTE*\n" + leadData.summary;
                 }
 
                 db.collection('silent_leads').doc(leadData.id).set({
-                    ...leadData,
+                    ...leadData, // Keeps the LATEST data at the top level
                     status: statusLog,
-                    last_updated: firebase.firestore.FieldValue.serverTimestamp()
+                    last_updated: firebase.firestore.FieldValue.serverTimestamp(),
+                    // 🟢 THE UPGRADE: Append this specific check to an array
+                    // This stores history without creating new documents!
+                    activity_log: firebase.firestore.FieldValue.arrayUnion({
+                        depth: totalDepth,
+                        total: grandTotal,
+                        loc: loc,
+                        time: new Date().toISOString() // Precise timestamp
+                    })
                 }, { merge: true }); 
 
                 if(typeof NOTIFY_TEMPLATES !== 'undefined') {
                     sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
                 }
                 
-                hasLoggedPrice = true; 
+                hasLoggedPrice = true;
 
                 document.getElementById('step-1').classList.add('hidden');
                 document.getElementById('step-2').classList.remove('hidden');
