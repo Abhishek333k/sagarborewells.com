@@ -30,13 +30,14 @@
         .form-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
         .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; transition: 0.3s; }
         .custom-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); }
-        
+        .custom-input:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+
         .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; font-weight: 700; padding: 18px; border-radius: 12px; width: 100%; font-size: 1.1rem; transition: 0.2s; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); }
         .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
 
         /* SLIDER & ELASTIC CONTAINER */
-        .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; transition: all 0.3s ease; }
+        .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; transition: background 0.3s ease, border-color 0.3s ease; }
         .slider-container.expanded { border-color: #f59e0b; background: #fffbeb; }
         
         .range-slider { width: 100%; height: 12px; border-radius: 6px; background: #cbd5e1; outline: none; -webkit-appearance: none; }
@@ -100,7 +101,10 @@
                         <label class="form-label">Mobile Number</label>
                         <div class="relative">
                             <input type="tel" id="custMobile" class="custom-input pr-24" placeholder="98765 43210" maxlength="10">
+                            
                             <button id="sendOtpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-4 rounded-lg font-bold text-xs hover:bg-black transition">VERIFY</button>
+                            <button id="editMobileBtn" onclick="resetOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-200 text-slate-600 px-3 rounded-lg font-bold text-xs hover:bg-slate-300 transition hidden"><i class="ri-pencil-line"></i></button>
+                            
                             <div id="verifiedBadge" class="absolute right-4 top-4 text-emerald-600 font-bold text-xs uppercase hidden flex items-center gap-1"><i class="ri-checkbox-circle-fill"></i> Verified</div>
                         </div>
                         <div id="otpSection" class="hidden mt-2 flex gap-2">
@@ -254,42 +258,6 @@
 
     <script>
         
-       // 🟢 0. PRE-FILL & ELASTIC SLIDER ENGINE (Restored)
-       // This block handles initial URL parameters (like ?depth=800) and expands the slider automatically.
-        window.addEventListener('DOMContentLoaded', () => {
-            const params = new URLSearchParams(window.location.search);
-            
-            // 1. Fill Location
-            if (params.has('loc')) {
-                const loc = decodeURIComponent(params.get('loc'));
-                document.getElementById('locInput').value = loc;
-            }
-
-            // 2. Fill Depth & Adjust Slider
-            if (params.has('depth')) {
-                const depth = parseInt(params.get('depth'));
-                const slider = document.getElementById('depthSlider');
-                const display = document.getElementById('display-val');
-                
-                // Update Values
-                slider.value = depth;
-                display.innerText = depth;
-
-                // Trigger visual update (Elastic logic)
-                if (depth > 500) { 
-                    slider.max = (depth > 900) ? 1200 : 900;
-                    document.getElementById('sliderBox').classList.add('expanded');
-                }
-                
-                // Force background color update (Visual Bar)
-                const pct = ((depth - slider.min) / (slider.max - slider.min)) * 100;
-                slider.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
-                
-                // Show alerts if needed
-                document.getElementById('expertAlert').style.display = (depth > 600) ? 'block' : 'none';
-            }
-        });
-
         // 🟢 INIT FIREBASE
         if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
             if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
@@ -310,6 +278,62 @@
         let currentQuoteID = null;   
         let hasLoggedPrice = false; 
 
+        // 🟢 UNIFIED INITIALIZATION (Materials & Pre-Fill)
+        window.addEventListener('DOMContentLoaded', () => {
+            // 1. Render Materials
+            const matGrid = document.getElementById('materialsGrid');
+            if(matGrid) {
+                matGrid.innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
+            }
+
+            // 2. Pre-Fill Engine
+            const params = new URLSearchParams(window.location.search);
+            let shouldCalc = false;
+            
+            // Fill Location
+            if (params.has('loc')) {
+                const loc = decodeURIComponent(params.get('loc'));
+                document.getElementById('locInput').value = loc;
+                shouldCalc = true;
+            }
+
+            // Fill Depth & Adjust Slider
+            if (params.has('depth')) {
+                const depth = parseInt(params.get('depth'));
+                const slider = document.getElementById('depthSlider');
+                const display = document.getElementById('display-val');
+                const sliderBox = document.getElementById('sliderBox');
+                
+                // Update Values
+                slider.value = depth;
+                display.innerText = depth;
+
+                // Visual Updates (Initial)
+                if (depth > 500) { 
+                    slider.max = (depth > 900) ? 1200 : 900;
+                    sliderBox.classList.add('expanded');
+                }
+                
+                // Force background color update (Visual Bar)
+                const pct = ((depth - slider.min) / (slider.max - slider.min)) * 100;
+                slider.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
+                
+                // Show alerts if needed
+                document.getElementById('expertAlert').style.display = (depth > 600) ? 'block' : 'none';
+                shouldCalc = true;
+            }
+
+            // 3. Auto-Calculate if Params Exist
+            if(shouldCalc) {
+                setTimeout(() => {
+                    if(!document.getElementById('generateBtn').disabled) {
+                        calculateEstimate();
+                    }
+                }, 1000);
+            }
+        });
+
+
         // 🟢 SLIDER LOGIC (Interaction)
         const slider = document.getElementById('depthSlider');
         const sliderBox = document.getElementById('sliderBox');
@@ -322,13 +346,21 @@
 
             document.getElementById('display-val').innerText = val;
 
+            // 🟢 VISUAL LOGIC: Toggle Colors Instantly (Val > 500)
+            if (val > 500) sliderBox.classList.add('expanded');
+            else sliderBox.classList.remove('expanded');
+
+            // 🟢 SCALE LOGIC: Expansion
             if (val >= currentMax) {
-                if (currentMax === 500) { this.max = 900; maxLabel.innerText = "900 FT"; sliderBox.classList.add('expanded'); }
+                if (currentMax === 500) { this.max = 900; maxLabel.innerText = "900 FT"; }
                 else if (currentMax === 900) { this.max = 1200; maxLabel.innerText = "1200 FT"; }
-            } else if (val < 400 && currentMax > 500) {
-                this.max = 500; maxLabel.innerText = "500 FT"; sliderBox.classList.remove('expanded');
+            } 
+            // 🟢 SCALE LOGIC: Contraction (With Hysteresis)
+            else if (val < 450 && currentMax > 500) {
+                this.max = 500; maxLabel.innerText = "500 FT";
                 this.value = val; 
             }
+            
             expertAlert.style.display = (val > 600) ? 'block' : 'none';
             const pct = ((val - this.min) / (this.max - this.min)) * 100;
             this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
@@ -426,21 +458,28 @@
                 rows: drillHtml
             };
 
-            // 🟢 INTELLIGENCE: Log Silent Lead
-            if (!hasLoggedPrice) {
-                db.collection('silent_leads').doc(leadData.id).set({
-                    ...leadData,
-                    type: "Window Shopper", 
-                    status: "Viewed Price / Not Booked"
-                });
-
-                // Secure Notification call
-                if(typeof NOTIFY_TEMPLATES !== 'undefined') {
-                    sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
-                }
-                
-                hasLoggedPrice = true; 
+            // 🟢 INTELLIGENCE: Log Silent Lead (ALWAYS LOG & NOTIFY)
+            // 🟥 FIX: Removed the "if(!hasLoggedPrice)" blocker.
+            // This ensures every "Calculate" click sends an update.
+            const statusLog = hasLoggedPrice ? "Updated Price Check" : "Viewed Price / Not Booked";
+            
+            // Add a visual marker for updates in Telegram
+            if (hasLoggedPrice) {
+                 leadData.summary = "🔄 *UPDATED QUOTE*\n" + leadData.summary;
             }
+
+            db.collection('silent_leads').doc(leadData.id).set({
+                ...leadData,
+                status: statusLog,
+                last_updated: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }); // Merge ensures we don't wipe other fields if they exist
+
+            // Secure Notification call (Always Send)
+            if(typeof NOTIFY_TEMPLATES !== 'undefined') {
+                sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
+            }
+            
+            hasLoggedPrice = true; 
 
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
@@ -448,7 +487,8 @@
         }
 
         // CONFIRM BOOKING
-        function confirmBooking() {
+        // 🔵 OPTIMIZATION: Async/Await prevents "Fire-and-Forget" network loss
+        async function confirmBooking() {
             const user = auth.currentUser;
             const finalData = { 
                 ...leadData, 
@@ -457,41 +497,49 @@
                 status: 'Booked' 
             };
 
-            db.collection('leads').doc(leadData.id).set(finalData).then(() => {
+            try {
+                // 1. Save Booking
+                await db.collection('leads').doc(leadData.id).set(finalData);
+                
+                // 2. Send Notification (Wait for it to ensure it sends)
+                if(typeof NOTIFY_TEMPLATES !== 'undefined') {
+                    await sendTelegram(NOTIFY_TEMPLATES.booking(finalData));
+                }
+
+                // 3. Update UI
                 document.getElementById('step-2').classList.add('hidden');
                 document.getElementById('step-3').classList.remove('hidden');
-                if(typeof NOTIFY_TEMPLATES !== 'undefined') {
-                    sendTelegram(NOTIFY_TEMPLATES.booking(finalData));
-                }
-            }).catch(e => alert("Error saving booking: " + e.message));
+            } catch (e) {
+                alert("Error saving booking: " + e.message);
+            }
         }
 
         // 🟢 SECURE TELEGRAM SENDER
-        // Now uses getTelegramCredentials() from config.js (Firebase Fetch)
         async function sendTelegram(msg) {
             if(typeof getTelegramCredentials === 'function') {
                 const creds = await getTelegramCredentials();
                 if(creds && creds.bot_token && creds.chat_id) {
                     const url = `https://api.telegram.org/bot${creds.bot_token}/sendMessage?chat_id=${creds.chat_id}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
-                    fetch(url).catch(e => console.log("Notify Error"));
+                    try {
+                        await fetch(url);
+                    } catch(e) { console.log("Notify Error", e); }
                 }
             } else {
                 console.warn("Secure Credential Fetcher not found.");
             }
         }
 
-        // UTILS
-        document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('materialsGrid').innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
-        });
-
         // 🟢 AUTH STATE LISTENER
         auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
                 document.getElementById('custMobile').disabled = true;
+                
+                // Show Edit Button
                 document.getElementById('sendOtpBtn').classList.add('hidden');
+                document.getElementById('editMobileBtn').classList.remove('hidden');
                 document.getElementById('verifiedBadge').classList.remove('hidden');
+                
                 document.getElementById('generateBtn').disabled = false; 
             }
         });
@@ -550,15 +598,43 @@
             const p = document.getElementById('custMobile').value;
             if(p.length!=10) return alert("Enter 10 digit number");
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
+            
+            // Disable Input during process
+            document.getElementById('custMobile').disabled = true;
+
             auth.signInWithPhoneNumber('+91'+p, window.recaptchaVerifier).then(cr=>{
-                window.confirmationResult=cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('sendOtpBtn').classList.add('hidden');
-            }).catch(e=>{ console.error(e); alert("SMS Error"); });
+                window.confirmationResult=cr; 
+                document.getElementById('otpSection').classList.remove('hidden'); 
+                document.getElementById('sendOtpBtn').classList.add('hidden');
+                // Show edit button immediately so they can fix errors
+                document.getElementById('editMobileBtn').classList.remove('hidden');
+            }).catch(e=>{ 
+                console.error(e); 
+                alert("SMS Error: " + e.message); 
+                document.getElementById('custMobile').disabled = false; // Re-enable on error
+            });
+        }
+
+        // 🟢 RESET OTP FUNCTION (Allow Editing)
+        function resetOTP() {
+             // 1. Hide OTP Section
+             document.getElementById('otpSection').classList.add('hidden');
+             // 2. Toggle Buttons
+             document.getElementById('sendOtpBtn').classList.remove('hidden');
+             document.getElementById('editMobileBtn').classList.add('hidden');
+             // 3. Enable Input
+             document.getElementById('custMobile').disabled = false;
+             document.getElementById('custMobile').focus();
+             // 4. Reset Auth State (Optional, but good for UI sync)
+             document.getElementById('verifiedBadge').classList.add('hidden');
+             document.getElementById('generateBtn').disabled = true; 
         }
         
         function verifyOTP() { 
             window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=> {
                 document.getElementById('otpSection').classList.add('hidden');
                 document.getElementById('generateBtn').disabled = false; 
+                // Note: verifiedBadge is shown by onAuthStateChanged
             }).catch(e => alert("Invalid OTP"));
         }
 
@@ -587,7 +663,7 @@
         function confirmQuoteLocation() { const p=qMap.getCenter(); new google.maps.Geocoder().geocode({location:p},(r,s)=>{if(s==='OK'){document.getElementById('locInput').value=r[0].formatted_address; calculateDist(p.lat(),p.lng());}}); document.getElementById('miniMapModal').style.display='none'; }
         function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{calculateDist(p.coords.latitude,p.coords.longitude); new google.maps.Geocoder().geocode({location:{lat:p.coords.latitude,lng:p.coords.longitude}},(r,s)=>{if(s==='OK')document.getElementById('locInput').value=r[0].formatted_address;});}); }
 
-        // 🟢 INJECT GOOGLE MAPS SCRIPT (Restored from Missing Chunk)
+        // 🟢 INJECT GOOGLE MAPS SCRIPT (Restored)
         const s = document.createElement('script'); 
         s.src=`https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
         s.async=true; 
