@@ -76,10 +76,10 @@
         .cyber-input { background: #1e293b; border: 1px solid #334155; color: white; padding: 12px; border-radius: 8px; width: 100%; outline: none; font-size: 14px; transition: 0.2s; }
         .cyber-input:focus { border-color: var(--neon-blue); }
         
-        /* MODAL ANIMATION */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
+        /* MODAL ANIMATION - CENTERED FIX */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
         .modal.open { display: flex; animation: fadeUp 0.2s ease-out; }
-        @keyframes fadeUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        #previewModal .bg-white { margin: auto; } /* Force Center */
 
         /* LOADING */
         .loader-ring { width: 40px; height: 40px; border: 3px solid #1e293b; border-top-color: var(--neon-blue); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -609,13 +609,17 @@
 
             <div class="space-y-4 mb-6">
                 <div>
-                    <label class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1 block pl-1">Current Status</label>
+                    <label class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1 block pl-1">Project Phase</label>
                     <div class="relative">
                         <select class="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-3 text-white text-sm outline-none focus:border-blue-500 transition appearance-none" onchange="updateLeadStatus('${data.docId}', this.value)">
-                            <option ${data.status==='Pending'?'selected':''}>Pending</option>
-                            <option ${data.status==='Contacted'?'selected':''}>Contacted</option>
-                            <option ${data.status==='Site Visit'?'selected':''}>Site Visit</option>
-                            <option ${data.status==='Closed'?'selected':''}>Closed</option>
+                            <option ${data.status==='Quote Generated'?'selected':''}>Quote Generated</option>
+                            <option ${data.status==='Booked'?'selected':''}>Booked</option>
+                            <option ${data.status==='Survey'?'selected':''}>Survey</option>
+                            <option ${data.status==='Rig Move'?'selected':''}>Rig Move</option>
+                            <option ${data.status==='Drilling'?'selected':''}>Drilling</option>
+                            <option ${data.status==='Water'?'selected':''}>Water</option>
+                            <option ${data.status==='Certification'?'selected':''}>Certification</option>
+                            <option ${data.status==='Completed'?'selected':''}>Completed</option>
                         </select>
                         <i class="ri-arrow-down-s-line absolute right-3 top-3.5 text-slate-500 pointer-events-none"></i>
                     </div>
@@ -646,6 +650,35 @@
             document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open');
         }
 
+		
+		function saveProject(e) {
+            e.preventDefault();
+            const id = document.getElementById('p_id').value;
+            const data = {
+                projectId: id,
+                date: document.getElementById('p_date').value,
+                mobile: "+91" + document.getElementById('p_mobile').value,
+                customerName: document.getElementById('p_name').value,
+                location: document.getElementById('p_loc').value,
+                gps: document.getElementById('p_gps').value,
+                depth: document.getElementById('p_depth').value,
+                yield: document.getElementById('p_yield').value,
+                casing_depth: document.getElementById('p_casing').value,
+                casing_type: document.getElementById('p_casingType').value,
+                rigType: "Sensor Rig",
+                motor: "7.5 HP Texmo",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            db.collection('projects').doc(id).set(data).then(() => {
+                // Update the lead to 'Completed' automatically
+                db.collection('leads').doc(id).update({ status: 'Completed' }).catch(()=>{});
+                notify("Project Record Secured");
+                showSection('projects');
+            }).catch(err => notify("Write Error: " + err.message, "error"));
+        }
+		
+		
         // --- UTILS ---
         function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }).then(() => notify("Status Updated")); }
         function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
@@ -655,12 +688,14 @@
             closeModal(); 
             showSection('create'); 
             resetForm();
-            // Pre-fill Data
+            
+            // 🟢 PERSIST REF ID
+            document.getElementById('p_id').value = lead.id || lead.docId; 
             document.getElementById('p_mobile').value = lead.mobile.replace('+91', ''); 
             document.getElementById('p_name').value = lead.name; 
             document.getElementById('p_loc').value = lead.loc; 
             document.getElementById('p_depth').value = lead.depth;
-            notify("Lead Data Imported");
+            notify("Data Imported: " + (lead.id || lead.docId));
         }
 
         function resetForm() {
