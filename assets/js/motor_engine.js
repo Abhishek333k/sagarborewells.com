@@ -6,7 +6,7 @@ const SHOPIFY_DOMAIN = "sagartraders.in";
 // 🟢 STATE
 let userSelection = { source: '', depth: 0, dia: 6, phase: 1 };
 
-// 🟢 WIZARD UI LOGIC
+// 🟢 WIZARD UI LOGIC (Unchanged)
 function selectSource(source) {
     userSelection.source = source;
     document.getElementById('step1').classList.remove('active');
@@ -21,7 +21,7 @@ function prevStep() {
     document.getElementById('progressBar').style.width = "33%";
 }
 
-// 🟢 THE HYBRID ENGINE (Shopify First -> Google Sheet Backup)
+// 🟢 THE HYBRID ENGINE
 async function runEngine() {
     // 1. Gather Inputs
     userSelection.depth = parseInt(document.getElementById('inputDepth').value);
@@ -36,31 +36,34 @@ async function runEngine() {
     // 2. UI Loading State
     const btn = document.getElementById('findBtn');
     const originalText = btn.innerHTML;
-    btn.innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Scanning Inventory...`;
+    btn.innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Intelligent Search...`;
     btn.disabled = true;
 
-    const requiredHead = userSelection.depth * 1.25; // Physics Buffer
+    // Physics Buffer (25% friction loss)
+    const requiredHead = userSelection.depth * 1.25; 
 
     try {
         const container = document.getElementById('resultsContainer');
         const debug = document.getElementById('calcDebug');
         container.innerHTML = "";
         
-        // --- ATTEMPT 1: SHOPIFY (Live Stock) ---
-        debug.innerText = "Checking Live Inventory...";
+        // --- SOURCE 1: SHOPIFY (Live Stock) ---
+        // (This code remains same as previous, fetching active products)
         const shopifyRaw = await fetchShopifyProducts();
         let matches = filterShopify(shopifyRaw, requiredHead);
         let source = "shopify";
 
-        // --- ATTEMPT 2: GOOGLE SHEET (Master List) ---
-        if (matches.length === 0) {
-            debug.innerText = "Checking Master Dealership Database...";
-            const sheetUrl = await getMasterListUrl(); // 🔐 Secure Fetch
-            
+        // --- SOURCE 2: GOOGLE SHEET (Master DB) ---
+        // If Shopify yields low results, we check the Master DB
+        if (matches.length < 3) {
+            const sheetUrl = await getMasterListUrl(); 
             if (sheetUrl) {
                 const sheetRaw = await fetch(sheetUrl).then(r => r.json());
-                matches = filterSheet(sheetRaw, requiredHead);
-                source = "sheet";
+                const sheetMatches = filterSheet(sheetRaw, requiredHead);
+                
+                // Merge results (Shopify on top)
+                matches = [...matches, ...sheetMatches];
+                source = "hybrid";
             }
         }
 
@@ -68,12 +71,12 @@ async function runEngine() {
         document.getElementById('step2').classList.remove('active');
         document.getElementById('step3').classList.add('active');
         document.getElementById('progressBar').style.width = "100%";
-        debug.innerHTML = `Physics Load: <strong>${Math.round(requiredHead)} ft</strong> (${source === 'shopify' ? 'In Stock' : 'Dealership Order'})`;
+        debug.innerHTML = `Physics Load: <strong>${Math.round(requiredHead)} ft</strong> (${matches.length} matches found)`;
 
         if (matches.length === 0) {
             container.innerHTML = noMatchHTML();
         } else {
-            renderResults(matches, source);
+            renderResults(matches);
         }
 
     } catch (error) {
@@ -85,8 +88,7 @@ async function runEngine() {
     }
 }
 
-// 🟢 FETCHERS & FILTERS
-
+// 🟢 FETCHERS (Unchanged)
 async function fetchShopifyProducts() {
     try {
         const url = `https://${SHOPIFY_DOMAIN}/products.json?limit=250`;
@@ -96,6 +98,7 @@ async function fetchShopifyProducts() {
     } catch { return []; }
 }
 
+// 🟢 SMART FILTER: SHOPIFY
 function filterShopify(products, reqHead) {
     return products.filter(p => {
         let specs = {};
@@ -106,12 +109,12 @@ function filterShopify(products, reqHead) {
             }
         });
         
+        // Strict Logic for Active Products
         if (specs.type !== userSelection.source) return false;
         if (specs.phase && parseInt(specs.phase) !== userSelection.phase) return false;
         if (userSelection.source === 'borewell' && specs.dia && parseInt(specs.dia) > userSelection.dia) return false;
         if (!specs.head || parseInt(specs.head) < reqHead) return false;
 
-        // Standardize Object for Renderer
         p.std = {
             title: p.title,
             brand: p.vendor,
@@ -119,68 +122,141 @@ function filterShopify(products, reqHead) {
             image: p.images.length > 0 ? p.images[0].src : 'assets/img/motor-placeholder.png',
             link: `https://${SHOPIFY_DOMAIN}/products/${p.handle}`,
             head: specs.head,
+            source: 'shopify',
             action: "BUY NOW"
         };
         return true;
     });
 }
 
+// 🟢 SMART FILTER: DIRTY DATA SHEET (The Logic Upgrade)
 function filterSheet(rows, reqHead) {
-    return rows.filter(r => {
-        // Sheet columns: type, phase, dia, maxhead, brand, model, price
-        if (r.type.toLowerCase() !== userSelection.source) return false;
-        if (parseInt(r.phase) !== userSelection.phase) return false;
-        if (userSelection.source === 'borewell' && parseInt(r.dia) > userSelection.dia) return false;
-        if (parseInt(r.maxhead) < reqHead) return false;
+    return rows.map(r => normalizeRow(r)) // 1. Clean Data
+               .filter(r => {             // 2. Filter Logic
+                   if (!r.valid) return false; // Skip junk rows
 
-        // Standardize Object
-        r.std = {
-            title: `${r.brand} ${r.model} (${r.hp}HP)`,
-            brand: r.brand,
-            price: r.price,
-            image: 'assets/img/motor-catalog.png', // Generic image for catalog items
-            link: `https://wa.me/${CONTACT_INFO.whatsapp_api}?text=I need ${r.brand} ${r.model} motor`,
-            head: r.maxhead,
-            action: "ORDER VIA DEALER"
-        };
-        return true;
-    });
+                   // Rule 1: Type Match (Fuzzy match)
+                   // If excel says "Submersible", it matches "borewell"
+                   if (userSelection.source === 'borewell' && !r.type.includes('sub')) return false;
+                   if (userSelection.source === 'openwell' && !r.type.includes('mono')) return false;
+
+                   // Rule 2: Phase Match (With Inference)
+                   if (r.phase !== userSelection.phase) return false;
+
+                   // Rule 3: Diameter (Borewell Only)
+                   if (userSelection.source === 'borewell' && r.dia > userSelection.dia) return false;
+
+                   // Rule 4: Head (Physics)
+                   if (r.maxhead < reqHead) return false;
+
+                   return true;
+               })
+               .map(r => {
+                   // 3. Format for Display
+                   return {
+                       std: {
+                           title: `${r.brand} ${r.model} (${r.hp}HP)`,
+                           brand: r.brand || "Generic",
+                           price: r.price || "Call for Price",
+                           image: 'assets/img/motor-catalog.png',
+                           link: `https://wa.me/${CONTACT_INFO.whatsapp_api}?text=I need ${r.brand} ${r.model} (Item Code: ${r.sku})`,
+                           head: r.maxhead,
+                           source: 'sheet',
+                           action: "CHECK STOCK"
+                       }
+                   };
+               });
+}
+
+// 🟢 DATA NORMALIZER (The "AI" Cleaner)
+function normalizeRow(row) {
+    // Standardize Keys (lowercase)
+    const safeGet = (key) => (row[key] || row[Object.keys(row).find(k => k.toLowerCase().includes(key))] || "").toString();
+
+    let clean = {
+        valid: true,
+        sku: safeGet('code') || safeGet('item'),
+        brand: safeGet('category') || "KSB", // Default to KSB if using KSB sheet
+        model: safeGet('description') || "Pump",
+        type: (safeGet('pump type') || safeGet('type')).toLowerCase(),
+        hp: parseFloat(safeGet('hp')) || 0,
+        price: safeGet('m.r.p') || safeGet('price'),
+        stage: parseInt(safeGet('stage')) || 0,
+        dia: 0,
+        phase: 0,
+        maxhead: 0
+    };
+
+    // 🧠 INFERENCE ENGINE (Filling the Gaps)
+
+    // 1. Infer Head from Stages (If Head column missing)
+    // KSB Data usually implies 1 Stage = 4-5 Meters (approx 15ft)
+    if (clean.stage > 0) {
+        clean.maxhead = clean.stage * 15; 
+    }
+
+    // 2. Infer Phase from HP
+    // < 3HP usually 1-Phase (Domestic), > 3HP usually 3-Phase (Agri)
+    if (clean.hp > 0) {
+        clean.phase = (clean.hp <= 2) ? 1 : 3;
+    }
+
+    // 3. Infer Dia from Description
+    // Look for "V4" (4 inch) or "V6" (6 inch) in model name
+    if (clean.model.toLowerCase().includes('v4') || clean.model.toLowerCase().includes('100mm')) {
+        clean.dia = 4;
+    } else if (clean.model.toLowerCase().includes('v6') || clean.model.toLowerCase().includes('150mm')) {
+        clean.dia = 6;
+    } else {
+        // Fallback: Low HP = 4", High HP = 6"
+        clean.dia = (clean.hp <= 3) ? 4 : 6;
+    }
+
+    // Validation: If we still have 0 head or 0 HP, this row is junk.
+    if (clean.maxhead === 0 || clean.hp === 0) clean.valid = false;
+
+    return clean;
 }
 
 // 🟢 RENDERER
-function renderResults(items, source) {
+function renderResults(items) {
     const container = document.getElementById('resultsContainer');
     container.innerHTML = "";
     
-    // Sort cheap to expensive
-    items.sort((a,b) => parseFloat(a.std.price) - parseFloat(b.std.price));
+    // Prioritize Shopify items (In Stock) over Sheet items
+    items.sort((a,b) => (a.std.source === 'shopify' ? -1 : 1));
 
     items.forEach((item, index) => {
         const i = item.std;
         let badge = "";
-        if (index === 0) badge = `<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded">BEST MATCH</span>`;
         
-        // Visual distinction for Sheet items (Yellow border)
-        const borderClass = source === 'sheet' ? 'border-yellow-400 border-2' : 'border-slate-200 border';
+        // Smart Badging
+        if (i.source === 'shopify') badge = `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">IN STOCK</span>`;
+        else if (index === 0) badge = `<span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded">BEST MATCH</span>`;
+
+        const borderClass = i.source === 'shopify' ? 'border-emerald-400 border-2' : 'border-slate-200 border';
+        const btnClass = i.source === 'shopify' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-800 hover:bg-slate-900';
 
         container.innerHTML += `
             <div class="product-card bg-white ${borderClass} rounded-xl p-4 flex gap-4 items-center">
                 <div class="w-20 h-20 bg-slate-50 rounded-lg flex-shrink-0 overflow-hidden border border-slate-100 relative">
                     <img src="${i.image}" class="w-full h-full object-contain" alt="${i.title}">
-                    ${source === 'sheet' ? '<div class="absolute bottom-0 w-full bg-yellow-400 text-[8px] text-center font-bold">CATALOG</div>' : ''}
                 </div>
                 <div class="flex-grow">
                     <div class="flex justify-between items-start">
                         <div>
                             <h4 class="font-bold text-slate-800 text-sm md:text-base leading-tight">${i.title}</h4>
-                            <p class="text-xs text-slate-500 mt-1">Max Head: ${i.head}ft ${badge}</p>
+                            <div class="flex gap-2 mt-1 items-center">
+                                <span class="text-xs text-slate-500 font-mono">Head: ${i.head}ft</span>
+                                ${badge}
+                            </div>
                         </div>
                         <div class="text-right">
-                            <div class="font-bold text-blue-600">₹${parseInt(i.price).toLocaleString()}</div>
+                            <div class="font-bold text-blue-600">${typeof i.price === 'number' ? '₹'+i.price.toLocaleString() : i.price}</div>
                         </div>
                     </div>
                     <div class="mt-3">
-                        <a href="${i.link}" target="_blank" class="block w-full ${source === 'shopify' ? 'bg-slate-900 hover:bg-blue-600' : 'bg-yellow-500 hover:bg-yellow-600'} text-white text-center text-xs font-bold py-2 rounded-lg transition">
+                        <a href="${i.link}" target="_blank" class="block w-full ${btnClass} text-white text-center text-xs font-bold py-2 rounded-lg transition">
                             ${i.action}
                         </a>
                     </div>
@@ -193,10 +269,10 @@ function renderResults(items, source) {
 function noMatchHTML() {
     return `
         <div class="text-center py-10">
-            <div class="text-4xl mb-2">🕵️</div>
-            <h3 class="font-bold text-slate-700">Checking Factory Database...</h3>
-            <p class="text-sm text-slate-500 mb-4">No direct stock found. Our engineering team can source this.</p>
-            <a href="contact.html" class="text-blue-600 font-bold hover:underline">Submit Technical Request -></a>
+            <div class="text-4xl mb-2">📡</div>
+            <h3 class="font-bold text-slate-700">Engineering Request Needed</h3>
+            <p class="text-sm text-slate-500 mb-4">Your depth requirement is extremely high. Standard catalog motors may not suffice.</p>
+            <a href="contact.html" class="inline-block border-2 border-blue-600 text-blue-600 font-bold px-6 py-2 rounded-full hover:bg-blue-50">Contact Technical Team</a>
         </div>
     `;
 }
