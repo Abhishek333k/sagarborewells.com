@@ -2,10 +2,10 @@
 
 document.addEventListener("DOMContentLoaded", function() {
     
-    // --- 0. INTELLIGENCE INJECTION (Analytics & Assets) ---
-    const head = document.getElementsByTagName('head')[0];
+    // --- 1. HEAD INJECTION (Assets & Analytics) ---
+    const head = document.head;
 
-    // A. Inject Favicon 
+    // Favicon
     if (!document.querySelector("link[rel*='icon']")) {
         const link = document.createElement('link');
         link.type = 'image/png';
@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function() {
         head.appendChild(link);
     }
 
-    // B. Google Analytics 4 (GA4) - LIVE
+    // Google Analytics 4
     const gaId = 'G-LRKE2HG1RN'; 
     const gaScript = document.createElement('script');
     gaScript.async = true;
@@ -26,16 +26,16 @@ document.addEventListener("DOMContentLoaded", function() {
     gtag('js', new Date());
     gtag('config', gaId);
 
-    // C. Microsoft Clarity - LIVE
-    const clarityId = 'vatt3qahek';
+    // Microsoft Clarity
     (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
         t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", clarityId);
+    })(window, document, "clarity", "script", "vatt3qahek");
 
 
-    // --- 1. RENDER HEADER (Navigation) ---
+    // --- 2. DYNAMIC NAVBAR ---
+    // Uses 'navbar-mount' which exists in your HTML files
     const headerMount = document.getElementById('navbar-mount');
     if (headerMount) {
         headerMount.innerHTML = `
@@ -56,11 +56,9 @@ document.addEventListener("DOMContentLoaded", function() {
                     <div class="hidden md:flex items-center gap-8">
                         <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
                         <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
-                        
                         <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
                             <i class="ri-user-line"></i> Account
                         </a>
-
                         <a href="quote.html" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-lg shadow-blue-200 flex items-center gap-2">
                             <i class="ri-calculator-line"></i> Get Quote
                         </a>
@@ -86,24 +84,11 @@ document.addEventListener("DOMContentLoaded", function() {
         if(btn) btn.addEventListener('click', () => document.getElementById('mobile-menu').classList.toggle('hidden'));
     }
 
-    // --- 2. RENDER FOOTER (Dynamic from Config) ---
+    // --- 3. DYNAMIC FOOTER ---
     const footerMount = document.getElementById('footer-mount');
-    if (footerMount) {
-        // Safe Config Access
-        const C = (typeof CONTACT_INFO !== 'undefined') ? CONTACT_INFO : {};
+    if (footerMount && typeof CONTACT_INFO !== 'undefined') {
+        const { whatsapp_api, social, address_line1, address_line2, phone_display, email } = CONTACT_INFO;
         
-        const phone = C.phone_display || '+91 96666 03888';
-        const email = C.email || 'support@sagarborewells.com';
-        
-        // Construct Address (Combines Line 1 & 2)
-        const addr1 = C.address_line1 || 'Mangalagiri';
-        const addr2 = C.address_line2 || 'Andhra Pradesh';
-        const fullAddress = `${addr1},<br>${addr2}`;
-        
-        const wa = C.whatsapp_api || '919666603888';
-        const insta = C.social_instagram || '#';
-        const yt = C.social_youtube || '#';
-
         footerMount.innerHTML = `
         <footer class="bg-[#0f172a] pt-16 pb-8 border-t border-slate-800 text-slate-400 font-sans mt-auto">
             <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
@@ -116,9 +101,9 @@ document.addEventListener("DOMContentLoaded", function() {
                         Advanced geological sensor drilling. Delivering precision water solutions since 2010.
                     </p>
                     <div class="flex gap-4">
-                        <a href="https://wa.me/${wa}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i class="ri-whatsapp-line"></i></a>
-                        <a href="${insta}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition"><i class="ri-instagram-line"></i></a>
-                        <a href="${yt}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i class="ri-youtube-fill"></i></a>
+                        <a href="https://wa.me/${whatsapp_api}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i class="ri-whatsapp-line"></i></a>
+                        <a href="${social.instagram}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition"><i class="ri-instagram-line"></i></a>
+                        <a href="${social.youtube}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i class="ri-youtube-fill"></i></a>
                     </div>
                 </div>
 
@@ -128,7 +113,6 @@ document.addEventListener("DOMContentLoaded", function() {
                         <li><a href="index.html" class="hover:text-blue-400 transition">Home</a></li>
                         <li><a href="quote.html" class="hover:text-blue-400 transition">Get Estimate</a></li>
                         <li><a href="dashboard.html" class="hover:text-blue-400 transition">Client Login</a></li>
-                        <li><a href="contact.html" class="hover:text-blue-400 transition">Contact Us</a></li>
                     </ul>
                 </div>
 
@@ -137,7 +121,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     <ul class="space-y-2 text-sm">
                         <li><a href="terms.html" class="hover:text-blue-400 transition">Terms of Service</a></li>
                         <li><a href="privacy.html" class="hover:text-blue-400 transition">Privacy Policy</a></li>
-                        <li><a href="refund.html" class="hover:text-blue-400 transition">Refund Policy</a></li>
                     </ul>
                 </div>
 
@@ -146,11 +129,11 @@ document.addEventListener("DOMContentLoaded", function() {
                     <ul class="space-y-4 text-sm">
                         <li class="flex items-start gap-3">
                             <i class="ri-map-pin-line text-blue-500 mt-1"></i>
-                            <span class="leading-tight">${fullAddress}</span>
+                            <span class="leading-tight">${address_line1},<br>${address_line2}</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="ri-phone-line text-blue-500"></i> 
-                            <a href="tel:${phone}" class="hover:text-white">${phone}</a>
+                            <a href="tel:${phone_display}" class="hover:text-white">${phone_display}</a>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="ri-mail-line text-blue-500"></i> 
@@ -166,27 +149,3 @@ document.addEventListener("DOMContentLoaded", function() {
         </footer>`;
     }
 });
-
-
-// --- 🛡️ SITE PROTECTION SUITE (CSS + JS) 🛡️ ---
-(function() {
-    // 1. 🎨 INJECT CSS PROTECTION
-    const style = document.createElement('style');
-    style.innerHTML = `
-        body { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
-        input, textarea { -webkit-user-select: text; -ms-user-select: text; user-select: text; }
-        img { -webkit-user-drag: none; user-drag: none; pointer-events: none; }
-    `;
-    document.head.appendChild(style);
-
-    // 2. 🚫 DISABLE RIGHT CLICK
-    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-
-    // 3. ⌨️ DISABLE SHORTCUTS
-    document.onkeydown = function(e) {
-        if (event.keyCode == 123) return false; // F12
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Inspect
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Inspect Element
-        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // View Source
-    };
-})();
