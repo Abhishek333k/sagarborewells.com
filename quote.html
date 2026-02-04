@@ -35,9 +35,10 @@
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); }
         .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        /* SLIDER */
+        /* SLIDER & ELASTIC CONTAINER */
         .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; transition: all 0.3s ease; }
         .slider-container.expanded { border-color: #f59e0b; background: #fffbeb; }
+        
         .range-slider { width: 100%; height: 12px; border-radius: 6px; background: #cbd5e1; outline: none; -webkit-appearance: none; }
         .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: var(--primary); border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.1s; }
         .range-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
@@ -70,7 +71,6 @@
         .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: none; font-family: inherit; }
         .pac-item { padding: 10px 15px; font-size: 14px; }
         
-        /* 🟢 MAP MARKER CSS */
         .map-center-marker {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%);
             z-index: 10; font-size: 32px; color: #ef4444; pointer-events: none;
@@ -254,7 +254,8 @@
 
     <script>
         
-       // 🟢 0. PRE-FILL ENGINE (Handle Edit/Recalculate)
+       // 🟢 0. PRE-FILL & ELASTIC SLIDER ENGINE (Restored)
+       // This block handles initial URL parameters (like ?depth=800) and expands the slider automatically.
         window.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
             
@@ -280,7 +281,7 @@
                     document.getElementById('sliderBox').classList.add('expanded');
                 }
                 
-                // Force background color update
+                // Force background color update (Visual Bar)
                 const pct = ((depth - slider.min) / (slider.max - slider.min)) * 100;
                 slider.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
                 
@@ -289,7 +290,6 @@
             }
         });
 
-        
         // 🟢 INIT FIREBASE
         if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
             if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
@@ -307,12 +307,10 @@
         let transportDist = 0;
         let siteCoords = null;
         let leadData = {};
+        let currentQuoteID = null;   
+        let hasLoggedPrice = false; 
 
-        // 🟢 STATE VARIABLES
-        let currentQuoteID = null;   // Persist ID across slider moves
-        let hasLoggedPrice = false;  // Prevent spamming admin on every slider move
-
-        // 🟢 SLIDER LOGIC
+        // 🟢 SLIDER LOGIC (Interaction)
         const slider = document.getElementById('depthSlider');
         const sliderBox = document.getElementById('sliderBox');
         const maxLabel = document.getElementById('maxLabel');
@@ -428,16 +426,15 @@
                 rows: drillHtml
             };
 
-            // 🟢 INTELLIGENCE: Log Silent Lead with QT ID (Once per session)
+            // 🟢 INTELLIGENCE: Log Silent Lead
             if (!hasLoggedPrice) {
-                // 1. Save to DB (Silent) - 🟢 FIX: Use .doc().set()
                 db.collection('silent_leads').doc(leadData.id).set({
                     ...leadData,
                     type: "Window Shopper", 
                     status: "Viewed Price / Not Booked"
                 });
 
-                // 2. Send Telegram (New Template)
+                // Secure Notification call
                 if(typeof NOTIFY_TEMPLATES !== 'undefined') {
                     sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
                 }
@@ -469,10 +466,17 @@
             }).catch(e => alert("Error saving booking: " + e.message));
         }
 
-        function sendTelegram(msg) {
-            if(typeof TELEGRAM_BOT_TOKEN !== 'undefined') {
-                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
-                fetch(url).catch(e => console.log("Notify Error"));
+        // 🟢 SECURE TELEGRAM SENDER
+        // Now uses getTelegramCredentials() from config.js (Firebase Fetch)
+        async function sendTelegram(msg) {
+            if(typeof getTelegramCredentials === 'function') {
+                const creds = await getTelegramCredentials();
+                if(creds && creds.bot_token && creds.chat_id) {
+                    const url = `https://api.telegram.org/bot${creds.bot_token}/sendMessage?chat_id=${creds.chat_id}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
+                    fetch(url).catch(e => console.log("Notify Error"));
+                }
+            } else {
+                console.warn("Secure Credential Fetcher not found.");
             }
         }
 
@@ -481,32 +485,28 @@
             document.getElementById('materialsGrid').innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
         });
 
-        // 🟢 AUTH STATE LISTENER (Unlock button on Login)
+        // 🟢 AUTH STATE LISTENER
         auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
                 document.getElementById('custMobile').disabled = true;
                 document.getElementById('sendOtpBtn').classList.add('hidden');
                 document.getElementById('verifiedBadge').classList.remove('hidden');
-                document.getElementById('generateBtn').disabled = false; // 🟢 FORCE ENABLE
+                document.getElementById('generateBtn').disabled = false; 
             }
         });
 
         function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
         
-        // 🟢 ROBUST PDF GENERATION (Prevents silent failures)
         function downloadPDF() { 
             const element = document.createElement('div');
-            // Check if Template Engine exists
             if(typeof getInvoiceHTML === 'function') {
                 element.innerHTML = getInvoiceHTML(leadData);
             } else {
-                // Fallback: Clone the current view
                 element.innerHTML = document.getElementById('invoice-capture').innerHTML;
                 element.innerHTML += '<br><br><h3>Generated via Sagar Borewells Online</h3>';
             }
 
-            // Check if PDF Engine exists
             if(typeof html2pdf !== 'undefined') {
                 html2pdf().from(element).save(`Estimate_${leadData.id}.pdf`);
             } else {
@@ -514,23 +514,19 @@
             }
         }
         
-        // 🟢 ROBUST WHATSAPP SHARE (Prevents dead clicks)
         function shareWhatsApp() { 
             let msg = "";
             let phone = CONTACT_INFO.whatsapp_api;
 
-            // Check if Template Engine exists
             if(typeof WA_MSG !== 'undefined') {
                 msg = WA_MSG.booking_share(leadData);
                 window.open(WA_MSG.link(phone, msg), '_blank');
             } else {
-                // Fallback: Manual Message Construction
                 msg = `*ESTIMATE: ${leadData.id}*\n\nDepth: ${leadData.depth} ft\nTotal: ₹${leadData.total.toLocaleString()}\n\nI want to proceed.`;
                 window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
             }
         }
         
-        // 🟢 EXPERT CONSULT FALLBACK
         function consultExpert() {
             const depth = document.getElementById('depthSlider').value;
             if(typeof WA_MSG !== 'undefined') {
@@ -541,7 +537,6 @@
             }
         }
         
-        // 🟢 CHAT SUPPORT FALLBACK
         function openChatSupport() {
              if(typeof WA_MSG !== 'undefined') {
                 const msg = WA_MSG.chat_support();
@@ -560,11 +555,10 @@
             }).catch(e=>{ console.error(e); alert("SMS Error"); });
         }
         
-        // 🟢 FIX: UNLOCK BUTTON AFTER OTP VERIFICATION
         function verifyOTP() { 
             window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=> {
                 document.getElementById('otpSection').classList.add('hidden');
-                document.getElementById('generateBtn').disabled = false; // 🟢 FORCE ENABLE
+                document.getElementById('generateBtn').disabled = false; 
             }).catch(e => alert("Invalid OTP"));
         }
 
@@ -593,7 +587,12 @@
         function confirmQuoteLocation() { const p=qMap.getCenter(); new google.maps.Geocoder().geocode({location:p},(r,s)=>{if(s==='OK'){document.getElementById('locInput').value=r[0].formatted_address; calculateDist(p.lat(),p.lng());}}); document.getElementById('miniMapModal').style.display='none'; }
         function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{calculateDist(p.coords.latitude,p.coords.longitude); new google.maps.Geocoder().geocode({location:{lat:p.coords.latitude,lng:p.coords.longitude}},(r,s)=>{if(s==='OK')document.getElementById('locInput').value=r[0].formatted_address;});}); }
 
-        const s = document.createElement('script'); s.src=`https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; s.async=true; s.defer=true; document.body.appendChild(s);
+        // 🟢 INJECT GOOGLE MAPS SCRIPT (Restored from Missing Chunk)
+        const s = document.createElement('script'); 
+        s.src=`https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
+        s.async=true; 
+        s.defer=true; 
+        document.body.appendChild(s);
     </script>
 </body>
 </html>
