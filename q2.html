@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"> 
+<head> 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Estimate | Sagar Borewells</title>
+    <title>Get Quote | Sagar Borewells</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -17,448 +18,657 @@
     <script src="assets/js/layout.js"></script>
     <script src="assets/js/quote_constants.js"></script> 
     <script src="assets/js/pdf_template.js"></script>
+    <script src="assets/js/notifications.js"></script>
+    <script src="assets/js/whatsapp_templates.js"></script>
 
     <style>
-        :root { --primary: #1d4ed8; --drill-dark: #0f172a; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #e2e8f0; overflow-x: hidden; }
+        /* BASE STYLES */
+        :root { --primary: #1e3a8a; --bg: #f8fafc; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: #1e293b; }
         
-        /* --- 3D DRILL BIT ASSEMBLY --- */
-        .drill-rig-stage {
-            position: relative; height: 600px; width: 100%;
-            background: #0f172a; border-left: 2px solid #1e293b;
-            display: flex; justify-content: center;
-            overflow: hidden;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
-        }
+        .quote-card { background: #ffffff; border-radius: 24px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); padding: 40px; max-width: 800px; margin: 40px auto; }
+        .form-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
+        .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; transition: 0.3s; }
+        .custom-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); }
+        .custom-input:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
 
-        .geo-layers {
-            position: absolute; inset: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, #5d4037 0%, #a1887f 15%, #546e7a 40%, #263238 100%);
-            opacity: 0.2; z-index: 0;
-        }
+        .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; font-weight: 700; padding: 18px; border-radius: 12px; width: 100%; font-size: 1.1rem; transition: 0.2s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); }
+        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        /* The Draggable Track */
-        .drill-track {
-            position: relative; height: 100%; width: 120px;
-            z-index: 10; cursor: grab;
-        }
-        .drill-track:active { cursor: grabbing; }
-
-        /* The Hammer (Visual) */
-        .hammer-assembly {
-            position: absolute; left: 50%; top: 0;
-            width: 50px; height: 140px;
-            transform: translateX(-50%) translateY(-95%); /* Tip at cursor */
-            z-index: 20;
-            will-change: transform, top;
-        }
-
-        /* Realistic Texture via CSS Gradient */
-        .hammer-body {
-            width: 100%; height: 100%;
-            background: 
-                /* Shine */
-                linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%),
-                /* Metal Color */
-                linear-gradient(to right, #1e293b, #475569, #1e293b);
-            border-radius: 4px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-        }
-
-        /* Tungsten Buttons (Red Tips) */
-        .hammer-head {
-            width: 110%; height: 20px; background: #334155;
-            border-bottom: 4px solid #b91c1c; /* Carbide */
-            border-radius: 0 0 10px 10px;
-            margin-bottom: -5px;
-        }
-
-        /* Animations */
-        .drilling { animation: vibrate 0.05s infinite linear; }
-        @keyframes vibrate {
-            0% { transform: translateX(-50%) translateY(-95%) rotate(0deg); }
-            25% { transform: translateX(-51%) translateY(-94%) rotate(1deg); }
-            50% { transform: translateX(-50%) translateY(-95%) rotate(0deg); }
-            75% { transform: translateX(-49%) translateY(-96%) rotate(-1deg); }
-            100% { transform: translateX(-50%) translateY(-95%) rotate(0deg); }
-        }
-
-        /* Dirt Particles */
-        .dust-particle {
-            position: absolute; width: 6px; height: 6px;
-            background: #a1887f; border-radius: 50%;
-            pointer-events: none; opacity: 0.8;
-            z-index: 15;
-        }
-
-        /* Borehole Darkness */
-        .borehole-shaft {
-            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-            width: 20px; background: #000; height: 0%;
-            box-shadow: inset 0 0 10px rgba(0,0,0,1);
-            transition: height 0.05s linear; z-index: 5;
-        }
-
-        /* UI Elements */
-        .depth-marker {
-            position: absolute; right: 10px; color: rgba(255,255,255,0.3);
-            font-size: 10px; font-weight: bold; transform: translateY(-50%);
-            pointer-events: none;
-        }
-
-        .depth-hud {
-            position: absolute; top: 20px; right: 20px; text-align: right; z-index: 30;
-        }
-        .hud-val { font-size: 4rem; font-weight: 900; line-height: 1; color: white; text-shadow: 0 0 20px rgba(37,99,235,0.5); }
-        .hud-lbl { color: #94a3b8; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; }
-
-        /* Form Styling */
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid #334155; }
-        .input-dark { background: #020617; border: 1px solid #334155; color: white; transition: 0.3s; }
-        .input-dark:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.2); outline: none; }
+        /* SLIDER & ELASTIC CONTAINER */
+        .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; transition: background 0.3s ease, border-color 0.3s ease; }
+        .slider-container.expanded { border-color: #f59e0b; background: #fffbeb; }
         
-        .est-table td, .est-table th { padding: 12px; border-bottom: 1px solid #334155; text-align: left; }
-        .est-table th { color: #94a3b8; text-transform: uppercase; font-size: 0.7rem; }
+        .range-slider { width: 100%; height: 12px; border-radius: 6px; background: #cbd5e1; outline: none; -webkit-appearance: none; }
+        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: var(--primary); border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.1s; }
+        .range-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
+
+        .expert-alert { display: none; margin-top: 15px; padding: 12px; background: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; color: #b91c1c; font-size: 0.85rem; font-weight: 600; text-align: center; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* RESULT CARD */
+        .est-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px -10px rgba(0,0,0,0.15); margin-top: 20px; border: 1px solid #e2e8f0; }
+        .est-header { background: #ffffff; padding: 30px; border-bottom: 2px solid #1e3a8a; }
+        .est-total-block { text-align: right; }
+        .est-amount { font-size: 2.2rem; font-weight: 800; color: #1e3a8a; line-height: 1; margin-top: 5px; }
+        
+        .est-meta { display: flex; justify-content: space-between; margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; }
+        .est-meta-item strong { display: block; font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
+        .est-meta-item span { font-size: 0.95rem; font-weight: 700; color: #334155; }
+
+        .est-body { padding: 30px; }
+        .est-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 0.9rem; }
+        .est-table th { text-align: left; padding: 8px; color: #64748b; font-size: 0.7rem; text-transform: uppercase; font-weight: 700; }
+        .est-table td { padding: 10px 8px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; color: #334155; }
+        .est-table tfoot td { border-top: 2px solid #e2e8f0; font-weight: 800; color: #1e3a8a; padding-top: 15px; font-size: 1rem; border-bottom: none; }
+        
+        .var-box { background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 12px; padding: 20px; margin-top: 20px; }
+        .var-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 30px; font-size: 0.85rem; }
+        .var-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed #dbeafe; }
+        .var-badge { background: #fff; color: #1e40af; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #bfdbfe; }
+
+        /* MAPS */
+        .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: none; font-family: inherit; }
+        .pac-item { padding: 10px 15px; font-size: 14px; }
+        
+        .map-center-marker {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%);
+            z-index: 10; font-size: 32px; color: #ef4444; pointer-events: none;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
     <div id="navbar-mount"></div>
 
-    <main class="flex-grow flex flex-col md:flex-row h-[calc(100vh-80px)]">
+    <main class="flex-grow">
         
-        <div class="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto bg-slate-900 z-20 shadow-2xl" id="formPanel">
-            <div class="max-w-lg mx-auto">
-                <h1 class="text-3xl font-extrabold text-white mb-2">Estimate Engine <span class="text-blue-500">v2.0</span></h1>
-                <p class="text-slate-400 text-sm mb-8">Configure your drilling parameters.</p>
+        <div id="step-1" class="container mx-auto px-4 py-8 fade-in-up">
+            <div class="quote-card">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Instant Quotation</h1>
+                    <p class="text-slate-500 font-medium">Precision estimation engine</p>
+                </div>
 
-                <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Client Details</label>
-                        <input type="text" id="custName" class="w-full p-4 rounded-xl input-dark mb-3" placeholder="Full Name">
-                        
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="custName" class="custom-input" placeholder="Your Name">
+                    </div>
+                    <div>
+                        <label class="form-label">Mobile Number</label>
                         <div class="relative">
-                            <input type="tel" id="custMobile" class="w-full p-4 rounded-xl input-dark pl-4 pr-24" placeholder="Mobile Number" maxlength="10">
-                            <button id="verifyBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 px-4 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-500 transition">VERIFY</button>
-                            <div id="verifiedBadge" class="absolute right-4 top-4 text-emerald-400 font-bold text-xs hidden"><i class="ri-check-double-line"></i> VERIFIED</div>
+                            <input type="tel" id="custMobile" class="custom-input pr-24" placeholder="98765 43210" maxlength="10">
+                            
+                            <button id="sendOtpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-4 rounded-lg font-bold text-xs hover:bg-black transition">VERIFY</button>
+                            <button id="editMobileBtn" onclick="resetOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-200 text-slate-600 px-3 rounded-lg font-bold text-xs hover:bg-slate-300 transition hidden"><i class="ri-pencil-line"></i></button>
+                            
+                            <div id="verifiedBadge" class="absolute right-4 top-4 text-emerald-600 font-bold text-xs uppercase hidden flex items-center gap-1"><i class="ri-checkbox-circle-fill"></i> Verified</div>
                         </div>
-                        
-                        <div id="otpBox" class="hidden mt-2 flex gap-2 animate-pulse">
-                            <input type="text" id="otpInput" class="flex-1 p-3 rounded-xl input-dark text-center tracking-widest" placeholder="ENTER OTP">
-                            <button onclick="verifyOTP()" class="px-6 bg-emerald-600 text-white rounded-xl font-bold">OK</button>
+                        <div id="otpSection" class="hidden mt-2 flex gap-2">
+                            <input type="text" id="otpInput" class="custom-input text-center tracking-widest" placeholder="OTP" maxlength="6">
+                            <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold hover:bg-emerald-700">OK</button>
                         </div>
                         <div id="recaptcha-container"></div>
                     </div>
+                </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Drill Site</label>
-                        <div class="relative">
-                            <input type="text" id="locInput" class="w-full p-4 rounded-xl input-dark pr-32" placeholder="Search Location...">
-                            <div class="absolute right-2 top-2 bottom-2 flex gap-1">
-                                <button onclick="detectGPS()" class="px-3 bg-slate-800 text-blue-400 rounded-lg hover:bg-slate-700"><i class="ri-gps-fill"></i></button>
-                                <button onclick="openMiniMap()" class="px-3 bg-slate-800 text-white rounded-lg hover:bg-slate-700"><i class="ri-map-2-line"></i></button>
+                <div>
+                    <label class="form-label">Site Location</label>
+                    <div class="relative flex gap-2">
+                        <input type="text" id="locInput" class="custom-input pr-24" placeholder="Start typing address...">
+                        <button onclick="detectGPS()" class="absolute right-14 top-2 bottom-2 bg-blue-100 text-blue-600 px-3 rounded-lg font-bold text-xs hover:bg-blue-200 transition">DETECT</button>
+                        <button onclick="openMiniMap()" class="absolute right-2 top-2 bottom-2 bg-slate-100 text-slate-600 px-3 rounded-lg hover:bg-slate-200 transition" title="Pick on Map"><i class="ri-map-2-line text-lg"></i></button>
+                    </div>
+                    <p id="distDisplay" class="text-xs text-right mt-1 text-slate-400 font-mono"></p>
+                </div>
+
+                <div class="mb-10 mt-8">
+                    <label class="form-label text-center mb-4">ESTIMATED DEPTH REQUIRED</label>
+                    <div id="sliderBox" class="slider-container">
+                        <div class="text-center mb-2">
+                            <span id="display-val" class="text-6xl font-extrabold text-blue-800">100</span>
+                            <span class="text-xl font-bold text-slate-400 align-top">FT</span>
+                        </div>
+                        
+                        <input type="range" id="depthSlider" class="range-slider" min="100" max="500" value="100" step="10">
+                        
+                        <div class="flex justify-between text-xs font-bold text-slate-400 mt-2">
+                            <span>100 FT</span>
+                            <span id="maxLabel">500 FT</span>
+                        </div>
+
+                        <div id="expertAlert" class="expert-alert">
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="flex items-center text-red-600 font-bold">
+                                    <i class="ri-error-warning-fill mr-2"></i> 
+                                    High Depth Zone (>600ft)
+                                </div>
+                                <p class="text-xs text-slate-500 font-medium">Complex geology detected. Technical consultation recommended.</p>
+                                <button onclick="consultExpert()" class="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-100 transition shadow-sm uppercase tracking-wide">
+                                    <i class="ri-whatsapp-line mr-1"></i> Request Geological Assessment
+                                </button>
                             </div>
                         </div>
-                        <p id="distDisplay" class="text-xs text-right mt-2 text-slate-500 font-mono h-4"></p>
+                    </div>
+                </div>
+
+                <button id="generateBtn" onclick="calculateEstimate()" class="btn-primary" disabled>
+                    <i class="ri-calculator-line mr-2"></i> Calculate Estimate
+                </button>
+            </div>
+        </div>
+
+        <div id="step-2" class="container mx-auto px-4 pb-12 hidden">
+            
+            <div class="flex justify-between items-center max-w-4xl mx-auto mb-4">
+                <button onclick="goToStep1()" class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-1"><i class="ri-arrow-left-line"></i> Edit Details</button>
+                <div class="flex gap-2">
+                    <button onclick="downloadPDF()" class="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-50"><i class="ri-file-download-line"></i> PDF</button>
+                    <button onclick="shareWhatsApp()" class="bg-emerald-50 text-emerald-600 border border-emerald-200 px-4 py-2 rounded-lg font-bold text-sm hover:bg-emerald-100"><i class="ri-whatsapp-line"></i> Share</button>
+                </div>
+            </div>
+
+            <div class="est-card max-w-4xl mx-auto" id="invoice-capture">
+                <div class="est-header">
+                    <div class="flex justify-between items-start">
+                        <div class="est-brand">
+                            <h2>SAGAR BOREWELLS</h2>
+                            <p>Advanced Geological Infrastructure</p>
+                        </div>
+                        <div class="est-total-block">
+                            <div class="est-label">ESTIMATED TOTAL</div>
+                            <div class="est-amount" id="invTotal">₹0</div>
+                        </div>
+                    </div>
+                    <div class="est-meta">
+                        <div class="est-meta-item"><strong>Location</strong><span id="invLoc">--</span></div>
+                        <div class="est-meta-item"><strong>Depth</strong><span id="invDepth">--</span></div>
+                        <div class="est-meta-item"><strong>Ref ID</strong><span id="invRef">--</span></div>
+                    </div>
+                </div>
+
+                <div class="est-body">
+                    
+                    <div class="section-title"><i class="ri-bar-chart-grouped-line"></i> Drilling Cost Structure</div>
+                    <table class="est-table">
+                        <thead><tr><th>Depth Range</th><th class="text-center">Rate / ft</th><th class="text-right">Amount</th></tr></thead>
+                        <tbody id="drillBody"></tbody>
+                        <tfoot><tr><td colspan="2">Drilling Subtotal</td><td class="text-right" id="drillSubtotal">₹0</td></tr></tfoot>
+                    </table>
+
+                    <div id="opsSection">
+                        <div class="section-title"><i class="ri-shield-check-line"></i> Operational & Labour</div>
+                        <table class="est-table">
+                            <tbody id="opsBody"></tbody>
+                            <tfoot><tr><td style="font-weight:700;">Subtotal (Fixed)</td><td class="text-right" id="opsSubtotal">₹0</td></tr></tfoot>
+                        </table>
                     </div>
 
-                    <button id="genBtn" onclick="calculate()" class="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-lg shadow-blue-900/50 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        CALCULATE ESTIMATE <i class="ri-arrow-right-line ml-2"></i>
-                    </button>
+                    <div class="var-box">
+                        <div class="var-title"><i class="ri-tools-line"></i> Material Estimates (Actuals)</div>
+                        <p class="text-xs text-slate-500 mb-4">Prices apply based on actual measurements at site.</p>
+                        <div class="var-grid" id="materialsGrid"></div>
+                    </div>
+
+                    <div class="text-center mt-10">
+                        <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">
+                            Confirm Booking
+                        </button>
+                        <p class="text-xs text-slate-400 mt-3 uppercase tracking-wide">Valid for 30 Days • Computer Generated Estimate</p>
+                    </div>
+
                 </div>
             </div>
         </div>
 
-        <div class="w-full md:w-1/2 relative bg-slate-950">
-            
-            <div class="depth-hud pointer-events-none">
-                <div class="hud-val" id="depthReadout">100</div>
-                <div class="hud-lbl">Target Depth (FT)</div>
-                <div id="expertBadge" class="hidden mt-2 bg-red-500/20 border border-red-500 text-red-400 px-3 py-1 rounded text-xs font-bold animate-pulse">
-                    ⚠️ HIGH DEPTH
+        <div id="step-3" class="container mx-auto px-4 fade-in-up hidden py-12">
+            <div class="quote-card text-center max-w-lg mx-auto">
+                <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="ri-check-line text-4xl text-emerald-600"></i>
                 </div>
-            </div>
-
-            <div class="drill-rig-stage" id="drillStage">
-                <div class="geo-layers"></div>
-                
-                <div class="drill-track" id="drillTrack">
-                    <div class="borehole-shaft" id="shaft"></div>
-                    
-                    <div class="hammer-assembly" id="hammer">
-                        <div class="hammer-body">
-                            <div class="hammer-head"></div>
-                        </div>
-                    </div>
-                    
-                    <div id="dirtEmitter" class="absolute left-1/2" style="top:0; width:1px; height:1px;"></div>
+                <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Booking Confirmed!</h1>
+                <p class="text-slate-500 mb-8">We have received your request. A representative will call you shortly to discuss site logistics.</p>
+                <div class="flex justify-center gap-4">
+                    <a href="dashboard.html" class="py-3 px-6 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50">Dashboard</a>
+                    <button onclick="openChatSupport()" class="py-3 px-6 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">Chat Support</button>
                 </div>
-
-                <div id="scaleMarkers" class="absolute right-0 top-0 bottom-0 w-20 pointer-events-none"></div>
-            </div>
-
-            <div class="absolute bottom-8 left-8 right-8 flex justify-center gap-4">
-                <button onclick="setDepth(200)" class="glass-panel px-4 py-2 rounded-lg text-xs font-bold text-slate-300 hover:text-white hover:border-blue-500 transition">200 FT</button>
-                <button onclick="setDepth(500)" class="glass-panel px-4 py-2 rounded-lg text-xs font-bold text-slate-300 hover:text-white hover:border-blue-500 transition">500 FT</button>
-                <button onclick="setDepth(1000)" class="glass-panel px-4 py-2 rounded-lg text-xs font-bold text-slate-300 hover:text-white hover:border-blue-500 transition">1000 FT</button>
             </div>
         </div>
 
     </main>
 
-    <div id="invoiceModal" class="fixed inset-0 z-50 bg-black/90 hidden items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl animate-fade-up">
-            <div class="bg-slate-900 p-6 flex justify-between items-center border-b-4 border-blue-600">
-                <h2 class="text-2xl font-black text-white">ESTIMATE</h2>
-                <button onclick="closeInvoice()" class="text-slate-400 hover:text-white"><i class="ri-close-circle-line text-3xl"></i></button>
+    <div id="footer-mount"></div>
+
+    <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
+        <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl relative">
+            <h3 class="font-bold text-slate-800 mb-2 text-center">Pinpoint Location</h3>
+            <div style="position: relative; width: 100%; height: 300px; background: #eee; border-radius: 10px; overflow: hidden;">
+                <div id="quoteMapContainer" style="width:100%; height:100%;"></div>
+                <i class="ri-map-pin-fill map-center-marker"></i>
             </div>
-            <div class="p-8 max-h-[70vh] overflow-y-auto">
-                <div class="flex justify-between items-end mb-6">
-                    <div>
-                        <div class="text-sm text-slate-500 font-bold uppercase">Total Cost</div>
-                        <div class="text-4xl font-extrabold text-blue-700" id="finalTotal">₹0</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-sm font-bold text-slate-900" id="finalRef">--</div>
-                        <div class="text-xs text-slate-500">Reference ID</div>
-                    </div>
-                </div>
-
-                <table class="est-table w-full mb-6">
-                    <thead><tr><th>Description</th><th class="text-right">Amount</th></tr></thead>
-                    <tbody id="invoiceBody" class="text-slate-700 text-sm"></tbody>
-                </table>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <button onclick="downloadPDF()" class="py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Download PDF</button>
-                    <button onclick="confirmBooking()" class="py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg">Confirm Booking</button>
-                </div>
+            <div class="flex justify-end gap-2 mt-4">
+                <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-500">Cancel</button>
+                <button onclick="confirmQuoteLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg">Set Location</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 🟢 CONFIG LOAD
-        const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : { PRICING_MODEL:{base_rate:70}, MATERIALS:[] };
         
-        // 🟢 PHYSICS ENGINE VARIABLES
-        const track = document.getElementById('drillTrack');
-        const hammer = document.getElementById('hammer');
-        const shaft = document.getElementById('shaft');
-        const emitter = document.getElementById('dirtEmitter');
-        const readout = document.getElementById('depthReadout');
-        
-        let isDragging = false;
-        let currentDepth = 100;
-        let maxScale = 500;
-        let lastY = 0;
+        // 🟢 INIT FIREBASE
+        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
+            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        }
+        const db = firebase.firestore();
+        const auth = firebase.auth();
 
-        // INIT
-        document.addEventListener('DOMContentLoaded', () => {
-            renderScale();
-            updatePhysics(100); // Start at 100ft
+        // 🟢 LOAD CONSTANTS
+        const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : {
+            PRICING_MODEL: { base_rate: 70, increments: { phase_1: 10, phase_2: 20, phase_3: 50 }, boundaries: { phase_2_start: 200, phase_3_start: 300 } },
+            MATERIALS: []
+        };
+        const { PRICING_MODEL, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, OFFICE_LOCATION } = CFG;
+
+        let transportDist = 0;
+        let siteCoords = null;
+        let leadData = {};
+        let currentQuoteID = null;   
+        let hasLoggedPrice = false; 
+
+        // 🟢 UNIFIED INITIALIZATION (Materials & Pre-Fill)
+        window.addEventListener('DOMContentLoaded', () => {
+            // 1. Render Materials
+            const matGrid = document.getElementById('materialsGrid');
+            if(matGrid) {
+                matGrid.innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
+            }
+
+            // 2. Pre-Fill Engine
+            const params = new URLSearchParams(window.location.search);
+            let shouldCalc = false;
             
-            // Events
-            track.addEventListener('mousedown', startDrag);
-            window.addEventListener('mousemove', onDrag);
-            window.addEventListener('mouseup', stopDrag);
-            
-            track.addEventListener('touchstart', startDrag);
-            window.addEventListener('touchmove', onDrag);
-            window.addEventListener('touchend', stopDrag);
+            // Fill Location
+            if (params.has('loc')) {
+                const loc = decodeURIComponent(params.get('loc'));
+                document.getElementById('locInput').value = loc;
+                shouldCalc = true;
+            }
+
+            // Fill Depth & Adjust Slider
+            if (params.has('depth')) {
+                const depth = parseInt(params.get('depth'));
+                const slider = document.getElementById('depthSlider');
+                const display = document.getElementById('display-val');
+                const sliderBox = document.getElementById('sliderBox');
+                
+                // Update Values
+                slider.value = depth;
+                display.innerText = depth;
+
+                // Visual Updates (Initial)
+                if (depth > 500) { 
+                    slider.max = (depth > 900) ? 1200 : 900;
+                    sliderBox.classList.add('expanded');
+                }
+                
+                // Force background color update (Visual Bar)
+                const pct = ((depth - slider.min) / (slider.max - slider.min)) * 100;
+                slider.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
+                
+                // Show alerts if needed
+                document.getElementById('expertAlert').style.display = (depth > 600) ? 'block' : 'none';
+                shouldCalc = true;
+            }
+
+            // 3. Auto-Calculate if Params Exist
+            if(shouldCalc) {
+                setTimeout(() => {
+                    if(!document.getElementById('generateBtn').disabled) {
+                        calculateEstimate();
+                    }
+                }, 1000);
+            }
         });
 
-        // 🟢 DRAG LOGIC (The "Elastic" Feel)
-        function startDrag(e) {
-            isDragging = true;
-            hammer.classList.add('drilling'); // Vibrate
-            e.preventDefault();
-        }
 
-        function stopDrag() {
-            isDragging = false;
-            hammer.classList.remove('drilling');
-        }
+        // 🟢 SLIDER LOGIC (Interaction)
+        const slider = document.getElementById('depthSlider');
+        const sliderBox = document.getElementById('sliderBox');
+        const maxLabel = document.getElementById('maxLabel');
+        const expertAlert = document.getElementById('expertAlert');
 
-        function onDrag(e) {
-            if(!isDragging) return;
-            
-            const rect = track.getBoundingClientRect();
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            let relativeY = clientY - rect.top;
-            
-            // Clamp
-            relativeY = Math.max(0, Math.min(relativeY, rect.height));
-            
-            // Calc Depth
-            const pct = relativeY / rect.height;
-            let rawDepth = Math.round(pct * maxScale);
-            
-            // Snap to 10ft
-            let targetDepth = Math.max(100, Math.round(rawDepth / 10) * 10);
-            
-            // Physics Direction (Down = Drill, Up = Retract)
-            if (targetDepth > currentDepth) {
-                spawnDirt(5); // Spew particles when going deeper
+        slider.addEventListener('input', function() {
+            let val = parseInt(this.value);
+            let currentMax = parseInt(this.max);
+
+            document.getElementById('display-val').innerText = val;
+
+            // 🟢 VISUAL LOGIC: Toggle Colors Instantly (Val > 500)
+            if (val > 500) sliderBox.classList.add('expanded');
+            else sliderBox.classList.remove('expanded');
+
+            // 🟢 SCALE LOGIC: Expansion
+            if (val >= currentMax) {
+                if (currentMax === 500) { this.max = 900; maxLabel.innerText = "900 FT"; }
+                else if (currentMax === 900) { this.max = 1200; maxLabel.innerText = "1200 FT"; }
+            } 
+            // 🟢 SCALE LOGIC: Contraction (With Hysteresis)
+            else if (val < 450 && currentMax > 500) {
+                this.max = 500; maxLabel.innerText = "500 FT";
+                this.value = val; 
             }
             
-            currentDepth = targetDepth;
+            expertAlert.style.display = (val > 600) ? 'block' : 'none';
+            const pct = ((val - this.min) / (this.max - this.min)) * 100;
+            this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
+        });
+
+        // 🟢 CALCULATION ENGINE
+        function calculateEstimate() {
+            if(document.getElementById('generateBtn').disabled) return;
+            const name = document.getElementById('custName').value;
+            const loc = document.getElementById('locInput').value;
             
-            // 🟢 ELASTIC SCALE LOGIC
-            // Expand if hitting bottom
-            if (pct > 0.95 && maxScale < 1500) {
-                maxScale += 300; // Snap expand
-                isDragging = false; // Reset drag to re-orient
-                renderScale();
-                updatePhysics(currentDepth);
-            }
-            // Contract if pulling up high
-            if (currentDepth < (maxScale - 600) && maxScale > 500) {
-                maxScale -= 300;
-                isDragging = false;
-                renderScale();
-                updatePhysics(currentDepth);
-            }
+            if(!name || !loc) { alert("Please fill details"); return; }
 
-            // High Depth Warning
-            if(currentDepth >= 600) document.getElementById('expertBadge').classList.remove('hidden');
-            else document.getElementById('expertBadge').classList.add('hidden');
-
-            // UI Update via RequestAnimationFrame for smoothness
-            requestAnimationFrame(() => updatePhysics(currentDepth));
-        }
-
-        function updatePhysics(depth) {
-            readout.innerText = depth;
-            const pct = (depth / maxScale) * 100;
+            const totalDepth = parseInt(slider.value);
             
-            hammer.style.top = pct + "%";
-            shaft.style.height = pct + "%";
-            emitter.style.top = pct + "%";
-        }
-
-        function renderScale() {
-            const el = document.getElementById('scaleMarkers');
-            el.innerHTML = '';
-            const step = maxScale / 5;
-            for(let i=1; i<=5; i++) {
-                const d = Math.round(step * i);
-                const mark = document.createElement('div');
-                mark.className = 'depth-marker';
-                mark.style.top = (i * 20) + '%';
-                mark.innerText = d + 'ft -';
-                el.appendChild(mark);
+            // 1. Generate Persistent ID
+            if (!currentQuoteID) {
+                currentQuoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
             }
-        }
 
-        // 🟢 PARTICLE SYSTEM ("Dirt Pouring")
-        function spawnDirt(count) {
-            for(let i=0; i<count; i++) {
-                const p = document.createElement('div');
-                p.className = 'dust-particle';
-                
-                // Randomize trajectory (Fly UP and OUT)
-                const angle = (Math.random() * 60 - 30); // Spread
-                const speed = Math.random() * 100 + 50;
-                
-                p.style.top = emitter.style.top;
-                p.style.left = '50%';
-                
-                track.appendChild(p);
-
-                // Animate
-                const anim = p.animate([
-                    { transform: `translate(-50%, 0) scale(1)`, opacity: 0.8 },
-                    { transform: `translate(${angle}px, -${speed}px) scale(0)`, opacity: 0 }
-                ], {
-                    duration: 600,
-                    easing: 'ease-out'
-                });
-
-                anim.onfinish = () => p.remove();
-            }
-        }
-
-        function setDepth(val) {
-            currentDepth = val;
-            while(currentDepth > maxScale) maxScale += 500; // Auto expand
-            renderScale();
-            updatePhysics(val);
-        }
-
-        // 🟢 CALCULATION ENGINE (Updated)
-        let leadData = {};
-
-        function calculate() {
-            const { PRICING_MODEL, LABOUR_CHARGE, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, MATERIALS } = CFG;
+            // 2. Math Logic
+            let drillHtml = "";
+            let breakdownText = ""; 
+            let drillCost = 0;
+            let currentDepth = 0;
+            let currentRate = PRICING_MODEL.base_rate; 
             const jumps = PRICING_MODEL.increments;
             const bounds = PRICING_MODEL.boundaries;
-            
-            let total = 0;
-            let html = '';
-            let d = 0; // tracked depth
-            let rate = PRICING_MODEL.base_rate;
 
-            // 1. Base Block
-            const baseChunk = Math.min(currentDepth, 100);
-            if(baseChunk > 0) {
-                total += baseChunk * rate;
-                html += `<tr><td>0 - ${baseChunk}ft (@ ₹${rate})</td><td class="text-right">₹${(baseChunk*rate).toLocaleString()}</td></tr>`;
-                d += baseChunk;
+            // Base 0-100
+            const firstChunk = Math.min(totalDepth, 100);
+            if(firstChunk > 0) {
+                const cost = firstChunk * currentRate;
+                drillCost += cost;
+                drillHtml += `<tr><td>0 - ${firstChunk} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                breakdownText += `• 0-${firstChunk}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
+                currentDepth += firstChunk;
             }
 
-            // 2. Loop Slabs
-            while(d < currentDepth) {
-                if (d >= bounds.phase_3_start) rate += jumps.phase_3;
-                else if (d >= bounds.phase_2_start) rate += jumps.phase_2;
-                else rate += jumps.phase_1;
-
-                let chunk = Math.min(50, currentDepth - d);
-                total += chunk * rate;
-                html += `<tr><td>${d+1} - ${d+chunk}ft (@ ₹${rate})</td><td class="text-right">₹${(chunk*rate).toLocaleString()}</td></tr>`;
-                d += chunk;
+            // Loop Slabs
+            while(currentDepth < totalDepth) {
+                let increment = jumps.phase_1; 
+                if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3; 
+                else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2; 
+                
+                currentRate += increment; 
+                let nextChunk = Math.min(50, totalDepth - currentDepth);
+                let cost = nextChunk * currentRate;
+                drillCost += cost;
+                
+                const endDepth = currentDepth + nextChunk;
+                drillHtml += `<tr><td>${currentDepth + 1} - ${endDepth} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                breakdownText += `• ${currentDepth + 1}-${endDepth}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
+                
+                currentDepth += nextChunk;
             }
 
             // Ops
-            total += LABOUR_CHARGE;
-            html += `<tr><td class="font-bold">Heavy Machinery Labour</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
+            let opsHtml = "";
+            let opsCost = 0;
+            if (transportDist > TRANSPORT_THRESHOLD_KM) {
+                const excessKm = transportDist - TRANSPORT_THRESHOLD_KM;
+                const blocks = Math.ceil(excessKm / 30);
+                const transCost = blocks * TRANSPORT_BASE_RATE; 
+                opsHtml += `<tr><td>Transport (${excessKm.toFixed(1)} km extra)</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
+                breakdownText += `• Transport: ₹${transCost.toLocaleString()}\n`;
+                opsCost += transCost;
+            }
+            opsHtml += `<tr><td>Rig Erection & Material Handling</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
+            breakdownText += `• Labour: ₹${LABOUR_CHARGE.toLocaleString()}\n`;
+            opsCost += LABOUR_CHARGE;
 
-            // Transport (Mock dist for now if not set)
-            // In real usage, transportDist is set by Maps
+            const grandTotal = drillCost + opsCost;
+
+            // Render
+            document.getElementById('opsSection').style.display = 'block';
+            document.getElementById('opsBody').innerHTML = opsHtml;
+            document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
+            document.getElementById('drillBody').innerHTML = drillHtml;
+            document.getElementById('drillSubtotal').innerText = "₹" + drillCost.toLocaleString();
+            document.getElementById('invTotal').innerText = "₹" + grandTotal.toLocaleString();
+            document.getElementById('invLoc').innerText = loc;
+            document.getElementById('invDepth').innerText = totalDepth + " ft";
+            document.getElementById('invRef').innerText = currentQuoteID;
+
+            // Prepare Data
+            leadData = { 
+                id: currentQuoteID, 
+                name, 
+                mobile: "+91"+document.getElementById('custMobile').value, 
+                loc, depth: totalDepth, total: grandTotal, 
+                status: "Quote Generated", 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                summary: breakdownText,
+                rows: drillHtml
+            };
+
+            // 🟢 INTELLIGENCE: Log Silent Lead (ALWAYS LOG & NOTIFY)
+            // 🟥 FIX: Removed the "if(!hasLoggedPrice)" blocker.
+            // This ensures every "Calculate" click sends an update.
+            const statusLog = hasLoggedPrice ? "Updated Price Check" : "Viewed Price / Not Booked";
             
-            document.getElementById('finalTotal').innerText = "₹" + total.toLocaleString();
-            document.getElementById('invoiceBody').innerHTML = html;
-            document.getElementById('finalRef').innerText = `QT-${Date.now().toString().slice(-4)}`;
+            // Add a visual marker for updates in Telegram
+            if (hasLoggedPrice) {
+                 leadData.summary = "🔄 *UPDATED QUOTE*\n" + leadData.summary;
+            }
+
+            db.collection('silent_leads').doc(leadData.id).set({
+                ...leadData,
+                status: statusLog,
+                last_updated: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }); // Merge ensures we don't wipe other fields if they exist
+
+            // Secure Notification call (Always Send)
+            if(typeof NOTIFY_TEMPLATES !== 'undefined') {
+                sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
+            }
             
-            // Show Modal
-            document.getElementById('invoiceModal').classList.remove('hidden');
-            document.getElementById('invoiceModal').classList.add('flex');
+            hasLoggedPrice = true; 
+
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
+            window.scrollTo(0,0);
         }
 
-        function closeInvoice() {
-            document.getElementById('invoiceModal').classList.add('hidden');
-            document.getElementById('invoiceModal').classList.remove('flex');
-        }
+        // CONFIRM BOOKING
+        // 🔵 OPTIMIZATION: Async/Await prevents "Fire-and-Forget" network loss
+        async function confirmBooking() {
+            const user = auth.currentUser;
+            const finalData = { 
+                ...leadData, 
+                userId: user ? user.uid : null, 
+                source: 'web_quote',
+                status: 'Booked' 
+            };
 
-        // 🟢 AUTH & MAPS (Boilerplate)
-        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
-            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
-            const auth = firebase.auth();
-            auth.onAuthStateChanged(user => {
-                if(user) {
-                    document.getElementById('custMobile').value = user.phoneNumber.replace('+91','');
-                    document.getElementById('genBtn').disabled = false;
-                    document.getElementById('verifiedBadge').classList.remove('hidden');
-                    document.getElementById('verifyBtn').classList.add('hidden');
+            try {
+                // 1. Save Booking
+                await db.collection('leads').doc(leadData.id).set(finalData);
+                
+                // 2. Send Notification (Wait for it to ensure it sends)
+                if(typeof NOTIFY_TEMPLATES !== 'undefined') {
+                    await sendTelegram(NOTIFY_TEMPLATES.booking(finalData));
                 }
+
+                // 3. Update UI
+                document.getElementById('step-2').classList.add('hidden');
+                document.getElementById('step-3').classList.remove('hidden');
+            } catch (e) {
+                alert("Error saving booking: " + e.message);
+            }
+        }
+
+        // 🟢 SECURE TELEGRAM SENDER
+        async function sendTelegram(msg) {
+            if(typeof getTelegramCredentials === 'function') {
+                const creds = await getTelegramCredentials();
+                if(creds && creds.bot_token && creds.chat_id) {
+                    const url = `https://api.telegram.org/bot${creds.bot_token}/sendMessage?chat_id=${creds.chat_id}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
+                    try {
+                        await fetch(url);
+                    } catch(e) { console.log("Notify Error", e); }
+                }
+            } else {
+                console.warn("Secure Credential Fetcher not found.");
+            }
+        }
+
+        // 🟢 AUTH STATE LISTENER
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
+                document.getElementById('custMobile').disabled = true;
+                
+                // Show Edit Button
+                document.getElementById('sendOtpBtn').classList.add('hidden');
+                document.getElementById('editMobileBtn').classList.remove('hidden');
+                document.getElementById('verifiedBadge').classList.remove('hidden');
+                
+                document.getElementById('generateBtn').disabled = false; 
+            }
+        });
+
+        function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
+        
+        function downloadPDF() { 
+            const element = document.createElement('div');
+            if(typeof getInvoiceHTML === 'function') {
+                element.innerHTML = getInvoiceHTML(leadData);
+            } else {
+                element.innerHTML = document.getElementById('invoice-capture').innerHTML;
+                element.innerHTML += '<br><br><h3>Generated via Sagar Borewells Online</h3>';
+            }
+
+            if(typeof html2pdf !== 'undefined') {
+                html2pdf().from(element).save(`Estimate_${leadData.id}.pdf`);
+            } else {
+                alert("PDF System Loading... Please wait 5 seconds and try again, or check your internet connection.");
+            }
+        }
+        
+        function shareWhatsApp() { 
+            let msg = "";
+            let phone = CONTACT_INFO.whatsapp_api;
+
+            if(typeof WA_MSG !== 'undefined') {
+                msg = WA_MSG.booking_share(leadData);
+                window.open(WA_MSG.link(phone, msg), '_blank');
+            } else {
+                msg = `*ESTIMATE: ${leadData.id}*\n\nDepth: ${leadData.depth} ft\nTotal: ₹${leadData.total.toLocaleString()}\n\nI want to proceed.`;
+                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+            }
+        }
+        
+        function consultExpert() {
+            const depth = document.getElementById('depthSlider').value;
+            if(typeof WA_MSG !== 'undefined') {
+                const msg = WA_MSG.deep_drill(depth);
+                window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+            } else {
+                window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=I need expert advice for ${depth}ft drilling.`, '_blank');
+            }
+        }
+        
+        function openChatSupport() {
+             if(typeof WA_MSG !== 'undefined') {
+                const msg = WA_MSG.chat_support();
+                window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+            } else {
+                window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=Support Request`, '_blank');
+            }
+        }
+
+        function sendOTP() {
+            const p = document.getElementById('custMobile').value;
+            if(p.length!=10) return alert("Enter 10 digit number");
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
+            
+            // Disable Input during process
+            document.getElementById('custMobile').disabled = true;
+
+            auth.signInWithPhoneNumber('+91'+p, window.recaptchaVerifier).then(cr=>{
+                window.confirmationResult=cr; 
+                document.getElementById('otpSection').classList.remove('hidden'); 
+                document.getElementById('sendOtpBtn').classList.add('hidden');
+                // Show edit button immediately so they can fix errors
+                document.getElementById('editMobileBtn').classList.remove('hidden');
+            }).catch(e=>{ 
+                console.error(e); 
+                alert("SMS Error: " + e.message); 
+                document.getElementById('custMobile').disabled = false; // Re-enable on error
             });
         }
 
-        // Mock functions for demo if APIs not loaded
-        function sendOTP() { alert("Simulated OTP Sent"); document.getElementById('otpBox').classList.remove('hidden'); }
-        function verifyOTP() { document.getElementById('otpBox').classList.add('hidden'); document.getElementById('genBtn').disabled = false; }
-        function detectGPS() { alert("GPS Detecting..."); }
+        // 🟢 RESET OTP FUNCTION (Allow Editing)
+        function resetOTP() {
+             // 1. Hide OTP Section
+             document.getElementById('otpSection').classList.add('hidden');
+             // 2. Toggle Buttons
+             document.getElementById('sendOtpBtn').classList.remove('hidden');
+             document.getElementById('editMobileBtn').classList.add('hidden');
+             // 3. Enable Input
+             document.getElementById('custMobile').disabled = false;
+             document.getElementById('custMobile').focus();
+             // 4. Reset Auth State (Optional, but good for UI sync)
+             document.getElementById('verifiedBadge').classList.add('hidden');
+             document.getElementById('generateBtn').disabled = true; 
+        }
+        
+        function verifyOTP() { 
+            window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=> {
+                document.getElementById('otpSection').classList.add('hidden');
+                document.getElementById('generateBtn').disabled = false; 
+                // Note: verifiedBadge is shown by onAuthStateChanged
+            }).catch(e => alert("Invalid OTP"));
+        }
+
+        // MAPS
+        let qMap;
+        function initMapTools() {
+            const input = document.getElementById('locInput');
+            const ac = new google.maps.places.Autocomplete(input);
+            ac.addListener('place_changed', () => { const p=ac.getPlace(); if(p.geometry) calculateDist(p.geometry.location.lat(), p.geometry.location.lng()); });
+        }
+        function calculateDist(lat, lng) {
+            const R=6371, dLat=(lat-OFFICE_LOCATION.lat)*Math.PI/180, dLon=(lng-OFFICE_LOCATION.lng)*Math.PI/180;
+            const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+            transportDist=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+            const disp=document.getElementById('distDisplay');
+            if(transportDist>TRANSPORT_THRESHOLD_KM) { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Extra Charges)`; disp.className="text-xs text-right mt-1 font-bold font-mono text-orange-600"; }
+            else { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Free Transport)`; disp.className="text-xs text-right mt-1 font-bold font-mono text-emerald-600"; }
+        }
+        function openMiniMap() { 
+            document.getElementById('miniMapModal').style.display='flex'; 
+            if(!qMap && typeof google!=='undefined') {
+                qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55},zoom:15, disableDefaultUI: true}); 
+            }
+            setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); 
+        }
+        function confirmQuoteLocation() { const p=qMap.getCenter(); new google.maps.Geocoder().geocode({location:p},(r,s)=>{if(s==='OK'){document.getElementById('locInput').value=r[0].formatted_address; calculateDist(p.lat(),p.lng());}}); document.getElementById('miniMapModal').style.display='none'; }
+        function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{calculateDist(p.coords.latitude,p.coords.longitude); new google.maps.Geocoder().geocode({location:{lat:p.coords.latitude,lng:p.coords.longitude}},(r,s)=>{if(s==='OK')document.getElementById('locInput').value=r[0].formatted_address;});}); }
+
+        // 🟢 INJECT GOOGLE MAPS SCRIPT (Restored)
+        const s = document.createElement('script'); 
+        s.src=`https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
+        s.async=true; 
+        s.defer=true; 
+        document.body.appendChild(s);
     </script>
 </body>
 </html>
