@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 <div class="flex justify-between h-20">
                     
                     <div class="flex items-center">
-                        <a href="index.html" class="flex items-center gap-2 group">
+                        <a href="index" class="flex items-center gap-2 group">
                             <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xl font-bold group-hover:scale-105 transition">S</div>
                             <div>
                                 <span class="block text-xl font-extrabold text-slate-900 leading-none">SAGAR</span>
@@ -65,13 +65,13 @@ document.addEventListener("DOMContentLoaded", function() {
                     </div>
 
                     <div class="hidden md:flex items-center gap-8">
-                        <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
-                        <a href="blog.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Blog</a>
-                        <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
-                        <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
+                        <a href="index" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
+                        <a href="blog" class="font-bold text-slate-600 hover:text-blue-600 transition">Blog</a>
+                        <a href="contact" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
+                        <a href="dashboard" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
                             <i class="ri-user-line"></i> Account
                         </a>
-                        <a href="quote.html" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-lg shadow-blue-200 flex items-center gap-2">
+                        <a href="quote" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-lg shadow-blue-200 flex items-center gap-2">
                             <i class="ri-calculator-line"></i> Get Quote
                         </a>
                     </div>
@@ -85,10 +85,10 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>
             
             <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 p-4 absolute w-full shadow-lg left-0 top-20 z-40">
-                <a href="index.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">Home</a>
-                <a href="dashboard.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">My Account</a>
-                <a href="contact.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">Contact</a>
-                <a href="quote.html" class="block py-3 mt-4 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700">Get Quote</a>
+                <a href="index" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">Home</a>
+                <a href="dashboard" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">My Account</a>
+                <a href="contact" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">Contact</a>
+                <a href="quote" class="block py-3 mt-4 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700">Get Quote</a>
             </div>
         </nav>`;
 
@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", function() {
             <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                 
                 <div class="col-span-1 md:col-span-1">
-                    <a href="index.html" class="text-xl font-extrabold text-white flex items-center gap-2 mb-4">
+                    <a href="index" class="text-xl font-extrabold text-white flex items-center gap-2 mb-4">
                         SAGAR <span class="text-blue-500">BOREWELLS</span>
                     </a>
                     <p class="text-xs leading-relaxed mb-6">
@@ -151,17 +151,17 @@ document.addEventListener("DOMContentLoaded", function() {
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Quick Access</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="index.html" class="hover:text-blue-400 transition">Home</a></li>
-                        <li><a href="quote.html" class="hover:text-blue-400 transition">Get Estimate</a></li>
-                        <li><a href="dashboard.html" class="hover:text-blue-400 transition">Client Login</a></li>
+                        <li><a href="index" class="hover:text-blue-400 transition">Home</a></li>
+                        <li><a href="quote" class="hover:text-blue-400 transition">Get Estimate</a></li>
+                        <li><a href="dashboard" class="hover:text-blue-400 transition">Client Login</a></li>
                     </ul>
                 </div>
 
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Legal</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="terms.html" class="hover:text-blue-400 transition">Terms of Service</a></li>
-                        <li><a href="privacy.html" class="hover:text-blue-400 transition">Privacy Policy</a></li>
+                        <li><a href="terms" class="hover:text-blue-400 transition">Terms of Service</a></li>
+                        <li><a href="privacy" class="hover:text-blue-400 transition">Privacy Policy</a></li>
                     </ul>
                 </div>
 
