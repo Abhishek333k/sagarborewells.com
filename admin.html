@@ -77,9 +77,18 @@
         .cyber-input:focus { border-color: var(--neon-blue); }
         
         /* MODAL ANIMATION - CENTERED FIX */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
+        .modal { 
+            position: fixed; inset: 0; 
+            background: rgba(0,0,0,0.9); 
+            z-index: 1000; /* Higher priority */
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px; 
+            backdrop-filter: blur(8px); 
+        }
         .modal.open { display: flex; animation: fadeUp 0.2s ease-out; }
-        #previewModal .bg-white { margin: auto; } /* Force Center */
+        .modal > div { margin: auto; } /* 🟢 Forces perfect center */
 
         /* LOADING */
         .loader-ring { width: 40px; height: 40px; border: 3px solid #1e293b; border-top-color: var(--neon-blue); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -481,8 +490,7 @@
             const name = document.getElementById('newZoneName').value; 
             const type = document.getElementById('drawType').value;
             const editId = document.getElementById('editDocId').value;
-            
-            if(!name) return notify("Enter Zone Name", "error");
+            if(!name) return notify("Name Required", "error");
             
             const path = currentPoly.getPath(); 
             let coords = []; 
@@ -490,14 +498,14 @@
             
             const zoneData = { name, type, color: ZONE_CONFIG[type].color, coords, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
             
-            // ✅ CORRECT EDIT LOGIC
-            if(editId) {
-                db.collection('geo_zones').doc(editId).update(zoneData).then(() => { notify("Zone Updated"); discardCurrentZone(); loadAdminZones(); });
-            } else {
-                // New Zone
-                const newId = name.replace(/\s+/g, '_').toLowerCase();
-                db.collection('geo_zones').doc(newId).set(zoneData).then(() => { notify("Zone Saved"); discardCurrentZone(); loadAdminZones(); });
-            }
+            // ✅ Fix: Use set with merge to handle both Add and Edit
+            const ref = editId ? db.collection('geo_zones').doc(editId) : db.collection('geo_zones').doc();
+            ref.set(zoneData, { merge: true }).then(() => { 
+                notify("Atlas Updated Successfully"); 
+                discardCurrentZone(); 
+                allZonesCache = []; // 🟢 Clear cache to force reload
+                loadAdminZones(); 
+            });
         }
         
         // 🟢 FILTERABLE LIST + MAP HIGHLIGHT
@@ -568,25 +576,16 @@
         
         function initEditZone(docId) {
             discardCurrentZone(); 
-            // 1. Find Polygon
             let targetPoly = mapPolygons.find(p => p.zoneId === docId);
-            if(!targetPoly) {
-                const zoneData = allZonesCache.find(z => z.id === docId);
-                if(!zoneData) return notify("Zone data not found");
-                targetPoly = new google.maps.Polygon({ paths: zoneData.coords, strokeColor: zoneData.color, fillColor: zoneData.color, fillOpacity: 0.15, strokeWeight: 1, map: adminMap });
-                mapPolygons.push(targetPoly);
-            }
+            if(!targetPoly) return notify("Zone not visible on map", "error");
 
-            // 2. Enable Edit Mode
             targetPoly.setEditable(true);
             targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); 
             currentPoly = targetPoly; 
             
-            // 3. Load Data into Form
-            const data = targetPoly.zoneData || allZonesCache.find(z => z.id === docId);
-            document.getElementById('newZoneName').value = data.name;
-            document.getElementById('editDocId').value = docId; // ✅ POPULATE HIDDEN ID
-            
+            document.getElementById('newZoneName').value = targetPoly.zoneData.name;
+            document.getElementById('editDocId').value = docId; 
+            document.getElementById('drawType').value = targetPoly.zoneData.type;
             document.getElementById('saveZonePanel').classList.remove('hidden');
         }
 
@@ -624,7 +623,21 @@
                         <i class="ri-arrow-down-s-line absolute right-3 top-3.5 text-slate-500 pointer-events-none"></i>
                     </div>
                 </div>
-
+				<div>
+                    <label class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1 block pl-1">Internal Lead Manager</label>
+                    <div class="relative">
+                        <select class="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-3 text-white text-sm outline-none focus:border-blue-500 transition appearance-none" onchange="db.collection('leads').doc('${data.docId}').update({ internalStatus: this.value }).then(() => notify('Log Updated'))">
+                            <option value="">-- Select Progress --</option>
+                            <option ${data.internalStatus==='Called'?'selected':''}>Called / Spoken</option>
+                            <option ${data.internalStatus==='Needs Follow-up'?'selected':''}>Needs Follow-up</option>
+                            <option ${data.internalStatus==='Call Later'?'selected':''}>Busy / Call Later</option>
+                            <option ${data.internalStatus==='Interested'?'selected':''}>High Interest</option>
+                            <option ${data.internalStatus==='Low Budget'?'selected':''}>Low Budget</option>
+                            <option ${data.internalStatus==='Fake Lead'?'selected':''}>Junk / Fake</option>
+                        </select>
+                        <i class="ri-history-line absolute right-3 top-3.5 text-slate-500 pointer-events-none"></i>
+                    </div>
+                </div>
                 <div>
                     <label class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1 block pl-1">Mission Log</label>
                     <div class="flex gap-2">
@@ -704,7 +717,18 @@
             document.getElementById('p_id').value = `SBW-${yy}${mm}-${rand}`;
         }
 
-        function deleteRecord(col, id) { if(confirm("Delete Record?")) db.collection(col).doc(id).delete().then(() => { notify("Deleted"); closeModal(); if(col==='leads') loadLeads(); else if(col==='projects') loadProjects(); else loadSilentLeads(); }); }
+       function deleteRecord(col, id) { 
+            if(confirm("Destroy this record permanently?")) {
+                db.collection(col).doc(id).delete().then(() => { 
+                    notify("Record purged"); 
+                    closeModal(); 
+                    // 🟢 Refresh specific list logic
+                    if(col==='leads') loadLeads(); 
+                    else if(col==='projects') loadProjects(); 
+                    else if(col==='silent_leads') loadSilentLeads(); 
+                }); 
+            } 
+        }
         function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
         function loadAnalytics() { db.collection('leads').get().then(s => { let rev=0; s.forEach(d=> rev+=parseInt(d.data().total||0)); document.getElementById('stat-revenue').innerText = "₹" + (rev/100000).toFixed(1) + "L"; }); db.collection('projects').get().then(s => { let d=0; s.forEach(doc=> d+=parseInt(doc.data().depth||0)); document.getElementById('stat-depth').innerText = d.toLocaleString() + " ft"; }); }
 
