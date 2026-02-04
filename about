@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us | Sagar Borewells - Drilling Experts Since 2010</title>
-    <meta name="description" content="Leading borewell drilling contractors in Andhra Pradesh. 15+ years experience, advanced sensor rigs, and precision groundwater surveying.">
+    <meta name="description" content="Leading borewell drilling contractors in Andhra Pradesh. 41+ years experience, advanced sensor rigs, and precision groundwater surveying.">
     <meta name="keywords" content="Borewell Drilling, Groundwater Survey, Motor Installation, Mangalagiri, Guntur, Vijayawada">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -71,16 +71,16 @@
             </div>
             <div class="bg-slate-100 rounded-2xl p-2 rotate-2 hover:rotate-0 transition duration-500">
                 <div class="bg-white rounded-xl p-6 shadow-lg border border-slate-200 h-full flex flex-col justify-center text-center">
-                    <h2 class="text-6xl font-black text-slate-900 mb-2">15+</h2>
+                    <h2 class="text-6xl font-black text-slate-900 mb-2">41+</h2>
                     <p class="text-blue-600 font-bold uppercase tracking-wider">Years Experience</p>
                     <div class="w-full h-px bg-slate-200 my-6"></div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <div class="text-3xl font-bold text-slate-800">2,500+</div>
+                            <div class="text-3xl font-bold text-slate-800">7,500+</div>
                             <div class="text-xs text-slate-500 uppercase">Projects</div>
                         </div>
                         <div>
-                            <div class="text-3xl font-bold text-slate-800">98%</div>
+                            <div class="text-3xl font-bold text-slate-800">96%</div>
                             <div class="text-xs text-slate-500 uppercase">Success Rate</div>
                         </div>
                     </div>
