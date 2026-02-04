@@ -72,3 +72,16 @@ document.addEventListener("DOMContentLoaded", () => {
         el.innerHTML = `${CONTACT_INFO.address_line1}<br>${CONTACT_INFO.address_line2}`;
     });
 });
+
+async function getMasterListUrl() {
+    try {
+        if (!firebase.apps.length) return null;
+        const db = firebase.firestore();
+        const doc = await db.collection('system_config').doc('inventory').get();
+        if (doc.exists) return doc.data().master_sheet_url;
+        return null;
+    } catch (error) {
+        console.error("Config Error:", error);
+        return null;
+    }
+}
