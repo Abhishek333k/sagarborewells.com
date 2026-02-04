@@ -66,6 +66,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                     <div class="hidden md:flex items-center gap-8">
                         <a href="index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
+                        <a href="blog.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Blog</a>
                         <a href="contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
                         <a href="dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
                             <i class="ri-user-line"></i> Account
