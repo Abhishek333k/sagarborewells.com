@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sagar Admin | Command OS</title>
+    <title>SBW Admin Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -56,18 +56,18 @@
     
     <div id="system-loader" class="fixed inset-0 z-[1000] bg-[#0f172a] flex flex-col items-center justify-center text-white">
         <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <div class="font-mono text-xs tracking-widest animate-pulse text-blue-400">INITIALIZING SAGAR OS...</div>
+        <div class="font-mono text-xs tracking-widest animate-pulse text-blue-400">INITIALIZING SBW CONSOLE...</div>
     </div>
 
     <aside class="w-64 bg-[#0B1120] border-r border-slate-800 flex flex-col flex-shrink-0 z-20">
         <div class="p-6 border-b border-slate-800">
-            <h1 class="text-xl font-black tracking-tight text-white">SAGAR<span class="text-blue-500 glow-text">OS</span></h1>
-            <div class="flex items-center gap-2 mt-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><p class="text-[10px] text-emerald-500 font-mono uppercase tracking-widest">v3.0 ONLINE</p></div>
+            <h1 class="text-xl font-black tracking-tight text-white">SBW<span class="text-blue-500 glow-text">ADMIN</span></h1>
+            <div class="flex items-center gap-2 mt-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><p class="text-[10px] text-emerald-500 font-mono uppercase tracking-widest">LIVE LINK</p></div>
         </div>
         <nav class="flex-grow p-4 space-y-1">
             <div onclick="showSection('leads')" id="nav-leads" class="nav-item active"><i class="ri-radar-line"></i> <span>Live Leads</span></div>
             <div onclick="showSection('silent')" id="nav-silent" class="nav-item text-yellow-400"><i class="ri-eye-line"></i> <span>Window Shoppers</span></div>
-            <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-database-2-line"></i> <span>BWBC Archives</span></div>
+            <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-archive-line"></i> <span>BWBC Archives</span></div>
             <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
             <div onclick="showSection('maproom')" id="nav-maproom" class="nav-item text-purple-400"><i class="ri-map-2-line"></i> <span>Geo-Map Room</span></div>
             <div onclick="showSection('dataops')" id="nav-dataops" class="nav-item text-orange-400"><i class="ri-database-line"></i> <span>Govt Data Sync</span></div>
@@ -89,8 +89,8 @@
         </div>
 
         <header class="flex justify-between items-center mb-6">
-            <div><h2 class="text-2xl font-bold text-white">Command Center</h2><p class="text-slate-500 text-xs mt-1">Real-time Data Stream</p></div>
-            <div class="glass-card px-3 py-1.5 flex items-center gap-2 border border-emerald-500/20"><i class="ri-server-line text-emerald-400 text-xs"></i><span class="text-[10px] font-mono text-emerald-400 font-bold">DB: CONNECTED</span></div>
+            <div><h2 class="text-2xl font-bold text-white">Command Console</h2><p class="text-slate-500 text-xs mt-1">Real-time Operations</p></div>
+            <div class="glass-card px-3 py-1.5 flex items-center gap-2 border border-emerald-500/20"><i class="ri-wifi-line text-emerald-400 text-xs"></i><span class="text-[10px] font-mono text-emerald-400 font-bold">ONLINE</span></div>
         </header>
 
         <div id="ceo-dashboard" class="grid grid-cols-3 gap-4 mb-6 hidden">
@@ -303,9 +303,12 @@
             const dashboard = document.getElementById('ceo-dashboard');
             
             // UI Toggle Logic
-            if(id === 'leads' || id === 'projects') {
+            if(id === 'leads') {
                 filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
                 dashboard.classList.remove('hidden');
+            } else if(id === 'projects') {
+                filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
+                dashboard.classList.add('hidden'); // Hide stats for archives
             } else {
                 filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
                 dashboard.classList.add('hidden');
@@ -314,8 +317,11 @@
             // Data Loading Logic
             if(id === 'leads') loadLeads(); 
             else if(id === 'projects') loadProjects();
-            else if(id === 'silent') loadSilentLeads(); // Load Silent Leads
-            else if(id === 'maproom') initAdminMap();
+            else if(id === 'silent') loadSilentLeads(); 
+            else if(id === 'maproom') {
+                initAdminMap();
+                setTimeout(() => { if(adminMap) google.maps.event.trigger(adminMap, 'resize'); }, 300);
+            }
         }
 
         // --- GLOBAL DELETE LOGIC ---
@@ -324,84 +330,167 @@
                 db.collection(collection).doc(docId).delete().then(() => {
                     notify("RECORD DELETED", "error"); 
                     closeModal();
-                    // Refresh the correct list
-                    if(collection === 'leads') loadLeads(); 
-                    else if(collection === 'projects') loadProjects();
-                    else if(collection === 'silent_leads') loadSilentLeads();
+                    // Auto-refresh handled by onSnapshot
                 });
             }
         }
 
-        // --- 🟢 UPGRADED SILENT LEADS LOADER ---
+        // --- 🟢 REAL-TIME DATA LOADERS (No Refresh Needed) ---
+        
+        let leadsUnsubscribe, projectsUnsubscribe, silentUnsubscribe;
+        let leadsCache = [], projectsCache = []; let currentView = 'leads';
+
+        function loadLeads() {
+            currentView = 'leads';
+            const el = document.getElementById('leads-list');
+            el.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Connecting to live feed...</div>';
+            
+            if(leadsUnsubscribe) leadsUnsubscribe(); // Unsubscribe prev listener
+            
+            leadsUnsubscribe = db.collection('leads').orderBy('timestamp','desc').limit(100)
+                .onSnapshot(snap => {
+                    leadsCache = [];
+                    snap.forEach(d => { let data = d.data(); data.docId = d.id; leadsCache.push(data); });
+                    filterData(); // Render with current filters
+                });
+        }
+
+        function loadProjects() {
+            currentView = 'projects';
+            const el = document.getElementById('projects-list');
+            el.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Syncing archives...</div>';
+
+            if(projectsUnsubscribe) projectsUnsubscribe();
+
+            projectsUnsubscribe = db.collection('projects').orderBy('projectId', 'desc')
+                .onSnapshot(snap => {
+                    projectsCache = [];
+                    snap.forEach(d => { let data = d.data(); projectsCache.push(data); });
+                    filterData();
+                });
+        }
+
         function loadSilentLeads() {
             const list = document.getElementById('silent-list');
             list.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Scanning Window Shoppers...</div>';
             
-            db.collection('silent_leads').orderBy('last_updated', 'desc').limit(50).get().then(snap => {
-                list.innerHTML = "";
-                if(snap.empty) { list.innerHTML = '<div class="text-center text-slate-600 mt-10">No Window Shoppers found.</div>'; return; }
-                
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const timeRaw = data.last_updated || data.timestamp;
-                    const time = timeRaw ? new Date(timeRaw.toDate()).toLocaleString() : "Recently";
-                    const currentStatus = data.adminStatus || "New";
+            if(silentUnsubscribe) silentUnsubscribe();
 
-                    list.innerHTML += `
-                        <div class="bg-slate-900 p-4 rounded border border-slate-700 flex flex-col gap-3 group hover:border-blue-500/50 transition">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <h4 class="text-lg font-mono font-bold text-white">${data.mobile}</h4>
-                                        <span class="text-[9px] bg-slate-800 px-1 rounded text-slate-400 font-mono">ID: ${doc.id}</span>
+            silentUnsubscribe = db.collection('silent_leads').orderBy('last_updated', 'desc').limit(50)
+                .onSnapshot(snap => {
+                    list.innerHTML = "";
+                    if(snap.empty) { list.innerHTML = '<div class="text-center text-slate-600 mt-10">No Window Shoppers found.</div>'; return; }
+                    
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        const timeRaw = data.last_updated || data.timestamp;
+                        const time = timeRaw ? new Date(timeRaw.toDate()).toLocaleString() : "Recently";
+                        const currentStatus = data.adminStatus || "New";
+
+                        list.innerHTML += `
+                            <div class="bg-slate-900 p-4 rounded border border-slate-700 flex flex-col gap-3 group hover:border-blue-500/50 transition">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="text-lg font-mono font-bold text-white">${data.mobile}</h4>
+                                            <span class="text-[9px] bg-slate-800 px-1 rounded text-slate-400 font-mono">ID: ${doc.id}</span>
+                                        </div>
+                                        <div class="text-xs text-slate-400 mt-1">
+                                            <i class="ri-map-pin-line text-blue-500"></i> ${data.loc}
+                                        </div>
+                                        <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-2">
+                                            <i class="ri-time-line"></i> ${time}
+                                            ${data.activity_log && data.activity_log.length > 1 ? `<span class="text-yellow-500 font-bold">• ${data.activity_log.length} Checks</span>` : ''}
+                                        </div>
                                     </div>
-                                    <div class="text-xs text-slate-400 mt-1">
-                                        <i class="ri-map-pin-line text-blue-500"></i> ${data.loc}
-                                    </div>
-                                    <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-2">
-                                        <i class="ri-time-line"></i> ${time}
-                                        ${data.activity_log && data.activity_log.length > 1 ? `<span class="text-yellow-500 font-bold">• ${data.activity_log.length} Checks</span>` : ''}
+                                    <div class="text-right">
+                                        <div class="text-emerald-400 font-bold text-sm">₹${parseInt(data.total).toLocaleString()}</div>
+                                        <div class="text-[10px] text-slate-500">${data.depth} ft</div>
                                     </div>
                                 </div>
-                                <div class="text-right">
-                                    <div class="text-emerald-400 font-bold text-sm">₹${parseInt(data.total).toLocaleString()}</div>
-                                    <div class="text-[10px] text-slate-500">${data.depth} ft</div>
+                                <div class="grid grid-cols-4 gap-2 pt-2 border-t border-slate-800">
+                                    <a href="tel:${data.mobile}" class="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white flex items-center justify-center rounded py-1.5 transition">
+                                        <i class="ri-phone-line"></i>
+                                    </a>
+                                    <button onclick="viewSilentHistory('${doc.id}')" class="bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center rounded py-1.5 transition" title="View History">
+                                        <i class="ri-history-line"></i>
+                                    </button>
+                                    <div class="col-span-2">
+                                        <select onchange="updateSilentStatus('${doc.id}', this.value)" class="w-full bg-slate-800 text-white text-[10px] h-full rounded px-2 outline-none border border-slate-600 focus:border-blue-500">
+                                            <option value="New" ${currentStatus==='New'?'selected':''}>⚪ New</option>
+                                            <option value="Contacted" ${currentStatus==='Contacted'?'selected':''}>🔵 Contacted</option>
+                                            <option value="Follow Up" ${currentStatus==='Follow Up'?'selected':''}>🟡 Follow Up</option>
+                                            <option value="Dead" ${currentStatus==='Dead'?'selected':''}>🔴 Dead</option>
+                                            <option value="Converted" ${currentStatus==='Converted'?'selected':''}>🟢 Converted</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="grid grid-cols-4 gap-2 pt-2 border-t border-slate-800">
-                                <a href="tel:${data.mobile}" class="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white flex items-center justify-center rounded py-1.5 transition">
-                                    <i class="ri-phone-line"></i>
-                                </a>
-                                <button onclick="viewSilentHistory('${doc.id}')" class="bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center rounded py-1.5 transition" title="View History">
-                                    <i class="ri-history-line"></i>
-                                </button>
-                                <div class="col-span-2">
-                                    <select onchange="updateSilentStatus('${doc.id}', this.value)" class="w-full bg-slate-800 text-white text-[10px] h-full rounded px-2 outline-none border border-slate-600 focus:border-blue-500">
-                                        <option value="New" ${currentStatus==='New'?'selected':''}>⚪ New</option>
-                                        <option value="Contacted" ${currentStatus==='Contacted'?'selected':''}>🔵 Contacted</option>
-                                        <option value="Follow Up" ${currentStatus==='Follow Up'?'selected':''}>🟡 Follow Up</option>
-                                        <option value="Dead" ${currentStatus==='Dead'?'selected':''}>🔴 Dead</option>
-                                        <option value="Converted" ${currentStatus==='Converted'?'selected':''}>🟢 Converted</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                        `;
+                    });
                 });
+        }
+
+        // --- FILTER & RENDER LOGIC ---
+        function filterData() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const dateStartStr = document.getElementById('dateStart').value;
+            const dateEndStr = document.getElementById('dateEnd').value;
+            
+            let start = dateStartStr ? new Date(dateStartStr).setHours(0,0,0,0) : 0;
+            let end = dateEndStr ? new Date(dateEndStr).setHours(23,59,59,999) : 9999999999999;
+
+            const list = currentView === 'leads' ? leadsCache : projectsCache;
+            
+            const filtered = list.filter(item => {
+                // Text Search
+                const matchesText = (item.name + item.mobile + item.loc + (item.docId||item.projectId)).toLowerCase().includes(term);
+                
+                // Date Search (using timestamp for Leads, date string for Projects)
+                let itemDate = 0;
+                if(item.timestamp) itemDate = item.timestamp.toDate().getTime();
+                else if(item.date) itemDate = new Date(item.date).getTime();
+                
+                const matchesDate = itemDate >= start && itemDate <= end;
+
+                return matchesText && matchesDate;
+            });
+
+            if(currentView === 'leads') renderLeads(filtered); else renderProjects(filtered);
+        }
+
+        function clearFilters() { 
+            document.getElementById('searchInput').value = ""; 
+            document.getElementById('dateStart').value = "";
+            document.getElementById('dateEnd').value = "";
+            filterData(); 
+        }
+
+        function renderLeads(list) {
+            const el = document.getElementById('leads-list'); el.innerHTML = "";
+            if(list.length === 0) { el.innerHTML = '<div class="text-center text-slate-500 py-10">No matching records.</div>'; return; }
+            
+            list.forEach(data => { 
+                el.innerHTML += `<div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 flex justify-between items-center hover:bg-slate-800/50 cursor-pointer border border-slate-800/50 hover:border-blue-500/30"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><i class="ri-user-search-line"></i></div><div><div class="font-bold text-white text-sm">${data.name}</div><div class="text-[10px] text-slate-400 font-mono">${data.loc}</div></div></div><div class="text-right"><div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[9px] text-blue-400 font-mono font-bold uppercase">${data.status || 'Pending'}</div></div></div>`; 
             });
         }
 
-        // 🟢 NEW: Update Status for Silent Leads
-        function updateSilentStatus(docId, status) {
-            db.collection('silent_leads').doc(docId).update({ 
-                adminStatus: status 
-            }).then(() => {
-                notify(`Status updated to ${status}`);
-            }).catch(e => notify("Update failed", "error"));
+        function renderProjects(list) {
+            const el = document.getElementById('projects-list'); el.innerHTML = "";
+            if(list.length === 0) { el.innerHTML = '<div class="text-center text-slate-500 py-10">No matching records.</div>'; return; }
+
+            list.forEach(data => { 
+                el.innerHTML += `<div onclick="openProjectModal('${data.projectId}')" class="glass-card p-5 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition border-y border-r border-slate-800/50"><div class="absolute top-2 right-2 text-slate-600 text-[9px] font-mono">${data.date}</div><h3 class="font-bold text-base text-white mb-1">${data.location}</h3><p class="text-xs text-slate-400 mb-3 font-mono">${data.customerName}</p><div class="text-[10px] text-emerald-500 font-mono tracking-widest bg-emerald-900/20 inline-block px-2 py-0.5 rounded border border-emerald-900/50">${data.projectId}</div></div>`; 
+            });
         }
 
-        // 🟢 NEW: View History Modal
+        // --- SILENT LEAD UTILS ---
+        function updateSilentStatus(docId, status) {
+            db.collection('silent_leads').doc(docId).update({ adminStatus: status })
+              .then(() => notify(`Status updated to ${status}`))
+              .catch(e => notify("Update failed", "error"));
+        }
+
         function viewSilentHistory(docId) {
             db.collection('silent_leads').doc(docId).get().then(doc => {
                 const data = doc.data();
@@ -421,14 +510,11 @@
                 } else {
                     log.forEach(item => {
                         const dateObj = new Date(item.time);
-                        const dateStr = dateObj.toLocaleDateString();
-                        const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        
                         historyHTML += `
                             <div class="bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center text-xs">
                                 <div>
                                     <div class="text-white font-bold">${item.depth} ft <span class="text-slate-500 font-normal">@ ${item.loc || 'Unknown'}</span></div>
-                                    <div class="text-slate-500 text-[10px]">${dateStr} • ${timeStr}</div>
+                                    <div class="text-slate-500 text-[10px]">${dateObj.toLocaleDateString()} • ${dateObj.toLocaleTimeString()}</div>
                                 </div>
                                 <div class="text-emerald-400 font-bold">₹${parseInt(item.total).toLocaleString()}</div>
                             </div>
@@ -455,6 +541,7 @@
 
         function initAdminMap() {
             if(adminMap) { loadAdminZones(); return; }
+            if(typeof google === 'undefined') { notify("Maps API Loading...", "info"); return; }
             
             const startLoc = { lat: 16.4410, lng: 80.5520 }; 
             adminMap = new google.maps.Map(document.getElementById('adminMap'), {
@@ -611,24 +698,7 @@
             db.collection('leads').get().then(snap => { leadCount = snap.size; snap.forEach(doc => { totalRevenue += parseInt(doc.data().total || 0); }); document.getElementById('stat-revenue').innerText = "₹" + (totalRevenue/100000).toFixed(1) + "L"; updateConversion(); });
             function updateConversion() { if(leadCount > 0) document.getElementById('stat-conversion').innerText = ((projectCount / leadCount) * 100).toFixed(1) + "%"; }
         }
-        let leadsCache = [], projectsCache = []; let currentView = 'leads';
-        function filterData() {
-            const term = document.getElementById('searchInput').value.toLowerCase();
-            const list = currentView === 'leads' ? leadsCache : projectsCache;
-            const filtered = list.filter(item => (item.name + item.mobile + item.loc).toLowerCase().includes(term));
-            if(currentView === 'leads') renderLeads(filtered); else renderProjects(filtered);
-        }
-        function clearFilters() { document.getElementById('searchInput').value = ""; filterData(); }
-        function loadLeads() { currentView = 'leads'; db.collection('leads').orderBy('timestamp','desc').limit(100).get().then(snap => { leadsCache = []; snap.forEach(d => { let data = d.data(); data.docId = d.id; leadsCache.push(data); }); renderLeads(leadsCache); }); }
-        function renderLeads(list) {
-            const el = document.getElementById('leads-list'); el.innerHTML = "";
-            list.forEach(data => { el.innerHTML += `<div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 flex justify-between items-center hover:bg-slate-800/50 cursor-pointer border border-slate-800/50 hover:border-blue-500/30"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><i class="ri-user-search-line"></i></div><div><div class="font-bold text-white text-sm">${data.name}</div><div class="text-[10px] text-slate-400 font-mono">${data.loc}</div></div></div><div class="text-right"><div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[9px] text-blue-400 font-mono font-bold uppercase">${data.status || 'Pending'}</div></div></div>`; });
-        }
-        function loadProjects() { currentView = 'projects'; db.collection('projects').orderBy('projectId', 'desc').get().then(snap => { projectsCache = []; snap.forEach(d => { let data = d.data(); projectsCache.push(data); }); renderProjects(projectsCache); }); }
-        function renderProjects(list) {
-            const el = document.getElementById('projects-list'); el.innerHTML = "";
-            list.forEach(data => { el.innerHTML += `<div onclick="openProjectModal('${data.projectId}')" class="glass-card p-5 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition border-y border-r border-slate-800/50"><div class="absolute top-2 right-2 text-slate-600 text-[9px] font-mono">${data.date}</div><h3 class="font-bold text-base text-white mb-1">${data.location}</h3><p class="text-xs text-slate-400 mb-3 font-mono">${data.customerName}</p><div class="text-[10px] text-emerald-500 font-mono tracking-widest bg-emerald-900/20 inline-block px-2 py-0.5 rounded border border-emerald-900/50">${data.projectId}</div></div>`; });
-        }
+        
         function startNewCertificate() { showSection('create'); resetForm(); }
         function resetForm() {
             document.getElementById('projectForm').reset(); isEditing = false;
@@ -652,12 +722,46 @@
             const docRef = db.collection('projects').doc(id);
             docRef.get().then(doc => { if(doc.exists && !isEditing) { notify("ERROR: ID Exists.", "error"); resetForm(); } else { docRef.set(data, { merge: true }).then(() => { notify(isEditing ? "RECORD UPDATED" : "CERTIFICATE ISSUED"); resetForm(); showSection('projects'); }); } });
         }
+        
         let currentPDFElement;
-        function previewQuote(encoded) { const data = JSON.parse(decodeURIComponent(encoded)); let rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`; const content = getInvoiceHTML({ name: data.name, mobile: data.mobile, loc: data.loc, total: data.total, rows: rows }); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); }
-        function previewCert(encoded) { const data = JSON.parse(decodeURIComponent(encoded)); const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType }; const content = getCertificateHTML(certData); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); }
+        
+        function previewQuote(encoded) { 
+            const data = JSON.parse(decodeURIComponent(encoded)); 
+            
+            // 🛑 BUG FIX: Pass full data to generator so it has access to rows, id, etc.
+            // If rows are missing (old data), generate them on the fly for display
+            if (!data.rows) {
+                data.rows = `<tr><td>Estimate based on ${data.depth}ft</td><td style="text-align:right">₹${parseInt(data.total).toLocaleString()}</td></tr>`;
+            }
+            
+            // Call template with FULL data object
+            const content = getInvoiceHTML(data); 
+            
+            document.getElementById('previewContent').innerHTML = content; 
+            currentPDFElement = content; 
+            document.getElementById('previewModal').classList.add('open'); 
+        }
+
+        function previewCert(encoded) { 
+            const data = JSON.parse(decodeURIComponent(encoded)); 
+            const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType }; 
+            const content = getCertificateHTML(certData); 
+            document.getElementById('previewContent').innerHTML = content; 
+            currentPDFElement = content; 
+            document.getElementById('previewModal').classList.add('open'); 
+        }
+
         function confirmDownloadPDF() { const el = document.createElement('div'); el.innerHTML = currentPDFElement; document.body.appendChild(el); html2pdf().from(el).save('Document.pdf').then(() => document.body.removeChild(el)); }
-        function downloadAdminCert(encoded) { previewCert(encoded); }
         function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
+        
+        // 🟢 FIXED: PROJECT MODAL HANDLER
+        function openProjectModal(projectId) {
+            const data = projectsCache.find(p => p.projectId === projectId);
+            const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Project Archive</h2><p class="text-slate-400 font-mono text-xs">${data.projectId}</p></div><div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.customerName}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.location}</div></div></div><div class="grid grid-cols-3 gap-2 mb-6 text-center"> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">DEPTH</span><span class="text-white font-bold">${data.depth}ft</span></div> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">YIELD</span><span class="text-emerald-400 font-bold">${data.yield}</span></div> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">DATE</span><span class="text-white font-bold">${data.date}</span></div> </div><div class="grid grid-cols-2 gap-3 mb-4"><button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-file-paper-line"></i> Certificate</button><button onclick="editProject('${data.projectId}')" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-edit-line"></i> Edit Record</button></div><div class="text-center pt-2"><button onclick="deleteRecord('projects', '${data.projectId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE ARCHIVE</button></div>`;
+            document.getElementById('modalContent').innerHTML = content; 
+            document.getElementById('detailModal').classList.add('open');
+        }
+
         function openLeadModal(docId) {
             const data = leadsCache.find(l => l.docId === docId); const notes = data.adminNotes || "";
             const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Lead Details</h2><p class="text-slate-400 font-mono text-xs">Quote: ${data.docId}</p></div><div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.name}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.loc}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div></div><div class="mb-6 grid grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Status</label>
