@@ -356,7 +356,6 @@
                 else if (currentMax === 900) { this.max = 1200; maxLabel.innerText = "1200 FT"; }
             } 
             // 🟢 SCALE LOGIC: Contraction (With Hysteresis)
-            // Only shrink scale if we are WELL within safe limits (< 450) to prevent flickering
             else if (val < 450 && currentMax > 500) {
                 this.max = 500; maxLabel.innerText = "500 FT";
                 this.value = val; 
@@ -459,21 +458,28 @@
                 rows: drillHtml
             };
 
-            // 🟢 INTELLIGENCE: Log Silent Lead
-            if (!hasLoggedPrice) {
-                db.collection('silent_leads').doc(leadData.id).set({
-                    ...leadData,
-                    type: "Window Shopper", 
-                    status: "Viewed Price / Not Booked"
-                });
-
-                // Secure Notification call
-                if(typeof NOTIFY_TEMPLATES !== 'undefined') {
-                    sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
-                }
-                
-                hasLoggedPrice = true; 
+            // 🟢 INTELLIGENCE: Log Silent Lead (ALWAYS LOG & NOTIFY)
+            // 🟥 FIX: Removed the "if(!hasLoggedPrice)" blocker.
+            // This ensures every "Calculate" click sends an update.
+            const statusLog = hasLoggedPrice ? "Updated Price Check" : "Viewed Price / Not Booked";
+            
+            // Add a visual marker for updates in Telegram
+            if (hasLoggedPrice) {
+                 leadData.summary = "🔄 *UPDATED QUOTE*\n" + leadData.summary;
             }
+
+            db.collection('silent_leads').doc(leadData.id).set({
+                ...leadData,
+                status: statusLog,
+                last_updated: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }); // Merge ensures we don't wipe other fields if they exist
+
+            // Secure Notification call (Always Send)
+            if(typeof NOTIFY_TEMPLATES !== 'undefined') {
+                sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
+            }
+            
+            hasLoggedPrice = true; 
 
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
@@ -481,7 +487,7 @@
         }
 
         // CONFIRM BOOKING
-        // 🔵 OPTIMIZATION: Added async/await for network reliability
+        // 🔵 OPTIMIZATION: Async/Await prevents "Fire-and-Forget" network loss
         async function confirmBooking() {
             const user = auth.currentUser;
             const finalData = { 
