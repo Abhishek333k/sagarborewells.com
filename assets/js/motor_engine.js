@@ -1,31 +1,18 @@
 // FILENAME: assets/js/motor_engine.js
 
-// 🟢 CONFIGURATION
-// Replace this with your actual Shopify URL
+// 🟢 CONFIG
 const SHOPIFY_DOMAIN = "sagartraders.in"; 
-// To make this work, create a collection in Shopify named "Motors" and get its handle (e.g., 'motors' or 'all')
-const COLLECTION_HANDLE = "all"; // Use 'all' to search everything, or a specific collection handle
 
-// 🟢 STATE MANAGEMENT
-let userSelection = {
-    source: '',
-    depth: 0,
-    dia: 6,
-    phase: 1
-};
+// 🟢 STATE
+let userSelection = { source: '', depth: 0, dia: 6, phase: 1 };
 
-// 🟢 WIZARD LOGIC
+// 🟢 WIZARD UI LOGIC
 function selectSource(source) {
     userSelection.source = source;
     document.getElementById('step1').classList.remove('active');
     document.getElementById('step2').classList.add('active');
     document.getElementById('progressBar').style.width = "66%";
-
-    if(source !== 'borewell') {
-        document.getElementById('borewellOptions').style.display = 'none';
-    } else {
-        document.getElementById('borewellOptions').style.display = 'block';
-    }
+    document.getElementById('borewellOptions').style.display = (source === 'borewell') ? 'block' : 'none';
 }
 
 function prevStep() {
@@ -34,13 +21,11 @@ function prevStep() {
     document.getElementById('progressBar').style.width = "33%";
 }
 
-// 🟢 THE ENGINE
+// 🟢 THE HYBRID ENGINE (Shopify First -> Google Sheet Backup)
 async function runEngine() {
-    // 1. GATHER INPUTS
-    const depthInput = document.getElementById('inputDepth').value;
-    userSelection.depth = parseInt(depthInput);
+    // 1. Gather Inputs
+    userSelection.depth = parseInt(document.getElementById('inputDepth').value);
     userSelection.phase = parseInt(document.getElementById('inputPhase').value);
-    
     if (userSelection.source === 'borewell') {
         const dias = document.getElementsByName('dia');
         for(let d of dias) if(d.checked) userSelection.dia = parseInt(d.value);
@@ -48,50 +33,71 @@ async function runEngine() {
 
     if (!userSelection.depth) return alert("Please enter total head/depth");
 
-    // 2. UI TRANSITION
+    // 2. UI Loading State
     const btn = document.getElementById('findBtn');
-    btn.innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Analyzing...`;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Scanning Inventory...`;
     btn.disabled = true;
 
-    // 3. PHYSICS CALCULATION
-    // Add 25% safety margin for friction losses in bends/pipes
-    const requiredHead = userSelection.depth * 1.25; 
+    const requiredHead = userSelection.depth * 1.25; // Physics Buffer
 
-    // 4. FETCH DATA FROM SHOPIFY
     try {
-        const products = await fetchShopifyProducts();
-        const matches = filterProducts(products, requiredHead);
-        renderResults(matches, requiredHead);
+        const container = document.getElementById('resultsContainer');
+        const debug = document.getElementById('calcDebug');
+        container.innerHTML = "";
         
-        // Move to next step
+        // --- ATTEMPT 1: SHOPIFY (Live Stock) ---
+        debug.innerText = "Checking Live Inventory...";
+        const shopifyRaw = await fetchShopifyProducts();
+        let matches = filterShopify(shopifyRaw, requiredHead);
+        let source = "shopify";
+
+        // --- ATTEMPT 2: GOOGLE SHEET (Master List) ---
+        if (matches.length === 0) {
+            debug.innerText = "Checking Master Dealership Database...";
+            const sheetUrl = await getMasterListUrl(); // 🔐 Secure Fetch
+            
+            if (sheetUrl) {
+                const sheetRaw = await fetch(sheetUrl).then(r => r.json());
+                matches = filterSheet(sheetRaw, requiredHead);
+                source = "sheet";
+            }
+        }
+
+        // --- RENDER ---
         document.getElementById('step2').classList.remove('active');
         document.getElementById('step3').classList.add('active');
         document.getElementById('progressBar').style.width = "100%";
-        
+        debug.innerHTML = `Physics Load: <strong>${Math.round(requiredHead)} ft</strong> (${source === 'shopify' ? 'In Stock' : 'Dealership Order'})`;
+
+        if (matches.length === 0) {
+            container.innerHTML = noMatchHTML();
+        } else {
+            renderResults(matches, source);
+        }
+
     } catch (error) {
         console.error(error);
-        alert("Error connecting to inventory. Please try again.");
+        alert("Network Error. Please try again.");
     } finally {
-        btn.innerHTML = `Find Matching Motors`;
+        btn.innerHTML = originalText;
         btn.disabled = false;
     }
 }
 
-// 🟢 SHOPIFY FETCH LOGIC
+// 🟢 FETCHERS & FILTERS
+
 async function fetchShopifyProducts() {
-    // Using the public products.json endpoint
-    // Limit set to 250 (max allowed per page)
-    const url = `https://${SHOPIFY_DOMAIN}/products.json?limit=250`;
-    const response = await fetch(url);
-    const data = await response.json();
-    return data.products;
+    try {
+        const url = `https://${SHOPIFY_DOMAIN}/products.json?limit=250`;
+        const r = await fetch(url);
+        const d = await r.json();
+        return d.products || [];
+    } catch { return []; }
 }
 
-// 🟢 AI FILTERING LOGIC
-function filterProducts(products, reqHead) {
+function filterShopify(products, reqHead) {
     return products.filter(p => {
-        // A. Convert Tags to Object for easy reading
-        // Expecting tags like: "type:borewell", "head:400", "phase:1", "dia:6"
         let specs = {};
         p.tags.forEach(tag => {
             if(tag.includes(':')) {
@@ -99,92 +105,98 @@ function filterProducts(products, reqHead) {
                 specs[key.trim().toLowerCase()] = val.trim().toLowerCase();
             }
         });
-
-        // B. FILTER: Source Type
-        // We look for 'type' tag matching selection (borewell/openwell)
+        
         if (specs.type !== userSelection.source) return false;
-
-        // C. FILTER: Phase
-        // If phase tag exists, it must match. If missing, we assume universal (risky, so best to tag all)
         if (specs.phase && parseInt(specs.phase) !== userSelection.phase) return false;
+        if (userSelection.source === 'borewell' && specs.dia && parseInt(specs.dia) > userSelection.dia) return false;
+        if (!specs.head || parseInt(specs.head) < reqHead) return false;
 
-        // D. FILTER: Diameter (Borewell only)
-        if (userSelection.source === 'borewell' && specs.dia) {
-            // Product diameter must be <= User hole diameter
-            // e.g. 4" pump fits in 6" hole (TRUE), 6" pump in 4" hole (FALSE)
-            if (parseInt(specs.dia) > userSelection.dia) return false;
-        }
-
-        // E. FILTER: Head (The Core Physics)
-        // Motor Max Head must be >= Required Head
-        if (specs.head) {
-            const motorMaxHead = parseInt(specs.head);
-            if (motorMaxHead < reqHead) return false;
-        } else {
-            return false; // Safety: If no head tag, ignore product
-        }
-
+        // Standardize Object for Renderer
+        p.std = {
+            title: p.title,
+            brand: p.vendor,
+            price: p.variants[0].price,
+            image: p.images.length > 0 ? p.images[0].src : 'assets/img/motor-placeholder.png',
+            link: `https://${SHOPIFY_DOMAIN}/products/${p.handle}`,
+            head: specs.head,
+            action: "BUY NOW"
+        };
         return true;
     });
 }
 
-// 🟢 RENDER LOGIC
-function renderResults(matches, reqHead) {
+function filterSheet(rows, reqHead) {
+    return rows.filter(r => {
+        // Sheet columns: type, phase, dia, maxhead, brand, model, price
+        if (r.type.toLowerCase() !== userSelection.source) return false;
+        if (parseInt(r.phase) !== userSelection.phase) return false;
+        if (userSelection.source === 'borewell' && parseInt(r.dia) > userSelection.dia) return false;
+        if (parseInt(r.maxhead) < reqHead) return false;
+
+        // Standardize Object
+        r.std = {
+            title: `${r.brand} ${r.model} (${r.hp}HP)`,
+            brand: r.brand,
+            price: r.price,
+            image: 'assets/img/motor-catalog.png', // Generic image for catalog items
+            link: `https://wa.me/${CONTACT_INFO.whatsapp_api}?text=I need ${r.brand} ${r.model} motor`,
+            head: r.maxhead,
+            action: "ORDER VIA DEALER"
+        };
+        return true;
+    });
+}
+
+// 🟢 RENDERER
+function renderResults(items, source) {
     const container = document.getElementById('resultsContainer');
-    const debug = document.getElementById('calcDebug');
-    
-    debug.innerHTML = `Physics Load: <strong>${Math.round(reqHead)} ft</strong> (Depth + Friction)`;
     container.innerHTML = "";
+    
+    // Sort cheap to expensive
+    items.sort((a,b) => parseFloat(a.std.price) - parseFloat(b.std.price));
 
-    if (matches.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-10">
-                <div class="text-4xl mb-2">🤷‍♂️</div>
-                <h3 class="font-bold text-slate-700">No Perfect Match Found</h3>
-                <p class="text-sm text-slate-500 mb-4">Your requirement (${Math.round(reqHead)}ft Head) is unique or out of stock.</p>
-                <a href="https://${SHOPIFY_DOMAIN}" target="_blank" class="text-blue-600 font-bold hover:underline">Browse All Motors -></a>
-            </div>
-        `;
-        return;
-    }
-
-    // Sort by price (Cheapest first)
-    matches.sort((a, b) => parseFloat(a.variants[0].price) - parseFloat(b.variants[0].price));
-
-    matches.forEach((p, index) => {
-        const variant = p.variants[0];
-        const image = p.images.length > 0 ? p.images[0].src : 'assets/img/motor-placeholder.png';
-        
-        // Dynamic Badge
+    items.forEach((item, index) => {
+        const i = item.std;
         let badge = "";
-        if(index === 0) badge = `<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded">BEST VALUE</span>`;
+        if (index === 0) badge = `<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded">BEST MATCH</span>`;
         
-        // Find Specs for display
-        const headTag = p.tags.find(t => t.includes('head:')) || "";
-        const maxHead = headTag.split(':')[1] || "?";
+        // Visual distinction for Sheet items (Yellow border)
+        const borderClass = source === 'sheet' ? 'border-yellow-400 border-2' : 'border-slate-200 border';
 
         container.innerHTML += `
-            <div class="product-card bg-white border border-slate-200 rounded-xl p-4 flex gap-4 items-center">
-                <div class="w-20 h-20 bg-slate-50 rounded-lg flex-shrink-0 overflow-hidden border border-slate-100">
-                    <img src="${image}" class="w-full h-full object-contain" alt="${p.title}">
+            <div class="product-card bg-white ${borderClass} rounded-xl p-4 flex gap-4 items-center">
+                <div class="w-20 h-20 bg-slate-50 rounded-lg flex-shrink-0 overflow-hidden border border-slate-100 relative">
+                    <img src="${i.image}" class="w-full h-full object-contain" alt="${i.title}">
+                    ${source === 'sheet' ? '<div class="absolute bottom-0 w-full bg-yellow-400 text-[8px] text-center font-bold">CATALOG</div>' : ''}
                 </div>
                 <div class="flex-grow">
                     <div class="flex justify-between items-start">
                         <div>
-                            <h4 class="font-bold text-slate-800 text-sm md:text-base leading-tight">${p.title}</h4>
-                            <p class="text-xs text-slate-500 mt-1">Max Head: ${maxHead}ft ${badge}</p>
+                            <h4 class="font-bold text-slate-800 text-sm md:text-base leading-tight">${i.title}</h4>
+                            <p class="text-xs text-slate-500 mt-1">Max Head: ${i.head}ft ${badge}</p>
                         </div>
                         <div class="text-right">
-                            <div class="font-bold text-blue-600">₹${parseInt(variant.price).toLocaleString()}</div>
+                            <div class="font-bold text-blue-600">₹${parseInt(i.price).toLocaleString()}</div>
                         </div>
                     </div>
                     <div class="mt-3">
-                        <a href="https://${SHOPIFY_DOMAIN}/products/${p.handle}" target="_blank" class="block w-full bg-slate-900 text-white text-center text-xs font-bold py-2 rounded-lg hover:bg-blue-600 transition">
-                            VIEW & BUY
+                        <a href="${i.link}" target="_blank" class="block w-full ${source === 'shopify' ? 'bg-slate-900 hover:bg-blue-600' : 'bg-yellow-500 hover:bg-yellow-600'} text-white text-center text-xs font-bold py-2 rounded-lg transition">
+                            ${i.action}
                         </a>
                     </div>
                 </div>
             </div>
         `;
     });
+}
+
+function noMatchHTML() {
+    return `
+        <div class="text-center py-10">
+            <div class="text-4xl mb-2">🕵️</div>
+            <h3 class="font-bold text-slate-700">Checking Factory Database...</h3>
+            <p class="text-sm text-slate-500 mb-4">No direct stock found. Our engineering team can source this.</p>
+            <a href="contact.html" class="text-blue-600 font-bold hover:underline">Submit Technical Request -></a>
+        </div>
+    `;
 }
