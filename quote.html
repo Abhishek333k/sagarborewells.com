@@ -30,13 +30,14 @@
         .form-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
         .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; transition: 0.3s; }
         .custom-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); }
-        
+        .custom-input:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+
         .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; font-weight: 700; padding: 18px; border-radius: 12px; width: 100%; font-size: 1.1rem; transition: 0.2s; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3); }
         .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
 
         /* SLIDER & ELASTIC CONTAINER */
-        .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; transition: all 0.3s ease; }
+        .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; transition: background 0.3s ease, border-color 0.3s ease; }
         .slider-container.expanded { border-color: #f59e0b; background: #fffbeb; }
         
         .range-slider { width: 100%; height: 12px; border-radius: 6px; background: #cbd5e1; outline: none; -webkit-appearance: none; }
@@ -100,7 +101,10 @@
                         <label class="form-label">Mobile Number</label>
                         <div class="relative">
                             <input type="tel" id="custMobile" class="custom-input pr-24" placeholder="98765 43210" maxlength="10">
+                            
                             <button id="sendOtpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-4 rounded-lg font-bold text-xs hover:bg-black transition">VERIFY</button>
+                            <button id="editMobileBtn" onclick="resetOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-200 text-slate-600 px-3 rounded-lg font-bold text-xs hover:bg-slate-300 transition hidden"><i class="ri-pencil-line"></i></button>
+                            
                             <div id="verifiedBadge" class="absolute right-4 top-4 text-emerald-600 font-bold text-xs uppercase hidden flex items-center gap-1"><i class="ri-checkbox-circle-fill"></i> Verified</div>
                         </div>
                         <div id="otpSection" class="hidden mt-2 flex gap-2">
@@ -298,15 +302,16 @@
                 const depth = parseInt(params.get('depth'));
                 const slider = document.getElementById('depthSlider');
                 const display = document.getElementById('display-val');
+                const sliderBox = document.getElementById('sliderBox');
                 
                 // Update Values
                 slider.value = depth;
                 display.innerText = depth;
 
-                // Trigger visual update (Elastic logic)
+                // Visual Updates (Initial)
                 if (depth > 500) { 
                     slider.max = (depth > 900) ? 1200 : 900;
-                    document.getElementById('sliderBox').classList.add('expanded');
+                    sliderBox.classList.add('expanded');
                 }
                 
                 // Force background color update (Visual Bar)
@@ -319,9 +324,7 @@
             }
 
             // 3. Auto-Calculate if Params Exist
-            // Note: We check if button is enabled (User might be logged out)
             if(shouldCalc) {
-                // We add a small delay to ensure Auth check completes
                 setTimeout(() => {
                     if(!document.getElementById('generateBtn').disabled) {
                         calculateEstimate();
@@ -343,13 +346,22 @@
 
             document.getElementById('display-val').innerText = val;
 
+            // 🟢 VISUAL LOGIC: Toggle Colors Instantly (Val > 500)
+            if (val > 500) sliderBox.classList.add('expanded');
+            else sliderBox.classList.remove('expanded');
+
+            // 🟢 SCALE LOGIC: Expansion
             if (val >= currentMax) {
-                if (currentMax === 500) { this.max = 900; maxLabel.innerText = "900 FT"; sliderBox.classList.add('expanded'); }
+                if (currentMax === 500) { this.max = 900; maxLabel.innerText = "900 FT"; }
                 else if (currentMax === 900) { this.max = 1200; maxLabel.innerText = "1200 FT"; }
-            } else if (val < 400 && currentMax > 500) {
-                this.max = 500; maxLabel.innerText = "500 FT"; sliderBox.classList.remove('expanded');
+            } 
+            // 🟢 SCALE LOGIC: Contraction (With Hysteresis)
+            // Only shrink scale if we are WELL within safe limits (< 450) to prevent flickering
+            else if (val < 450 && currentMax > 500) {
+                this.max = 500; maxLabel.innerText = "500 FT";
                 this.value = val; 
             }
+            
             expertAlert.style.display = (val > 600) ? 'block' : 'none';
             const pct = ((val - this.min) / (this.max - this.min)) * 100;
             this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
@@ -516,8 +528,12 @@
             if (user) {
                 document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
                 document.getElementById('custMobile').disabled = true;
+                
+                // Show Edit Button
                 document.getElementById('sendOtpBtn').classList.add('hidden');
+                document.getElementById('editMobileBtn').classList.remove('hidden');
                 document.getElementById('verifiedBadge').classList.remove('hidden');
+                
                 document.getElementById('generateBtn').disabled = false; 
             }
         });
@@ -576,15 +592,43 @@
             const p = document.getElementById('custMobile').value;
             if(p.length!=10) return alert("Enter 10 digit number");
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
+            
+            // Disable Input during process
+            document.getElementById('custMobile').disabled = true;
+
             auth.signInWithPhoneNumber('+91'+p, window.recaptchaVerifier).then(cr=>{
-                window.confirmationResult=cr; document.getElementById('otpSection').classList.remove('hidden'); document.getElementById('sendOtpBtn').classList.add('hidden');
-            }).catch(e=>{ console.error(e); alert("SMS Error"); });
+                window.confirmationResult=cr; 
+                document.getElementById('otpSection').classList.remove('hidden'); 
+                document.getElementById('sendOtpBtn').classList.add('hidden');
+                // Show edit button immediately so they can fix errors
+                document.getElementById('editMobileBtn').classList.remove('hidden');
+            }).catch(e=>{ 
+                console.error(e); 
+                alert("SMS Error: " + e.message); 
+                document.getElementById('custMobile').disabled = false; // Re-enable on error
+            });
+        }
+
+        // 🟢 RESET OTP FUNCTION (Allow Editing)
+        function resetOTP() {
+             // 1. Hide OTP Section
+             document.getElementById('otpSection').classList.add('hidden');
+             // 2. Toggle Buttons
+             document.getElementById('sendOtpBtn').classList.remove('hidden');
+             document.getElementById('editMobileBtn').classList.add('hidden');
+             // 3. Enable Input
+             document.getElementById('custMobile').disabled = false;
+             document.getElementById('custMobile').focus();
+             // 4. Reset Auth State (Optional, but good for UI sync)
+             document.getElementById('verifiedBadge').classList.add('hidden');
+             document.getElementById('generateBtn').disabled = true; 
         }
         
         function verifyOTP() { 
             window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=> {
                 document.getElementById('otpSection').classList.add('hidden');
                 document.getElementById('generateBtn').disabled = false; 
+                // Note: verifiedBadge is shown by onAuthStateChanged
             }).catch(e => alert("Invalid OTP"));
         }
 
