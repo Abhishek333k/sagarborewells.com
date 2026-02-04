@@ -348,39 +348,121 @@
             }
         }
 
-        // --- 🟢 FIXED SILENT LEADS LOADER (Added Delete Button) ---
+		// --- 🟢 UPGRADED SILENT LEADS LOADER ---
         function loadSilentLeads() {
             const list = document.getElementById('silent-list');
-            list.innerHTML = '<div class="text-center text-slate-500">Scanning...</div>';
+            list.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Scanning Window Shoppers...</div>';
             
-            db.collection('silent_leads').orderBy('timestamp', 'desc').limit(50).get().then(snap => {
+            db.collection('silent_leads').orderBy('last_updated', 'desc').limit(50).get().then(snap => {
                 list.innerHTML = "";
                 if(snap.empty) { list.innerHTML = '<div class="text-center text-slate-600 mt-10">No Window Shoppers found.</div>'; return; }
                 
                 snap.forEach(doc => {
                     const data = doc.data();
-                    const time = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : "Just now";
+                    // Fallback for timestamp
+                    const timeRaw = data.last_updated || data.timestamp;
+                    const time = timeRaw ? new Date(timeRaw.toDate()).toLocaleString() : "Recently";
                     
+                    // Safely handle status
+                    const currentStatus = data.adminStatus || "New"; // adminStatus is set by YOU, data.status is auto-generated
+
                     list.innerHTML += `
-                        <div class="bg-slate-900 p-4 rounded border border-slate-700 flex justify-between items-center group hover:border-yellow-500/50 transition">
-                            <div>
-                                <h4 class="text-xl font-mono font-bold text-yellow-400">${data.mobile}</h4>
-                                <p class="text-xs text-slate-500 flex items-center gap-2">
-                                    <i class="ri-time-line"></i> ${time}
-                                    <span class="bg-slate-800 px-1 rounded text-[9px] uppercase tracking-wider text-slate-400">Verified</span>
-                                </p>
+                        <div class="bg-slate-900 p-4 rounded border border-slate-700 flex flex-col gap-3 group hover:border-blue-500/50 transition">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h4 class="text-lg font-mono font-bold text-white">${data.mobile}</h4>
+                                        <span class="text-[9px] bg-slate-800 px-1 rounded text-slate-400 font-mono">ID: ${doc.id}</span>
+                                    </div>
+                                    <div class="text-xs text-slate-400 mt-1">
+                                        <i class="ri-map-pin-line text-blue-500"></i> ${data.loc}
+                                    </div>
+                                    <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-2">
+                                        <i class="ri-time-line"></i> ${time}
+                                        ${data.activity_log && data.activity_log.length > 1 ? `<span class="text-yellow-500 font-bold">• ${data.activity_log.length} Checks</span>` : ''}
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-emerald-400 font-bold text-sm">₹${parseInt(data.total).toLocaleString()}</div>
+                                    <div class="text-[10px] text-slate-500">${data.depth} ft</div>
+                                </div>
                             </div>
-                            <div class="flex gap-2">
-                                <a href="tel:${data.mobile}" class="bg-green-600 text-white px-4 py-2 rounded font-bold text-xs hover:bg-green-500 flex items-center gap-1">
-                                    <i class="ri-phone-line"></i> CALL
+
+                            <div class="grid grid-cols-4 gap-2 pt-2 border-t border-slate-800">
+                                <a href="tel:${data.mobile}" class="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white flex items-center justify-center rounded py-1.5 transition">
+                                    <i class="ri-phone-line"></i>
                                 </a>
-                                <button onclick="deleteRecord('silent_leads', '${doc.id}')" class="bg-slate-800 text-slate-400 px-3 py-2 rounded font-bold text-xs hover:bg-red-900 hover:text-red-400 border border-slate-700">
-                                    <i class="ri-delete-bin-line"></i>
+                                
+                                <button onclick="viewSilentHistory('${doc.id}')" class="bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center rounded py-1.5 transition" title="View History">
+                                    <i class="ri-history-line"></i>
                                 </button>
+
+                                <div class="col-span-2">
+                                    <select onchange="updateSilentStatus('${doc.id}', this.value)" class="w-full bg-slate-800 text-white text-[10px] h-full rounded px-2 outline-none border border-slate-600 focus:border-blue-500">
+                                        <option value="New" ${currentStatus==='New'?'selected':''}>⚪ New</option>
+                                        <option value="Contacted" ${currentStatus==='Contacted'?'selected':''}>🔵 Contacted</option>
+                                        <option value="Follow Up" ${currentStatus==='Follow Up'?'selected':''}>🟡 Follow Up</option>
+                                        <option value="Dead" ${currentStatus==='Dead'?'selected':''}>🔴 Dead</option>
+                                        <option value="Converted" ${currentStatus==='Converted'?'selected':''}>🟢 Converted</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     `;
                 });
+            });
+        }
+		
+		// 🟢 NEW: Update Status for Silent Leads
+        function updateSilentStatus(docId, status) {
+            db.collection('silent_leads').doc(docId).update({ 
+                adminStatus: status 
+            }).then(() => {
+                notify(`Status updated to ${status}`);
+            }).catch(e => notify("Update failed", "error"));
+        }
+
+        // 🟢 NEW: View History Modal
+        function viewSilentHistory(docId) {
+            db.collection('silent_leads').doc(docId).get().then(doc => {
+                const data = doc.data();
+                const log = data.activity_log || [];
+                
+                // Sort by time (newest first)
+                log.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+                let historyHTML = `
+                    <div class="text-center mb-4">
+                        <h3 class="text-white font-bold text-lg">Activity Log</h3>
+                        <p class="text-slate-400 text-xs font-mono">${data.mobile}</p>
+                    </div>
+                    <div class="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                `;
+
+                if (log.length === 0) {
+                    historyHTML += `<div class="text-center text-slate-500 text-xs">No detailed history found.</div>`;
+                } else {
+                    log.forEach(item => {
+                        const dateObj = new Date(item.time);
+                        const dateStr = dateObj.toLocaleDateString();
+                        const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        
+                        historyHTML += `
+                            <div class="bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center text-xs">
+                                <div>
+                                    <div class="text-white font-bold">${item.depth} ft <span class="text-slate-500 font-normal">@ ${item.loc || 'Unknown'}</span></div>
+                                    <div class="text-slate-500 text-[10px]">${dateStr} • ${timeStr}</div>
+                                </div>
+                                <div class="text-emerald-400 font-bold">₹${parseInt(item.total).toLocaleString()}</div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                historyHTML += `</div>`;
+                
+                document.getElementById('modalContent').innerHTML = historyHTML;
+                document.getElementById('detailModal').classList.add('open');
             });
         }
 
