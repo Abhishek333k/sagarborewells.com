@@ -366,124 +366,169 @@
             this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
         });
 
-        // 🟢 CALCULATION ENGINE
-        function calculateEstimate() {
+		// 🟢 SECURE ID GENERATOR (Checks DB for Duplicates)
+        async function getUniqueQuoteID() {
+            const maxRetries = 5;
+            let attempt = 0;
+            
+            while(attempt < maxRetries) {
+                // Generate Candidate ID: QT-YYMM-XXXX (Year-Month-Random)
+                // Using Month reduces collision scope to 30 days, making short numbers safer.
+                const now = new Date();
+                const yy = now.getFullYear().toString().substr(-2);
+                const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+                const rand = Math.floor(1000 + Math.random() * 9000); // 1000-9999
+                const candidateID = `QT-${yy}${mm}-${rand}`; // Example: QT-2402-5821
+
+                // CHECK FIREBASE
+                // We check 'leads' collection. If it's not there, it's safe to use.
+                try {
+                    const doc = await db.collection('leads').doc(candidateID).get();
+                    if (!doc.exists) {
+                        return candidateID; // ✅ Unique! Return it.
+                    }
+                    console.warn(`Collision detected for ${candidateID}. Retrying...`);
+                } catch(e) {
+                    console.error("DB Check Failed", e);
+                    // In offline mode or error, add a timestamp suffix to guarantee uniqueness
+                    return `QT-${yy}${mm}-${rand}-${Date.now().toString().slice(-4)}`;
+                }
+                
+                attempt++;
+            }
+            // Fallback if loop fails (Extremely unlikely)
+            return `QT-${Date.now()}`; 
+        }
+
+        // 🟢 CALCULATION ENGINE (Upgraded to Async)
+        async function calculateEstimate() {
             if(document.getElementById('generateBtn').disabled) return;
             const name = document.getElementById('custName').value;
             const loc = document.getElementById('locInput').value;
             
             if(!name || !loc) { alert("Please fill details"); return; }
 
-            const totalDepth = parseInt(slider.value);
-            
-            // 1. Generate Persistent ID
-            if (!currentQuoteID) {
-                currentQuoteID = `QT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-            }
+            // ⚡ VISUAL FEEDBACK: Show loading state while checking DB
+            const genBtn = document.getElementById('generateBtn');
+            const originalBtnText = genBtn.innerHTML;
+            genBtn.disabled = true;
+            genBtn.innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Generating ID...`;
 
-            // 2. Math Logic
-            let drillHtml = "";
-            let breakdownText = ""; 
-            let drillCost = 0;
-            let currentDepth = 0;
-            let currentRate = PRICING_MODEL.base_rate; 
-            const jumps = PRICING_MODEL.increments;
-            const bounds = PRICING_MODEL.boundaries;
+            try {
+                // 1. Generate Persistent ID (Securely)
+                if (!currentQuoteID) {
+                    currentQuoteID = await getUniqueQuoteID();
+                }
 
-            // Base 0-100
-            const firstChunk = Math.min(totalDepth, 100);
-            if(firstChunk > 0) {
-                const cost = firstChunk * currentRate;
-                drillCost += cost;
-                drillHtml += `<tr><td>0 - ${firstChunk} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                breakdownText += `• 0-${firstChunk}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
-                currentDepth += firstChunk;
-            }
-
-            // Loop Slabs
-            while(currentDepth < totalDepth) {
-                let increment = jumps.phase_1; 
-                if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3; 
-                else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2; 
+                const totalDepth = parseInt(slider.value);
                 
-                currentRate += increment; 
-                let nextChunk = Math.min(50, totalDepth - currentDepth);
-                let cost = nextChunk * currentRate;
-                drillCost += cost;
+                // 2. Math Logic (Standard)
+                let drillHtml = "";
+                let breakdownText = ""; 
+                let drillCost = 0;
+                let currentDepth = 0;
+                let currentRate = PRICING_MODEL.base_rate; 
+                const jumps = PRICING_MODEL.increments;
+                const bounds = PRICING_MODEL.boundaries;
+
+                // Base 0-100
+                const firstChunk = Math.min(totalDepth, 100);
+                if(firstChunk > 0) {
+                    const cost = firstChunk * currentRate;
+                    drillCost += cost;
+                    drillHtml += `<tr><td>0 - ${firstChunk} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                    breakdownText += `• 0-${firstChunk}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
+                    currentDepth += firstChunk;
+                }
+
+                // Loop Slabs
+                while(currentDepth < totalDepth) {
+                    let increment = jumps.phase_1; 
+                    if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3; 
+                    else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2; 
+                    
+                    currentRate += increment; 
+                    let nextChunk = Math.min(50, totalDepth - currentDepth);
+                    let cost = nextChunk * currentRate;
+                    drillCost += cost;
+                    
+                    const endDepth = currentDepth + nextChunk;
+                    drillHtml += `<tr><td>${currentDepth + 1} - ${endDepth} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
+                    breakdownText += `• ${currentDepth + 1}-${endDepth}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
+                    
+                    currentDepth += nextChunk;
+                }
+
+                // Ops
+                let opsHtml = "";
+                let opsCost = 0;
+                if (transportDist > TRANSPORT_THRESHOLD_KM) {
+                    const excessKm = transportDist - TRANSPORT_THRESHOLD_KM;
+                    const blocks = Math.ceil(excessKm / 30);
+                    const transCost = blocks * TRANSPORT_BASE_RATE; 
+                    opsHtml += `<tr><td>Transport (${excessKm.toFixed(1)} km extra)</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
+                    breakdownText += `• Transport: ₹${transCost.toLocaleString()}\n`;
+                    opsCost += transCost;
+                }
+                opsHtml += `<tr><td>Rig Erection & Material Handling</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
+                breakdownText += `• Labour: ₹${LABOUR_CHARGE.toLocaleString()}\n`;
+                opsCost += LABOUR_CHARGE;
+
+                const grandTotal = drillCost + opsCost;
+
+                // Render
+                document.getElementById('opsSection').style.display = 'block';
+                document.getElementById('opsBody').innerHTML = opsHtml;
+                document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
+                document.getElementById('drillBody').innerHTML = drillHtml;
+                document.getElementById('drillSubtotal').innerText = "₹" + drillCost.toLocaleString();
+                document.getElementById('invTotal').innerText = "₹" + grandTotal.toLocaleString();
+                document.getElementById('invLoc').innerText = loc;
+                document.getElementById('invDepth').innerText = totalDepth + " ft";
+                document.getElementById('invRef').innerText = currentQuoteID;
+
+                // Prepare Data
+                leadData = { 
+                    id: currentQuoteID, 
+                    name, 
+                    mobile: "+91"+document.getElementById('custMobile').value, 
+                    loc, depth: totalDepth, total: grandTotal, 
+                    status: "Quote Generated", 
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    summary: breakdownText,
+                    rows: drillHtml
+                };
+
+                // 🟢 INTELLIGENCE: Log Silent Lead
+                const statusLog = hasLoggedPrice ? "Updated Price Check" : "Viewed Price / Not Booked";
+                if (hasLoggedPrice) {
+                     leadData.summary = "🔄 *UPDATED QUOTE*\n" + leadData.summary;
+                }
+
+                db.collection('silent_leads').doc(leadData.id).set({
+                    ...leadData,
+                    status: statusLog,
+                    last_updated: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }); 
+
+                if(typeof NOTIFY_TEMPLATES !== 'undefined') {
+                    sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
+                }
                 
-                const endDepth = currentDepth + nextChunk;
-                drillHtml += `<tr><td>${currentDepth + 1} - ${endDepth} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                breakdownText += `• ${currentDepth + 1}-${endDepth}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
-                
-                currentDepth += nextChunk;
+                hasLoggedPrice = true; 
+
+                document.getElementById('step-1').classList.add('hidden');
+                document.getElementById('step-2').classList.remove('hidden');
+                window.scrollTo(0,0);
+
+            } catch (error) {
+                console.error("Calculation Error:", error);
+                alert("System busy. Please try again.");
+            } finally {
+                // Restore Button
+                genBtn.disabled = false;
+                genBtn.innerHTML = originalBtnText;
             }
-
-            // Ops
-            let opsHtml = "";
-            let opsCost = 0;
-            if (transportDist > TRANSPORT_THRESHOLD_KM) {
-                const excessKm = transportDist - TRANSPORT_THRESHOLD_KM;
-                const blocks = Math.ceil(excessKm / 30);
-                const transCost = blocks * TRANSPORT_BASE_RATE; 
-                opsHtml += `<tr><td>Transport (${excessKm.toFixed(1)} km extra)</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
-                breakdownText += `• Transport: ₹${transCost.toLocaleString()}\n`;
-                opsCost += transCost;
-            }
-            opsHtml += `<tr><td>Rig Erection & Material Handling</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
-            breakdownText += `• Labour: ₹${LABOUR_CHARGE.toLocaleString()}\n`;
-            opsCost += LABOUR_CHARGE;
-
-            const grandTotal = drillCost + opsCost;
-
-            // Render
-            document.getElementById('opsSection').style.display = 'block';
-            document.getElementById('opsBody').innerHTML = opsHtml;
-            document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
-            document.getElementById('drillBody').innerHTML = drillHtml;
-            document.getElementById('drillSubtotal').innerText = "₹" + drillCost.toLocaleString();
-            document.getElementById('invTotal').innerText = "₹" + grandTotal.toLocaleString();
-            document.getElementById('invLoc').innerText = loc;
-            document.getElementById('invDepth').innerText = totalDepth + " ft";
-            document.getElementById('invRef').innerText = currentQuoteID;
-
-            // Prepare Data
-            leadData = { 
-                id: currentQuoteID, 
-                name, 
-                mobile: "+91"+document.getElementById('custMobile').value, 
-                loc, depth: totalDepth, total: grandTotal, 
-                status: "Quote Generated", 
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                summary: breakdownText,
-                rows: drillHtml
-            };
-
-            // 🟢 INTELLIGENCE: Log Silent Lead (ALWAYS LOG & NOTIFY)
-            // 🟥 FIX: Removed the "if(!hasLoggedPrice)" blocker.
-            // This ensures every "Calculate" click sends an update.
-            const statusLog = hasLoggedPrice ? "Updated Price Check" : "Viewed Price / Not Booked";
-            
-            // Add a visual marker for updates in Telegram
-            if (hasLoggedPrice) {
-                 leadData.summary = "🔄 *UPDATED QUOTE*\n" + leadData.summary;
-            }
-
-            db.collection('silent_leads').doc(leadData.id).set({
-                ...leadData,
-                status: statusLog,
-                last_updated: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true }); // Merge ensures we don't wipe other fields if they exist
-
-            // Secure Notification call (Always Send)
-            if(typeof NOTIFY_TEMPLATES !== 'undefined') {
-                sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
-            }
-            
-            hasLoggedPrice = true; 
-
-            document.getElementById('step-1').classList.add('hidden');
-            document.getElementById('step-2').classList.remove('hidden');
-            window.scrollTo(0,0);
         }
 
         // CONFIRM BOOKING
