@@ -254,18 +254,46 @@
 
     <script>
         
-       // 🟢 0. PRE-FILL & ELASTIC SLIDER ENGINE (Restored)
-       // This block handles initial URL parameters (like ?depth=800) and expands the slider automatically.
+        // 🟢 INIT FIREBASE
+        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
+            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        }
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // 🟢 LOAD CONSTANTS
+        const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : {
+            PRICING_MODEL: { base_rate: 70, increments: { phase_1: 10, phase_2: 20, phase_3: 50 }, boundaries: { phase_2_start: 200, phase_3_start: 300 } },
+            MATERIALS: []
+        };
+        const { PRICING_MODEL, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, OFFICE_LOCATION } = CFG;
+
+        let transportDist = 0;
+        let siteCoords = null;
+        let leadData = {};
+        let currentQuoteID = null;   
+        let hasLoggedPrice = false; 
+
+        // 🟢 UNIFIED INITIALIZATION (Materials & Pre-Fill)
         window.addEventListener('DOMContentLoaded', () => {
+            // 1. Render Materials
+            const matGrid = document.getElementById('materialsGrid');
+            if(matGrid) {
+                matGrid.innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
+            }
+
+            // 2. Pre-Fill Engine
             const params = new URLSearchParams(window.location.search);
+            let shouldCalc = false;
             
-            // 1. Fill Location
+            // Fill Location
             if (params.has('loc')) {
                 const loc = decodeURIComponent(params.get('loc'));
                 document.getElementById('locInput').value = loc;
+                shouldCalc = true;
             }
 
-            // 2. Fill Depth & Adjust Slider
+            // Fill Depth & Adjust Slider
             if (params.has('depth')) {
                 const depth = parseInt(params.get('depth'));
                 const slider = document.getElementById('depthSlider');
@@ -287,28 +315,21 @@
                 
                 // Show alerts if needed
                 document.getElementById('expertAlert').style.display = (depth > 600) ? 'block' : 'none';
+                shouldCalc = true;
+            }
+
+            // 3. Auto-Calculate if Params Exist
+            // Note: We check if button is enabled (User might be logged out)
+            if(shouldCalc) {
+                // We add a small delay to ensure Auth check completes
+                setTimeout(() => {
+                    if(!document.getElementById('generateBtn').disabled) {
+                        calculateEstimate();
+                    }
+                }, 1000);
             }
         });
 
-        // 🟢 INIT FIREBASE
-        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
-            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
-        }
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-
-        // 🟢 LOAD CONSTANTS
-        const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : {
-            PRICING_MODEL: { base_rate: 70, increments: { phase_1: 10, phase_2: 20, phase_3: 50 }, boundaries: { phase_2_start: 200, phase_3_start: 300 } },
-            MATERIALS: []
-        };
-        const { PRICING_MODEL, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, OFFICE_LOCATION } = CFG;
-
-        let transportDist = 0;
-        let siteCoords = null;
-        let leadData = {};
-        let currentQuoteID = null;   
-        let hasLoggedPrice = false; 
 
         // 🟢 SLIDER LOGIC (Interaction)
         const slider = document.getElementById('depthSlider');
@@ -448,7 +469,8 @@
         }
 
         // CONFIRM BOOKING
-        function confirmBooking() {
+        // 🔵 OPTIMIZATION: Added async/await for network reliability
+        async function confirmBooking() {
             const user = auth.currentUser;
             const finalData = { 
                 ...leadData, 
@@ -457,33 +479,37 @@
                 status: 'Booked' 
             };
 
-            db.collection('leads').doc(leadData.id).set(finalData).then(() => {
+            try {
+                // 1. Save Booking
+                await db.collection('leads').doc(leadData.id).set(finalData);
+                
+                // 2. Send Notification (Wait for it to ensure it sends)
+                if(typeof NOTIFY_TEMPLATES !== 'undefined') {
+                    await sendTelegram(NOTIFY_TEMPLATES.booking(finalData));
+                }
+
+                // 3. Update UI
                 document.getElementById('step-2').classList.add('hidden');
                 document.getElementById('step-3').classList.remove('hidden');
-                if(typeof NOTIFY_TEMPLATES !== 'undefined') {
-                    sendTelegram(NOTIFY_TEMPLATES.booking(finalData));
-                }
-            }).catch(e => alert("Error saving booking: " + e.message));
+            } catch (e) {
+                alert("Error saving booking: " + e.message);
+            }
         }
 
         // 🟢 SECURE TELEGRAM SENDER
-        // Now uses getTelegramCredentials() from config.js (Firebase Fetch)
         async function sendTelegram(msg) {
             if(typeof getTelegramCredentials === 'function') {
                 const creds = await getTelegramCredentials();
                 if(creds && creds.bot_token && creds.chat_id) {
                     const url = `https://api.telegram.org/bot${creds.bot_token}/sendMessage?chat_id=${creds.chat_id}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
-                    fetch(url).catch(e => console.log("Notify Error"));
+                    try {
+                        await fetch(url);
+                    } catch(e) { console.log("Notify Error", e); }
                 }
             } else {
                 console.warn("Secure Credential Fetcher not found.");
             }
         }
-
-        // UTILS
-        document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('materialsGrid').innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
-        });
 
         // 🟢 AUTH STATE LISTENER
         auth.onAuthStateChanged((user) => {
@@ -587,7 +613,7 @@
         function confirmQuoteLocation() { const p=qMap.getCenter(); new google.maps.Geocoder().geocode({location:p},(r,s)=>{if(s==='OK'){document.getElementById('locInput').value=r[0].formatted_address; calculateDist(p.lat(),p.lng());}}); document.getElementById('miniMapModal').style.display='none'; }
         function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{calculateDist(p.coords.latitude,p.coords.longitude); new google.maps.Geocoder().geocode({location:{lat:p.coords.latitude,lng:p.coords.longitude}},(r,s)=>{if(s==='OK')document.getElementById('locInput').value=r[0].formatted_address;});}); }
 
-        // 🟢 INJECT GOOGLE MAPS SCRIPT (Restored from Missing Chunk)
+        // 🟢 INJECT GOOGLE MAPS SCRIPT (Restored)
         const s = document.createElement('script'); 
         s.src=`https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
         s.async=true; 
