@@ -116,7 +116,7 @@
                 </div>
                 <h3 class="text-slate-800 font-bold mb-1">No Estimates Yet</h3>
                 <p class="text-slate-400 text-sm mb-6">Create a price estimation to see it here.</p>
-                <a href="quote.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow-lg shadow-blue-100">
+                <a href="quote" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow-lg shadow-blue-100">
                     <i class="ri-calculator-line mr-2"></i> Get Quote
                 </a>
             </div>
@@ -171,12 +171,12 @@
                 document.body.style.opacity = '1';
                 loadDashboard(user.uid, user.phoneNumber);
             } else {
-                window.location.replace("login.html");
+                window.location.replace("login");
             }
         });
 
         function logout() {
-            auth.signOut().then(() => window.location.href = "index.html");
+            auth.signOut().then(() => window.location.href = "index");
         }
 
         function switchTab(tab) {
@@ -330,7 +330,7 @@
         }
 
         function recalc(loc, depth) {
-            window.location.href = `quote.html?loc=${encodeURIComponent(loc)}&depth=${depth}`;
+            window.location.href = `quote?loc=${encodeURIComponent(loc)}&depth=${depth}`;
         }
 
         // 🟢 UNIFIED DOCUMENT HANDLER (Preview & Download)
