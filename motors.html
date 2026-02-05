@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Motor Match | Sagar Borewells</title>
+    <title>Smart Motor Selector | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
@@ -14,98 +14,98 @@
 
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
-        .wizard-step { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s ease-out; }
-        .wizard-step.active { display: block; opacity: 1; transform: translateY(0); }
-        .option-card { cursor: pointer; border: 2px solid #e2e8f0; border-radius: 16px; padding: 24px; transition: all 0.2s; background: white; text-align: center; }
-        .option-card:hover { border-color: #3b82f6; transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1); }
-        .cyber-input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-weight: 700; outline: none; }
-        .cyber-input:focus { border-color: #2563eb; }
+        .wizard-step { display: none; animation: fadeIn 0.4s ease; }
+        .wizard-step.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .option-card { cursor: pointer; border: 2px solid #e2e8f0; border-radius: 12px; padding: 20px; transition: all 0.2s; background: white; }
+        .option-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.15); }
     </style>
 </head>
-<body class="flex flex-col min-h-screen text-slate-800">
+<body class="flex flex-col min-h-screen">
+
     <div id="navbar-mount"></div>
 
-    <main class="flex-grow container mx-auto px-4 py-12 max-w-3xl">
+    <main class="flex-grow container mx-auto px-4 py-10 max-w-3xl">
+        
         <div class="text-center mb-10">
-            <span class="bg-blue-100 text-blue-700 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Gemini AI Engine</span>
-            <h1 class="text-4xl font-extrabold text-slate-900 mt-3">Intelligent Motor Search</h1>
-            <p class="text-slate-500 mt-2">Searching live stock & factory catalogs in real-time.</p>
+            <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Powered by SagarTraders.in</span>
+            <h1 class="text-3xl font-extrabold text-slate-900 mt-3">AI Motor Recommendation</h1>
+            <p class="text-slate-500 mt-2">Engineered logic to match your borewell with our live inventory.</p>
         </div>
 
-        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-slate-100"><div id="progressBar" class="h-full bg-blue-600 transition-all duration-500 w-[25%]"></div></div>
+        <div class="bg-white rounded-2xl shadow-xl p-8 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-slate-100">
+                <div id="progressBar" class="h-full bg-blue-600 transition-all duration-500" style="width: 25%"></div>
+            </div>
 
             <div id="step1" class="wizard-step active">
-                <h3 class="text-xl font-bold text-center mb-8">What is your Water Source?</h3>
+                <h3 class="text-lg font-bold text-slate-800 mb-6">1. Water Source</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="option-card" onclick="selectSource('borewell')">
-                        <i class="ri-arrow-down-circle-line text-4xl text-blue-500 mb-2 block"></i>
-                        <h4 class="font-bold text-lg">Borewell</h4>
-                        <p class="text-xs text-slate-400 mt-1">Submersible</p>
+                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-arrow-down-circle-line"></i></div>
+                        <h4 class="font-bold">Borewell</h4><p class="text-xs text-slate-500 mt-1">Deep Submersible</p>
                     </div>
                     <div class="option-card" onclick="selectSource('openwell')">
-                        <i class="ri-drop-line text-4xl text-emerald-500 mb-2 block"></i>
-                        <h4 class="font-bold text-lg">Open Well</h4>
-                        <p class="text-xs text-slate-400 mt-1">Monoblock</p>
+                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-checkbox-blank-circle-line"></i></div>
+                        <h4 class="font-bold">Open Well</h4><p class="text-xs text-slate-500 mt-1">Monoblock / Open Sub</p>
                     </div>
                     <div class="option-card" onclick="selectSource('sewage')">
-                        <i class="ri-delete-bin-line text-4xl text-orange-500 mb-2 block"></i>
-                        <h4 class="font-bold text-lg">Sewage</h4>
-                        <p class="text-xs text-slate-400 mt-1">Drainage</p>
+                        <div class="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-delete-bin-line"></i></div>
+                        <h4 class="font-bold">Sewage</h4><p class="text-xs text-slate-500 mt-1">Drainage / Mud</p>
                     </div>
                 </div>
             </div>
 
             <div id="step2" class="wizard-step">
-                <h3 class="text-xl font-bold text-center mb-6">Site Configuration</h3>
-                <div class="max-w-md mx-auto space-y-5">
-                    
+                <h3 class="text-lg font-bold text-slate-800 mb-6">2. Site Logistics</h3>
+                <div class="space-y-6">
                     <div id="opt-borewell" class="hidden spec-box">
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Total Depth (Feet)</label>
-                        <input type="number" id="inp-depth" class="cyber-input" placeholder="e.g. 450">
-                        <div class="mt-4 flex gap-4 justify-center">
-                            <label class="flex items-center gap-2 font-bold text-sm text-slate-600"><input type="radio" name="dia" value="4"> 4" Casing</label>
-                            <label class="flex items-center gap-2 font-bold text-sm text-slate-600"><input type="radio" name="dia" value="6" checked> 6" Casing</label>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Total Depth (Feet)</label>
+                        <input type="number" id="inp-depth" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold mb-4" placeholder="e.g. 450">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Casing Diameter</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-4 py-2 rounded-lg border border-slate-200"><input type="radio" name="dia" value="4"> 4 Inch</label>
+                            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-4 py-2 rounded-lg border border-slate-200"><input type="radio" name="dia" value="6" checked> 6 Inch</label>
                         </div>
                     </div>
 
-                    <div id="opt-openwell" class="hidden spec-box grid grid-cols-2 gap-4">
-                        <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Suction (Ft)</label><input type="number" id="inp-suction" class="cyber-input"></div>
-                        <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Delivery (Ft)</label><input type="number" id="inp-delivery" class="cyber-input"></div>
-                        <div class="col-span-2"><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Flat Distance (Ft)</label><input type="number" id="inp-flat" class="cyber-input"></div>
+                    <div id="opt-openwell" class="hidden spec-box">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Suction Depth (ft)</label>
+                        <input type="number" id="inp-suction" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold mb-4">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Delivery Height (ft)</label>
+                        <input type="number" id="inp-delivery" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold mb-4">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Flat Distance (ft)</label>
+                        <input type="number" id="inp-flat" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold">
                     </div>
 
                     <div id="opt-sewage" class="hidden spec-box">
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Lift Height (Ft)</label>
-                        <input type="number" id="inp-lift" class="cyber-input">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Lift Height (ft)</label>
+                        <input type="number" id="inp-lift" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold">
                     </div>
 
-                    <div class="pt-4 border-t border-slate-100">
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Power Phase</label>
-                        <select id="inp-phase" class="cyber-input bg-white">
-                            <option value="1">Single Phase (Home)</option>
-                            <option value="3">Three Phase (Farm)</option>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Power Supply</label>
+                        <select id="inp-phase" class="w-full border-2 border-slate-200 rounded-xl p-3 bg-white font-bold">
+                            <option value="1">Single Phase</option>
+                            <option value="3">Three Phase</option>
                         </select>
                     </div>
-
-                    <button onclick="runMotorEngine()" id="btn-search" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg mt-4 flex justify-center items-center gap-2">
-                        <span>INITIATE SEARCH</span> <i class="ri-search-line"></i>
-                    </button>
-                    <button onclick="location.reload()" class="w-full text-xs font-bold text-slate-400 mt-2">Back</button>
+                    
+                    <button onclick="runMotorEngine()" id="btn-search" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg mt-4">Find Matching Motors</button>
+                    <button onclick="location.reload()" class="w-full mt-2 text-slate-400 font-bold text-xs py-2">Back</button>
                 </div>
             </div>
 
             <div id="step3" class="wizard-step">
-                <div class="flex justify-between items-end mb-6">
-                    <div>
-                        <h2 class="text-xl font-bold">Matches Found</h2>
-                        <div id="debug-text" class="text-xs text-blue-600 font-mono mt-1">AI Thinking...</div>
-                    </div>
-                    <button onclick="location.reload()" class="bg-slate-100 p-2 rounded-lg"><i class="ri-refresh-line"></i></button>
+                <div class="text-center mb-6">
+                    <h3 class="text-xl font-bold text-slate-900">Recommended Hardware</h3>
+                    <p class="text-xs text-slate-500 font-mono mt-1" id="calcDebug">Syncing...</p>
                 </div>
-                <div id="results-grid" class="space-y-4 min-h-[200px]"></div>
-                <div id="no-match-msg" class="hidden text-center py-10 text-slate-500">No matches. Try different parameters.</div>
+                <div id="resultsContainer" class="space-y-4 min-h-[200px]"><div id="results-grid"></div></div>
+                <div id="no-match-msg" class="hidden text-center py-4 text-slate-500">No exact matches found.</div>
+                <button onclick="location.reload()" class="w-full mt-6 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200">Start Over</button>
             </div>
+
         </div>
     </main>
 
@@ -123,6 +123,7 @@
         function goToStep(n) {
             document.querySelectorAll('.wizard-step').forEach(e=>e.classList.remove('active'));
             document.getElementById('step'+n).classList.add('active');
+            document.getElementById('progressBar').style.width= (n*33) + "%";
         }
     </script>
 </body>
