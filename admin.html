@@ -216,8 +216,14 @@
     <div id="previewModal" class="modal-overlay" style="z-index: 150;"><div class="glass-modal p-4 w-full max-w-2xl rounded-xl h-[85vh] flex flex-col"><div class="flex justify-between items-center mb-3 px-2"><h3 class="text-white font-bold text-sm">Preview</h3><div class="flex gap-2"><button onclick="confirmDownloadPDF()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-xs font-bold">Download PDF</button><button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-400 hover:text-white px-3 py-1.5 text-xs font-bold">Close</button></div></div><div id="previewContent" class="flex-grow bg-white overflow-y-auto rounded shadow-inner p-4 text-black"></div></div></div>
     <div id="mapModal" class="modal-overlay" style="z-index: 200;"><div class="glass-card p-6 w-full max-w-2xl border border-slate-600 shadow-2xl"><h3 class="text-lg font-bold text-white mb-4 text-center">Satellite Targeting</h3><div class="map-wrapper"><div id="mapContainer" class="w-full h-full"></div><div class="target-reticle"><div class="reticle-dot"></div><div class="reticle-ring"></div><div class="absolute top-[30px] w-[1px] h-[20px] bg-gradient-to-b from-blue-400 to-transparent opacity-50"></div><div class="absolute w-[80px] h-[1px] bg-blue-500/30"></div><div class="absolute h-[80px] w-[1px] bg-blue-500/30"></div></div></div><div class="flex justify-center gap-4 mt-6"><button onclick="document.getElementById('mapModal').classList.remove('open')" class="text-slate-400 hover:text-white font-bold px-6 text-xs">ABORT</button><button onclick="confirmLocation()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded font-bold text-xs shadow-lg shadow-blue-900/50">LOCK COORDINATES</button></div></div></div>
 
-    <script>
-        if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
+
+<script>
+        // 🟢 FIX 1: Prevent Duplicate Initialization Crash
+        // We only initialize if no apps exist yet.
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+            firebase.initializeApp(CONTACT_INFO.firebase_config);
+        }
+
         const db = firebase.firestore();
         const auth = firebase.auth();
 
@@ -234,6 +240,7 @@
             const loginModal = document.getElementById('login-overlay');
 
             if(user) {
+                // Check if user is an admin
                 db.collection('admins').doc(user.phoneNumber).get().then(doc => {
                     if (doc.exists) {
                         if(loader) loader.style.display = 'none';
@@ -247,11 +254,13 @@
                         loginModal.classList.add('open');
                     }
                 }).catch(e => {
+                    console.error(e); // Log error for debugging
                     notify("System Error: " + e.message, "error");
                     if(loader) loader.style.display = 'none';
                     loginModal.classList.add('open');
                 });
             } else {
+                // No user logged in
                 if(loader) loader.style.display = 'none';
                 loginModal.classList.add('open');
             }
@@ -260,15 +269,29 @@
         function sendAdminOTP() {
             const phone = document.getElementById('adminPhone').value;
             if(phone.length !== 10) return notify("INVALID ID", "error");
-            const btn = document.getElementById('sendOtpBtn'); btn.innerText = "TRANSMITTING...";
+            
+            const btn = document.getElementById('sendOtpBtn'); 
+            btn.innerText = "TRANSMITTING...";
+            
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
+            
             auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier).then(cr => {
-                window.confirmationResult = cr; btn.classList.add('hidden');
+                window.confirmationResult = cr; 
+                btn.classList.add('hidden');
                 document.getElementById('otp-group').classList.remove('hidden');
                 document.getElementById('verifyOtpBtn').classList.remove('hidden');
-            }).catch(e => notify("TRANSMISSION FAILED", "error"));
+            }).catch(e => {
+                console.error(e);
+                notify("TRANSMISSION FAILED: " + e.message, "error");
+                btn.innerText = "Authenticate"; // Reset button text
+            });
         }
-        function verifyAdminOTP() { window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => notify("INVALID CODE", "error")); }
+
+        function verifyAdminOTP() { 
+            const code = document.getElementById('adminOtp').value;
+            window.confirmationResult.confirm(code).catch((e) => notify("INVALID CODE", "error")); 
+        }
+
         function logout() { auth.signOut(); window.location.reload(); }
 
         // --- NAVIGATION LOGIC ---
@@ -313,7 +336,7 @@
             }
         }
 
-        // --- 🟢 REAL-TIME DATA LOADERS (No Refresh Needed) ---
+        // --- 🟢 REAL-TIME DATA LOADERS ---
         let leadsUnsubscribe, projectsUnsubscribe, silentUnsubscribe;
         let leadsCache = [], projectsCache = []; let currentView = 'leads';
 
@@ -420,16 +443,11 @@
             const list = currentView === 'leads' ? leadsCache : projectsCache;
             
             const filtered = list.filter(item => {
-                // Text Search
                 const matchesText = (item.name + item.mobile + item.loc + (item.docId||item.projectId)).toLowerCase().includes(term);
-                
-                // Date Search (using timestamp for Leads, date string for Projects)
                 let itemDate = 0;
                 if(item.timestamp) itemDate = item.timestamp.toDate().getTime();
                 else if(item.date) itemDate = new Date(item.date).getTime();
-                
                 const matchesDate = itemDate >= start && itemDate <= end;
-
                 return matchesText && matchesDate;
             });
 
@@ -622,7 +640,6 @@
         function toggleDrawButtons(isDrawing) { document.getElementById('btnDraw').classList.toggle('hidden', isDrawing); document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing); }
         function enableEditorUI(title, btnText) { document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('zonePanelTitle').innerText = title; document.getElementById('btnSaveZone').innerText = btnText; }
 
-        // --- 🟢 FIXED: DATA OPS (BATCH CHUNKING) ---
         function addRiskRegion() {
             const region = document.getElementById('riskRegion').value; const status = document.getElementById('riskLevel').value; if(!region) return notify("Enter Region", "error");
             db.collection('risk_map').doc(region.toLowerCase()).set({ region: region.toLowerCase(), status: status, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
@@ -719,11 +736,7 @@
         
         function previewQuote(encoded) { 
             const data = JSON.parse(decodeURIComponent(encoded)); 
-            
-            // 🛑 BUG FIX: Pass full data to generator so it has access to rows, id, etc.
             if (!data.rows) {
-                // If rows are missing (old data), generate them on the fly for display
-                // 🟢 SAFE: Use 0 fallback to prevent infinite loop
                 let remaining = parseInt(data.depth || 0); 
                 let rows = "";
                 let floor = 0; 
@@ -740,7 +753,6 @@
                 data.rows = rows;
             }
             
-            // Call template with FULL data object
             const content = getInvoiceHTML(data); 
             
             document.getElementById('previewContent').innerHTML = content; 
@@ -787,7 +799,14 @@
         function initMapTools() { const input = document.getElementById('p_loc'); if(input) { const ac = new google.maps.places.Autocomplete(input); ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); } }
         function openMapPicker() { if(typeof google === 'undefined') { notify("System Initializing...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
         function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
-        const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`; s.async = true; s.defer = true; document.body.appendChild(s);
+        
+        // 🟢 FIX: Ensure Google Maps Key is Defined
+        const mapKey = (typeof CONTACT_INFO !== 'undefined' && CONTACT_INFO.google_maps_key) ? CONTACT_INFO.google_maps_key : 'YOUR_API_KEY_HERE';
+        const s = document.createElement('script'); 
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${mapKey}&libraries=places,drawing,geometry&callback=initMapTools`; 
+        s.async = true; 
+        s.defer = true; 
+        document.body.appendChild(s);
     </script>
 </body>
 </html>
