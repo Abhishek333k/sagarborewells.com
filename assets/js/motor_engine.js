@@ -11,7 +11,7 @@ window.EngineState = {
     phase: 1
 };
 
-// 🖥️ TERMINAL SYSTEM
+// 🖥️ TERMINAL SYSTEM (Visual Feedback)
 const Terminal = {
     el: document.getElementById('aiTerminal'),
     log: (msg, type = '') => {
@@ -87,7 +87,6 @@ window.runMotorEngine = async function() {
         // 4. DATA AGGREGATION (Shopify + KSB + KOEL)
         Terminal.log("Aggregating Global Inventory...");
         
-        // 🟢 FIX: Fetch all sources (added KOEL support)
         const [shopifyData, ksbData, koelData] = await Promise.all([
             fetchShopifyData(),
             fetchSheetData(invConfig.ksb_db_url, 'KSB'),         // KSB Catalog
@@ -98,14 +97,21 @@ window.runMotorEngine = async function() {
         Terminal.log(`Analyzed ${totalItems} SKUs across 3 Databases.`);
         Terminal.progress(50);
 
-        // 5. HARD FILTER (Physics & Type)
+        // 5. HARD FILTER (Physics & Type & BLACKLIST)
+        // We filter locally to save AI tokens and prevent bad recommendations
         Terminal.log(`Applying Physics Constraints (Head > ${Math.round(head)}ft)...`);
         
         const allCandidates = [...shopifyData, ...ksbData, ...koelData];
         
+        // ⛔ BLACKLIST (Remove Accessories)
+        const BLACKLIST = ['panel', 'starter', 'cable', 'wire', 'rope', 'pipe', 'fan', 'service', 'repair', 'kit', 'spares', 'accessories', 'control', 'box'];
+
         const candidates = allCandidates.filter(item => {
             const txt = (item.title + " " + item.desc).toLowerCase();
             
+            // Blacklist Check
+            if (BLACKLIST.some(badWord => txt.includes(badWord))) return false;
+
             // Type Check
             if (s.source === 'borewell' && !txt.includes('sub') && !txt.includes('bore') && !txt.includes('v4') && !txt.includes('v6')) return false;
             if (s.source === 'openwell' && !txt.includes('open') && !txt.includes('mono')) return false;
@@ -115,7 +121,7 @@ window.runMotorEngine = async function() {
             if (s.phase === 3 && !is3Phase) return false;
             if (s.phase === 1 && is3Phase) return false;
 
-            // Borewell Dia Check
+            // Borewell Dia Check (Don't put 6" pump in 4" hole)
             if (s.source === 'borewell' && s.dia === 4 && (txt.includes('v6') || txt.includes('6 inch'))) return false;
 
             return true;
@@ -126,7 +132,7 @@ window.runMotorEngine = async function() {
         // 6. AI DECISION (Gemini)
         let finalResults = [];
         if (candidates.length > 0) {
-            Terminal.log("Requesting Gemini 1.5 Flash Analysis...");
+            Terminal.log("Requesting SBW Flash Analysis...");
             Terminal.progress(75);
             finalResults = await askGemini(geminiKey, s, candidates);
         }
@@ -160,7 +166,7 @@ window.runMotorEngine = async function() {
 async function askGemini(apiKey, userSpecs, candidates) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
-    // Minify data to save tokens
+    // Minify data to save tokens (Gemini charges per character)
     const miniList = candidates.map(c => ({ 
         id: c.id, 
         name: c.title, 
@@ -170,11 +176,15 @@ async function askGemini(apiKey, userSpecs, candidates) {
 
     const prompt = `
     Role: Expert Hydraulic Engineer.
-    User Needs: ${userSpecs.source} pump, ${userSpecs.phase}-Phase, Head requirement: ${Math.round(userSpecs.calculatedHead)} ft.
+    User Needs: ${userSpecs.source} WATER PUMP, ${userSpecs.phase}-Phase, Head requirement: ${Math.round(userSpecs.calculatedHead)} ft.
     
     Task: Select the best 3-5 matches from this list.
-    Prioritize: 1. Technical Fit, 2. 'Shopify' (In Stock), 3. Price.
-    Constraint: If Head is mentioned in title, it MUST be > ${Math.round(userSpecs.calculatedHead)}.
+    
+    🚨 CRITICAL RULES:
+    1. ONLY recommend WATER PUMPS. 
+    2. DO NOT recommend Control Panels, Starters, Fans, Cables, or Accessories.
+    3. If Head is mentioned in title, it MUST be > ${Math.round(userSpecs.calculatedHead)}.
+    4. Prioritize: Technical Fit > In Stock ('shopify') > Price.
     
     List: ${JSON.stringify(miniList)}
     
@@ -190,15 +200,14 @@ async function askGemini(apiKey, userSpecs, candidates) {
         
         const data = await res.json();
         
+        // Parse Gemini Response (Clean up Markdown)
         if (!data.candidates || !data.candidates[0].content) throw new Error("AI Busy");
         
         const rawTxt = data.candidates[0].content.parts[0].text;
         const cleanJson = rawTxt.replace(/```json|```/g, '').trim();
-        
-        // 🟢 FIX: Variable name collision fixed
         const aiDecisions = JSON.parse(cleanJson);
 
-        // Merge AI Reasoning
+        // Merge AI Reasoning with Full Data Objects
         return aiDecisions.map(d => {
             const original = candidates.find(c => c.id === d.id);
             if (original) {
@@ -210,22 +219,23 @@ async function askGemini(apiKey, userSpecs, candidates) {
 
     } catch (e) {
         console.warn("AI Fallback triggered", e);
-        return candidates.slice(0, 3); // Fallback logic
+        return candidates.slice(0, 3); // Fallback: Return top 3 raw matches if AI fails
     }
 }
 
 // 🟢 DATA FETCHERS
 
+// 1. Shopify Fetcher
 async function fetchShopifyData() {
     try {
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/products.json?limit=250`);
         const json = await res.json();
         return json.products.map(p => ({
             id: p.id.toString(),
-            source: 'shopify',
+            source: 'shopify', // Used for badge logic
             brand: p.vendor,
             title: p.title,
-            desc: p.tags ? p.tags.join(" ") : "", // 🟢 FIX: Safe navigation
+            desc: p.tags ? p.tags.join(" ") : "", 
             price: p.variants[0].price,
             link: `https://${SHOPIFY_DOMAIN}/products/${p.handle}`,
             image: p.images[0]?.src
@@ -233,21 +243,22 @@ async function fetchShopifyData() {
     } catch { return []; }
 }
 
+// 2. Google Sheet Fetcher (Works for both KSB and KOEL scripts)
 async function fetchSheetData(url, defaultBrand) {
     if (!url) return [];
     try {
         const res = await fetch(url);
         const json = await res.json();
         
-        // Handle Google Script Object Response
+        // Handle Google Script Object Response: { "SKU": { ... } }
         return Object.entries(json).map(([sku, item]) => ({
             id: sku,
-            source: 'catalog',
-            brand: item.brand || defaultBrand, 
+            source: 'catalog', // Used for badge logic
+            brand: item.brand || defaultBrand, // Use script brand or fallback
             title: item.desc,
             desc: `${item.pumpType} ${item.hp}HP ${item.category}`,
             price: item.rate,
-            link: `https://wa.me/916304094177?text=I am interested in ${item.brand || defaultBrand} pump: ${item.desc} (${sku})`,
+            link: `https://wa.me/916304094177?text=I am interested in ${item.brand} pump: ${item.desc} (${sku})`,
             image: null
         }));
     } catch (e) { 
@@ -264,7 +275,7 @@ function renderCards(list) {
     list.forEach(p => {
         const isStock = p.source === 'shopify';
         
-        // Badge Logic
+        // Dynamic Badge Logic
         let badge = "CATALOG";
         let badgeColor = "bg-blue-100 text-blue-700";
         
