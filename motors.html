@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Motor Selector | Sagar Borewells</title>
+    <title>AI Motor Architect | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -17,9 +17,25 @@
 
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
-        .wizard-step { display: none; animation: fadeIn 0.4s ease; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .wizard-step { display: none; animation: slideUp 0.4s ease-out; }
         .wizard-step.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* TERMINAL STYLES */
+        .terminal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
+            z-index: 50; display: none; align-items: center; justify-content: center;
+        }
+        .terminal-box {
+            background: #000; border: 1px solid #334155; border-radius: 12px;
+            width: 90%; max-width: 600px; padding: 24px; color: #4ade80;
+            font-family: 'JetBrains Mono', monospace; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .blink { animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        
         .option-card { cursor: pointer; border: 2px solid #e2e8f0; border-radius: 12px; padding: 20px; transition: all 0.2s; background: white; }
         .option-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.15); }
     </style>
@@ -28,12 +44,25 @@
 
     <div id="navbar-mount"></div>
 
+    <div id="aiTerminal" class="terminal-overlay">
+        <div class="terminal-box">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+                <span class="text-xs text-slate-500">AI_ENGINE_V3.0</span>
+                <span class="text-xs text-slate-500" id="termTime">00:00:00</span>
+            </div>
+            <div id="termLogs" class="space-y-2 text-sm h-48 overflow-y-auto mb-4">
+                </div>
+            <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div id="termProgress" class="h-full bg-green-500 transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
     <main class="flex-grow container mx-auto px-4 py-10 max-w-3xl">
-        
         <div class="text-center mb-10">
             <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Powered by SagarTraders.in</span>
-            <h1 class="text-3xl font-extrabold text-slate-900 mt-3">AI Motor Recommendation</h1>
-            <p class="text-slate-500 mt-2">Engineered logic to match your borewell with our live inventory.</p>
+            <h1 class="text-3xl font-extrabold text-slate-900 mt-3">AI Motor Architect</h1>
+            <p class="text-slate-500 mt-2">Let our AI analyze physics to build your perfect water system.</p>
         </div>
 
         <div class="bg-white rounded-2xl shadow-xl p-8 relative overflow-hidden">
@@ -45,15 +74,15 @@
                 <h3 class="text-lg font-bold text-slate-800 mb-6">1. Water Source</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="option-card" onclick="selectSource('borewell')">
-                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-arrow-down-circle-line"></i></div>
+                        <i class="ri-arrow-down-circle-line text-4xl text-blue-500 mb-2 block"></i>
                         <h4 class="font-bold">Borewell</h4><p class="text-xs text-slate-500 mt-1">Deep Submersible</p>
                     </div>
                     <div class="option-card" onclick="selectSource('openwell')">
-                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-checkbox-blank-circle-line"></i></div>
-                        <h4 class="font-bold">Open Well</h4><p class="text-xs text-slate-500 mt-1">Monoblock / Open Sub</p>
+                        <i class="ri-drop-line text-4xl text-emerald-500 mb-2 block"></i>
+                        <h4 class="font-bold">Open Well</h4><p class="text-xs text-slate-500 mt-1">Monoblock / Surface</p>
                     </div>
                     <div class="option-card" onclick="selectSource('sewage')">
-                        <div class="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-delete-bin-line"></i></div>
+                        <i class="ri-delete-bin-line text-4xl text-orange-500 mb-2 block"></i>
                         <h4 class="font-bold">Sewage</h4><p class="text-xs text-slate-500 mt-1">Drainage / Mud</p>
                     </div>
                 </div>
@@ -73,9 +102,9 @@
                     </div>
 
                     <div id="opt-openwell" class="hidden spec-box">
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Suction Depth (ft)</label>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Suction (ft)</label>
                         <input type="number" id="inp-suction" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold mb-4">
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Delivery Height (ft)</label>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Delivery (ft)</label>
                         <input type="number" id="inp-delivery" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold mb-4">
                         <label class="block text-sm font-bold text-slate-700 mb-2">Flat Distance (ft)</label>
                         <input type="number" id="inp-flat" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold">
@@ -94,24 +123,28 @@
                         </select>
                     </div>
                     
-                    <button onclick="runMotorEngine()" id="btn-search" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg mt-4">Find Matching Motors</button>
+                    <button onclick="runMotorEngine()" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg mt-4 flex justify-center items-center gap-2">
+                        <span>INITIATE SEARCH</span> <i class="ri-terminal-line"></i>
+                    </button>
                     <button onclick="goToStep(1)" class="w-full mt-2 text-slate-400 font-bold text-xs py-2">Back</button>
                 </div>
             </div>
 
             <div id="step3" class="wizard-step">
-                <div class="text-center mb-6">
-                    <h3 class="text-xl font-bold text-slate-900">Recommended Hardware</h3>
-                    <p class="text-xs text-slate-500 font-mono mt-1" id="calcDebug">Syncing...</p>
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold">AI Recommendations</h2>
+                        <div id="calcDebug" class="text-xs text-blue-600 font-mono mt-1">Calculated Head: 0ft</div>
+                    </div>
+                    <button onclick="location.reload()" class="bg-slate-100 p-2 rounded-lg hover:bg-slate-200"><i class="ri-refresh-line"></i></button>
                 </div>
                 <div id="resultsContainer" class="space-y-4 min-h-[200px]"><div id="results-grid"></div></div>
-                <div id="no-match-msg" class="hidden text-center py-4 text-slate-500">No exact matches found.</div>
-                <button onclick="location.reload()" class="w-full mt-6 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200">Start Over</button>
+                <div id="no-match-msg" class="hidden text-center py-10 text-slate-500">No matches found.</div>
             </div>
 
         </div>
     </main>
 
     <div id="footer-mount"></div>
-    </body>
+</body>
 </html>
