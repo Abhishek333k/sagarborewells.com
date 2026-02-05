@@ -16,7 +16,9 @@ async function runMotorEngine() {
     const s = window.EngineState;
     
     // 1. CALCULATE PHYSICS (Client Side)
-    s.phase = parseInt(document.getElementById('inp-phase').value);
+    const phaseEl = document.getElementById('inp-phase');
+    s.phase = phaseEl ? parseInt(phaseEl.value) : 1;
+    
     let head = 0;
     
     if (s.source === 'borewell') {
@@ -35,7 +37,7 @@ async function runMotorEngine() {
         head = parseInt(document.getElementById('inp-lift').value || 0);
     }
 
-    if (head <= 0) return alert("Please enter valid parameters.");
+    if (head <= 0) return alert("Please enter valid depth parameters.");
     s.calculatedHead = head;
 
     // 2. UI LOADING
@@ -59,7 +61,8 @@ async function runMotorEngine() {
         const allMatches = [...shopifyResults, ...aiResults];
 
         goToStep(4);
-        document.getElementById('debug-text').innerHTML = `TDH: <strong>${Math.round(head)} ft</strong> • ${s.phase} Phase`;
+        const debugEl = document.getElementById('debug-text');
+        if(debugEl) debugEl.innerHTML = `TDH: <strong>${Math.round(head)} ft</strong> • ${s.phase} Phase`;
 
         if (allMatches.length === 0) {
             document.getElementById('no-match-msg').classList.remove('hidden');
@@ -92,6 +95,7 @@ async function fetchShopifyData() {
             });
 
             // Local Filter Logic
+            // Note: Ensure Shopify tags match these keys exactly (type, phase, dia, head)
             if (tags.type !== s.source) return null;
             if (parseInt(tags.phase) !== s.phase) return null;
             if (s.source === 'borewell' && parseInt(tags.dia) > s.dia) return null;
@@ -113,25 +117,30 @@ async function fetchShopifyData() {
 
 // 🟢 AI AGENT FETCHER (Server Logic)
 async function fetchAIAgentData(userSpecs) {
-    const agentUrl = await getMasterListUrl(); // Your GAS Deployment URL from config.js
+    // 🔐 Secure Fetch from config.js
+    if (typeof getInventoryAgentUrl !== 'function') {
+        console.error("Config missing getInventoryAgentUrl function");
+        return [];
+    }
+
+    const agentUrl = await getInventoryAgentUrl(); 
     if (!agentUrl) return [];
 
     try {
+        // We use standard fetch. Google Apps Script Web App must be deployed correctly.
+        // Deploy as: "Execute as Me", "Access: Anyone".
+        // This allows CORS requests to succeed.
         const res = await fetch(agentUrl, {
-            method: 'POST', // Must be POST to send data
-            mode: 'no-cors', // Apps Script quirk - handled below *
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', 
+            // 'no-cors' is NOT used here because we need the JSON response.
+            // If CORS fails, it means the GAS deployment settings are wrong.
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, 
+            // GAS POST requests often prefer raw string payload or form-urlencoded
             body: JSON.stringify({ specs: userSpecs })
         });
         
-        // * NOTE: Google Apps Script 'no-cors' mode is opaque.
-        // To get actual JSON back, we usually need a specialized setup.
-        // However, for Simplicity in this "Audit" fix, we use the standard method 
-        // assuming standard CORS setup on script or using the redirect method.
-        // A more robust method for GAS is "JSONP" or using a proxy, but here is the
-        // standard fetch implementation.
-        
         const data = await res.json(); 
+        
         if(data.matches) {
             return data.matches.map(m => ({
                 source: 'catalog',
@@ -147,8 +156,7 @@ async function fetchAIAgentData(userSpecs) {
         }
         return [];
     } catch (e) {
-        console.warn("AI Agent silent fail (likely CORS or Timeout):", e);
-        // Fallback: If AI fails, we just show Shopify results
+        console.warn("AI Agent fetch failed (Check CORS/Deployment):", e);
         return [];
     }
 }
@@ -156,6 +164,7 @@ async function fetchAIAgentData(userSpecs) {
 // 🟢 RENDERER
 function renderCards(list) {
     const container = document.getElementById('results-grid');
+    container.innerHTML = "";
     
     // Sort: Shopify First
     list.sort((a, b) => (a.source === 'shopify' ? -1 : 1));
@@ -175,25 +184,25 @@ function renderCards(list) {
         const aiReason = p.reason ? `<div class="text-[10px] text-slate-500 italic mt-1 border-t border-slate-100 pt-1">"${p.reason}"</div>` : '';
 
         container.innerHTML += `
-        <div class="product-card bg-white border border-slate-200 rounded-xl p-4 flex gap-4 items-center">
+        <div class="product-card bg-white border border-slate-200 rounded-xl p-4 flex gap-4 items-center transition hover:border-blue-300 hover:shadow-md">
             <div class="w-16 h-16 bg-slate-50 rounded-lg flex-shrink-0 border border-slate-100 p-1 flex items-center justify-center">
-                <img src="${img}" class="max-w-full max-h-full object-contain">
+                <img src="${img}" class="max-w-full max-h-full object-contain mix-blend-multiply">
             </div>
             <div class="flex-grow">
                 <div class="flex justify-between items-start">
                     <div>
                         <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">${p.brand}</div>
-                        <h4 class="font-bold text-slate-800 text-sm leading-tight">${p.model}</h4>
+                        <h4 class="font-bold text-slate-800 text-sm leading-tight line-clamp-2">${p.model}</h4>
                         <div class="flex gap-2 mt-1 items-center">
                             <span class="text-xs font-mono text-slate-500 font-bold">${p.maxhead}ft</span>
                             ${badge}
                         </div>
                     </div>
-                    <div class="font-bold text-blue-600 text-right">${priceTxt}</div>
+                    <div class="font-bold text-blue-600 text-right whitespace-nowrap pl-2">${priceTxt}</div>
                 </div>
                 ${aiReason}
                 <div class="mt-2">
-                    <a href="${p.link}" target="_blank" class="block w-full ${btnBg} text-white text-center text-[10px] font-bold py-2 rounded-lg transition">${btnTxt}</a>
+                    <a href="${p.link}" target="_blank" class="block w-full ${btnBg} text-white text-center text-[10px] font-bold py-2 rounded-lg transition hover:shadow-lg">${btnTxt}</a>
                 </div>
             </div>
         </div>`;
