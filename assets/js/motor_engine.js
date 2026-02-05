@@ -269,32 +269,39 @@ function renderCards(list) {
     const container = document.getElementById('results-grid');
     container.innerHTML = "";
     
+    // 🎨 Define the Fallback Image Path here
+    const FALLBACK_IMG = 'assets/img/blueprint-placeholder.png';
+
     list.forEach(p => {
         const isStock = p.source === 'shopify';
         
-        // 🟢 FIX: New Badge Logic
-        let badge = "DIRECT";
+        let badge = "CATALOG";
         let badgeColor = "bg-blue-100 text-blue-700";
         
         if (isStock) {
             badge = "IN STOCK";
             badgeColor = "bg-emerald-100 text-emerald-700";
-        } else if (p.brand === 'Kirloskar' || p.brand === 'KOEL') {
+        } else if (p.brand && (p.brand.toUpperCase().includes('KIRLOSKAR') || p.brand.toUpperCase().includes('KOEL'))) {
             badge = "KOEL DIRECT";
             badgeColor = "bg-green-100 text-green-800";
-        } else if (p.brand === 'KSB') {
+        } else if (p.brand && p.brand.toUpperCase().includes('KSB')) {
             badge = "KSB DIRECT";
             badgeColor = "bg-orange-100 text-orange-800";
         }
 
         const btnTxt = isStock ? "BUY NOW" : "CHECK AVAILABILITY";
         const btnBg = isStock ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-800 hover:bg-black";
-        const img = p.image || 'assets/img/motor-catalog.png';
+        
+        // 🛡️ Logic: Use product image if exists, otherwise use fallback
+        const displayImg = p.image ? p.image : FALLBACK_IMG;
 
         container.innerHTML += `
         <div class="product-card bg-white border border-slate-200 rounded-xl p-4 flex gap-4 items-center animate-[fadeIn_0.5s]">
-            <div class="w-16 h-16 bg-slate-50 rounded-lg flex-shrink-0 border border-slate-100 p-1 flex items-center justify-center">
-                <img src="${img}" class="max-w-full max-h-full object-contain">
+            <div class="w-16 h-16 bg-slate-50 rounded-lg flex-shrink-0 border border-slate-100 p-1 flex items-center justify-center overflow-hidden relative">
+                <img src="${displayImg}" 
+                     class="max-w-full max-h-full object-contain" 
+                     alt="${p.title}"
+                     onerror="this.onerror=null; this.src='${FALLBACK_IMG}';">
             </div>
             <div class="flex-grow">
                 <div class="flex justify-between items-start">
