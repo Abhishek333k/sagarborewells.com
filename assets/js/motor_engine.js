@@ -11,27 +11,25 @@ window.EngineState = {
     phase: 1
 };
 
-// 🖥️ TERMINAL SYSTEM (Professional Overlay)
+// 🖥️ TERMINAL SYSTEM
 const Terminal = {
     el: document.getElementById('aiTerminal'),
-    logs: document.getElementById('terminalLogs'),
-    bar: document.getElementById('terminalProgress'),
-    
-    show: () => { document.getElementById('aiTerminal').style.display = 'flex'; },
-    hide: () => { document.getElementById('aiTerminal').style.display = 'none'; },
-    
     log: (msg, type = '') => {
         const line = document.createElement('div');
         line.className = `log-line ${type}`;
         line.innerHTML = `<span class="opacity-50">>></span> ${msg}`;
         const container = document.getElementById('terminalLogs');
-        container.appendChild(line);
-        container.scrollTop = container.scrollHeight;
+        if(container) {
+            container.appendChild(line);
+            container.scrollTop = container.scrollHeight;
+        }
     },
-    
     progress: (pct) => {
-        document.getElementById('terminalProgress').style.width = `${pct}%`;
-    }
+        const bar = document.getElementById('terminalProgress');
+        if(bar) bar.style.width = `${pct}%`;
+    },
+    show: () => { document.getElementById('aiTerminal').style.display = 'flex'; },
+    hide: () => { document.getElementById('aiTerminal').style.display = 'none'; }
 };
 
 // 🟢 MAIN ENGINE
@@ -41,9 +39,11 @@ window.runMotorEngine = async function() {
     s.phase = phaseEl ? parseInt(phaseEl.value) : 1;
     let head = 0;
     
-    // Physics Logic
+    // 1. PHYSICS ENGINE
     if (s.source === 'borewell') {
         const depth = parseInt(document.getElementById('inp-depth').value || 0);
+        const diaRadio = document.querySelector('input[name="dia"]:checked');
+        s.dia = diaRadio ? parseInt(diaRadio.value) : 6;
         head = depth * 1.25; 
     } else if (s.source === 'openwell') {
         const suc = parseInt(document.getElementById('inp-suction').value || 0);
@@ -54,16 +54,16 @@ window.runMotorEngine = async function() {
         head = parseInt(document.getElementById('inp-lift').value || 0);
     }
 
-    if (head <= 0) return alert("Please enter valid parameters.");
+    if (head <= 0) return alert("Please enter valid depth parameters.");
     s.calculatedHead = head;
 
-    // 1. START TERMINAL
+    // 2. START TERMINAL
     Terminal.show();
     Terminal.log("Initializing Neural Context...", "highlight");
     Terminal.progress(10);
 
     try {
-        // 2. FETCH SECURE KEYS
+        // 3. SECURE KEYS
         const [geminiKey, invConfig] = await Promise.all([
             getGeminiKey(),
             getInventoryConfig()
@@ -74,46 +74,63 @@ window.runMotorEngine = async function() {
         Terminal.log("Database Connection Established.");
         Terminal.progress(30);
 
-        // 3. FETCH RAW DATA (Shopify + Sheet)
+        // 4. DATA AGGREGATION
         Terminal.log("Aggregating Global Inventory...");
         const [shopifyData, sheetData] = await Promise.all([
             fetchShopifyData(),
             fetchSheetData(invConfig.ksb_db_url)
         ]);
 
-        Terminal.log(`Analyzed ${shopifyData.length + sheetData.length} SKUs across 2 Databases.`);
-        Terminal.progress(60);
+        Terminal.log(`Analyzed ${shopifyData.length} Store Items + ${sheetData.length} Catalog Items.`);
+        Terminal.progress(50);
 
-        // 4. PRE-FILTER CANDIDATES (Save Token Cost)
-        // We do a loose keyword filter so we don't send 2000 items to Gemini
-        Terminal.log("Optimizing Data Vector...");
+        // 5. HARD FILTER (Physics & Type)
+        // We filter obvious mismatches locally to save AI tokens
+        Terminal.log("Applying Physics Constraints...");
         const candidates = [...shopifyData, ...sheetData].filter(item => {
             const txt = (item.title + " " + item.desc).toLowerCase();
-            if (s.source === 'borewell' && !txt.includes('bore') && !txt.includes('sub') && !txt.includes('v4') && !txt.includes('v6')) return false;
+            
+            // Type Check
+            if (s.source === 'borewell' && !txt.includes('sub') && !txt.includes('bore') && !txt.includes('v4') && !txt.includes('v6')) return false;
             if (s.source === 'openwell' && !txt.includes('open') && !txt.includes('mono')) return false;
+            
+            // Phase Check (Strict)
+            const is3Phase = txt.includes('3 phase') || txt.includes('3phase') || txt.includes('3 ph');
+            if (s.phase === 3 && !is3Phase) return false;
+            if (s.phase === 1 && is3Phase) return false;
+
+            // Borewell Dia Check
+            if (s.source === 'borewell' && s.dia === 4 && (txt.includes('v6') || txt.includes('6 inch'))) return false;
+
             return true;
-        }).slice(0, 40); // Top 40 Candidates
+        }).slice(0, 30); // Send top 30 valid candidates to AI
 
-        // 5. ASK GEMINI (The Magic)
-        Terminal.log("Generative Analysis in Progress...", "highlight");
-        const recommendations = await askGemini(geminiKey, s, candidates);
+        Terminal.log(`${candidates.length} Viable Candidates Identified.`, "highlight");
+        
+        // 6. AI DECISION (Gemini)
+        let finalResults = [];
+        if (candidates.length > 0) {
+            Terminal.log("Requesting Gemini 1.5 Flash Analysis...");
+            Terminal.progress(75);
+            finalResults = await askGemini(geminiKey, s, candidates);
+        }
 
-        Terminal.log("Generating Recommendation Vector...");
+        Terminal.log("Generating Recommendation Vectors...");
         Terminal.progress(100);
-        await new Promise(r => setTimeout(r, 1000)); // Cinematic Pause
+        await new Promise(r => setTimeout(r, 800)); 
 
-        // 6. RENDER
+        // 7. RENDER
         Terminal.hide();
         window.goToStep(3);
         
         const debugEl = document.getElementById('calcDebug');
         if(debugEl) debugEl.innerHTML = `TDH: <strong>${Math.round(head)} ft</strong> • ${s.phase} Phase`;
 
-        if (recommendations.length === 0) {
+        if (finalResults.length === 0) {
             document.getElementById('no-match-msg').classList.remove('hidden');
         } else {
             document.getElementById('no-match-msg').classList.add('hidden');
-            renderCards(recommendations);
+            renderCards(finalResults);
         }
 
     } catch (e) {
@@ -123,24 +140,27 @@ window.runMotorEngine = async function() {
     }
 };
 
-// 🟢 AI BRAIN (Gemini API)
+// 🟢 AI BRAIN
 async function askGemini(apiKey, userSpecs, candidates) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
+    // Minify data to save tokens
+    const miniList = candidates.map(c => ({ 
+        id: c.id, 
+        name: c.title, 
+        price: c.price 
+    }));
+
     const prompt = `
-    Role: Hydraulic Engineer.
-    User Needs: ${userSpecs.source} pump, ${userSpecs.phase}-Phase power, capable of ${Math.round(userSpecs.calculatedHead)} ft Head.
+    Role: Senior Hydraulic Engineer.
+    User Needs: ${userSpecs.source} pump, ${userSpecs.phase}-Phase, Head requirement: ${Math.round(userSpecs.calculatedHead)} ft.
     
-    Task: Select the best 3-5 matches from the Candidate List below.
-    Prioritize items from 'shopify' source first.
+    Task: Pick the best 3 matches from this list. 
+    Constraint: If Head is mentioned in title, it MUST be > ${Math.round(userSpecs.calculatedHead)}.
     
-    Candidate List:
-    ${JSON.stringify(candidates.map(c => ({ id: c.id, title: c.title, price: c.price, source: c.source })))}
+    List: ${JSON.stringify(miniList)}
     
-    Output JSON ONLY:
-    [
-        { "id": "...", "reason": "Why this fits (max 10 words)" }
-    ]
+    Output JSON ONLY: [ { "id": "...", "reason": "Short reason" } ]
     `;
 
     try {
@@ -153,22 +173,25 @@ async function askGemini(apiKey, userSpecs, candidates) {
         const data = await res.json();
         const rawTxt = data.candidates[0].content.parts[0].text;
         const cleanJson = rawTxt.replace(/```json|```/g, '').trim();
-        const ai decisions = JSON.parse(cleanJson);
+        const decisions = JSON.parse(cleanJson);
 
-        // Merge AI decisions back with full object data
-        return ai_decisions.map(d => {
+        // Merge AI Logic with Full Data
+        return decisions.map(d => {
             const original = candidates.find(c => c.id === d.id);
-            return original ? { ...original, reason: d.reason } : null;
+            if (original) {
+                original.reason = d.reason;
+                return original;
+            }
+            return null;
         }).filter(x => x !== null);
 
     } catch (e) {
-        console.warn("AI Brain Freeze, falling back to raw list", e);
-        return candidates.slice(0, 3); // Fallback: Just return top 3 raw matches
+        console.warn("AI Fallback triggered", e);
+        return candidates.slice(0, 3); // Fallback to raw list if AI fails
     }
 }
 
 // 🟢 DATA FETCHERS
-
 async function fetchShopifyData() {
     try {
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/products.json?limit=250`);
@@ -188,23 +211,27 @@ async function fetchShopifyData() {
 async function fetchSheetData(url) {
     if (!url) return [];
     try {
-        const res = await fetch(url); // Your Google Script API
+        const res = await fetch(url);
         const json = await res.json();
         
-        // Convert Object { "SKU": {...} } to Array
+        // 🟢 FIX: Handle Object Response from Google Script
+        // Script returns: { "SKU1": { desc: "...", rate: "..." }, ... }
         return Object.entries(json).map(([sku, item]) => ({
             id: sku,
             source: 'catalog',
             title: item.desc,
             desc: `${item.pumpType} ${item.hp}HP ${item.category}`,
             price: item.rate,
-            link: `https://wa.me/916304094177?text=Availability Check: ${item.desc} (${sku})`,
+            link: `https://wa.me/916304094177?text=Check availability: ${item.desc}`,
             image: null
         }));
-    } catch { return []; }
+    } catch (e) { 
+        console.warn("Sheet Fetch Error", e); 
+        return []; 
+    }
 }
 
-// 🟢 UI HELPERS
+// 🟢 RENDERER
 function renderCards(list) {
     const container = document.getElementById('results-grid');
     container.innerHTML = "";
@@ -213,7 +240,7 @@ function renderCards(list) {
         const isStock = p.source === 'shopify';
         const badge = isStock ? "IN STOCK" : "CATALOG";
         const badgeColor = isStock ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700";
-        const btnTxt = isStock ? "BUY NOW" : "CHECK AVAILABILITY";
+        const btnTxt = isStock ? "BUY NOW" : "CHECK STOCK";
         const btnBg = isStock ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-800 hover:bg-black";
         const img = p.image || 'assets/img/motor-catalog.png';
 
@@ -234,7 +261,7 @@ function renderCards(list) {
                     <div class="font-bold text-blue-600 text-right">₹${parseInt(p.price).toLocaleString()}</div>
                 </div>
                 <div class="text-[10px] text-slate-500 italic mt-1 border-t border-slate-100 pt-1">
-                    🤖 ${p.reason || "Matched based on specs"}
+                    ✨ ${p.reason || "Engineered Match"}
                 </div>
                 <div class="mt-2">
                     <a href="${p.link}" target="_blank" class="block w-full ${btnBg} text-white text-center text-[10px] font-bold py-2 rounded-lg transition">${btnTxt}</a>
@@ -244,6 +271,7 @@ function renderCards(list) {
     });
 }
 
+// 🟢 HELPERS
 window.selectSource = function(s) {
     window.EngineState.source = s;
     document.querySelectorAll('.wizard-step').forEach(e => e.classList.remove('active'));
