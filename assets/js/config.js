@@ -16,7 +16,7 @@ const CONTACT_INFO = {
         youtube: "https://www.youtube.com/@Sagar_Bore_Wells"
     },
 
-    // --- FIREBASE CONFIG ---
+    // --- FIREBASE CONFIG (Public/Safe to expose) ---
     firebase_config: {
         apiKey: "AIzaSyAp3D__eHpiOaPoQmO2eXL25C2evR0yqfQ",
         authDomain: "sbw-ops-956b1.firebaseapp.com",
@@ -25,68 +25,59 @@ const CONTACT_INFO = {
         messagingSenderId: "958364659529",
         appId: "1:958364659529:web:bb3387a1ded9374ed0f498",
         measurementId: "G-XLMWW4MMTL"
-    },
-
-    // --- API KEYS ---
-    google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus"
+    }
 };
 
-// 🟢 INITIALIZE FIREBASE (Singleton Pattern)
+// 🟢 INITIALIZE FIREBASE
 if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     firebase.initializeApp(CONTACT_INFO.firebase_config);
 } else if (typeof firebase === 'undefined') {
-    console.error("🔥 CRITICAL: Firebase SDK not loaded in HTML. Please add the <script> tags.");
+    console.error("🔥 CRITICAL: Firebase SDK not loaded.");
 }
 
 // ---------------------------------------------------------
-// 🔐 SECURE CREDENTIAL FETCHERS
+// 🔐 SECURE VAULT (Fetch Sensitive Data from DB)
 // ---------------------------------------------------------
 
-/**
- * 1. TELEGRAM BOT CREDENTIALS
- */
+// 1. Google Maps Key (Cached)
+let _cachedMapsKey = null;
+async function getGoogleMapsKey() {
+    if (_cachedMapsKey) return _cachedMapsKey;
+    try {
+        if (typeof firebase === 'undefined') return null;
+        const doc = await firebase.firestore().collection('system_config').doc('api_keys').get();
+        if (doc.exists) {
+            _cachedMapsKey = doc.data().google_maps;
+            return _cachedMapsKey;
+        }
+        return null;
+    } catch (e) { console.error("Maps Key Error", e); return null; }
+}
+
+// 2. Inventory Databases (KSB, Kirloskar, etc.)
+// Returns an object: { ksb_db_url: "...", kirloskar_db_url: "...", ai_agent_url: "..." }
+let _cachedInventoryConfig = null;
+async function getInventoryConfig() {
+    if (_cachedInventoryConfig) return _cachedInventoryConfig;
+    try {
+        if (typeof firebase === 'undefined') return null;
+        const doc = await firebase.firestore().collection('system_config').doc('inventory').get();
+        if (doc.exists) {
+            _cachedInventoryConfig = doc.data();
+            return _cachedInventoryConfig;
+        }
+        console.error("🔥 Inventory Config Missing in DB");
+        return null;
+    } catch (e) { console.error("DB Config Error", e); return null; }
+}
+
+// 3. Telegram Credentials
 async function getTelegramCredentials() {
     try {
         if (typeof firebase === 'undefined') return null;
-        const db = firebase.firestore();
-        const doc = await db.collection('system_config').doc('telegram').get();
-        if (doc.exists) return doc.data(); 
-        return null;
-    } catch (error) {
-        console.error("Error fetching Telegram credentials:", error);
-        return null;
-    }
-}
-
-/**
- * 2. AI INVENTORY AGENT URL (With Caching)
- */
-let _cachedAgentUrl = null;
-
-async function getInventoryAgentUrl() {
-    if (_cachedAgentUrl) return _cachedAgentUrl;
-
-    try {
-        if (typeof firebase === 'undefined') {
-            alert("System Error: Database connection missing. (Firebase SDK)");
-            return null;
-        }
-        
-        const db = firebase.firestore();
-        // Fetch from 'system_config' -> 'inventory' -> field: 'ai_agent_url'
-        const doc = await db.collection('system_config').doc('inventory').get();
-        
-        if (doc.exists && doc.data().ai_agent_url) {
-            _cachedAgentUrl = doc.data().ai_agent_url;
-            return _cachedAgentUrl;
-        } else {
-            console.error("🔥 CONFIG ERROR: 'ai_agent_url' not found in Firestore.");
-            return null;
-        }
-    } catch (error) {
-        console.error("🔥 CONFIG ERROR: Could not fetch Agent URL.", error);
-        return null;
-    }
+        const doc = await firebase.firestore().collection('system_config').doc('telegram').get();
+        return doc.exists ? doc.data() : null;
+    } catch (e) { return null; }
 }
 
 // ---------------------------------------------------------
