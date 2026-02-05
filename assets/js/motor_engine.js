@@ -89,8 +89,8 @@ window.runMotorEngine = async function() {
         
         const [shopifyData, ksbData, koelData] = await Promise.all([
             fetchShopifyData(),
-            fetchSheetData(invConfig.ksb_db_url, 'KSB'),         // KSB Catalog
-            fetchSheetData(invConfig.kirloskar_db_url, 'KOEL')   // Kirloskar Catalog
+            fetchSheetData(invConfig.ksb_db_url, 'KSB'),
+            fetchSheetData(invConfig.kirloskar_db_url, 'KOEL')
         ]);
 
         const totalItems = shopifyData.length + ksbData.length + koelData.length;
@@ -108,6 +108,7 @@ window.runMotorEngine = async function() {
         const candidates = allCandidates.filter(item => {
             const txt = (item.title + " " + item.desc).toLowerCase();
             
+            // Blacklist Check
             if (BLACKLIST.some(badWord => txt.includes(badWord))) return false;
 
             // Type Check
@@ -123,7 +124,7 @@ window.runMotorEngine = async function() {
             if (s.source === 'borewell' && s.dia === 4 && (txt.includes('v6') || txt.includes('6 inch'))) return false;
 
             return true;
-        }).slice(0, 40);
+        }).slice(0, 60); // ⬆️ INCREASED LIMIT: Send 60 items to AI (was 40)
 
         Terminal.log(`${candidates.length} Viable Candidates Identified.`, "highlight");
         
@@ -164,6 +165,7 @@ window.runMotorEngine = async function() {
 async function askGemini(apiKey, userSpecs, candidates) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
+    // Minify data
     const miniList = candidates.map(c => ({ 
         id: c.id, 
         name: c.title, 
@@ -171,17 +173,18 @@ async function askGemini(apiKey, userSpecs, candidates) {
         source: c.source 
     }));
 
+    // ⬆️ UPDATED PROMPT: Request 12 matches instead of 3-5
     const prompt = `
     Role: Expert Hydraulic Engineer.
     User Needs: ${userSpecs.source} WATER PUMP, ${userSpecs.phase}-Phase, Head requirement: ${Math.round(userSpecs.calculatedHead)} ft.
     
-    Task: Select the best 3-5 matches from this list.
+    Task: Select the best 10-15 matches from this list.
     
-    🚨 CRITICAL RULES:
+    🚨 RULES:
     1. ONLY recommend WATER PUMPS. 
     2. DO NOT recommend Control Panels, Starters, Fans, Cables, or Accessories.
     3. If Head is mentioned in title, it MUST be > ${Math.round(userSpecs.calculatedHead)}.
-    4. Prioritize: Technical Fit > In Stock ('shopify') > Price.
+    4. Provide a mix of 'shopify' (Stock) and 'catalog' options.
     
     List: ${JSON.stringify(miniList)}
     
@@ -213,12 +216,12 @@ async function askGemini(apiKey, userSpecs, candidates) {
 
     } catch (e) {
         console.warn("AI Fallback triggered", e);
-        return candidates.slice(0, 3);
+        // ⬆️ INCREASED FALLBACK: Return top 15 items if AI fails (was 3)
+        return candidates.slice(0, 15);
     }
 }
 
 // 🟢 DATA FETCHERS
-
 async function fetchShopifyData() {
     try {
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/products.json?limit=250`);
@@ -243,9 +246,7 @@ async function fetchSheetData(url, defaultBrand) {
         const json = await res.json();
         
         return Object.entries(json).map(([sku, item]) => {
-            // 🟢 FIX: Ensure brand is never undefined
             const brandName = item.brand || defaultBrand || "Premium";
-            
             return {
                 id: sku,
                 source: 'catalog',
@@ -253,7 +254,6 @@ async function fetchSheetData(url, defaultBrand) {
                 title: item.desc,
                 desc: `${item.pumpType} ${item.hp}HP ${item.category}`,
                 price: item.rate,
-                // 🟢 FIX: Cleaner Message
                 link: `https://wa.me/916304094177?text=I am interested in ${brandName} pump: ${item.desc} (${sku})`,
                 image: null
             };
@@ -269,13 +269,13 @@ function renderCards(list) {
     const container = document.getElementById('results-grid');
     container.innerHTML = "";
     
-    // 🎨 Define the Fallback Image Path here
-    const FALLBACK_IMG = 'assets/img/blueprint-placeholder.png';
+    // 🎨 Fallback Image
+    const FALLBACK_IMG = 'assets/img/blueprint-placeholder.png'; // Or use the placehold.co link
 
     list.forEach(p => {
         const isStock = p.source === 'shopify';
         
-        let badge = "CATALOG";
+        let badge = "DIRECT";
         let badgeColor = "bg-blue-100 text-blue-700";
         
         if (isStock) {
@@ -292,7 +292,7 @@ function renderCards(list) {
         const btnTxt = isStock ? "BUY NOW" : "CHECK AVAILABILITY";
         const btnBg = isStock ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-800 hover:bg-black";
         
-        // 🛡️ Logic: Use product image if exists, otherwise use fallback
+        // 🛡️ Safe Image
         const displayImg = p.image ? p.image : FALLBACK_IMG;
 
         container.innerHTML += `
