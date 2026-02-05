@@ -11,49 +11,38 @@ window.EngineState = {
     phase: 1
 };
 
-// 🛡️ SECURITY: Basic HTML Sanitizer
-const escapeHTML = (str) => {
-    if (!str) return "";
-    return str.toString()
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-};
-
 // 🖥️ TERMINAL SYSTEM
-const DOM = {
-    terminal: document.getElementById('aiTerminal'),
-    logs: document.getElementById('terminalLogs'),
-    progress: document.getElementById('terminalProgress'),
-    debug: document.getElementById('calcDebug'),
-    grid: document.getElementById('results-grid'),
-    noMatch: document.getElementById('no-match-msg'),
-    phase: document.getElementById('inp-phase')
-};
-
 const Terminal = {
+    el: document.getElementById('aiTerminal'),
     log: (msg, type = '') => {
         const line = document.createElement('div');
         line.className = `log-line ${type}`;
-        line.innerHTML = `<span class="opacity-50">>></span> ${escapeHTML(msg)}`;
-        if (DOM.logs) {
-            DOM.logs.appendChild(line);
-            DOM.logs.scrollTop = DOM.logs.scrollHeight;
+        line.innerHTML = `<span class="opacity-50">>></span> ${msg}`;
+        const container = document.getElementById('terminalLogs');
+        if(container) {
+            container.appendChild(line);
+            container.scrollTop = container.scrollHeight;
         }
     },
     progress: (pct) => {
-        if (DOM.progress) DOM.progress.style.width = `${pct}%`;
+        const bar = document.getElementById('terminalProgress');
+        if(bar) bar.style.width = `${pct}%`;
     },
-    show: () => { if (DOM.terminal) DOM.terminal.style.display = 'flex'; },
-    hide: () => { if (DOM.terminal) DOM.terminal.style.display = 'none'; }
+    show: () => { 
+        const el = document.getElementById('aiTerminal');
+        if(el) el.style.display = 'flex'; 
+    },
+    hide: () => { 
+        const el = document.getElementById('aiTerminal');
+        if(el) el.style.display = 'none'; 
+    }
 };
 
 // 🟢 MAIN ENGINE EXECUTION
 window.runMotorEngine = async function() {
     const s = window.EngineState;
-    s.phase = DOM.phase ? parseInt(DOM.phase.value) : 1;
+    const phaseEl = document.getElementById('inp-phase');
+    s.phase = phaseEl ? parseInt(phaseEl.value) : 1;
     let head = 0;
     
     // 1. PHYSICS ENGINE
@@ -100,8 +89,8 @@ window.runMotorEngine = async function() {
         
         const [shopifyData, ksbData, koelData] = await Promise.all([
             fetchShopifyData(),
-            fetchSheetData(invConfig.ksb_db_url, 'KSB'),
-            fetchSheetData(invConfig.kirloskar_db_url, 'KOEL')
+            fetchSheetData(invConfig.ksb_db_url, 'KSB'),         // KSB Catalog
+            fetchSheetData(invConfig.kirloskar_db_url, 'KOEL')   // Kirloskar Catalog
         ]);
 
         const totalItems = shopifyData.length + ksbData.length + koelData.length;
@@ -112,64 +101,55 @@ window.runMotorEngine = async function() {
         Terminal.log(`Applying Physics Constraints (Head > ${Math.round(head)}ft)...`);
         
         const allCandidates = [...shopifyData, ...ksbData, ...koelData];
+        
+        // ⛔ BLACKLIST
         const BLACKLIST = ['panel', 'starter', 'cable', 'wire', 'rope', 'pipe', 'fan', 'service', 'repair', 'kit', 'spares', 'accessories', 'control', 'box'];
 
-        // STEP 1: Basic Filtering
-        let candidates = allCandidates.filter(item => {
+        const candidates = allCandidates.filter(item => {
             const txt = (item.title + " " + item.desc).toLowerCase();
             
-            // Critical Rejections
             if (BLACKLIST.some(badWord => txt.includes(badWord))) return false;
-            
+
+            // Type Check
             if (s.source === 'borewell' && !txt.includes('sub') && !txt.includes('bore') && !txt.includes('v4') && !txt.includes('v6')) return false;
             if (s.source === 'openwell' && !txt.includes('open') && !txt.includes('mono')) return false;
             
+            // Phase Check
             const is3Phase = txt.includes('3 phase') || txt.includes('3phase') || txt.includes('3 ph');
             if (s.phase === 3 && !is3Phase) return false;
             if (s.phase === 1 && is3Phase) return false;
 
+            // Borewell Dia Check
             if (s.source === 'borewell' && s.dia === 4 && (txt.includes('v6') || txt.includes('6 inch'))) return false;
 
             return true;
-        });
+        }).slice(0, 40);
 
-        // STEP 2: Smart Pre-Sorting (Bubble up best matches)
-        candidates.sort((a, b) => {
-            let scoreA = 0;
-            let scoreB = 0;
-            // Boost In-Stock items
-            if (a.source === 'shopify') scoreA += 50;
-            if (b.source === 'shopify') scoreB += 50;
-            return scoreB - scoreA;
-        });
-
-        // STEP 3: Slice Top 60
-        const finalCandidates = candidates.slice(0, 60);
-
-        Terminal.log(`${finalCandidates.length} Optimal Candidates Identified.`, "highlight");
+        Terminal.log(`${candidates.length} Viable Candidates Identified.`, "highlight");
         
         // 6. AI DECISION
         let finalResults = [];
-        if (finalCandidates.length > 0) {
+        if (candidates.length > 0) {
             Terminal.log("Requesting SBW Flash Analysis...");
             Terminal.progress(75);
-            finalResults = await askGemini(geminiKey, s, finalCandidates);
+            finalResults = await askGemini(geminiKey, s, candidates);
         }
 
         Terminal.log("Generating Recommendation Vectors...");
         Terminal.progress(100);
-        await new Promise(r => setTimeout(r, 800)); 
+        await new Promise(r => setTimeout(r, 800));
 
         // 7. RENDER RESULTS
         Terminal.hide();
         window.goToStep(3);
         
-        if(DOM.debug) DOM.debug.innerHTML = `TDH: <strong>${Math.round(head)} ft</strong> • ${s.phase} Phase`;
+        const debugEl = document.getElementById('calcDebug');
+        if(debugEl) debugEl.innerHTML = `TDH: <strong>${Math.round(head)} ft</strong> • ${s.phase} Phase`;
 
         if (finalResults.length === 0) {
-            if(DOM.noMatch) DOM.noMatch.classList.remove('hidden');
+            document.getElementById('no-match-msg').classList.remove('hidden');
         } else {
-            if(DOM.noMatch) DOM.noMatch.classList.add('hidden');
+            document.getElementById('no-match-msg').classList.add('hidden');
             renderCards(finalResults);
         }
 
@@ -180,19 +160,22 @@ window.runMotorEngine = async function() {
     }
 };
 
-// 🟢 AI BRAIN (Gemini API)
+// 🟢 AI BRAIN
 async function askGemini(apiKey, userSpecs, candidates) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const miniList = candidates.map(c => ({ 
-        id: c.id, name: c.title, price: c.price, source: c.source 
+        id: c.id, 
+        name: c.title, 
+        price: c.price,
+        source: c.source 
     }));
 
     const prompt = `
     Role: Expert Hydraulic Engineer.
     User Needs: ${userSpecs.source} WATER PUMP, ${userSpecs.phase}-Phase, Head requirement: ${Math.round(userSpecs.calculatedHead)} ft.
     
-    Task: Select the best 10-15 matches from this list.
+    Task: Select the best 3-5 matches from this list.
     
     🚨 CRITICAL RULES:
     1. ONLY recommend WATER PUMPS. 
@@ -230,12 +213,12 @@ async function askGemini(apiKey, userSpecs, candidates) {
 
     } catch (e) {
         console.warn("AI Fallback triggered", e);
-        // Fallback: Return top 15 pre-sorted matches
-        return candidates.slice(0, 15);
+        return candidates.slice(0, 3);
     }
 }
 
 // 🟢 DATA FETCHERS
+
 async function fetchShopifyData() {
     try {
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/products.json?limit=250`);
@@ -243,7 +226,7 @@ async function fetchShopifyData() {
         return json.products.map(p => ({
             id: p.id.toString(),
             source: 'shopify',
-            brand: p.vendor || "Store",
+            brand: p.vendor,
             title: p.title,
             desc: p.tags ? p.tags.join(" ") : "", 
             price: p.variants[0].price,
@@ -260,44 +243,48 @@ async function fetchSheetData(url, defaultBrand) {
         const json = await res.json();
         
         return Object.entries(json).map(([sku, item]) => {
-            const safeBrand = item.brand || defaultBrand || "Premium";
-            const safeTitle = item.desc || "Water Pump";
+            // 🟢 FIX: Ensure brand is never undefined
+            const brandName = item.brand || defaultBrand || "Premium";
             
             return {
                 id: sku,
                 source: 'catalog',
-                brand: safeBrand, 
-                title: safeTitle,
+                brand: brandName, 
+                title: item.desc,
                 desc: `${item.pumpType} ${item.hp}HP ${item.category}`,
                 price: item.rate,
-                link: `https://wa.me/916304094177?text=I am interested in ${safeBrand} pump: ${safeTitle} (${sku})`,
+                // 🟢 FIX: Cleaner Message
+                link: `https://wa.me/916304094177?text=I am interested in ${brandName} pump: ${item.desc} (${sku})`,
                 image: null
             };
         });
-    } catch (e) { console.warn(`Fetch Error for ${defaultBrand}`, e); return []; }
+    } catch (e) { 
+        console.warn(`Fetch Error for ${defaultBrand}`, e); 
+        return []; 
+    }
 }
 
 // 🟢 RENDERER
 function renderCards(list) {
-    if (!DOM.grid) return;
-    DOM.grid.innerHTML = "";
+    const container = document.getElementById('results-grid');
+    container.innerHTML = "";
     
-    const FALLBACK_IMG = 'assets/img/blueprint-placeholder.png'; 
+    // 🎨 Define the Fallback Image Path here
+    const FALLBACK_IMG = 'assets/img/blueprint-placeholder.png';
 
     list.forEach(p => {
         const isStock = p.source === 'shopify';
         
-        let badge = "DIRECT";
+        let badge = "CATALOG";
         let badgeColor = "bg-blue-100 text-blue-700";
         
-        const brandUp = (p.brand || "").toUpperCase();
         if (isStock) {
             badge = "IN STOCK";
             badgeColor = "bg-emerald-100 text-emerald-700";
-        } else if (brandUp.includes('KIRLOSKAR') || brandUp.includes('KOEL')) {
+        } else if (p.brand && (p.brand.toUpperCase().includes('KIRLOSKAR') || p.brand.toUpperCase().includes('KOEL'))) {
             badge = "KOEL DIRECT";
             badgeColor = "bg-green-100 text-green-800";
-        } else if (brandUp.includes('KSB')) {
+        } else if (p.brand && p.brand.toUpperCase().includes('KSB')) {
             badge = "KSB DIRECT";
             badgeColor = "bg-orange-100 text-orange-800";
         }
@@ -305,24 +292,22 @@ function renderCards(list) {
         const btnTxt = isStock ? "BUY NOW" : "CHECK AVAILABILITY";
         const btnBg = isStock ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-800 hover:bg-black";
         
+        // 🛡️ Logic: Use product image if exists, otherwise use fallback
         const displayImg = p.image ? p.image : FALLBACK_IMG;
-        const safeTitle = escapeHTML(p.title);
-        const safeReason = escapeHTML(p.reason || "AI Selected");
-        const safeBrand = escapeHTML(p.brand || "Premium");
 
-        DOM.grid.innerHTML += `
+        container.innerHTML += `
         <div class="product-card bg-white border border-slate-200 rounded-xl p-4 flex gap-4 items-center animate-[fadeIn_0.5s]">
             <div class="w-16 h-16 bg-slate-50 rounded-lg flex-shrink-0 border border-slate-100 p-1 flex items-center justify-center overflow-hidden relative">
                 <img src="${displayImg}" 
                      class="max-w-full max-h-full object-contain" 
-                     alt="${safeTitle}"
+                     alt="${p.title}"
                      onerror="this.onerror=null; this.src='${FALLBACK_IMG}';">
             </div>
             <div class="flex-grow">
                 <div class="flex justify-between items-start">
                     <div>
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">${safeBrand}</div>
-                        <h4 class="font-bold text-slate-800 text-sm leading-tight line-clamp-2">${safeTitle}</h4>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">${p.brand || 'Premium'}</div>
+                        <h4 class="font-bold text-slate-800 text-sm leading-tight line-clamp-2">${p.title}</h4>
                         <div class="flex gap-2 mt-1 items-center">
                             <span class="${badgeColor} text-[10px] font-bold px-2 py-1 rounded">${badge}</span>
                         </div>
@@ -330,7 +315,7 @@ function renderCards(list) {
                     <div class="font-bold text-blue-600 text-right">₹${parseInt(p.price).toLocaleString()}</div>
                 </div>
                 <div class="text-[10px] text-slate-500 italic mt-1 border-t border-slate-100 pt-1">
-                    ✨ ${safeReason}
+                    ✨ ${p.reason || "AI Selected"}
                 </div>
                 <div class="mt-2">
                     <a href="${p.link}" target="_blank" class="block w-full ${btnBg} text-white text-center text-[10px] font-bold py-2 rounded-lg transition">${btnTxt}</a>
@@ -347,13 +332,10 @@ window.selectSource = function(s) {
     document.getElementById('step2').classList.add('active');
     document.getElementById('progressBar').style.width="66%";
     document.querySelectorAll('.spec-box').forEach(e => e.classList.add('hidden'));
-    const opt = document.getElementById('opt-'+s);
-    if(opt) opt.classList.remove('hidden');
+    document.getElementById('opt-'+s).classList.remove('hidden');
 }
-
 window.goToStep = function(n) {
     document.querySelectorAll('.wizard-step').forEach(e => e.classList.remove('active'));
-    const step = document.getElementById('step'+n);
-    if(step) step.classList.add('active');
+    document.getElementById('step'+n).classList.add('active');
     document.getElementById('progressBar').style.width=(n*33)+"%";
 }
