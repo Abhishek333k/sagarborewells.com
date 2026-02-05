@@ -25,15 +25,15 @@ const Terminal = {
         }
     },
     progress: (pct) => {
-        const bar = document.getElementById('terminalProgress');
+        const bar = document.getElementById('Progress');
         if(bar) bar.style.width = `${pct}%`;
     },
     show: () => { 
-        const el = document.getElementById('aiTerminal');
+        const el = document.getElementById('ai');
         if(el) el.style.display = 'flex'; 
     },
     hide: () => { 
-        const el = document.getElementById('aiTerminal');
+        const el = document.getElementById('ai');
         if(el) el.style.display = 'none'; 
     }
 };
@@ -63,9 +63,9 @@ window.runMotorEngine = async function() {
     if (head <= 0) return alert("Please enter valid parameters.");
     s.calculatedHead = head;
 
-    // 2. START TERMINAL
-    Terminal.show();
-    Terminal.log("Initializing Neural Context...", "highlight");
+    // 2. START 
+    .show();
+    .log("Initializing Neural Network...", "highlight");
     Terminal.progress(10);
 
     try {
@@ -96,7 +96,7 @@ window.runMotorEngine = async function() {
         ]);
 
         const totalItems = shopifyData.length + ksbData.length + koelData.length;
-        Terminal.log(`Analyzed ${totalItems} SKUs across 3 Databases.`);
+        Terminal.log(`Analyzed ${totalItems} SKUs across All Databases.`);
         Terminal.progress(50);
 
         // 5. HARD FILTER (Physics & Type)
@@ -128,7 +128,7 @@ window.runMotorEngine = async function() {
         // 6. AI DECISION (Gemini)
         let finalResults = [];
         if (candidates.length > 0) {
-            Terminal.log("Requesting Gemini 1.5 Flash Analysis...");
+            Terminal.log("Requesting SBW AI Analysis...");
             Terminal.progress(75);
             finalResults = await askGemini(geminiKey, s, candidates);
         }
