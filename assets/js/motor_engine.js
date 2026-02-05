@@ -11,7 +11,7 @@ window.EngineState = {
     phase: 1
 };
 
-// 🖥️ TERMINAL SYSTEM
+// 🖥️ TERMINAL SYSTEM (Visual Feedback)
 const Terminal = {
     el: document.getElementById('aiTerminal'),
     log: (msg, type = '') => {
@@ -28,18 +28,24 @@ const Terminal = {
         const bar = document.getElementById('terminalProgress');
         if(bar) bar.style.width = `${pct}%`;
     },
-    show: () => { document.getElementById('aiTerminal').style.display = 'flex'; },
-    hide: () => { document.getElementById('aiTerminal').style.display = 'none'; }
+    show: () => { 
+        const el = document.getElementById('aiTerminal');
+        if(el) el.style.display = 'flex'; 
+    },
+    hide: () => { 
+        const el = document.getElementById('aiTerminal');
+        if(el) el.style.display = 'none'; 
+    }
 };
 
-// 🟢 MAIN ENGINE
+// 🟢 MAIN ENGINE EXECUTION
 window.runMotorEngine = async function() {
     const s = window.EngineState;
     const phaseEl = document.getElementById('inp-phase');
     s.phase = phaseEl ? parseInt(phaseEl.value) : 1;
     let head = 0;
     
-    // 1. PHYSICS ENGINE
+    // 1. PHYSICS ENGINE (Calculate Head)
     if (s.source === 'borewell') {
         const depth = parseInt(document.getElementById('inp-depth').value || 0);
         const diaRadio = document.querySelector('input[name="dia"]:checked');
@@ -54,7 +60,7 @@ window.runMotorEngine = async function() {
         head = parseInt(document.getElementById('inp-lift').value || 0);
     }
 
-    if (head <= 0) return alert("Please enter valid depth parameters.");
+    if (head <= 0) return alert("Please enter valid parameters.");
     s.calculatedHead = head;
 
     // 2. START TERMINAL
@@ -63,7 +69,12 @@ window.runMotorEngine = async function() {
     Terminal.progress(10);
 
     try {
-        // 3. SECURE KEYS
+        // 3. SECURE KEYS (Fetch from Firestore)
+        // Ensure config.js is loaded and these functions exist
+        if (typeof getGeminiKey !== 'function' || typeof getInventoryConfig !== 'function') {
+            throw new Error("Security Modules Not Loaded");
+        }
+
         const [geminiKey, invConfig] = await Promise.all([
             getGeminiKey(),
             getInventoryConfig()
@@ -74,20 +85,27 @@ window.runMotorEngine = async function() {
         Terminal.log("Database Connection Established.");
         Terminal.progress(30);
 
-        // 4. DATA AGGREGATION
+        // 4. DATA AGGREGATION (Shopify + KSB + KOEL)
         Terminal.log("Aggregating Global Inventory...");
-        const [shopifyData, sheetData] = await Promise.all([
+        
+        // Fetch all sources in parallel
+        const [shopifyData, ksbData, koelData] = await Promise.all([
             fetchShopifyData(),
-            fetchSheetData(invConfig.ksb_db_url)
+            fetchSheetData(invConfig.ksb_db_url, 'KSB'),         // KSB Catalog
+            fetchSheetData(invConfig.kirloskar_db_url, 'KOEL')   // Kirloskar Catalog
         ]);
 
-        Terminal.log(`Analyzed ${shopifyData.length} Store Items + ${sheetData.length} Catalog Items.`);
+        const totalItems = shopifyData.length + ksbData.length + koelData.length;
+        Terminal.log(`Analyzed ${totalItems} SKUs across 3 Databases.`);
         Terminal.progress(50);
 
         // 5. HARD FILTER (Physics & Type)
-        // We filter obvious mismatches locally to save AI tokens
-        Terminal.log("Applying Physics Constraints...");
-        const candidates = [...shopifyData, ...sheetData].filter(item => {
+        // We filter obvious mismatches locally to save AI tokens and cost
+        Terminal.log(`Applying Physics Constraints (Head > ${Math.round(head)}ft)...`);
+        
+        const allCandidates = [...shopifyData, ...ksbData, ...koelData];
+        
+        const candidates = allCandidates.filter(item => {
             const txt = (item.title + " " + item.desc).toLowerCase();
             
             // Type Check
@@ -99,11 +117,11 @@ window.runMotorEngine = async function() {
             if (s.phase === 3 && !is3Phase) return false;
             if (s.phase === 1 && is3Phase) return false;
 
-            // Borewell Dia Check
+            // Borewell Dia Check (Don't put 6" pump in 4" hole)
             if (s.source === 'borewell' && s.dia === 4 && (txt.includes('v6') || txt.includes('6 inch'))) return false;
 
             return true;
-        }).slice(0, 30); // Send top 30 valid candidates to AI
+        }).slice(0, 40); // Limit to top 40 candidates for Gemini
 
         Terminal.log(`${candidates.length} Viable Candidates Identified.`, "highlight");
         
@@ -117,9 +135,9 @@ window.runMotorEngine = async function() {
 
         Terminal.log("Generating Recommendation Vectors...");
         Terminal.progress(100);
-        await new Promise(r => setTimeout(r, 800)); 
+        await new Promise(r => setTimeout(r, 800)); // Cinematic delay
 
-        // 7. RENDER
+        // 7. RENDER RESULTS
         Terminal.hide();
         window.goToStep(3);
         
@@ -136,31 +154,33 @@ window.runMotorEngine = async function() {
     } catch (e) {
         console.error(e);
         Terminal.log(`CRITICAL ERROR: ${e.message}`, "error");
-        setTimeout(() => { Terminal.hide(); alert(e.message); }, 3000);
+        setTimeout(() => { Terminal.hide(); alert("System Error: " + e.message); }, 3000);
     }
 };
 
-// 🟢 AI BRAIN
+// 🟢 AI BRAIN (Gemini API)
 async function askGemini(apiKey, userSpecs, candidates) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
-    // Minify data to save tokens
+    // Minify data to save tokens (Gemini charges per character)
     const miniList = candidates.map(c => ({ 
         id: c.id, 
         name: c.title, 
-        price: c.price 
+        price: c.price,
+        source: c.source 
     }));
 
     const prompt = `
-    Role: Senior Hydraulic Engineer.
+    Role: Expert Hydraulic Engineer.
     User Needs: ${userSpecs.source} pump, ${userSpecs.phase}-Phase, Head requirement: ${Math.round(userSpecs.calculatedHead)} ft.
     
-    Task: Pick the best 3 matches from this list. 
+    Task: Select the best 3-5 matches from this list.
+    Prioritize: 1. Technical Fit, 2. 'Shopify' (In Stock), 3. Price.
     Constraint: If Head is mentioned in title, it MUST be > ${Math.round(userSpecs.calculatedHead)}.
     
     List: ${JSON.stringify(miniList)}
     
-    Output JSON ONLY: [ { "id": "...", "reason": "Short reason" } ]
+    Output JSON ONLY: [ { "id": "...", "reason": "Why this fits (max 10 words)" } ]
     `;
 
     try {
@@ -171,11 +191,15 @@ async function askGemini(apiKey, userSpecs, candidates) {
         });
         
         const data = await res.json();
+        
+        // Parse Gemini Response (Clean up Markdown)
+        if (!data.candidates || !data.candidates[0].content) throw new Error("AI Busy");
+        
         const rawTxt = data.candidates[0].content.parts[0].text;
         const cleanJson = rawTxt.replace(/```json|```/g, '').trim();
         const decisions = JSON.parse(cleanJson);
 
-        // Merge AI Logic with Full Data
+        // Merge AI Reasoning with Full Data Objects
         return decisions.map(d => {
             const original = candidates.find(c => c.id === d.id);
             if (original) {
@@ -187,18 +211,21 @@ async function askGemini(apiKey, userSpecs, candidates) {
 
     } catch (e) {
         console.warn("AI Fallback triggered", e);
-        return candidates.slice(0, 3); // Fallback to raw list if AI fails
+        return candidates.slice(0, 3); // Fallback: Return top 3 raw matches if AI fails
     }
 }
 
 // 🟢 DATA FETCHERS
+
+// 1. Shopify Fetcher
 async function fetchShopifyData() {
     try {
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/products.json?limit=250`);
         const json = await res.json();
         return json.products.map(p => ({
             id: p.id.toString(),
-            source: 'shopify',
+            source: 'shopify', // Used for badge logic
+            brand: p.vendor,
             title: p.title,
             desc: p.tags.join(" "),
             price: p.variants[0].price,
@@ -208,25 +235,26 @@ async function fetchShopifyData() {
     } catch { return []; }
 }
 
-async function fetchSheetData(url) {
+// 2. Google Sheet Fetcher (Works for both KSB and KOEL scripts)
+async function fetchSheetData(url, defaultBrand) {
     if (!url) return [];
     try {
         const res = await fetch(url);
         const json = await res.json();
         
-        // 🟢 FIX: Handle Object Response from Google Script
-        // Script returns: { "SKU1": { desc: "...", rate: "..." }, ... }
+        // Handle Google Script Object Response: { "SKU": { ... } }
         return Object.entries(json).map(([sku, item]) => ({
             id: sku,
-            source: 'catalog',
+            source: 'catalog', // Used for badge logic
+            brand: item.brand || defaultBrand, // Use script brand or fallback
             title: item.desc,
             desc: `${item.pumpType} ${item.hp}HP ${item.category}`,
             price: item.rate,
-            link: `https://wa.me/916304094177?text=Check availability: ${item.desc}`,
+            link: `https://wa.me/916304094177?text=I am interested in ${item.brand} pump: ${item.desc} (${sku})`,
             image: null
         }));
     } catch (e) { 
-        console.warn("Sheet Fetch Error", e); 
+        console.warn(`Fetch Error for ${defaultBrand}`, e); 
         return []; 
     }
 }
@@ -238,9 +266,23 @@ function renderCards(list) {
     
     list.forEach(p => {
         const isStock = p.source === 'shopify';
-        const badge = isStock ? "IN STOCK" : "CATALOG";
-        const badgeColor = isStock ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700";
-        const btnTxt = isStock ? "BUY NOW" : "CHECK STOCK";
+        
+        // Dynamic Badge Logic
+        let badge = "CATALOG";
+        let badgeColor = "bg-blue-100 text-blue-700";
+        
+        if (isStock) {
+            badge = "IN STOCK";
+            badgeColor = "bg-emerald-100 text-emerald-700";
+        } else if (p.brand === 'Kirloskar' || p.brand === 'KOEL') {
+            badge = "KOEL FACTORY";
+            badgeColor = "bg-green-100 text-green-800";
+        } else if (p.brand === 'KSB') {
+            badge = "KSB FACTORY";
+            badgeColor = "bg-orange-100 text-orange-800";
+        }
+
+        const btnTxt = isStock ? "BUY NOW" : "CHECK AVAILABILITY";
         const btnBg = isStock ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-800 hover:bg-black";
         const img = p.image || 'assets/img/motor-catalog.png';
 
@@ -252,7 +294,7 @@ function renderCards(list) {
             <div class="flex-grow">
                 <div class="flex justify-between items-start">
                     <div>
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">${p.source}</div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">${p.brand || 'Premium'}</div>
                         <h4 class="font-bold text-slate-800 text-sm leading-tight line-clamp-2">${p.title}</h4>
                         <div class="flex gap-2 mt-1 items-center">
                             <span class="${badgeColor} text-[10px] font-bold px-2 py-1 rounded">${badge}</span>
@@ -261,7 +303,7 @@ function renderCards(list) {
                     <div class="font-bold text-blue-600 text-right">₹${parseInt(p.price).toLocaleString()}</div>
                 </div>
                 <div class="text-[10px] text-slate-500 italic mt-1 border-t border-slate-100 pt-1">
-                    ✨ ${p.reason || "Engineered Match"}
+                    ✨ ${p.reason || "AI Selected"}
                 </div>
                 <div class="mt-2">
                     <a href="${p.link}" target="_blank" class="block w-full ${btnBg} text-white text-center text-[10px] font-bold py-2 rounded-lg transition">${btnTxt}</a>
@@ -271,7 +313,7 @@ function renderCards(list) {
     });
 }
 
-// 🟢 HELPERS
+// 🟢 WIZARD HELPERS
 window.selectSource = function(s) {
     window.EngineState.source = s;
     document.querySelectorAll('.wizard-step').forEach(e => e.classList.remove('active'));
