@@ -3,170 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Motor Selector | Sagar Borewells</title>
+    <title>Motor Recommendation Engine | Sagar Borewells</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
     <script src="assets/js/motor_engine.js"></script>
 
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
-        .wizard-step { display: none; animation: fadeIn 0.4s ease; }
-        .wizard-step.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
         
-        .option-card { cursor: pointer; border: 2px solid #e2e8f0; border-radius: 12px; padding: 20px; transition: all 0.2s; background: white; }
-        .option-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.15); }
-        .option-card.selected { border-color: #2563eb; background: #eff6ff; ring: 2px solid #2563eb; }
-        
-        .product-card { transition: all 0.3s ease; }
-        .product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px -5px rgba(0,0,0,0.1); }
+        /* WIZARD ANIMATIONS */
+        .step-container { display: none; animation: slideUp 0.4s ease-out; }
+        .step-container.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CARDS */
+        .selection-card { 
+            background: white; border: 2px solid #e2e8f0; border-radius: 16px; padding: 24px; 
+            cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;
+        }
+        .selection-card:hover { border-color: #94a3b8; transform: translateY(-4px); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1); }
+        .selection-card.selected { border-color: #2563eb; background: #eff6ff; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); }
+        .selection-card.selected::after {
+            content: "\EB7B"; font-family: remixicon; position: absolute; top: 10px; right: 10px;
+            background: #2563eb; color: white; border-radius: 50%; width: 24px; height: 24px;
+            display: flex; items-center; justify-content: center; font-size: 14px;
+        }
+
+        /* CUSTOM INPUTS */
+        .eng-input { 
+            width: 100%; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; 
+            padding: 16px; font-weight: 700; color: #1e293b; outline: none; transition: 0.2s;
+        }
+        .eng-input:focus { border-color: #2563eb; background: white; }
+        .eng-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 8px; display: block; letter-spacing: 0.05em; }
+
+        /* RESULTS GRID */
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
     </style>
 </head>
-<body class="flex flex-col min-h-screen">
+<body class="flex flex-col min-h-screen text-slate-800">
 
     <div id="navbar-mount"></div>
 
-    <main class="flex-grow container mx-auto px-4 py-10 max-w-3xl">
-        
-        <div class="text-center mb-10">
-            <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">AI Recommendation Engine</span>
-            <h1 class="text-3xl font-extrabold text-slate-900 mt-3">Find Your Perfect Pump</h1>
-            <p class="text-slate-500 mt-2">Answer 3 questions to get an engineering-grade recommendation.</p>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-xl p-8 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-slate-100">
-                <div id="progressBar" class="h-full bg-blue-600 transition-all duration-500" style="width: 20%"></div>
+    <main class="flex-grow py-12 px-4">
+        <div class="max-w-4xl mx-auto">
+            
+            <div class="text-center mb-12">
+                <div class="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold mb-4 border border-blue-200 shadow-sm">
+                    <i class="ri-cpu-line"></i> <span>AI HYDRAULIC ENGINEER</span>
+                </div>
+                <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 mb-4">Let's Architect Your Water System.</h1>
+                <p class="text-slate-500 font-medium max-w-lg mx-auto">We don't just sell pumps. We match the precise physics of your site to our global inventory (KSB, Kirloskar, & More).</p>
             </div>
 
-            <div id="step1" class="wizard-step active">
-                <h3 class="text-lg font-bold text-slate-800 mb-6">1. How will you use the water?</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="option-card" onclick="selectUsage('domestic')">
-                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-home-smile-line"></i></div>
-                        <h4 class="font-bold">Domestic / Home</h4>
-                        <p class="text-xs text-slate-500 mt-1">Filling overhead tanks, gardening, drinking. (Standard Flow)</p>
-                    </div>
-                    <div class="option-card" onclick="selectUsage('agri')">
-                        <div class="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-plant-line"></i></div>
-                        <h4 class="font-bold">Agriculture / Farm</h4>
-                        <p class="text-xs text-slate-500 mt-1">Irrigation, sprinklers, drip systems. (High Flow)</p>
-                    </div>
-                </div>
-                <div class="mt-4 text-center">
-                    <button onclick="selectUsage('industrial')" class="text-xs text-slate-400 font-bold hover:text-slate-600">Looking for Industrial / Sewage?</button>
-                </div>
+            <div class="h-1.5 w-full bg-slate-200 rounded-full mb-10 overflow-hidden max-w-md mx-auto">
+                <div id="progressBar" class="h-full bg-blue-600 transition-all duration-500 w-[20%]"></div>
             </div>
 
-            <div id="step2" class="wizard-step">
-                <h3 class="text-lg font-bold text-slate-800 mb-6">2. Select Water Source</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="option-card" onclick="selectSource('borewell')">
-                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-arrow-down-circle-line"></i></div>
-                        <h4 class="font-bold">Borewell</h4>
-                        <p class="text-xs text-slate-500 mt-1">Deep drilled shaft</p>
-                    </div>
-                    <div class="option-card" onclick="selectSource('openwell')">
-                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-checkbox-blank-circle-line"></i></div>
-                        <h4 class="font-bold">Open Well / Sump</h4>
-                        <p class="text-xs text-slate-500 mt-1">Wide ring well, river, or tank</p>
-                    </div>
-                    <div class="option-card hidden" id="sewageOption" onclick="selectSource('sewage')">
-                        <div class="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-delete-bin-line"></i></div>
-                        <h4 class="font-bold">Sewage / Waste</h4>
-                        <p class="text-xs text-slate-500 mt-1">Drainage, Mud, Slurry</p>
-                    </div>
-                </div>
-                <button onclick="prevStep(1)" class="w-full mt-6 text-slate-400 font-bold text-xs py-2 hover:text-slate-600">Back</button>
-            </div>
-
-            <div id="step3" class="wizard-step">
-                <h3 class="text-lg font-bold text-slate-800 mb-6">3. Technical Details</h3>
-                <div class="space-y-6">
+            <div id="step1" class="step-container active">
+                <h3 class="text-xl font-bold mb-6 text-center">1. Select Application Scenario</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
                     
-                    <div id="spec-borewell" class="hidden spec-group">
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-700 mb-2">Total Depth (Feet)</label>
-                            <input type="number" id="inputDepth" class="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-blue-600 outline-none font-bold text-lg" placeholder="e.g. 450">
+                    <div class="selection-card group" onclick="selectUsage('domestic')">
+                        <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition">
+                            <i class="ri-home-4-line"></i>
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-700 mb-2">Casing Diameter (Inch)</label>
-                            <select id="inputDia" class="w-full border-2 border-slate-200 rounded-xl p-3 outline-none bg-white font-bold">
-                                <option value="4">4 Inch (Standard)</option>
-                                <option value="4.5">4.5 Inch</option>
-                                <option value="5">5 Inch</option>
-                                <option value="6" selected>6 Inch</option>
-                                <option value="6.5">6.5 Inch</option>
-                                <option value="7">7 Inch</option>
-                                <option value="8">8 Inch</option>
-                                <option value="10">10 Inch</option>
-                            </select>
+                        <h4 class="text-lg font-bold mb-2">Domestic / Home</h4>
+                        <p class="text-sm text-slate-500">Overhead tanks, gardening, drinking water. Prioritizes energy efficiency and silence.</p>
+                        <div class="mt-4 text-xs font-mono text-indigo-500 bg-indigo-50 inline-block px-2 py-1 rounded">DEFAULT: 1-PHASE</div>
+                    </div>
+
+                    <div class="selection-card group" onclick="selectUsage('agri')">
+                        <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition">
+                            <i class="ri-plant-line"></i>
+                        </div>
+                        <h4 class="text-lg font-bold mb-2">Agriculture / Farm</h4>
+                        <p class="text-sm text-slate-500">Irrigation, sprinklers, open fields. Prioritizes high flow rate and durability.</p>
+                        <div class="mt-4 text-xs font-mono text-emerald-600 bg-emerald-50 inline-block px-2 py-1 rounded">DEFAULT: 3-PHASE</div>
+                    </div>
+
+                </div>
+                <div class="text-center mt-6">
+                    <button onclick="selectUsage('industrial')" class="text-xs font-bold text-slate-400 hover:text-slate-600 underline">Switch to Industrial / Sewage Mode</button>
+                </div>
+            </div>
+
+            <div id="step2" class="step-container">
+                <h3 class="text-xl font-bold mb-6 text-center">2. Select Water Source</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    <div class="selection-card" onclick="selectSource('borewell')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="ri-arrow-down-circle-fill text-blue-500 text-xl"></i>
+                            <h4 class="font-bold">Borewell</h4>
+                        </div>
+                        <p class="text-xs text-slate-500">Deep drilled shaft (4" - 8" dia). Requires Submersible Pump.</p>
+                    </div>
+
+                    <div class="selection-card" onclick="selectSource('openwell')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="ri-checkbox-blank-circle-line text-emerald-500 text-xl"></i>
+                            <h4 class="font-bold">Open Well</h4>
+                        </div>
+                        <p class="text-xs text-slate-500">Wide ring well, Sump, or River. Requires Monoblock/Open-Sub.</p>
+                    </div>
+
+                    <div id="sewageOption" class="selection-card hidden" onclick="selectSource('sewage')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="ri-delete-bin-2-line text-orange-500 text-xl"></i>
+                            <h4 class="font-bold">Sewage / Mud</h4>
+                        </div>
+                        <p class="text-xs text-slate-500">Drainage, construction sites. Requires Cutter Pump.</p>
+                    </div>
+
+                </div>
+                <button onclick="prevStep(1)" class="mt-6 flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-slate-600 mx-auto"><i class="ri-arrow-left-line"></i> Change Scenario</button>
+            </div>
+
+            <div id="step3" class="step-container">
+                <h3 class="text-xl font-bold mb-2 text-center">3. Site Parameters</h3>
+                <p class="text-center text-slate-500 text-sm mb-8">Accurate inputs ensure the pump won't burn out.</p>
+
+                <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 max-w-xl mx-auto">
+                    
+                    <div id="spec-borewell" class="spec-group hidden space-y-6">
+                        <div>
+                            <label class="eng-label"><i class="ri-ruler-2-line"></i> Total Depth (Feet)</label>
+                            <input type="number" id="inputDepth" class="eng-input text-2xl text-blue-600" placeholder="e.g. 450">
+                            <p class="text-[10px] text-slate-400 mt-1">Ground level to bottom.</p>
+                        </div>
+                        
+                        <div>
+                            <label class="eng-label"><i class="ri-donut-chart-line"></i> Bore Diameter (Casing Size)</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="dia" value="4" class="peer hidden">
+                                    <div class="p-3 border-2 border-slate-200 rounded-xl text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 font-bold text-sm transition">
+                                        4.5 Inch (Standard)
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="dia" value="6" class="peer hidden" checked>
+                                    <div class="p-3 border-2 border-slate-200 rounded-xl text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 font-bold text-sm transition">
+                                        6 Inch+ (High Yield)
+                                    </div>
+                                </label>
+                            </div>
+                            <p class="text-[10px] text-orange-500 mt-2 font-bold"><i class="ri-alert-line"></i> Critical: A 6" pump will get stuck in a 4" bore.</p>
                         </div>
                     </div>
 
-                    <div id="spec-openwell" class="hidden spec-group">
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-700 mb-2">Vertical Suction (Depth inside well)</label>
-                            <input type="number" id="inputSuction" class="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-blue-600 outline-none font-bold text-lg" placeholder="e.g. 20 (ft)">
+                    <div id="spec-openwell" class="spec-group hidden space-y-6">
+                        <div>
+                            <label class="eng-label">Suction Depth (Feet)</label>
+                            <input type="number" id="inputSuction" class="eng-input" placeholder="Depth inside well">
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-700 mb-2">Delivery Distance (Flat ground)</label>
-                            <input type="number" id="inputHorizontal" class="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-blue-600 outline-none font-bold text-lg" placeholder="e.g. 500 (ft)">
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-700 mb-2">Vertical Delivery (Height to tank)</label>
-                            <input type="number" id="inputDeliveryHeight" class="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-blue-600 outline-none font-bold text-lg" placeholder="e.g. 30 (ft)">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="eng-label">Delivery Height</label>
+                                <input type="number" id="inputDeliveryHeight" class="eng-input" placeholder="Vertical (ft)">
+                            </div>
+                            <div>
+                                <label class="eng-label">Flat Distance</label>
+                                <input type="number" id="inputHorizontal" class="eng-input" placeholder="Horizontal (ft)">
+                            </div>
                         </div>
                     </div>
 
-                    <div id="spec-sewage" class="hidden spec-group">
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-700 mb-2">Vertical Lift Needed (Head)</label>
-                            <input type="number" id="inputLift" class="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-blue-600 outline-none font-bold text-lg" placeholder="e.g. 25 (ft)">
+                    <div id="spec-sewage" class="spec-group hidden space-y-6">
+                        <div>
+                            <label class="eng-label">Vertical Lift (Head)</label>
+                            <input type="number" id="inputLift" class="eng-input" placeholder="e.g. 25 ft">
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-700 mb-2">Fluid Type</label>
-                            <select id="inputFluid" class="w-full border-2 border-slate-200 rounded-xl p-3 outline-none bg-white font-bold">
+                        <div>
+                            <label class="eng-label">Fluid Type</label>
+                            <select id="inputFluid" class="eng-input bg-white">
                                 <option value="clear">Clear Water</option>
-                                <option value="mud">Muddy / Sandy</option>
-                                <option value="sludge">Heavy Sludge / Waste</option>
+                                <option value="mud">Muddy Water</option>
+                                <option value="sludge">Heavy Sludge/Waste</option>
                             </select>
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Power Supply</label>
-                        <select id="inputPhase" class="w-full border-2 border-slate-200 rounded-xl p-3 outline-none bg-white">
-                            <option value="1">Single Phase (Home/220V)</option>
-                            <option value="3">Three Phase (Farm/440V)</option>
+                    <div class="mt-6 pt-6 border-t border-slate-100">
+                        <label class="eng-label"><i class="ri-flashlight-line"></i> Power Supply</label>
+                        <select id="inputPhase" class="eng-input bg-white cursor-pointer">
+                            <option value="1">Single Phase (Home / 220V)</option>
+                            <option value="3">Three Phase (Agri / 440V)</option>
                         </select>
                     </div>
-                    
-                    <button onclick="runEngine()" id="findBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition flex justify-center items-center gap-2">
-                        <span>Find Matching Motors</span>
+
+                    <button onclick="runEngine()" id="findBtn" class="w-full mt-8 bg-slate-900 text-white font-extrabold text-lg py-4 rounded-xl hover:bg-black transition shadow-xl shadow-slate-300 flex items-center justify-center gap-2">
+                        <span>INITIATE SEARCH</span> <i class="ri-arrow-right-line"></i>
                     </button>
-                    <button onclick="prevStep(2)" class="w-full mt-2 text-slate-400 font-bold text-xs py-2 hover:text-slate-600">Back</button>
+
                 </div>
+                
+                <button onclick="prevStep(2)" class="mt-6 text-sm font-bold text-slate-400 hover:text-slate-600 block mx-auto">Back</button>
             </div>
 
-            <div id="step4" class="wizard-step">
-                <div class="text-center mb-6">
-                    <h3 class="text-xl font-bold text-slate-900">Recommended Hardware</h3>
-                    <p class="text-xs text-slate-500 font-mono mt-1" id="calcDebug">Syncing...</p>
+            <div id="step4" class="step-container">
+                <div class="flex justify-between items-end mb-8 border-b border-slate-200 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-900">Engineering Match</h2>
+                        <div id="calcDebug" class="text-sm font-mono text-blue-600 mt-1">Calculating...</div>
+                    </div>
+                    <button onclick="location.reload()" class="text-xs font-bold text-slate-500 hover:text-blue-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg">
+                        <i class="ri-refresh-line"></i> RESET
+                    </button>
                 </div>
 
-                <div id="resultsContainer" class="space-y-4 min-h-[200px]"></div>
+                <div id="resultsContainer" class="product-grid">
+                    </div>
 
-                <button onclick="location.reload()" class="w-full mt-6 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200">Start Over</button>
+                <div id="noMatch" class="hidden text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300 mt-4">
+                    <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4"><i class="ri-tools-line"></i></div>
+                    <h3 class="font-bold text-lg text-slate-800">Custom Engineering Required</h3>
+                    <p class="text-sm text-slate-500 max-w-xs mx-auto mt-2 mb-6">Your requirements exceed standard catalog specs. Our engineers need to design a custom solution.</p>
+                    <a href="contact.html" class="inline-block bg-blue-600 text-white font-bold px-6 py-2.5 rounded-lg text-sm hover:bg-blue-700">Request Technical Call</a>
+                </div>
             </div>
 
         </div>
     </main>
 
     <div id="footer-mount"></div>
+
+    <script>
+        // UI Helpers for the Wizard
+        // (Logic is in motor_engine.js, this just handles visuals)
+        
+        function selectUsage(u) {
+            window.userSelection = window.userSelection || {};
+            window.userSelection.usage = u;
+            
+            // Auto-set Phase Default
+            const phaseSelect = document.getElementById('inputPhase');
+            if(u === 'agri') phaseSelect.value = "3";
+            else phaseSelect.value = "1";
+
+            if(u === 'industrial') document.getElementById('sewageOption').classList.remove('hidden');
+            else document.getElementById('sewageOption').classList.add('hidden');
+
+            goToStep(2);
+        }
+
+        function selectSource(s) {
+            // Toggle Spec Groups
+            document.querySelectorAll('.spec-group').forEach(e => e.classList.add('hidden'));
+            document.getElementById('spec-' + s).classList.remove('hidden');
+            
+            // Pass to Engine
+            if(window.selectSourceEngine) window.selectSourceEngine(s); // Link to engine.js function
+            else {
+                // Fallback if engine not loaded yet
+                document.querySelectorAll('.wizard-step').forEach(e => e.classList.remove('active')); // Reset
+            }
+            goToStep(3);
+        }
+
+        // Note: The actual "selectSource" logic is likely in motor_engine.js. 
+        // We override it here slightly for UI, but rely on engine.js for state.
+    </script>
 </body>
 </html>
