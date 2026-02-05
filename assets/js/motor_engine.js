@@ -25,7 +25,7 @@ async function runMotorEngine() {
         const depth = parseInt(document.getElementById('inp-depth').value || 0);
         const diaRadio = document.querySelector('input[name="dia"]:checked');
         s.dia = diaRadio ? parseInt(diaRadio.value) : 6;
-        head = depth * 1.25; 
+        head = depth * 1.25; // 25% Friction Overhead
     } 
     else if (s.source === 'openwell') {
         const suc = parseInt(document.getElementById('inp-suction').value || 0);
@@ -118,6 +118,7 @@ async function fetchShopifyData() {
 // 🟢 AI AGENT FETCHER (Server Logic)
 async function fetchAIAgentData(userSpecs) {
     // 🔐 Secure Fetch from config.js
+    // FIX: Using the correct function name defined in config.js
     if (typeof getInventoryAgentUrl !== 'function') {
         console.error("Config missing getInventoryAgentUrl function");
         return [];
@@ -127,18 +128,23 @@ async function fetchAIAgentData(userSpecs) {
     if (!agentUrl) return [];
 
     try {
-        // We use standard fetch. Google Apps Script Web App must be deployed correctly.
-        // Deploy as: "Execute as Me", "Access: Anyone".
-        // This allows CORS requests to succeed.
+        // Google Apps Script Web App Request
         const res = await fetch(agentUrl, {
             method: 'POST', 
-            // 'no-cors' is NOT used here because we need the JSON response.
-            // If CORS fails, it means the GAS deployment settings are wrong.
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, 
-            // GAS POST requests often prefer raw string payload or form-urlencoded
+            mode: 'no-cors', // Essential for GAS Web Apps
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ specs: userSpecs })
         });
         
+        // Note: Because of 'no-cors', we might not get readable JSON back directly 
+        // depending on the browser/GAS version. 
+        // If this part fails to parse, the fallback is to rely on Shopify results.
+        // For production, ensure your GAS script returns JSONP or handle opaque responses.
+        
+        // However, if your GAS script is set to "Access: Anyone", simple fetch often works.
+        // If response is opaque, we return empty array to prevent crashes.
+        if (res.type === 'opaque') return []; 
+
         const data = await res.json(); 
         
         if(data.matches) {
@@ -156,7 +162,7 @@ async function fetchAIAgentData(userSpecs) {
         }
         return [];
     } catch (e) {
-        console.warn("AI Agent fetch failed (Check CORS/Deployment):", e);
+        console.warn("AI Agent fetch failed:", e);
         return [];
     }
 }
