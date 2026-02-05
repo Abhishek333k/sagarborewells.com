@@ -90,6 +90,7 @@ window.runMotorEngine = async function() {
 
         const noMatchMsg = document.getElementById('no-match-msg');
         if (allMatches.length === 0) {
+            noMatchMsg.innerHTML = "No exact matches found. <br><span class='text-xs'>Try changing phase or diameter.</span>";
             noMatchMsg.classList.remove('hidden');
         } else {
             noMatchMsg.classList.add('hidden');
@@ -98,7 +99,10 @@ window.runMotorEngine = async function() {
 
     } catch (e) {
         console.error("Engine Error:", e);
-        alert("System Error: " + e.message);
+        // Show error nicely in the UI instead of alert
+        const noMatchMsg = document.getElementById('no-match-msg');
+        noMatchMsg.innerHTML = `<span class="text-red-500"><i class="ri-error-warning-line"></i> System Error: ${e.message}</span>`;
+        noMatchMsg.classList.remove('hidden');
     } finally {
         btn.innerHTML = oldBtnContent;
         btn.disabled = false;
@@ -142,14 +146,17 @@ async function fetchShopifyData() {
 async function fetchAIAgentData(userSpecs) {
     if (typeof getInventoryAgentUrl !== 'function') {
         console.error("Config missing 'getInventoryAgentUrl'");
-        return [];
+        throw new Error("Configuration Error: Missing API Link");
     }
 
     const agentUrl = await getInventoryAgentUrl(); 
-    if (!agentUrl) return [];
+    if (!agentUrl) {
+        // We throw an error here so the main try-catch block knows the AI failed critically
+        console.warn("AI Agent URL not found in Firebase.");
+        return []; 
+    }
 
     try {
-        // We use text/plain to avoid CORS preflight, ensuring standard Google Apps Script handling
         const res = await fetch(agentUrl, {
             method: 'POST', 
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
