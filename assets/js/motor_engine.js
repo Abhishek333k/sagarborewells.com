@@ -37,11 +37,8 @@ window.goToStep = function(n) {
 // 🟢 MAIN ENGINE FUNCTION
 window.runMotorEngine = async function() {
     const s = window.EngineState;
-    
-    // 1. CALCULATE PHYSICS
     const phaseEl = document.getElementById('inp-phase');
     s.phase = phaseEl ? parseInt(phaseEl.value) : 1;
-    
     let head = 0;
     
     if (s.source === 'borewell') {
@@ -63,7 +60,7 @@ window.runMotorEngine = async function() {
     if (head <= 0) return alert("Please enter valid parameters.");
     s.calculatedHead = head;
 
-    // 2. UI LOADING
+    // UI Loading
     const btn = document.getElementById('btn-search');
     const oldBtnContent = btn.innerHTML;
     btn.innerHTML = `<i class="ri-cpu-line animate-pulse"></i> AI SEARCHING...`;
@@ -72,17 +69,14 @@ window.runMotorEngine = async function() {
     try {
         const container = document.getElementById('results-grid');
         container.innerHTML = "";
-        
-        // Move to Results Step
         window.goToStep(3);
 
-        // 3. PARALLEL EXECUTION
+        // 🟢 PARALLEL FETCH (Scalable Architecture)
         const [shopifyResults, aiResults] = await Promise.all([
             fetchShopifyData(),       
             fetchAIAgentData(s)       
         ]);
 
-        // 4. MERGE & RENDER
         const allMatches = [...shopifyResults, ...aiResults];
 
         const debugEl = document.getElementById('calcDebug');
@@ -111,50 +105,28 @@ window.runMotorEngine = async function() {
 // 🟢 SHOPIFY FETCHER (FUZZY LOGIC)
 async function fetchShopifyData() {
     const s = window.EngineState;
-    console.log("🔍 Starting Shopify Search for:", s);
-
     try {
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/products.json?limit=250`);
         const json = await res.json();
         
-        const results = json.products.map(p => {
-            // 1. EXTRACT SPECS (Fuzzy Match)
-            let specs = { type: 'unknown', hp: 0, phase: 1, head: 0, dia: 0 };
-            
-            // Combine tags/title for searching
+        return json.products.map(p => {
             const searchStr = (p.tags.join(" ") + " " + p.title).toLowerCase();
+            let specs = { type: 'unknown', hp: 0, phase: 1, head: 999, dia: 0 };
 
-            // A. Detect Type
-            if (searchStr.includes('borewell') || searchStr.includes('submersible') || searchStr.includes('v4') || searchStr.includes('v6')) {
-                specs.type = 'borewell';
-            } else if (searchStr.includes('openwell') || searchStr.includes('monoblock') || searchStr.includes('centrifugal')) {
-                specs.type = 'openwell';
-            } else if (searchStr.includes('sewage') || searchStr.includes('cutter') || searchStr.includes('mud')) {
-                specs.type = 'sewage';
-            }
+            // Fuzzy Detection
+            if (searchStr.includes('borewell') || searchStr.includes('submersible') || searchStr.includes('v4')) specs.type = 'borewell';
+            else if (searchStr.includes('openwell') || searchStr.includes('monoblock')) specs.type = 'openwell';
+            else if (searchStr.includes('sewage') || searchStr.includes('cutter')) specs.type = 'sewage';
 
-            // B. Detect HP
             const hpMatch = searchStr.match(/(\d+(\.\d+)?)\s?hp/);
             if (hpMatch) specs.hp = parseFloat(hpMatch[1]);
 
-            // C. Detect Phase
-            if (searchStr.includes('3 phase') || searchStr.includes('3phase') || searchStr.includes('3 ph')) {
-                specs.phase = 3;
-            }
+            if (searchStr.includes('3 phase') || searchStr.includes('3phase')) specs.phase = 3;
 
-            // D. Detect Head (Heuristic)
-            let explicitHead = 0;
-            p.tags.forEach(t => { if(t.toLowerCase().includes('head:')) explicitHead = parseInt(t.split(':')[1]); });
-            specs.head = explicitHead > 0 ? explicitHead : 999; // 999 = Unknown (Passes filter)
-
-            // E. Detect Dia
-            if (searchStr.includes('v4') || searchStr.includes('4 inch') || searchStr.includes('100mm')) specs.dia = 4;
-            if (searchStr.includes('v6') || searchStr.includes('6 inch') || searchStr.includes('150mm')) specs.dia = 6;
-
-            // 2. FILTERING
+            // Simple Filter
             if (specs.type !== 'unknown' && specs.type !== s.source) return null;
             if (specs.phase !== s.phase) return null;
-            if (s.source === 'borewell' && specs.dia > s.dia) return null;
+            if (s.source === 'borewell' && specs.dia > s.dia && specs.dia !== 0) return null; // Only filter dia if known
             if (specs.head !== 999 && specs.head < s.calculatedHead) return null;
 
             return {
@@ -167,35 +139,44 @@ async function fetchShopifyData() {
                 link: `https://${SHOPIFY_DOMAIN}/products/${p.handle}`,
                 image: p.images.length > 0 ? p.images[0].src : 'assets/img/motor-placeholder.png'
             };
-        }).filter(item => item !== null);
-
-        console.log(`✅ Shopify Found ${results.length} matches`);
-        return results;
-
-    } catch (e) { 
-        console.error("❌ Shopify Fetch Error", e); 
-        return []; 
-    }
+        }).filter(item => item !== null); 
+    } catch (e) { return []; }
 }
 
-// 🟢 AI AGENT FETCHER
+// 🟢 AI AGENT FETCHER (SECURE DB)
 async function fetchAIAgentData(userSpecs) {
-    if (typeof getInventoryAgentUrl !== 'function') {
-        console.error("Config missing 'getInventoryAgentUrl'");
-        throw new Error("Configuration Error: Missing API Link");
+    if (typeof getInventoryConfig !== 'function') {
+        console.error("Config missing");
+        return [];
     }
 
-    const agentUrl = await getInventoryAgentUrl(); 
-    if (!agentUrl) {
-        console.warn("AI Agent URL not found in Firebase.");
-        return []; 
+    // 🔐 SECURE FETCH: Get all DB URLs from Firestore
+    const config = await getInventoryConfig(); 
+    if (!config || !config.ai_agent_url) {
+        console.warn("AI Agent URL missing in DB");
+        return [];
     }
 
+    // We can now pass multiple sheet URLs to the AI Agent if needed
+    // The Google Script needs to be updated to accept 'ksb_url', 'kirloskar_url' in payload
+    // For now, we assume the AI Agent script has the KSB URL logic built-in OR we pass it.
+    // Let's pass the specific Sheet URL so the AI knows where to look.
+    
+    // NOTE: For this architecture to work perfectly, your Google Apps Script 
+    // should read the `sheetUrl` from the payload below.
+    
     try {
-        const res = await fetch(agentUrl, {
+        const res = await fetch(config.ai_agent_url, {
             method: 'POST', 
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ specs: userSpecs })
+            body: JSON.stringify({ 
+                specs: userSpecs,
+                // 🚀 FUTURE PROOFING: We tell the AI which DBs to search
+                databases: {
+                    ksb: config.ksb_db_url,
+                    kirloskar: config.kirloskar_db_url || null
+                }
+            })
         });
         
         const data = await res.json(); 
@@ -223,8 +204,6 @@ async function fetchAIAgentData(userSpecs) {
 function renderCards(list) {
     const container = document.getElementById('results-grid');
     container.innerHTML = "";
-    
-    // Sort: Shopify First
     list.sort((a, b) => (a.source === 'shopify' ? -1 : 1));
 
     list.forEach(p => {
