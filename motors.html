@@ -22,7 +22,6 @@
         .option-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.15); }
         .option-card.selected { border-color: #2563eb; background: #eff6ff; ring: 2px solid #2563eb; }
         
-        /* Product Card Styles */
         .product-card { transition: all 0.3s ease; }
         .product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px -5px rgba(0,0,0,0.1); }
     </style>
@@ -34,55 +33,108 @@
     <main class="flex-grow container mx-auto px-4 py-10 max-w-3xl">
         
         <div class="text-center mb-10">
-            <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Powered by SagarTraders.in</span>
-            <h1 class="text-3xl font-extrabold text-slate-900 mt-3">AI Motor Recommendation</h1>
-            <p class="text-slate-500 mt-2">Engineered logic to match your borewell with our live inventory.</p>
+            <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">AI Recommendation Engine</span>
+            <h1 class="text-3xl font-extrabold text-slate-900 mt-3">Find Your Perfect Pump</h1>
+            <p class="text-slate-500 mt-2">Answer 3 questions to get an engineering-grade recommendation.</p>
         </div>
 
         <div class="bg-white rounded-2xl shadow-xl p-8 relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-1.5 bg-slate-100">
-                <div id="progressBar" class="h-full bg-blue-600 transition-all duration-500" style="width: 25%"></div>
+                <div id="progressBar" class="h-full bg-blue-600 transition-all duration-500" style="width: 20%"></div>
             </div>
 
             <div id="step1" class="wizard-step active">
-                <h3 class="text-lg font-bold text-slate-800 mb-6">1. Water Source</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="option-card" onclick="selectSource('borewell')">
-                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-arrow-down-circle-line"></i></div>
-                        <h4 class="font-bold">Borewell</h4>
-                        <p class="text-xs text-slate-500 mt-1">Deep Submersible</p>
+                <h3 class="text-lg font-bold text-slate-800 mb-6">1. How will you use the water?</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="option-card" onclick="selectUsage('domestic')">
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-home-smile-line"></i></div>
+                        <h4 class="font-bold">Domestic / Home</h4>
+                        <p class="text-xs text-slate-500 mt-1">Filling overhead tanks, gardening, drinking. (Standard Flow)</p>
                     </div>
-                    <div class="option-card" onclick="selectSource('openwell')">
-                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-checkbox-blank-circle-line"></i></div>
-                        <h4 class="font-bold">Open Well</h4>
-                        <p class="text-xs text-slate-500 mt-1">Monoblock / Open Sub</p>
+                    <div class="option-card" onclick="selectUsage('agri')">
+                        <div class="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-plant-line"></i></div>
+                        <h4 class="font-bold">Agriculture / Farm</h4>
+                        <p class="text-xs text-slate-500 mt-1">Irrigation, sprinklers, drip systems. (High Flow)</p>
                     </div>
-                    <div class="option-card" onclick="selectSource('sewage')">
-                        <div class="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-delete-bin-line"></i></div>
-                        <h4 class="font-bold">Sewage</h4>
-                        <p class="text-xs text-slate-500 mt-1">Drainage / Mud</p>
-                    </div>
+                </div>
+                <div class="mt-4 text-center">
+                    <button onclick="selectUsage('industrial')" class="text-xs text-slate-400 font-bold hover:text-slate-600">Looking for Industrial / Sewage?</button>
                 </div>
             </div>
 
             <div id="step2" class="wizard-step">
-                <h3 class="text-lg font-bold text-slate-800 mb-6">2. Site Logistics</h3>
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Total Head (Depth + Distance)</label>
-                        <input type="number" id="inputDepth" class="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-blue-600 outline-none font-bold text-lg" placeholder="e.g. 450 (ft)">
-                        <p class="text-xs text-slate-400 mt-1">Combine vertical depth and horizontal distance.</p>
+                <h3 class="text-lg font-bold text-slate-800 mb-6">2. Select Water Source</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="option-card" onclick="selectSource('borewell')">
+                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-arrow-down-circle-line"></i></div>
+                        <h4 class="font-bold">Borewell</h4>
+                        <p class="text-xs text-slate-500 mt-1">Deep drilled shaft</p>
                     </div>
+                    <div class="option-card" onclick="selectSource('openwell')">
+                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-checkbox-blank-circle-line"></i></div>
+                        <h4 class="font-bold">Open Well / Sump</h4>
+                        <p class="text-xs text-slate-500 mt-1">Wide ring well, river, or tank</p>
+                    </div>
+                    <div class="option-card hidden" id="sewageOption" onclick="selectSource('sewage')">
+                        <div class="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="ri-delete-bin-line"></i></div>
+                        <h4 class="font-bold">Sewage / Waste</h4>
+                        <p class="text-xs text-slate-500 mt-1">Drainage, Mud, Slurry</p>
+                    </div>
+                </div>
+                <button onclick="prevStep(1)" class="w-full mt-6 text-slate-400 font-bold text-xs py-2 hover:text-slate-600">Back</button>
+            </div>
+
+            <div id="step3" class="wizard-step">
+                <h3 class="text-lg font-bold text-slate-800 mb-6">3. Technical Details</h3>
+                <div class="space-y-6">
                     
-                    <div id="borewellOptions">
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Casing Diameter</label>
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
-                                <input type="radio" name="dia" value="4" class="accent-blue-600"> <span class="font-bold text-slate-700">4 Inch</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
-                                <input type="radio" name="dia" value="6" checked class="accent-blue-600"> <span class="font-bold text-slate-700">6 Inch+</span>
-                            </label>
+                    <div id="spec-borewell" class="hidden spec-group">
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Total Depth (Feet)</label>
+                            <input type="number" id="inputDepth" class="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-blue-600 outline-none font-bold text-lg" placeholder="e.g. 450">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Casing Diameter (Inch)</label>
+                            <select id="inputDia" class="w-full border-2 border-slate-200 rounded-xl p-3 outline-none bg-white font-bold">
+                                <option value="4">4 Inch (Standard)</option>
+                                <option value="4.5">4.5 Inch</option>
+                                <option value="5">5 Inch</option>
+                                <option value="6" selected>6 Inch</option>
+                                <option value="6.5">6.5 Inch</option>
+                                <option value="7">7 Inch</option>
+                                <option value="8">8 Inch</option>
+                                <option value="10">10 Inch</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="spec-openwell" class="hidden spec-group">
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Vertical Suction (Depth inside well)</label>
+                            <input type="number" id="inputSuction" class="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-blue-600 outline-none font-bold text-lg" placeholder="e.g. 20 (ft)">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Delivery Distance (Flat ground)</label>
+                            <input type="number" id="inputHorizontal" class="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-blue-600 outline-none font-bold text-lg" placeholder="e.g. 500 (ft)">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Vertical Delivery (Height to tank)</label>
+                            <input type="number" id="inputDeliveryHeight" class="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-blue-600 outline-none font-bold text-lg" placeholder="e.g. 30 (ft)">
+                        </div>
+                    </div>
+
+                    <div id="spec-sewage" class="hidden spec-group">
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Vertical Lift Needed (Head)</label>
+                            <input type="number" id="inputLift" class="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-blue-600 outline-none font-bold text-lg" placeholder="e.g. 25 (ft)">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Fluid Type</label>
+                            <select id="inputFluid" class="w-full border-2 border-slate-200 rounded-xl p-3 outline-none bg-white font-bold">
+                                <option value="clear">Clear Water</option>
+                                <option value="mud">Muddy / Sandy</option>
+                                <option value="sludge">Heavy Sludge / Waste</option>
+                            </select>
                         </div>
                     </div>
 
@@ -97,18 +149,17 @@
                     <button onclick="runEngine()" id="findBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition flex justify-center items-center gap-2">
                         <span>Find Matching Motors</span>
                     </button>
-                    <button onclick="prevStep()" class="w-full mt-2 text-slate-400 font-bold text-xs py-2 hover:text-slate-600">Back</button>
+                    <button onclick="prevStep(2)" class="w-full mt-2 text-slate-400 font-bold text-xs py-2 hover:text-slate-600">Back</button>
                 </div>
             </div>
 
-            <div id="step3" class="wizard-step">
+            <div id="step4" class="wizard-step">
                 <div class="text-center mb-6">
                     <h3 class="text-xl font-bold text-slate-900">Recommended Hardware</h3>
-                    <p class="text-xs text-slate-500 font-mono mt-1" id="calcDebug">Syncing with SagarTraders...</p>
+                    <p class="text-xs text-slate-500 font-mono mt-1" id="calcDebug">Syncing...</p>
                 </div>
 
-                <div id="resultsContainer" class="space-y-4 min-h-[200px]">
-                    </div>
+                <div id="resultsContainer" class="space-y-4 min-h-[200px]"></div>
 
                 <button onclick="location.reload()" class="w-full mt-6 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200">Start Over</button>
             </div>
