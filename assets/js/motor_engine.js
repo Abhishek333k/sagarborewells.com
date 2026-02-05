@@ -11,7 +11,7 @@ window.EngineState = {
     phase: 1
 };
 
-// 🖥️ TERMINAL SYSTEM (Visual Feedback)
+// 🖥️ TERMINAL SYSTEM
 const Terminal = {
     el: document.getElementById('aiTerminal'),
     log: (msg, type = '') => {
@@ -45,7 +45,7 @@ window.runMotorEngine = async function() {
     s.phase = phaseEl ? parseInt(phaseEl.value) : 1;
     let head = 0;
     
-    // 1. PHYSICS ENGINE (Calculate Head)
+    // 1. PHYSICS ENGINE
     if (s.source === 'borewell') {
         const depth = parseInt(document.getElementById('inp-depth').value || 0);
         const diaRadio = document.querySelector('input[name="dia"]:checked');
@@ -69,7 +69,7 @@ window.runMotorEngine = async function() {
     Terminal.progress(10);
 
     try {
-        // 3. SECURE KEYS (Fetch from Firestore)
+        // 3. SECURE KEYS
         if (typeof getGeminiKey !== 'function' || typeof getInventoryConfig !== 'function') {
             throw new Error("Security Modules Not Loaded");
         }
@@ -84,7 +84,7 @@ window.runMotorEngine = async function() {
         Terminal.log("Database Connection Established.");
         Terminal.progress(30);
 
-        // 4. DATA AGGREGATION (Shopify + KSB + KOEL)
+        // 4. DATA AGGREGATION
         Terminal.log("Aggregating Global Inventory...");
         
         const [shopifyData, ksbData, koelData] = await Promise.all([
@@ -98,38 +98,36 @@ window.runMotorEngine = async function() {
         Terminal.progress(50);
 
         // 5. HARD FILTER (Physics & Type & BLACKLIST)
-        // We filter locally to save AI tokens and prevent bad recommendations
         Terminal.log(`Applying Physics Constraints (Head > ${Math.round(head)}ft)...`);
         
         const allCandidates = [...shopifyData, ...ksbData, ...koelData];
         
-        // ⛔ BLACKLIST (Remove Accessories)
+        // ⛔ BLACKLIST
         const BLACKLIST = ['panel', 'starter', 'cable', 'wire', 'rope', 'pipe', 'fan', 'service', 'repair', 'kit', 'spares', 'accessories', 'control', 'box'];
 
         const candidates = allCandidates.filter(item => {
             const txt = (item.title + " " + item.desc).toLowerCase();
             
-            // Blacklist Check
             if (BLACKLIST.some(badWord => txt.includes(badWord))) return false;
 
             // Type Check
             if (s.source === 'borewell' && !txt.includes('sub') && !txt.includes('bore') && !txt.includes('v4') && !txt.includes('v6')) return false;
             if (s.source === 'openwell' && !txt.includes('open') && !txt.includes('mono')) return false;
             
-            // Phase Check (Strict)
+            // Phase Check
             const is3Phase = txt.includes('3 phase') || txt.includes('3phase') || txt.includes('3 ph');
             if (s.phase === 3 && !is3Phase) return false;
             if (s.phase === 1 && is3Phase) return false;
 
-            // Borewell Dia Check (Don't put 6" pump in 4" hole)
+            // Borewell Dia Check
             if (s.source === 'borewell' && s.dia === 4 && (txt.includes('v6') || txt.includes('6 inch'))) return false;
 
             return true;
-        }).slice(0, 40); // Limit to top 40 candidates for Gemini
+        }).slice(0, 40);
 
         Terminal.log(`${candidates.length} Viable Candidates Identified.`, "highlight");
         
-        // 6. AI DECISION (Gemini)
+        // 6. AI DECISION
         let finalResults = [];
         if (candidates.length > 0) {
             Terminal.log("Requesting SBW Flash Analysis...");
@@ -139,7 +137,7 @@ window.runMotorEngine = async function() {
 
         Terminal.log("Generating Recommendation Vectors...");
         Terminal.progress(100);
-        await new Promise(r => setTimeout(r, 800)); // Cinematic delay
+        await new Promise(r => setTimeout(r, 800));
 
         // 7. RENDER RESULTS
         Terminal.hide();
@@ -162,11 +160,10 @@ window.runMotorEngine = async function() {
     }
 };
 
-// 🟢 AI BRAIN (Gemini API)
+// 🟢 AI BRAIN
 async function askGemini(apiKey, userSpecs, candidates) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
-    // Minify data to save tokens (Gemini charges per character)
     const miniList = candidates.map(c => ({ 
         id: c.id, 
         name: c.title, 
@@ -199,15 +196,12 @@ async function askGemini(apiKey, userSpecs, candidates) {
         });
         
         const data = await res.json();
-        
-        // Parse Gemini Response (Clean up Markdown)
         if (!data.candidates || !data.candidates[0].content) throw new Error("AI Busy");
         
         const rawTxt = data.candidates[0].content.parts[0].text;
         const cleanJson = rawTxt.replace(/```json|```/g, '').trim();
         const aiDecisions = JSON.parse(cleanJson);
 
-        // Merge AI Reasoning with Full Data Objects
         return aiDecisions.map(d => {
             const original = candidates.find(c => c.id === d.id);
             if (original) {
@@ -219,20 +213,19 @@ async function askGemini(apiKey, userSpecs, candidates) {
 
     } catch (e) {
         console.warn("AI Fallback triggered", e);
-        return candidates.slice(0, 3); // Fallback: Return top 3 raw matches if AI fails
+        return candidates.slice(0, 3);
     }
 }
 
 // 🟢 DATA FETCHERS
 
-// 1. Shopify Fetcher
 async function fetchShopifyData() {
     try {
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/products.json?limit=250`);
         const json = await res.json();
         return json.products.map(p => ({
             id: p.id.toString(),
-            source: 'shopify', // Used for badge logic
+            source: 'shopify',
             brand: p.vendor,
             title: p.title,
             desc: p.tags ? p.tags.join(" ") : "", 
@@ -243,24 +236,28 @@ async function fetchShopifyData() {
     } catch { return []; }
 }
 
-// 2. Google Sheet Fetcher (Works for both KSB and KOEL scripts)
 async function fetchSheetData(url, defaultBrand) {
     if (!url) return [];
     try {
         const res = await fetch(url);
         const json = await res.json();
         
-        // Handle Google Script Object Response: { "SKU": { ... } }
-        return Object.entries(json).map(([sku, item]) => ({
-            id: sku,
-            source: 'catalog', // Used for badge logic
-            brand: item.brand || defaultBrand, // Use script brand or fallback
-            title: item.desc,
-            desc: `${item.pumpType} ${item.hp}HP ${item.category}`,
-            price: item.rate,
-            link: `https://wa.me/916304094177?text=I am interested in ${item.brand} pump: ${item.desc} (${sku})`,
-            image: null
-        }));
+        return Object.entries(json).map(([sku, item]) => {
+            // 🟢 FIX: Ensure brand is never undefined
+            const brandName = item.brand || defaultBrand || "Premium";
+            
+            return {
+                id: sku,
+                source: 'catalog',
+                brand: brandName, 
+                title: item.desc,
+                desc: `${item.pumpType} ${item.hp}HP ${item.category}`,
+                price: item.rate,
+                // 🟢 FIX: Cleaner Message
+                link: `https://wa.me/916304094177?text=I am interested in ${brandName} pump: ${item.desc} (${sku})`,
+                image: null
+            };
+        });
     } catch (e) { 
         console.warn(`Fetch Error for ${defaultBrand}`, e); 
         return []; 
@@ -275,18 +272,18 @@ function renderCards(list) {
     list.forEach(p => {
         const isStock = p.source === 'shopify';
         
-        // Dynamic Badge Logic
-        let badge = "CATALOG";
+        // 🟢 FIX: New Badge Logic
+        let badge = "DIRECT";
         let badgeColor = "bg-blue-100 text-blue-700";
         
         if (isStock) {
             badge = "IN STOCK";
             badgeColor = "bg-emerald-100 text-emerald-700";
         } else if (p.brand === 'Kirloskar' || p.brand === 'KOEL') {
-            badge = "KOEL FACTORY";
+            badge = "KOEL DIRECT";
             badgeColor = "bg-green-100 text-green-800";
         } else if (p.brand === 'KSB') {
-            badge = "KSB FACTORY";
+            badge = "KSB DIRECT";
             badgeColor = "bg-orange-100 text-orange-800";
         }
 
