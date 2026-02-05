@@ -147,26 +147,38 @@ function filterStandardized(products, source) {
     });
 }
 
-// 🟢 RENDERER
+// 🟢 RENDERER UPDATE
 function renderResults(items) {
     const container = document.getElementById('resultsContainer');
     container.innerHTML = "";
     
-    // Sort: Shopify First, then Cheapest
+    // Sort logic: Shopify first
     items.sort((a,b) => {
         if (a.source === 'shopify' && b.source !== 'shopify') return -1;
         if (a.source !== 'shopify' && b.source === 'shopify') return 1;
-        return parseFloat(a.price) - parseFloat(b.price);
+        return 0; // Don't sort by price for Catalog items since price is hidden
     });
 
     items.forEach((p, index) => {
         let badge = "";
-        if (p.source === 'shopify') badge = `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">IN STOCK</span>`;
-        else if (index === 0) badge = `<span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded">CATALOG MATCH</span>`;
+        let priceDisplay = "";
+        let btnText = "";
+        let btnClass = "";
 
-        const btnText = p.source === 'shopify' ? "BUY NOW" : "CHECK AVAILABILITY";
-        const btnClass = p.source === 'shopify' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-slate-800 hover:bg-slate-900";
-        // If image is missing in Sheet, use placeholder
+        if (p.source === 'shopify') {
+            badge = `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">IN STOCK</span>`;
+            // Shopify Price: Format as Currency
+            priceDisplay = `₹${parseInt(p.price).toLocaleString()}`;
+            btnText = "BUY NOW";
+            btnClass = "bg-emerald-600 hover:bg-emerald-700";
+        } else {
+            badge = `<span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded">DEALERSHIP</span>`;
+            // Sheet Price: Show text directly ("Check Stock")
+            priceDisplay = `<span class="text-xs text-slate-500 font-bold uppercase">${p.price}</span>`;
+            btnText = "CHECK AVAILABILITY";
+            btnClass = "bg-slate-800 hover:bg-slate-900";
+        }
+
         const img = p.image || 'assets/img/motor-catalog.png';
 
         container.innerHTML += `
@@ -184,7 +196,7 @@ function renderResults(items) {
                             </div>
                         </div>
                         <div class="text-right">
-                            <div class="font-bold text-blue-600">₹${parseInt(p.price).toLocaleString()}</div>
+                            <div class="font-bold text-blue-600">${priceDisplay}</div>
                         </div>
                     </div>
                     <div class="mt-3">
