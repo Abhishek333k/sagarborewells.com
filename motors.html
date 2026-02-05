@@ -92,7 +92,7 @@
                     </div>
                     
                     <button onclick="runMotorEngine()" id="btn-search" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg mt-4">Find Matching Motors</button>
-                    <button onclick="location.reload()" class="w-full mt-2 text-slate-400 font-bold text-xs py-2">Back</button>
+                    <button onclick="goToStep(1)" class="w-full mt-2 text-slate-400 font-bold text-xs py-2">Back</button>
                 </div>
             </div>
 
@@ -110,21 +110,5 @@
     </main>
 
     <div id="footer-mount"></div>
-
-    <script>
-        function selectSource(s) {
-            window.EngineState.source = s;
-            document.querySelectorAll('.wizard-step').forEach(e=>e.classList.remove('active'));
-            document.getElementById('step2').classList.add('active');
-            document.getElementById('progressBar').style.width="66%";
-            document.querySelectorAll('.spec-box').forEach(e=>e.classList.add('hidden'));
-            document.getElementById('opt-'+s).classList.remove('hidden');
-        }
-        function goToStep(n) {
-            document.querySelectorAll('.wizard-step').forEach(e=>e.classList.remove('active'));
-            document.getElementById('step'+n).classList.add('active');
-            document.getElementById('progressBar').style.width= (n*33) + "%";
-        }
-    </script>
-</body>
+    </body>
 </html>
