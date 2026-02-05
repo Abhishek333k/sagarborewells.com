@@ -89,8 +89,8 @@ window.runMotorEngine = async function() {
         
         const [shopifyData, ksbData, koelData] = await Promise.all([
             fetchShopifyData(),
-            fetchSheetData(invConfig.ksb_db_url, 'KSB'),
-            fetchSheetData(invConfig.kirloskar_db_url, 'KOEL')
+            fetchSheetData(invConfig.ksb_db_url, 'KSB'),         // KSB Catalog
+            fetchSheetData(invConfig.kirloskar_db_url, 'KOEL')   // Kirloskar Catalog
         ]);
 
         const totalItems = shopifyData.length + ksbData.length + koelData.length;
@@ -108,7 +108,6 @@ window.runMotorEngine = async function() {
         const candidates = allCandidates.filter(item => {
             const txt = (item.title + " " + item.desc).toLowerCase();
             
-            // Blacklist Check
             if (BLACKLIST.some(badWord => txt.includes(badWord))) return false;
 
             // Type Check
@@ -124,7 +123,7 @@ window.runMotorEngine = async function() {
             if (s.source === 'borewell' && s.dia === 4 && (txt.includes('v6') || txt.includes('6 inch'))) return false;
 
             return true;
-        }).slice(0, 60); // Limit to top 60 candidates for Gemini
+        }).slice(0, 40);
 
         Terminal.log(`${candidates.length} Viable Candidates Identified.`, "highlight");
         
@@ -165,7 +164,6 @@ window.runMotorEngine = async function() {
 async function askGemini(apiKey, userSpecs, candidates) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
-    // Minify data
     const miniList = candidates.map(c => ({ 
         id: c.id, 
         name: c.title, 
@@ -177,7 +175,7 @@ async function askGemini(apiKey, userSpecs, candidates) {
     Role: Expert Hydraulic Engineer.
     User Needs: ${userSpecs.source} WATER PUMP, ${userSpecs.phase}-Phase, Head requirement: ${Math.round(userSpecs.calculatedHead)} ft.
     
-    Task: Select the best 10-15 matches from this list.
+    Task: Select the best 3-5 matches from this list.
     
     🚨 CRITICAL RULES:
     1. ONLY recommend WATER PUMPS. 
@@ -215,12 +213,12 @@ async function askGemini(apiKey, userSpecs, candidates) {
 
     } catch (e) {
         console.warn("AI Fallback triggered", e);
-        // Fallback: Return top 15 raw matches
-        return candidates.slice(0, 15);
+        return candidates.slice(0, 3);
     }
 }
 
 // 🟢 DATA FETCHERS
+
 async function fetchShopifyData() {
     try {
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/products.json?limit=250`);
@@ -245,17 +243,18 @@ async function fetchSheetData(url, defaultBrand) {
         const json = await res.json();
         
         return Object.entries(json).map(([sku, item]) => {
-            const safeBrand = item.brand || defaultBrand || "Premium";
-            const safeTitle = item.desc || "Water Pump";
+            // 🟢 FIX: Ensure brand is never undefined
+            const brandName = item.brand || defaultBrand || "Premium";
             
             return {
                 id: sku,
                 source: 'catalog',
-                brand: safeBrand, 
-                title: safeTitle,
+                brand: brandName, 
+                title: item.desc,
                 desc: `${item.pumpType} ${item.hp}HP ${item.category}`,
                 price: item.rate,
-                link: `https://wa.me/916304094177?text=I am interested in ${safeBrand} pump: ${safeTitle} (${sku})`,
+                // 🟢 FIX: Cleaner Message
+                link: `https://wa.me/916304094177?text=I am interested in ${brandName} pump: ${item.desc} (${sku})`,
                 image: null
             };
         });
@@ -270,25 +269,22 @@ function renderCards(list) {
     const container = document.getElementById('results-grid');
     container.innerHTML = "";
     
-    // 🎨 Fallback Image
-    const FALLBACK_IMG = 'assets/img/blueprint-placeholder.png'; 
+    // 🎨 Define the Fallback Image Path here
+    const FALLBACK_IMG = 'assets/img/blueprint-placeholder.png';
 
     list.forEach(p => {
         const isStock = p.source === 'shopify';
         
-        let badge = "DIRECT";
+        let badge = "CATALOG";
         let badgeColor = "bg-blue-100 text-blue-700";
-        
-        // Brand Detection Logic
-        const brandUp = (p.brand || "").toUpperCase();
         
         if (isStock) {
             badge = "IN STOCK";
             badgeColor = "bg-emerald-100 text-emerald-700";
-        } else if (brandUp.includes('KIRLOSKAR') || brandUp.includes('KOEL')) {
+        } else if (p.brand && (p.brand.toUpperCase().includes('KIRLOSKAR') || p.brand.toUpperCase().includes('KOEL'))) {
             badge = "KOEL DIRECT";
             badgeColor = "bg-green-100 text-green-800";
-        } else if (brandUp.includes('KSB')) {
+        } else if (p.brand && p.brand.toUpperCase().includes('KSB')) {
             badge = "KSB DIRECT";
             badgeColor = "bg-orange-100 text-orange-800";
         }
