@@ -109,37 +109,103 @@ window.runMotorEngine = async function() {
     }
 };
 
-// 🟢 SHOPIFY FETCHER
+// 🟢 SHOPIFY FETCHER (ROBUST / FUZZY MATCHING)
 async function fetchShopifyData() {
     const s = window.EngineState;
+    console.log("🔍 Starting Shopify Search for:", s);
+
     try {
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/products.json?limit=250`);
         const json = await res.json();
         
-        return json.products.map(p => {
-            let tags = {};
-            p.tags.forEach(t => { 
-                const parts = t.split(':'); 
-                if(parts.length===2) tags[parts[0].trim().toLowerCase()] = parts[1].trim().toLowerCase(); 
-            });
+        const results = json.products.map(p => {
+            // 1. EXTRACT SPECS FROM TAGS & TITLE (Fuzzy Match)
+            let specs = {
+                type: 'unknown',
+                hp: 0,
+                phase: 1,
+                head: 0,
+                dia: 0
+            };
 
-            if (tags.type !== s.source) return null;
-            if (parseInt(tags.phase) !== s.phase) return null;
-            if (s.source === 'borewell' && parseInt(tags.dia) > s.dia) return null;
-            if (parseInt(tags.head) < s.calculatedHead) return null;
+            // Combine tags and title for searching
+            const searchStr = (p.tags.join(" ") + " " + p.title).toLowerCase();
+
+            // A. Detect Type
+            if (searchStr.includes('borewell') || searchStr.includes('submersible') || searchStr.includes('v4') || searchStr.includes('v6')) {
+                specs.type = 'borewell';
+            } else if (searchStr.includes('openwell') || searchStr.includes('monoblock') || searchStr.includes('centrifugal')) {
+                specs.type = 'openwell';
+            } else if (searchStr.includes('sewage') || searchStr.includes('cutter') || searchStr.includes('mud')) {
+                specs.type = 'sewage';
+            }
+
+            // B. Detect HP (Regex for "0.5 HP", "1HP", etc.)
+            const hpMatch = searchStr.match(/(\d+(\.\d+)?)\s?hp/);
+            if (hpMatch) specs.hp = parseFloat(hpMatch[1]);
+
+            // C. Detect Phase
+            if (searchStr.includes('3 phase') || searchStr.includes('3phase') || searchStr.includes('3 ph')) {
+                specs.phase = 3;
+            } else {
+                specs.phase = 1; // Default to single phase
+            }
+
+            // D. Detect Head (Look for "100 ft", "30 m")
+            // If explicit head tag exists (head:100), use it. Otherwise, guess.
+            let explicitHead = 0;
+            p.tags.forEach(t => {
+                if(t.toLowerCase().includes('head:')) explicitHead = parseInt(t.split(':')[1]);
+            });
+            
+            if (explicitHead > 0) {
+                specs.head = explicitHead;
+            } else {
+                // Heuristic: If head missing, estimate based on HP? 
+                // Or looking for numbers near "ft" or "mtr"
+                // For safety, let's assume if we can't find head, we DON'T filter by it strictly, 
+                // OR we set a generous default.
+                specs.head = 999; // Allow it to pass if head is unknown
+            }
+
+            // E. Detect Dia (Borewell only)
+            if (searchStr.includes('v4') || searchStr.includes('4 inch') || searchStr.includes('100mm')) specs.dia = 4;
+            if (searchStr.includes('v6') || searchStr.includes('6 inch') || searchStr.includes('150mm')) specs.dia = 6;
+
+
+            // 2. FILTERING LOGIC
+            // Filter 1: Type Mismatch
+            if (specs.type !== 'unknown' && specs.type !== s.source) return null;
+
+            // Filter 2: Phase Mismatch
+            if (specs.phase !== s.phase) return null;
+
+            // Filter 3: Borewell Dia Mismatch (You can't put a 6" pump in a 4" hole)
+            if (s.source === 'borewell' && specs.dia > s.dia) return null;
+
+            // Filter 4: Head Capacity (Pump must be strong enough)
+            // Note: If specs.head is 999 (unknown), we let it pass to be safe
+            if (specs.head !== 999 && specs.head < s.calculatedHead) return null;
 
             return {
                 source: 'shopify',
                 brand: p.vendor,
                 model: p.title,
-                hp: parseFloat(tags.hp) || 0,
-                maxhead: parseInt(tags.head),
+                hp: specs.hp,
+                maxhead: specs.head === 999 ? "Unknown" : specs.head,
                 price: p.variants[0].price,
                 link: `https://${SHOPIFY_DOMAIN}/products/${p.handle}`,
-                image: p.images[0]?.src
+                image: p.images.length > 0 ? p.images[0].src : 'assets/img/motor-placeholder.png'
             };
-        }).filter(item => item !== null); 
-    } catch (e) { console.error("Shopify Fetch Error", e); return []; }
+        }).filter(item => item !== null);
+
+        console.log(`✅ Shopify Found ${results.length} matches`);
+        return results;
+
+    } catch (e) { 
+        console.error("❌ Shopify Fetch Error", e); 
+        return []; 
+    }
 }
 
 // 🟢 AI AGENT FETCHER
