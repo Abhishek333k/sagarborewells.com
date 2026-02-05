@@ -17,12 +17,11 @@
 
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-        .wizard-step { display: none; animation: slideUp 0.4s ease-out; }
+        .wizard-step { display: none; animation: fadeIn 0.4s ease; }
         .wizard-step.active { display: block; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* 📟 TERMINAL OVERLAY STYLES */
+        /* 📟 TERMINAL STYLES */
         .terminal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(9, 9, 11, 0.98); z-index: 9999;
@@ -31,12 +30,11 @@
         .terminal-box {
             width: 90%; max-width: 600px; color: #4ade80; font-family: 'JetBrains Mono', monospace;
         }
-        .log-line { margin-bottom: 8px; font-size: 14px; opacity: 0; animation: fadeIn 0.2s forwards; }
+        .log-line { margin-bottom: 8px; font-size: 13px; opacity: 0; animation: typeIn 0.2s forwards; }
+        .log-line.highlight { color: #facc15; font-weight: bold; border-bottom: 1px dashed #333; padding-bottom: 4px; }
         .log-line.error { color: #ef4444; }
-        .log-line.highlight { color: #facc15; font-weight: bold; }
-        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes typeIn { to { opacity: 1; } }
         
-        /* CARD STYLES */
         .option-card { cursor: pointer; border: 2px solid #e2e8f0; border-radius: 12px; padding: 20px; transition: all 0.2s; background: white; }
         .option-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.15); }
     </style>
@@ -48,27 +46,25 @@
     <div id="aiTerminal" class="terminal-overlay">
         <div class="terminal-box">
             <div class="flex items-center gap-2 mb-6 border-b border-gray-800 pb-4">
-                <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                <span class="ml-2 text-xs text-gray-500">AI_ENGINE_V3.0.exe</span>
+                <i class="ri-cpu-line text-green-500 animate-pulse"></i>
+                <span class="text-xs text-gray-500 tracking-widest">GEMINI_ENGINE_CORE_V3</span>
             </div>
             
-            <div id="terminalLogs" class="h-64 overflow-y-auto mb-4">
+            <div id="terminalLogs" class="h-64 overflow-y-auto mb-4 scrollbar-hide">
                 </div>
 
-            <div class="h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+            <div class="h-1 w-full bg-gray-900 rounded-full overflow-hidden">
                 <div id="terminalProgress" class="h-full bg-green-500 transition-all duration-300" style="width: 0%"></div>
             </div>
-            <p class="text-center text-gray-500 text-xs mt-4">Processing Hydraulic Data...</p>
+            <p class="text-center text-gray-600 text-[10px] mt-4 uppercase tracking-widest">Optimizing Recommendations...</p>
         </div>
     </div>
 
     <main class="flex-grow container mx-auto px-4 py-10 max-w-3xl">
         <div class="text-center mb-10">
-            <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">AI Powered</span>
+            <span class="bg-blue-100 text-blue-700 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Powered by Gemini AI</span>
             <h1 class="text-3xl font-extrabold text-slate-900 mt-3">Smart Motor Architect</h1>
-            <p class="text-slate-500 mt-2">Connecting live with SagarTraders Inventory + KSB Factory Database.</p>
+            <p class="text-slate-500 mt-2">Connecting SagarTraders Store + KSB Factory Database.</p>
         </div>
 
         <div class="bg-white rounded-2xl shadow-xl p-8 relative overflow-hidden">
@@ -129,7 +125,7 @@
                     </div>
                     
                     <button onclick="runMotorEngine()" id="btn-search" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg mt-6 flex justify-center items-center gap-2 transition-all hover:scale-[1.02]">
-                        <span>INITIATE AI SEARCH</span> <i class="ri-search-2-line"></i>
+                        <span>INITIATE AI SEARCH</span> <i class="ri-cpu-line"></i>
                     </button>
                     <button onclick="goToStep(1)" class="w-full mt-3 text-slate-400 font-bold text-xs py-2 hover:text-slate-600">Back</button>
                 </div>
