@@ -1,6 +1,7 @@
 // FILENAME: assets/js/motor_engine.js
 
 const SHOPIFY_DOMAIN = "sagartraders.in"; 
+const CACHE_TTL = 60 * 60 * 1000; // 1 Hour Cache
 
 // GLOBAL STATE
 window.EngineState = {
@@ -11,7 +12,7 @@ window.EngineState = {
     phase: 1
 };
 
-// 🛡️ SECURITY: Basic HTML Sanitizer to prevent XSS from Sheet data
+// 🛡️ SECURITY: Basic HTML Sanitizer
 const escapeHTML = (str) => {
     if (!str) return "";
     return str.toString()
@@ -22,8 +23,28 @@ const escapeHTML = (str) => {
         .replace(/'/g, "&#039;");
 };
 
-// 🖥️ TERMINAL SYSTEM (Visual Feedback)
-// Cache DOM elements to improve performance
+// 🧠 CACHE SYSTEM (The Speed Booster)
+const Cache = {
+    get: (key) => {
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return null;
+            const item = JSON.parse(raw);
+            if (Date.now() - item.ts > CACHE_TTL) {
+                localStorage.removeItem(key);
+                return null;
+            }
+            return item.data;
+        } catch { return null; }
+    },
+    set: (key, data) => {
+        try {
+            localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+        } catch (e) { console.warn("Storage Full"); }
+    }
+};
+
+// 🖥️ TERMINAL SYSTEM
 const DOM = {
     terminal: document.getElementById('aiTerminal'),
     logs: document.getElementById('terminalLogs'),
@@ -47,8 +68,12 @@ const Terminal = {
     progress: (pct) => {
         if (DOM.progress) DOM.progress.style.width = `${pct}%`;
     },
-    show: () => { if (DOM.terminal) DOM.terminal.style.display = 'flex'; },
-    hide: () => { if (DOM.terminal) DOM.terminal.style.display = 'none'; }
+    show: () => { 
+        if (DOM.terminal) DOM.terminal.style.display = 'flex'; 
+    },
+    hide: () => { 
+        if (DOM.terminal) DOM.terminal.style.display = 'none'; 
+    }
 };
 
 // 🟢 MAIN ENGINE EXECUTION
@@ -57,7 +82,7 @@ window.runMotorEngine = async function() {
     s.phase = DOM.phase ? parseInt(DOM.phase.value) : 1;
     let head = 0;
     
-    // 1. PHYSICS ENGINE (Calculate Head)
+    // 1. PHYSICS ENGINE
     if (s.source === 'borewell') {
         const depth = parseInt(document.getElementById('inp-depth').value || 0);
         const diaRadio = document.querySelector('input[name="dia"]:checked');
@@ -75,15 +100,24 @@ window.runMotorEngine = async function() {
     if (head <= 0) return alert("Please enter valid parameters.");
     s.calculatedHead = head;
 
-    // 2. START TERMINAL
+    // 2. IMMEDIATE UI FEEDBACK (Fixes "Slow Button" feel)
+    const btn = document.getElementById('btn-search');
+    if(btn) btn.disabled = true; // Prevent double clicks
+    
     Terminal.show();
     Terminal.log("Initializing Neural Context...", "highlight");
-    Terminal.progress(10);
+    Terminal.progress(5);
+
+    // Fake ticker to keep user engaged while APIs load
+    let ticker = 5;
+    const interval = setInterval(() => {
+        if(ticker < 90) { ticker += Math.random() * 2; Terminal.progress(ticker); }
+    }, 500);
 
     try {
-        // 3. SECURE KEYS (Fetch from Firestore)
+        // 3. SECURE KEYS
         if (typeof getGeminiKey !== 'function' || typeof getInventoryConfig !== 'function') {
-            throw new Error("Security Modules Not Loaded (Check config.js)");
+            throw new Error("Security Modules Not Loaded");
         }
 
         const [geminiKey, invConfig] = await Promise.all([
@@ -93,68 +127,71 @@ window.runMotorEngine = async function() {
 
         if (!geminiKey || !invConfig) throw new Error("Security Vault Access Denied (Missing Keys)");
         
-        Terminal.log("Database Connection Established.");
-        Terminal.progress(30);
+        Terminal.log("Security Handshake: Authorized.");
 
-        // 4. DATA AGGREGATION (Shopify + KSB + KOEL)
+        // 4. DATA AGGREGATION (With Caching!)
         Terminal.log("Aggregating Global Inventory...");
         
-        const [shopifyData, ksbData, koelData] = await Promise.all([
-            fetchShopifyData(),
-            fetchSheetData(invConfig.ksb_db_url, 'KSB'),
-            fetchSheetData(invConfig.kirloskar_db_url, 'KOEL')
-        ]);
+        // Check Cache First
+        let shopifyData = Cache.get('SBW_SHOPIFY');
+        let ksbData = Cache.get('SBW_KSB');
+        let koelData = Cache.get('SBW_KOEL');
+        
+        // Fetch Missing Data in Parallel
+        const promises = [];
+        if(!shopifyData) promises.push(fetchShopifyData().then(d => { shopifyData = d; Cache.set('SBW_SHOPIFY', d); }));
+        if(!ksbData) promises.push(fetchSheetData(invConfig.ksb_db_url, 'KSB').then(d => { ksbData = d; Cache.set('SBW_KSB', d); }));
+        if(!koelData) promises.push(fetchSheetData(invConfig.kirloskar_db_url, 'KOEL').then(d => { koelData = d; Cache.set('SBW_KOEL', d); }));
+        
+        if(promises.length > 0) {
+            Terminal.log(`Downloading Updates from ${promises.length} Servers...`);
+            await Promise.all(promises);
+        } else {
+            Terminal.log("Loaded Inventory from Local Cache (Instant Mode).");
+        }
 
-        const totalItems = shopifyData.length + ksbData.length + koelData.length;
-        Terminal.log(`Analyzed ${totalItems} SKUs across 3 Databases.`);
-        Terminal.progress(50);
+        const totalItems = (shopifyData?.length || 0) + (ksbData?.length || 0) + (koelData?.length || 0);
+        Terminal.log(`Analyzed ${totalItems} SKUs.`);
+        
+        clearInterval(interval); // Stop fake ticker
+        Terminal.progress(60);
 
-        // 5. HARD FILTER (Physics & Type & BLACKLIST)
+        // 5. HARD FILTER
         Terminal.log(`Applying Physics Constraints (Head > ${Math.round(head)}ft)...`);
         
-        const allCandidates = [...shopifyData, ...ksbData, ...koelData];
-        
-        // ⛔ BLACKLIST (Remove Accessories)
+        const allCandidates = [...(shopifyData||[]), ...(ksbData||[]), ...(koelData||[])];
         const BLACKLIST = ['panel', 'starter', 'cable', 'wire', 'rope', 'pipe', 'fan', 'service', 'repair', 'kit', 'spares', 'accessories', 'control', 'box'];
 
         const candidates = allCandidates.filter(item => {
             const txt = (item.title + " " + item.desc).toLowerCase();
-            
-            // Blacklist Check
             if (BLACKLIST.some(badWord => txt.includes(badWord))) return false;
-
-            // Type Check
+            
             if (s.source === 'borewell' && !txt.includes('sub') && !txt.includes('bore') && !txt.includes('v4') && !txt.includes('v6')) return false;
             if (s.source === 'openwell' && !txt.includes('open') && !txt.includes('mono')) return false;
             
-            // Phase Check (Strict)
             const is3Phase = txt.includes('3 phase') || txt.includes('3phase') || txt.includes('3 ph');
             if (s.phase === 3 && !is3Phase) return false;
             if (s.phase === 1 && is3Phase) return false;
 
-            // Borewell Dia Check (Don't put 6" pump in 4" hole)
             if (s.source === 'borewell' && s.dia === 4 && (txt.includes('v6') || txt.includes('6 inch'))) return false;
 
             return true;
-        }).slice(0, 60); // Limit to top 60 candidates for Gemini input
+        }).slice(0, 60);
 
         Terminal.log(`${candidates.length} Viable Candidates Identified.`, "highlight");
         
-        // 6. AI DECISION (Gemini)
+        // 6. AI DECISION
         let finalResults = [];
         if (candidates.length > 0) {
             Terminal.log("Requesting SBW Flash Analysis...");
-            Terminal.progress(75);
-            // Pass the API Key strictly for this call. 
-            // IMPORTANT: Restrict this key in Google Cloud Console to your domain.
+            Terminal.progress(80);
             finalResults = await askGemini(geminiKey, s, candidates);
         }
 
-        Terminal.log("Generating Recommendation Vectors...");
         Terminal.progress(100);
-        await new Promise(r => setTimeout(r, 800)); // Cinematic delay
+        await new Promise(r => setTimeout(r, 600));
 
-        // 7. RENDER RESULTS
+        // 7. RENDER
         Terminal.hide();
         window.goToStep(3);
         
@@ -169,37 +206,32 @@ window.runMotorEngine = async function() {
 
     } catch (e) {
         console.error(e);
+        clearInterval(interval);
         Terminal.log(`CRITICAL ERROR: ${e.message}`, "error");
         setTimeout(() => { Terminal.hide(); alert("System Error: " + e.message); }, 3000);
+    } finally {
+        if(btn) btn.disabled = false;
     }
 };
 
-// 🟢 AI BRAIN (Gemini API)
+// 🟢 AI BRAIN
 async function askGemini(apiKey, userSpecs, candidates) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
-    // Minify data to save tokens (Gemini charges per character)
     const miniList = candidates.map(c => ({ 
-        id: c.id, 
-        name: c.title, 
-        price: c.price,
-        source: c.source 
+        id: c.id, name: c.title, price: c.price, source: c.source 
     }));
 
     const prompt = `
     Role: Expert Hydraulic Engineer.
     User Needs: ${userSpecs.source} WATER PUMP, ${userSpecs.phase}-Phase, Head requirement: ${Math.round(userSpecs.calculatedHead)} ft.
-    
     Task: Select the best 10-15 matches from this list.
-    
     🚨 CRITICAL RULES:
     1. ONLY recommend WATER PUMPS. 
     2. DO NOT recommend Control Panels, Starters, Fans, Cables, or Accessories.
     3. If Head is mentioned in title, it MUST be > ${Math.round(userSpecs.calculatedHead)}.
     4. Prioritize: Technical Fit > In Stock ('shopify') > Price.
-    
     List: ${JSON.stringify(miniList)}
-    
     Output JSON ONLY: [ { "id": "...", "reason": "Why this fits (max 10 words)" } ]
     `;
 
@@ -217,7 +249,6 @@ async function askGemini(apiKey, userSpecs, candidates) {
         const cleanJson = rawTxt.replace(/```json|```/g, '').trim();
         const aiDecisions = JSON.parse(cleanJson);
 
-        // Merge AI Reasoning with Full Data Objects
         return aiDecisions.map(d => {
             const original = candidates.find(c => c.id === d.id);
             if (original) {
@@ -229,13 +260,11 @@ async function askGemini(apiKey, userSpecs, candidates) {
 
     } catch (e) {
         console.warn("AI Fallback triggered", e);
-        // Fallback: Return top 15 raw matches based on simple physics filter
         return candidates.slice(0, 15);
     }
 }
 
-// 🟢 DATA FETCHERS
-
+// 🟢 DATA FETCHERS (Standard)
 async function fetchShopifyData() {
     try {
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/products.json?limit=250`);
@@ -258,14 +287,9 @@ async function fetchSheetData(url, defaultBrand) {
     try {
         const res = await fetch(url);
         const json = await res.json();
-        
-        // Handle Google Script Object Response
         return Object.entries(json).map(([sku, item]) => {
-            // 🛡️ LOGIC FIX: Ensure Brand is never undefined in the object
-            // This prevents "undefined" appearing in the WhatsApp link
             const safeBrand = item.brand || defaultBrand || "Premium";
             const safeTitle = item.desc || "Water Pump";
-            
             return {
                 id: sku,
                 source: 'catalog',
@@ -273,15 +297,11 @@ async function fetchSheetData(url, defaultBrand) {
                 title: safeTitle,
                 desc: `${item.pumpType} ${item.hp}HP ${item.category}`,
                 price: item.rate,
-                // 🟢 UPDATED: Cleaner Message
                 link: `https://wa.me/916304094177?text=I am interested in ${safeBrand} pump: ${safeTitle} (${sku})`,
                 image: null
             };
         });
-    } catch (e) { 
-        console.warn(`Fetch Error for ${defaultBrand}`, e); 
-        return []; 
-    }
+    } catch (e) { console.warn(`Fetch Error for ${defaultBrand}`, e); return []; }
 }
 
 // 🟢 RENDERER
@@ -289,7 +309,7 @@ function renderCards(list) {
     if (!DOM.grid) return;
     DOM.grid.innerHTML = "";
     
-    // 🎨 Fallback Image (Blueprint Style)
+    // 🎨 Fallback Image
     const FALLBACK_IMG = 'assets/img/blueprint-placeholder.png'; 
 
     list.forEach(p => {
@@ -299,7 +319,6 @@ function renderCards(list) {
         let badgeColor = "bg-blue-100 text-blue-700";
         
         const brandUp = (p.brand || "").toUpperCase();
-
         if (isStock) {
             badge = "IN STOCK";
             badgeColor = "bg-emerald-100 text-emerald-700";
@@ -314,10 +333,7 @@ function renderCards(list) {
         const btnTxt = isStock ? "BUY NOW" : "CHECK AVAILABILITY";
         const btnBg = isStock ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-800 hover:bg-black";
         
-        // 🛡️ Logic: Use product image if exists, otherwise use fallback
         const displayImg = p.image ? p.image : FALLBACK_IMG;
-        
-        // Sanitize outputs for display
         const safeTitle = escapeHTML(p.title);
         const safeReason = escapeHTML(p.reason || "AI Selected");
         const safeBrand = escapeHTML(p.brand || "Premium");
@@ -352,7 +368,7 @@ function renderCards(list) {
     });
 }
 
-// 🟢 WIZARD HELPERS
+// 🟢 WIZARD HELPERS (Same as before)
 window.selectSource = function(s) {
     window.EngineState.source = s;
     document.querySelectorAll('.wizard-step').forEach(e => e.classList.remove('active'));
