@@ -15,7 +15,7 @@ window.EngineState = {
 async function runMotorEngine() {
     const s = window.EngineState;
     
-    // 1. CALCULATE PHYSICS (Client Side)
+    // 1. CALCULATE PHYSICS
     const phaseEl = document.getElementById('inp-phase');
     s.phase = phaseEl ? parseInt(phaseEl.value) : 1;
     
@@ -25,7 +25,7 @@ async function runMotorEngine() {
         const depth = parseInt(document.getElementById('inp-depth').value || 0);
         const diaRadio = document.querySelector('input[name="dia"]:checked');
         s.dia = diaRadio ? parseInt(diaRadio.value) : 6;
-        head = depth * 1.25; // 25% Friction Overhead
+        head = depth * 1.25; 
     } 
     else if (s.source === 'openwell') {
         const suc = parseInt(document.getElementById('inp-suction').value || 0);
@@ -50,18 +50,20 @@ async function runMotorEngine() {
         const container = document.getElementById('results-grid');
         container.innerHTML = "";
         
-        // 3. PARALLEL EXECUTION (Speed!)
-        // Run Shopify Search AND AI Agent Search at the same time
+        // 🟢 FIX: Move to Step 3 (Results) immediately to show loading state
+        // Previously this tried to go to Step 4 which didn't exist
+        if(typeof goToStep === 'function') goToStep(3);
+
+        // 3. PARALLEL EXECUTION
         const [shopifyResults, aiResults] = await Promise.all([
-            fetchShopifyData(),       // Fast Local
-            fetchAIAgentData(s)       // Deep Remote
+            fetchShopifyData(),       
+            fetchAIAgentData(s)       
         ]);
 
         // 4. MERGE & RENDER
         const allMatches = [...shopifyResults, ...aiResults];
 
-        goToStep(4);
-        const debugEl = document.getElementById('debug-text');
+        const debugEl = document.getElementById('calcDebug');
         if(debugEl) debugEl.innerHTML = `TDH: <strong>${Math.round(head)} ft</strong> • ${s.phase} Phase`;
 
         if (allMatches.length === 0) {
@@ -80,7 +82,7 @@ async function runMotorEngine() {
     }
 }
 
-// 🟢 SHOPIFY FETCHER (Client Logic)
+// 🟢 SHOPIFY FETCHER
 async function fetchShopifyData() {
     const s = window.EngineState;
     try {
@@ -94,8 +96,6 @@ async function fetchShopifyData() {
                 if(parts.length===2) tags[parts[0].trim().toLowerCase()] = parts[1].trim().toLowerCase(); 
             });
 
-            // Local Filter Logic
-            // Note: Ensure Shopify tags match these keys exactly (type, phase, dia, head)
             if (tags.type !== s.source) return null;
             if (parseInt(tags.phase) !== s.phase) return null;
             if (s.source === 'borewell' && parseInt(tags.dia) > s.dia) return null;
@@ -111,42 +111,32 @@ async function fetchShopifyData() {
                 link: `https://${SHOPIFY_DOMAIN}/products/${p.handle}`,
                 image: p.images[0]?.src
             };
-        }).filter(item => item !== null); // Remove nulls
+        }).filter(item => item !== null); 
     } catch (e) { console.log("Shopify Error", e); return []; }
 }
 
-// 🟢 AI AGENT FETCHER (Server Logic)
+// 🟢 AI AGENT FETCHER
 async function fetchAIAgentData(userSpecs) {
-    // 🔐 Secure Fetch from config.js
-    // FIX: Using the correct function name defined in config.js
     if (typeof getInventoryAgentUrl !== 'function') {
-        console.error("Config missing getInventoryAgentUrl function");
+        console.error("Config missing");
         return [];
     }
 
+    // 🟢 FIX: Removed Duplicate Declaration here
     const agentUrl = await getInventoryAgentUrl(); 
     if (!agentUrl) return [];
 
     try {
-        // Google Apps Script Web App Request
         const res = await fetch(agentUrl, {
             method: 'POST', 
-            mode: 'no-cors', // Essential for GAS Web Apps
+            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ specs: userSpecs })
         });
         
-        // Note: Because of 'no-cors', we might not get readable JSON back directly 
-        // depending on the browser/GAS version. 
-        // If this part fails to parse, the fallback is to rely on Shopify results.
-        // For production, ensure your GAS script returns JSONP or handle opaque responses.
-        
-        // However, if your GAS script is set to "Access: Anyone", simple fetch often works.
-        // If response is opaque, we return empty array to prevent crashes.
         if (res.type === 'opaque') return []; 
 
         const data = await res.json(); 
-        
         if(data.matches) {
             return data.matches.map(m => ({
                 source: 'catalog',
@@ -157,12 +147,11 @@ async function fetchAIAgentData(userSpecs) {
                 price: "Check Stock",
                 link: `https://wa.me/916304094177?text=I need ${m.brand} ${m.model}`,
                 image: null,
-                reason: m.reason // AI Reasoning
+                reason: m.reason 
             }));
         }
         return [];
     } catch (e) {
-        console.warn("AI Agent fetch failed:", e);
         return [];
     }
 }
@@ -172,7 +161,6 @@ function renderCards(list) {
     const container = document.getElementById('results-grid');
     container.innerHTML = "";
     
-    // Sort: Shopify First
     list.sort((a, b) => (a.source === 'shopify' ? -1 : 1));
 
     list.forEach(p => {
@@ -185,30 +173,28 @@ function renderCards(list) {
         const btnTxt = isStock ? "BUY NOW" : "GET QUOTE";
         const btnBg = isStock ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-800 hover:bg-black";
         const img = p.image || 'assets/img/motor-catalog.png';
-        
-        // Show AI reasoning if available
         const aiReason = p.reason ? `<div class="text-[10px] text-slate-500 italic mt-1 border-t border-slate-100 pt-1">"${p.reason}"</div>` : '';
 
         container.innerHTML += `
-        <div class="product-card bg-white border border-slate-200 rounded-xl p-4 flex gap-4 items-center transition hover:border-blue-300 hover:shadow-md">
+        <div class="product-card bg-white border border-slate-200 rounded-xl p-4 flex gap-4 items-center">
             <div class="w-16 h-16 bg-slate-50 rounded-lg flex-shrink-0 border border-slate-100 p-1 flex items-center justify-center">
-                <img src="${img}" class="max-w-full max-h-full object-contain mix-blend-multiply">
+                <img src="${img}" class="max-w-full max-h-full object-contain">
             </div>
             <div class="flex-grow">
                 <div class="flex justify-between items-start">
                     <div>
                         <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">${p.brand}</div>
-                        <h4 class="font-bold text-slate-800 text-sm leading-tight line-clamp-2">${p.model}</h4>
+                        <h4 class="font-bold text-slate-800 text-sm leading-tight">${p.model}</h4>
                         <div class="flex gap-2 mt-1 items-center">
                             <span class="text-xs font-mono text-slate-500 font-bold">${p.maxhead}ft</span>
                             ${badge}
                         </div>
                     </div>
-                    <div class="font-bold text-blue-600 text-right whitespace-nowrap pl-2">${priceTxt}</div>
+                    <div class="font-bold text-blue-600 text-right">${priceTxt}</div>
                 </div>
                 ${aiReason}
                 <div class="mt-2">
-                    <a href="${p.link}" target="_blank" class="block w-full ${btnBg} text-white text-center text-[10px] font-bold py-2 rounded-lg transition hover:shadow-lg">${btnTxt}</a>
+                    <a href="${p.link}" target="_blank" class="block w-full ${btnBg} text-white text-center text-[10px] font-bold py-2 rounded-lg transition">${btnTxt}</a>
                 </div>
             </div>
         </div>`;
