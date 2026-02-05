@@ -11,7 +11,7 @@ window.EngineState = {
     phase: 1
 };
 
-// 🖥️ TERMINAL SYSTEM (Visual Feedback)
+// 🖥️ TERMINAL SYSTEM
 const Terminal = {
     el: document.getElementById('aiTerminal'),
     log: (msg, type = '') => {
@@ -25,15 +25,15 @@ const Terminal = {
         }
     },
     progress: (pct) => {
-        const bar = document.getElementById('Progress');
+        const bar = document.getElementById('terminalProgress');
         if(bar) bar.style.width = `${pct}%`;
     },
     show: () => { 
-        const el = document.getElementById('ai');
+        const el = document.getElementById('aiTerminal');
         if(el) el.style.display = 'flex'; 
     },
     hide: () => { 
-        const el = document.getElementById('ai');
+        const el = document.getElementById('aiTerminal');
         if(el) el.style.display = 'none'; 
     }
 };
@@ -63,14 +63,13 @@ window.runMotorEngine = async function() {
     if (head <= 0) return alert("Please enter valid parameters.");
     s.calculatedHead = head;
 
-    // 2. START 
-    .show();
-    .log("Initializing Neural Network...", "highlight");
+    // 2. START TERMINAL
+    Terminal.show();
+    Terminal.log("Initializing Neural Context...", "highlight");
     Terminal.progress(10);
 
     try {
         // 3. SECURE KEYS (Fetch from Firestore)
-        // Ensure config.js is loaded and these functions exist
         if (typeof getGeminiKey !== 'function' || typeof getInventoryConfig !== 'function') {
             throw new Error("Security Modules Not Loaded");
         }
@@ -88,7 +87,7 @@ window.runMotorEngine = async function() {
         // 4. DATA AGGREGATION (Shopify + KSB + KOEL)
         Terminal.log("Aggregating Global Inventory...");
         
-        // Fetch all sources in parallel
+        // 🟢 FIX: Fetch all sources (added KOEL support)
         const [shopifyData, ksbData, koelData] = await Promise.all([
             fetchShopifyData(),
             fetchSheetData(invConfig.ksb_db_url, 'KSB'),         // KSB Catalog
@@ -96,11 +95,10 @@ window.runMotorEngine = async function() {
         ]);
 
         const totalItems = shopifyData.length + ksbData.length + koelData.length;
-        Terminal.log(`Analyzed ${totalItems} SKUs across All Databases.`);
+        Terminal.log(`Analyzed ${totalItems} SKUs across 3 Databases.`);
         Terminal.progress(50);
 
         // 5. HARD FILTER (Physics & Type)
-        // We filter obvious mismatches locally to save AI tokens and cost
         Terminal.log(`Applying Physics Constraints (Head > ${Math.round(head)}ft)...`);
         
         const allCandidates = [...shopifyData, ...ksbData, ...koelData];
@@ -117,7 +115,7 @@ window.runMotorEngine = async function() {
             if (s.phase === 3 && !is3Phase) return false;
             if (s.phase === 1 && is3Phase) return false;
 
-            // Borewell Dia Check (Don't put 6" pump in 4" hole)
+            // Borewell Dia Check
             if (s.source === 'borewell' && s.dia === 4 && (txt.includes('v6') || txt.includes('6 inch'))) return false;
 
             return true;
@@ -128,7 +126,7 @@ window.runMotorEngine = async function() {
         // 6. AI DECISION (Gemini)
         let finalResults = [];
         if (candidates.length > 0) {
-            Terminal.log("Requesting SBW AI Analysis...");
+            Terminal.log("Requesting Gemini 1.5 Flash Analysis...");
             Terminal.progress(75);
             finalResults = await askGemini(geminiKey, s, candidates);
         }
@@ -162,7 +160,7 @@ window.runMotorEngine = async function() {
 async function askGemini(apiKey, userSpecs, candidates) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
-    // Minify data to save tokens (Gemini charges per character)
+    // Minify data to save tokens
     const miniList = candidates.map(c => ({ 
         id: c.id, 
         name: c.title, 
@@ -192,15 +190,16 @@ async function askGemini(apiKey, userSpecs, candidates) {
         
         const data = await res.json();
         
-        // Parse Gemini Response (Clean up Markdown)
         if (!data.candidates || !data.candidates[0].content) throw new Error("AI Busy");
         
         const rawTxt = data.candidates[0].content.parts[0].text;
         const cleanJson = rawTxt.replace(/```json|```/g, '').trim();
-        const decisions = JSON.parse(cleanJson);
+        
+        // 🟢 FIX: Variable name collision fixed
+        const aiDecisions = JSON.parse(cleanJson);
 
-        // Merge AI Reasoning with Full Data Objects
-        return decisions.map(d => {
+        // Merge AI Reasoning
+        return aiDecisions.map(d => {
             const original = candidates.find(c => c.id === d.id);
             if (original) {
                 original.reason = d.reason;
@@ -211,23 +210,22 @@ async function askGemini(apiKey, userSpecs, candidates) {
 
     } catch (e) {
         console.warn("AI Fallback triggered", e);
-        return candidates.slice(0, 3); // Fallback: Return top 3 raw matches if AI fails
+        return candidates.slice(0, 3); // Fallback logic
     }
 }
 
 // 🟢 DATA FETCHERS
 
-// 1. Shopify Fetcher
 async function fetchShopifyData() {
     try {
         const res = await fetch(`https://${SHOPIFY_DOMAIN}/products.json?limit=250`);
         const json = await res.json();
         return json.products.map(p => ({
             id: p.id.toString(),
-            source: 'shopify', // Used for badge logic
+            source: 'shopify',
             brand: p.vendor,
             title: p.title,
-            desc: p.tags.join(" "),
+            desc: p.tags ? p.tags.join(" ") : "", // 🟢 FIX: Safe navigation
             price: p.variants[0].price,
             link: `https://${SHOPIFY_DOMAIN}/products/${p.handle}`,
             image: p.images[0]?.src
@@ -235,22 +233,21 @@ async function fetchShopifyData() {
     } catch { return []; }
 }
 
-// 2. Google Sheet Fetcher (Works for both KSB and KOEL scripts)
 async function fetchSheetData(url, defaultBrand) {
     if (!url) return [];
     try {
         const res = await fetch(url);
         const json = await res.json();
         
-        // Handle Google Script Object Response: { "SKU": { ... } }
+        // Handle Google Script Object Response
         return Object.entries(json).map(([sku, item]) => ({
             id: sku,
-            source: 'catalog', // Used for badge logic
-            brand: item.brand || defaultBrand, // Use script brand or fallback
+            source: 'catalog',
+            brand: item.brand || defaultBrand, 
             title: item.desc,
             desc: `${item.pumpType} ${item.hp}HP ${item.category}`,
             price: item.rate,
-            link: `https://wa.me/916304094177?text=I am interested in ${item.brand} pump: ${item.desc} (${sku})`,
+            link: `https://wa.me/916304094177?text=I am interested in ${item.brand || defaultBrand} pump: ${item.desc} (${sku})`,
             image: null
         }));
     } catch (e) { 
@@ -267,7 +264,7 @@ function renderCards(list) {
     list.forEach(p => {
         const isStock = p.source === 'shopify';
         
-        // Dynamic Badge Logic
+        // Badge Logic
         let badge = "CATALOG";
         let badgeColor = "bg-blue-100 text-blue-700";
         
