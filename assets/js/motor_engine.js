@@ -11,8 +11,38 @@ window.EngineState = {
     phase: 1
 };
 
-// 🟢 MAIN FUNCTION
-async function runMotorEngine() {
+/**
+ * 🟢 WIZARD UI LOGIC
+ * Moved from HTML to here for better architecture.
+ */
+window.selectSource = function(source) {
+    window.EngineState.source = source;
+    
+    // Reset wizard UI
+    document.querySelectorAll('.wizard-step').forEach(e => e.classList.remove('active'));
+    document.getElementById('step2').classList.add('active');
+    
+    // Update Progress
+    const progress = document.getElementById('progressBar');
+    if(progress) progress.style.width = "66%";
+    
+    // Toggle Spec Boxes
+    document.querySelectorAll('.spec-box').forEach(e => e.classList.add('hidden'));
+    const targetOpt = document.getElementById('opt-' + source);
+    if(targetOpt) targetOpt.classList.remove('hidden');
+};
+
+window.goToStep = function(n) {
+    document.querySelectorAll('.wizard-step').forEach(e => e.classList.remove('active'));
+    const target = document.getElementById('step' + n);
+    if(target) target.classList.add('active');
+    
+    const progress = document.getElementById('progressBar');
+    if(progress) progress.style.width = (n * 33) + "%";
+};
+
+// 🟢 MAIN ENGINE FUNCTION
+window.runMotorEngine = async function() {
     const s = window.EngineState;
     
     // 1. CALCULATE PHYSICS
@@ -42,7 +72,7 @@ async function runMotorEngine() {
 
     // 2. UI LOADING
     const btn = document.getElementById('btn-search');
-    const oldBtn = btn.innerHTML;
+    const oldBtnContent = btn.innerHTML;
     btn.innerHTML = `<i class="ri-cpu-line animate-pulse"></i> AI SEARCHING...`;
     btn.disabled = true;
 
@@ -50,9 +80,8 @@ async function runMotorEngine() {
         const container = document.getElementById('results-grid');
         container.innerHTML = "";
         
-        // 🟢 FIX: Move to Step 3 (Results) immediately to show loading state
-        // Previously this tried to go to Step 4 which didn't exist
-        if(typeof goToStep === 'function') goToStep(3);
+        // Move to Results Step
+        window.goToStep(3);
 
         // 3. PARALLEL EXECUTION
         const [shopifyResults, aiResults] = await Promise.all([
@@ -66,21 +95,22 @@ async function runMotorEngine() {
         const debugEl = document.getElementById('calcDebug');
         if(debugEl) debugEl.innerHTML = `TDH: <strong>${Math.round(head)} ft</strong> • ${s.phase} Phase`;
 
+        const noMatchMsg = document.getElementById('no-match-msg');
         if (allMatches.length === 0) {
-            document.getElementById('no-match-msg').classList.remove('hidden');
+            noMatchMsg.classList.remove('hidden');
         } else {
-            document.getElementById('no-match-msg').classList.add('hidden');
+            noMatchMsg.classList.add('hidden');
             renderCards(allMatches);
         }
 
     } catch (e) {
-        console.error(e);
+        console.error("Engine Error:", e);
         alert("System Error: " + e.message);
     } finally {
-        btn.innerHTML = oldBtn;
+        btn.innerHTML = oldBtnContent;
         btn.disabled = false;
     }
-}
+};
 
 // 🟢 SHOPIFY FETCHER
 async function fetchShopifyData() {
@@ -112,30 +142,29 @@ async function fetchShopifyData() {
                 image: p.images[0]?.src
             };
         }).filter(item => item !== null); 
-    } catch (e) { console.log("Shopify Error", e); return []; }
+    } catch (e) { console.error("Shopify Fetch Error", e); return []; }
 }
 
 // 🟢 AI AGENT FETCHER
 async function fetchAIAgentData(userSpecs) {
     if (typeof getInventoryAgentUrl !== 'function') {
-        console.error("Config missing");
+        console.error("Config missing 'getInventoryAgentUrl'");
         return [];
     }
 
-    // 🟢 FIX: Removed Duplicate Declaration here
     const agentUrl = await getInventoryAgentUrl(); 
     if (!agentUrl) return [];
 
     try {
+        // 🟢 FIX: Removed 'no-cors'. 
+        // We MUST allow standard CORS to read the JSON response.
+        // Google Apps Script Web App must be deployed as "Who has access: Anyone".
         const res = await fetch(agentUrl, {
             method: 'POST', 
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 'text/plain' avoids CORS preflight complexity in some GAS setups
             body: JSON.stringify({ specs: userSpecs })
         });
         
-        if (res.type === 'opaque') return []; 
-
         const data = await res.json(); 
         if(data.matches) {
             return data.matches.map(m => ({
@@ -152,6 +181,7 @@ async function fetchAIAgentData(userSpecs) {
         }
         return [];
     } catch (e) {
+        console.warn("AI Agent Fetch Failed:", e);
         return [];
     }
 }
@@ -161,6 +191,7 @@ function renderCards(list) {
     const container = document.getElementById('results-grid');
     container.innerHTML = "";
     
+    // Sort: Shopify First
     list.sort((a, b) => (a.source === 'shopify' ? -1 : 1));
 
     list.forEach(p => {
