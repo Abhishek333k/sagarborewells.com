@@ -99,7 +99,6 @@ window.runMotorEngine = async function() {
 
     } catch (e) {
         console.error("Engine Error:", e);
-        // Show error nicely in the UI instead of alert
         const noMatchMsg = document.getElementById('no-match-msg');
         noMatchMsg.innerHTML = `<span class="text-red-500"><i class="ri-error-warning-line"></i> System Error: ${e.message}</span>`;
         noMatchMsg.classList.remove('hidden');
@@ -109,7 +108,7 @@ window.runMotorEngine = async function() {
     }
 };
 
-// 🟢 SHOPIFY FETCHER (ROBUST / FUZZY MATCHING)
+// 🟢 SHOPIFY FETCHER (FUZZY LOGIC)
 async function fetchShopifyData() {
     const s = window.EngineState;
     console.log("🔍 Starting Shopify Search for:", s);
@@ -119,16 +118,10 @@ async function fetchShopifyData() {
         const json = await res.json();
         
         const results = json.products.map(p => {
-            // 1. EXTRACT SPECS FROM TAGS & TITLE (Fuzzy Match)
-            let specs = {
-                type: 'unknown',
-                hp: 0,
-                phase: 1,
-                head: 0,
-                dia: 0
-            };
-
-            // Combine tags and title for searching
+            // 1. EXTRACT SPECS (Fuzzy Match)
+            let specs = { type: 'unknown', hp: 0, phase: 1, head: 0, dia: 0 };
+            
+            // Combine tags/title for searching
             const searchStr = (p.tags.join(" ") + " " + p.title).toLowerCase();
 
             // A. Detect Type
@@ -140,51 +133,28 @@ async function fetchShopifyData() {
                 specs.type = 'sewage';
             }
 
-            // B. Detect HP (Regex for "0.5 HP", "1HP", etc.)
+            // B. Detect HP
             const hpMatch = searchStr.match(/(\d+(\.\d+)?)\s?hp/);
             if (hpMatch) specs.hp = parseFloat(hpMatch[1]);
 
             // C. Detect Phase
             if (searchStr.includes('3 phase') || searchStr.includes('3phase') || searchStr.includes('3 ph')) {
                 specs.phase = 3;
-            } else {
-                specs.phase = 1; // Default to single phase
             }
 
-            // D. Detect Head (Look for "100 ft", "30 m")
-            // If explicit head tag exists (head:100), use it. Otherwise, guess.
+            // D. Detect Head (Heuristic)
             let explicitHead = 0;
-            p.tags.forEach(t => {
-                if(t.toLowerCase().includes('head:')) explicitHead = parseInt(t.split(':')[1]);
-            });
-            
-            if (explicitHead > 0) {
-                specs.head = explicitHead;
-            } else {
-                // Heuristic: If head missing, estimate based on HP? 
-                // Or looking for numbers near "ft" or "mtr"
-                // For safety, let's assume if we can't find head, we DON'T filter by it strictly, 
-                // OR we set a generous default.
-                specs.head = 999; // Allow it to pass if head is unknown
-            }
+            p.tags.forEach(t => { if(t.toLowerCase().includes('head:')) explicitHead = parseInt(t.split(':')[1]); });
+            specs.head = explicitHead > 0 ? explicitHead : 999; // 999 = Unknown (Passes filter)
 
-            // E. Detect Dia (Borewell only)
+            // E. Detect Dia
             if (searchStr.includes('v4') || searchStr.includes('4 inch') || searchStr.includes('100mm')) specs.dia = 4;
             if (searchStr.includes('v6') || searchStr.includes('6 inch') || searchStr.includes('150mm')) specs.dia = 6;
 
-
-            // 2. FILTERING LOGIC
-            // Filter 1: Type Mismatch
+            // 2. FILTERING
             if (specs.type !== 'unknown' && specs.type !== s.source) return null;
-
-            // Filter 2: Phase Mismatch
             if (specs.phase !== s.phase) return null;
-
-            // Filter 3: Borewell Dia Mismatch (You can't put a 6" pump in a 4" hole)
             if (s.source === 'borewell' && specs.dia > s.dia) return null;
-
-            // Filter 4: Head Capacity (Pump must be strong enough)
-            // Note: If specs.head is 999 (unknown), we let it pass to be safe
             if (specs.head !== 999 && specs.head < s.calculatedHead) return null;
 
             return {
@@ -217,7 +187,6 @@ async function fetchAIAgentData(userSpecs) {
 
     const agentUrl = await getInventoryAgentUrl(); 
     if (!agentUrl) {
-        // We throw an error here so the main try-catch block knows the AI failed critically
         console.warn("AI Agent URL not found in Firebase.");
         return []; 
     }
