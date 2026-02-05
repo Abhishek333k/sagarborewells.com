@@ -28,36 +28,72 @@ const CONTACT_INFO = {
     },
 
     // --- API KEYS ---
-    google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus", 
-    database_url: "https://script.google.com/macros/s/AKfycbwMJ16yDE-PsghDqyBa6mS4J-QXrMn10OYSEthKZEMRhv9uw6N1NpBN3_FgNX7PsmeSig/exec"
+    google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus"
 };
 
+// 🟢 INITIALIZE FIREBASE (Singleton Pattern)
+// Ensures Firebase is only loaded once per page load
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+    firebase.initializeApp(CONTACT_INFO.firebase_config);
+}
+
+// ---------------------------------------------------------
+// 🔐 SECURE CREDENTIAL FETCHERS (THE VAULT)
+// ---------------------------------------------------------
+
 /**
- * 🔐 SECURE CREDENTIAL FETCHER
- * Retrieves Telegram tokens from Firestore 'config' collection.
- * This ensures tokens are never hardcoded in the JS file.
+ * 1. TELEGRAM BOT CREDENTIALS
+ * Fetches token for booking notifications.
  */
 async function getTelegramCredentials() {
     try {
         if (!firebase.apps.length) return null;
         const db = firebase.firestore();
-        
-        // Fetching from a secure collection 'system_config' document 'telegram'
         const doc = await db.collection('system_config').doc('telegram').get();
         
-        if (doc.exists) {
-            return doc.data(); // Returns { bot_token: "...", chat_id: "..." }
-        } else {
-            console.error("Telegram Config Not Found in Firebase");
-            return null;
-        }
+        if (doc.exists) return doc.data(); 
+        console.error("Telegram Config Not Found in Firebase");
+        return null;
     } catch (error) {
         console.error("Error fetching credentials:", error);
         return null;
     }
 }
 
-// HELPER: Injects details automatically on load
+/**
+ * 2. AI INVENTORY AGENT URL (With Caching)
+ * Fetches the Google Apps Script Web App URL.
+ * Uses a memory cache to prevent spamming Firestore on repeated clicks.
+ */
+let _cachedAgentUrl = null;
+
+async function getInventoryAgentUrl() {
+    // Return from memory if already fetched this session
+    if (_cachedAgentUrl) return _cachedAgentUrl;
+
+    try {
+        if (!firebase.apps.length) return null;
+        const db = firebase.firestore();
+        
+        // Fetch from 'system_config' -> 'inventory' -> field: 'ai_agent_url'
+        const doc = await db.collection('system_config').doc('inventory').get();
+        
+        if (doc.exists && doc.data().ai_agent_url) {
+            _cachedAgentUrl = doc.data().ai_agent_url;
+            return _cachedAgentUrl;
+        } else {
+            console.error("🔥 CRITICAL: 'ai_agent_url' not found in Firestore.");
+            return null;
+        }
+    } catch (error) {
+        console.error("🔥 CONFIG ERROR: Could not fetch Agent URL.", error);
+        return null;
+    }
+}
+
+// ---------------------------------------------------------
+// 🛠️ UI HELPERS (Auto-Inject Contact Info)
+// ---------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
     const setTxt = (sel, val) => document.querySelectorAll(sel).forEach(el => el.innerText = val);
     const setHref = (sel, pre, val) => document.querySelectorAll(sel).forEach(el => { if(el.tagName==='A') el.href = pre + val; });
@@ -72,16 +108,3 @@ document.addEventListener("DOMContentLoaded", () => {
         el.innerHTML = `${CONTACT_INFO.address_line1}<br>${CONTACT_INFO.address_line2}`;
     });
 });
-
-async function getMasterListUrl() {
-    try {
-        if (!firebase.apps.length) return null;
-        const db = firebase.firestore();
-        const doc = await db.collection('system_config').doc('inventory').get();
-        if (doc.exists) return doc.data().master_sheet_url;
-        return null;
-    } catch (error) {
-        console.error("Config Error:", error);
-        return null;
-    }
-}
