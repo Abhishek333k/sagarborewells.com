@@ -56,7 +56,7 @@
 
     <aside class="w-64 bg-[#0B1120] border-r border-slate-800 flex flex-col flex-shrink-0 z-20">
         <div class="p-6 border-b border-slate-800">
-            <h1 class="text-xl font-black tracking-tight text-white">SBW<span class="text-blue-500 glow-text">ADMIN</span></h1>
+            <h1 class="text-xl font-black tracking-tight text-white">SBW <span class="text-blue-500 glow-text"> ADMIN</span></h1>
             <div class="flex items-center gap-2 mt-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><p class="text-[10px] text-emerald-500 font-mono uppercase tracking-widest">LIVE LINK</p></div>
         </div>
         <nav class="flex-grow p-4 space-y-1">
@@ -256,6 +256,17 @@
                 loginModal.classList.add('open');
             }
         });
+
+        // 🟢 TIMEOUT FALLBACK FOR LOADER (Wait 10s then kill loader)
+        setTimeout(() => {
+             const loader = document.getElementById('system-loader');
+             if(loader && loader.style.display !== 'none') {
+                 // Only hide if auth is taking too long, let user try to login
+                 const loginModal = document.getElementById('login-overlay');
+                 loader.style.display = 'none';
+                 if(loginModal) loginModal.classList.add('open');
+             }
+        }, 10000);
 
         function sendAdminOTP() {
             const phone = document.getElementById('adminPhone').value;
@@ -719,16 +730,8 @@
         
         function previewQuote(encoded) { 
             const data = JSON.parse(decodeURIComponent(encoded)); 
-            
-            // 🛑 BUG FIX: Pass full data to generator so it has access to rows, id, etc.
             if (!data.rows) {
-                // If rows are missing (old data), generate them on the fly for display
-                // 🟢 SAFE: Use 0 fallback to prevent infinite loop
-                let remaining = parseInt(data.depth || 0); 
-                let rows = "";
-                let floor = 0; 
-                let currentRate = 70;
-                
+                let remaining = parseInt(data.depth || 0); let rows = ""; let floor = 0; let currentRate = 70;
                 if (remaining > 0) {
                     while(remaining > 0) {
                         let chunk = (remaining >= 50) ? 50 : remaining;
@@ -739,22 +742,13 @@
                 }
                 data.rows = rows;
             }
-            
-            // Call template with FULL data object
-            const content = getInvoiceHTML(data); 
-            
-            document.getElementById('previewContent').innerHTML = content; 
-            currentPDFElement = content; 
-            document.getElementById('previewModal').classList.add('open'); 
+            const content = getInvoiceHTML(data); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); 
         }
 
         function previewCert(encoded) { 
             const data = JSON.parse(decodeURIComponent(encoded)); 
             const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType }; 
-            const content = getCertificateHTML(certData); 
-            document.getElementById('previewContent').innerHTML = content; 
-            currentPDFElement = content; 
-            document.getElementById('previewModal').classList.add('open'); 
+            const content = getCertificateHTML(certData); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); 
         }
 
         function confirmDownloadPDF() { const el = document.createElement('div'); el.innerHTML = currentPDFElement; document.body.appendChild(el); html2pdf().from(el).save('Document.pdf').then(() => document.body.removeChild(el)); }
@@ -763,8 +757,7 @@
         function openProjectModal(projectId) {
             const data = projectsCache.find(p => p.projectId === projectId);
             const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Project Archive</h2><p class="text-slate-400 font-mono text-xs">${data.projectId}</p></div><div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.customerName}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.location}</div></div></div><div class="grid grid-cols-3 gap-2 mb-6 text-center"> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">DEPTH</span><span class="text-white font-bold">${data.depth}ft</span></div> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">YIELD</span><span class="text-emerald-400 font-bold">${data.yield}</span></div> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">DATE</span><span class="text-white font-bold">${data.date}</span></div> </div><div class="grid grid-cols-2 gap-3 mb-4"><button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-file-paper-line"></i> Certificate</button><button onclick="editProject('${data.projectId}')" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-edit-line"></i> Edit Record</button></div><div class="text-center pt-2"><button onclick="deleteRecord('projects', '${data.projectId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE ARCHIVE</button></div>`;
-            document.getElementById('modalContent').innerHTML = content; 
-            document.getElementById('detailModal').classList.add('open');
+            document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open');
         }
 
         function openLeadModal(docId) {
@@ -784,9 +777,23 @@
         }
         function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }); }
         function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
-        function initMapTools() { const input = document.getElementById('p_loc'); if(input) { const ac = new google.maps.places.Autocomplete(input); ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); } }
+        
+        // 🟢 FIX: Global callback for Google Maps
+        window.initMapTools = function() { 
+            const input = document.getElementById('p_loc'); 
+            if(input) { 
+                const ac = new google.maps.places.Autocomplete(input); 
+                ac.addListener('place_changed', () => { 
+                    const p = ac.getPlace(); 
+                    if(p.geometry && map) map.setCenter(p.geometry.location); 
+                }); 
+            } 
+        };
+        
         function openMapPicker() { if(typeof google === 'undefined') { notify("System Initializing...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
         function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
+        
+        // 🟢 FIX: Load Script Only After Config is Ready
         const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`; s.async = true; s.defer = true; document.body.appendChild(s);
     </script>
 </body>
