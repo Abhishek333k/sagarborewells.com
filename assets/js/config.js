@@ -32,49 +32,47 @@ const CONTACT_INFO = {
 };
 
 // 🟢 INITIALIZE FIREBASE (Singleton Pattern)
-// Ensures Firebase is only loaded once per page load
 if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     firebase.initializeApp(CONTACT_INFO.firebase_config);
+} else if (typeof firebase === 'undefined') {
+    console.error("🔥 CRITICAL: Firebase SDK not loaded in HTML. Please add the <script> tags.");
 }
 
 // ---------------------------------------------------------
-// 🔐 SECURE CREDENTIAL FETCHERS (THE VAULT)
+// 🔐 SECURE CREDENTIAL FETCHERS
 // ---------------------------------------------------------
 
 /**
  * 1. TELEGRAM BOT CREDENTIALS
- * Fetches token for booking notifications.
  */
 async function getTelegramCredentials() {
     try {
-        if (!firebase.apps.length) return null;
+        if (typeof firebase === 'undefined') return null;
         const db = firebase.firestore();
         const doc = await db.collection('system_config').doc('telegram').get();
-        
         if (doc.exists) return doc.data(); 
-        console.error("Telegram Config Not Found in Firebase");
         return null;
     } catch (error) {
-        console.error("Error fetching credentials:", error);
+        console.error("Error fetching Telegram credentials:", error);
         return null;
     }
 }
 
 /**
  * 2. AI INVENTORY AGENT URL (With Caching)
- * Fetches the Google Apps Script Web App URL.
- * Uses a memory cache to prevent spamming Firestore on repeated clicks.
  */
 let _cachedAgentUrl = null;
 
 async function getInventoryAgentUrl() {
-    // Return from memory if already fetched this session
     if (_cachedAgentUrl) return _cachedAgentUrl;
 
     try {
-        if (!firebase.apps.length) return null;
-        const db = firebase.firestore();
+        if (typeof firebase === 'undefined') {
+            alert("System Error: Database connection missing. (Firebase SDK)");
+            return null;
+        }
         
+        const db = firebase.firestore();
         // Fetch from 'system_config' -> 'inventory' -> field: 'ai_agent_url'
         const doc = await db.collection('system_config').doc('inventory').get();
         
@@ -82,7 +80,7 @@ async function getInventoryAgentUrl() {
             _cachedAgentUrl = doc.data().ai_agent_url;
             return _cachedAgentUrl;
         } else {
-            console.error("🔥 CRITICAL: 'ai_agent_url' not found in Firestore.");
+            console.error("🔥 CONFIG ERROR: 'ai_agent_url' not found in Firestore.");
             return null;
         }
     } catch (error) {
@@ -92,7 +90,7 @@ async function getInventoryAgentUrl() {
 }
 
 // ---------------------------------------------------------
-// 🛠️ UI HELPERS (Auto-Inject Contact Info)
+// 🛠️ UI HELPERS
 // ---------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
     const setTxt = (sel, val) => document.querySelectorAll(sel).forEach(el => el.innerText = val);
@@ -100,7 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setTxt('.dynamic-phone', CONTACT_INFO.phone_display);
     setHref('.dynamic-phone', 'tel:+', CONTACT_INFO.whatsapp_api);
-    
     setTxt('.dynamic-email', CONTACT_INFO.email);
     setHref('.dynamic-email', 'mailto:', CONTACT_INFO.email);
     
