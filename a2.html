@@ -37,7 +37,14 @@
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; } .btn-danger:hover { background: #ef4444; color: white; }
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
         .modal-overlay.open { display: flex; opacity: 1; }
+        
+        /* 🟢 FIX: Added Map Wrapper and Pin CSS */
         .map-wrapper { position: relative; width: 100%; height: 350px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
+        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+        .reticle-dot { width: 4px; height: 4px; background-color: #3b82f6; border-radius: 50%; box-shadow: 0 0 8px #3b82f6; }
+        .reticle-ring { width: 40px; height: 40px; border: 1px solid rgba(59, 130, 246, 0.5); border-radius: 50%; position: absolute; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+        @keyframes ping { 75%, 100% { transform: scale(1.5); opacity: 0; } }
+
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
@@ -442,102 +449,6 @@
                         `;
                     });
                 });
-        }
-
-        // --- FILTER & RENDER LOGIC ---
-        function filterData() {
-            const term = document.getElementById('searchInput').value.toLowerCase();
-            const dateStartStr = document.getElementById('dateStart').value;
-            const dateEndStr = document.getElementById('dateEnd').value;
-            
-            let start = dateStartStr ? new Date(dateStartStr).setHours(0,0,0,0) : 0;
-            let end = dateEndStr ? new Date(dateEndStr).setHours(23,59,59,999) : 9999999999999;
-
-            const list = currentView === 'leads' ? leadsCache : projectsCache;
-            
-            const filtered = list.filter(item => {
-                // Text Search
-                const matchesText = (item.name + item.mobile + item.loc + (item.docId||item.projectId)).toLowerCase().includes(term);
-                
-                // Date Search (using timestamp for Leads, date string for Projects)
-                let itemDate = 0;
-                if(item.timestamp) itemDate = item.timestamp.toDate().getTime();
-                else if(item.date) itemDate = new Date(item.date).getTime();
-                
-                const matchesDate = itemDate >= start && itemDate <= end;
-
-                return matchesText && matchesDate;
-            });
-
-            if(currentView === 'leads') renderLeads(filtered); else renderProjects(filtered);
-        }
-
-        function clearFilters() { 
-            document.getElementById('searchInput').value = ""; 
-            document.getElementById('dateStart').value = "";
-            document.getElementById('dateEnd').value = "";
-            filterData(); 
-        }
-
-        function renderLeads(list) {
-            const el = document.getElementById('leads-list'); el.innerHTML = "";
-            if(list.length === 0) { el.innerHTML = '<div class="text-center text-slate-500 py-10">No matching records.</div>'; return; }
-            
-            list.forEach(data => { 
-                el.innerHTML += `<div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 flex justify-between items-center hover:bg-slate-800/50 cursor-pointer border border-slate-800/50 hover:border-blue-500/30"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><i class="ri-user-search-line"></i></div><div><div class="font-bold text-white text-sm">${data.name}</div><div class="text-[10px] text-slate-400 font-mono">${data.loc}</div></div></div><div class="text-right"><div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[9px] text-blue-400 font-mono font-bold uppercase">${data.status || 'Pending'}</div></div></div>`; 
-            });
-        }
-
-        function renderProjects(list) {
-            const el = document.getElementById('projects-list'); el.innerHTML = "";
-            if(list.length === 0) { el.innerHTML = '<div class="text-center text-slate-500 py-10">No matching records.</div>'; return; }
-
-            list.forEach(data => { 
-                el.innerHTML += `<div onclick="openProjectModal('${data.projectId}')" class="glass-card p-5 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition border-y border-r border-slate-800/50"><div class="absolute top-2 right-2 text-slate-600 text-[9px] font-mono">${data.date}</div><h3 class="font-bold text-base text-white mb-1">${data.location}</h3><p class="text-xs text-slate-400 mb-3 font-mono">${data.customerName}</p><div class="text-[10px] text-emerald-500 font-mono tracking-widest bg-emerald-900/20 inline-block px-2 py-0.5 rounded border border-emerald-900/50">${data.projectId}</div></div>`; 
-            });
-        }
-
-        // --- SILENT LEAD UTILS ---
-        function updateSilentStatus(docId, status) {
-            db.collection('silent_leads').doc(docId).update({ adminStatus: status })
-              .then(() => notify(`Status updated to ${status}`))
-              .catch(e => notify("Update failed", "error"));
-        }
-
-        function viewSilentHistory(docId) {
-            db.collection('silent_leads').doc(docId).get().then(doc => {
-                const data = doc.data();
-                const log = data.activity_log || [];
-                log.sort((a, b) => new Date(b.time) - new Date(a.time));
-
-                let historyHTML = `
-                    <div class="text-center mb-4">
-                        <h3 class="text-white font-bold text-lg">Activity Log</h3>
-                        <p class="text-slate-400 text-xs font-mono">${data.mobile}</p>
-                    </div>
-                    <div class="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                `;
-
-                if (log.length === 0) {
-                    historyHTML += `<div class="text-center text-slate-500 text-xs">No detailed history found.</div>`;
-                } else {
-                    log.forEach(item => {
-                        const dateObj = new Date(item.time);
-                        historyHTML += `
-                            <div class="bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center text-xs">
-                                <div>
-                                    <div class="text-white font-bold">${item.depth} ft <span class="text-slate-500 font-normal">@ ${item.loc || 'Unknown'}</span></div>
-                                    <div class="text-slate-500 text-[10px]">${dateObj.toLocaleDateString()} • ${dateObj.toLocaleTimeString()}</div>
-                                </div>
-                                <div class="text-emerald-400 font-bold">₹${parseInt(item.total).toLocaleString()}</div>
-                            </div>
-                        `;
-                    });
-                }
-                historyHTML += `</div>`;
-                document.getElementById('modalContent').innerHTML = historyHTML;
-                document.getElementById('detailModal').classList.add('open');
-            });
         }
 
         // --- MAPS & ZONES LOGIC ---
