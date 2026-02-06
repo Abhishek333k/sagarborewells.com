@@ -52,6 +52,7 @@
     <div id="system-loader" class="fixed inset-0 z-[1000] bg-[#0f172a] flex flex-col items-center justify-center text-white">
         <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
         <div class="font-mono text-xs tracking-widest animate-pulse text-blue-400">INITIALIZING SBW CONSOLE...</div>
+        <div id="loader-status" class="mt-2 text-[10px] text-slate-500">Connecting...</div>
     </div>
 
     <aside class="w-64 bg-[#0B1120] border-r border-slate-800 flex flex-col flex-shrink-0 z-20">
@@ -217,11 +218,40 @@
     <div id="mapModal" class="modal-overlay" style="z-index: 200;"><div class="glass-card p-6 w-full max-w-2xl border border-slate-600 shadow-2xl"><h3 class="text-lg font-bold text-white mb-4 text-center">Satellite Targeting</h3><div class="map-wrapper"><div id="mapContainer" class="w-full h-full"></div><div class="target-reticle"><div class="reticle-dot"></div><div class="reticle-ring"></div><div class="absolute top-[30px] w-[1px] h-[20px] bg-gradient-to-b from-blue-400 to-transparent opacity-50"></div><div class="absolute w-[80px] h-[1px] bg-blue-500/30"></div><div class="absolute h-[80px] w-[1px] bg-blue-500/30"></div></div></div><div class="flex justify-center gap-4 mt-6"><button onclick="document.getElementById('mapModal').classList.remove('open')" class="text-slate-400 hover:text-white font-bold px-6 text-xs">ABORT</button><button onclick="confirmLocation()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded font-bold text-xs shadow-lg shadow-blue-900/50">LOCK COORDINATES</button></div></div></div>
 
     <script>
-        if(CONTACT_INFO.firebase_config) firebase.initializeApp(CONTACT_INFO.firebase_config);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+        // 🔴 SAFETY TIMER: Force Loader Hide after 10s (Even if Firebase Fails)
+        setTimeout(() => {
+             const loader = document.getElementById('system-loader');
+             if(loader && loader.style.display !== 'none') {
+                 console.warn("⚠️ System Loader Timed Out - Forcing UI Open");
+                 const loginModal = document.getElementById('login-overlay');
+                 loader.style.display = 'none';
+                 if(loginModal) loginModal.classList.add('open');
+                 // Only verify Toastify exists before calling
+                 if(typeof Toastify === 'function') {
+                     Toastify({ text: "Connection slow or Config missing. Offline mode.", duration: 5000, style: { background: "#f59e0b" } }).showToast();
+                 }
+             }
+        }, 10000);
+
+        // 🔴 FIREBASE INIT WRAPPER
+        let db, auth;
+        try {
+            if(typeof CONTACT_INFO === 'undefined' || !CONTACT_INFO.firebase_config) {
+                throw new Error("Config Missing");
+            }
+            if(firebase.apps.length === 0) {
+                firebase.initializeApp(CONTACT_INFO.firebase_config);
+            }
+            db = firebase.firestore();
+            auth = firebase.auth();
+        } catch (e) {
+            console.error("🔥 CRITICAL FIREBASE ERROR:", e);
+            // Alert user immediately if critical config is missing
+            alert("System Configuration Error: " + e.message);
+        }
 
         function notify(msg, type='success') {
+            if(typeof Toastify !== 'function') return alert(msg);
             Toastify({
                 text: msg, duration: 3000, gravity: "top", position: "right",
                 style: { background: type==='success' ? "#059669" : "#dc2626", borderRadius: "8px", boxShadow: "0 4px 15px rgba(0,0,0,0.3)", fontSize: "12px", fontWeight: "bold" }
@@ -229,46 +259,38 @@
         }
 
         // --- AUTH & SETUP ---
-        auth.onAuthStateChanged(user => {
-            const loader = document.getElementById('system-loader');
-            const loginModal = document.getElementById('login-overlay');
+        if(auth) {
+            auth.onAuthStateChanged(user => {
+                const loader = document.getElementById('system-loader');
+                const loginModal = document.getElementById('login-overlay');
 
-            if(user) {
-                db.collection('admins').doc(user.phoneNumber).get().then(doc => {
-                    if (doc.exists) {
-                        if(loader) loader.style.display = 'none';
-                        if(loginModal) loginModal.classList.remove('open');
-                        showSection('leads'); 
-                        loadAnalytics(); 
-                    } else { 
-                        notify("UNAUTHORIZED ACCESS", "error"); 
-                        auth.signOut(); 
+                if(user) {
+                    db.collection('admins').doc(user.phoneNumber).get().then(doc => {
+                        if (doc.exists) {
+                            if(loader) loader.style.display = 'none';
+                            if(loginModal) loginModal.classList.remove('open');
+                            showSection('leads'); 
+                            loadAnalytics(); 
+                        } else { 
+                            notify("UNAUTHORIZED ACCESS", "error"); 
+                            auth.signOut(); 
+                            if(loader) loader.style.display = 'none';
+                            loginModal.classList.add('open');
+                        }
+                    }).catch(e => {
+                        notify("System Error: " + e.message, "error");
                         if(loader) loader.style.display = 'none';
                         loginModal.classList.add('open');
-                    }
-                }).catch(e => {
-                    notify("System Error: " + e.message, "error");
+                    });
+                } else {
                     if(loader) loader.style.display = 'none';
                     loginModal.classList.add('open');
-                });
-            } else {
-                if(loader) loader.style.display = 'none';
-                loginModal.classList.add('open');
-            }
-        });
-
-        // 🟢 TIMEOUT FALLBACK FOR LOADER (Wait 10s then kill loader)
-        setTimeout(() => {
-             const loader = document.getElementById('system-loader');
-             if(loader && loader.style.display !== 'none') {
-                 // Only hide if auth is taking too long, let user try to login
-                 const loginModal = document.getElementById('login-overlay');
-                 loader.style.display = 'none';
-                 if(loginModal) loginModal.classList.add('open');
-             }
-        }, 10000);
+                }
+            });
+        }
 
         function sendAdminOTP() {
+            if(!auth) return notify("System Offline", "error");
             const phone = document.getElementById('adminPhone').value;
             if(phone.length !== 10) return notify("INVALID ID", "error");
             const btn = document.getElementById('sendOtpBtn'); btn.innerText = "TRANSMITTING...";
@@ -334,7 +356,8 @@
             el.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Connecting to live feed...</div>';
             
             if(leadsUnsubscribe) leadsUnsubscribe(); 
-            
+            if(!db) return; // Safety check
+
             leadsUnsubscribe = db.collection('leads').orderBy('timestamp','desc').limit(100)
                 .onSnapshot(snap => {
                     leadsCache = [];
@@ -349,6 +372,7 @@
             el.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Syncing archives...</div>';
 
             if(projectsUnsubscribe) projectsUnsubscribe();
+            if(!db) return;
 
             projectsUnsubscribe = db.collection('projects').orderBy('projectId', 'desc')
                 .onSnapshot(snap => {
@@ -363,6 +387,7 @@
             list.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Scanning Window Shoppers...</div>';
             
             if(silentUnsubscribe) silentUnsubscribe();
+            if(!db) return;
 
             silentUnsubscribe = db.collection('silent_leads').orderBy('last_updated', 'desc').limit(50)
                 .onSnapshot(snap => {
@@ -696,6 +721,7 @@
 
         // --- CORE UTILS ---
         function loadAnalytics() {
+            if(!db) return;
             let totalDepth = 0; let totalRevenue = 0; let leadCount = 0; let projectCount = 0;
             db.collection('projects').get().then(snap => { projectCount = snap.size; snap.forEach(doc => { totalDepth += parseInt(doc.data().depth || 0); }); document.getElementById('stat-depth').innerText = totalDepth.toLocaleString() + " ft"; updateConversion(); });
             db.collection('leads').get().then(snap => { leadCount = snap.size; snap.forEach(doc => { totalRevenue += parseInt(doc.data().total || 0); }); document.getElementById('stat-revenue').innerText = "₹" + (totalRevenue/100000).toFixed(1) + "L"; updateConversion(); });
@@ -793,8 +819,10 @@
         function openMapPicker() { if(typeof google === 'undefined') { notify("System Initializing...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
         function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
         
-        // 🟢 FIX: Load Script Only After Config is Ready
-        const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`; s.async = true; s.defer = true; document.body.appendChild(s);
+        // 🟢 FIX: Load Script Only After Config is Ready (if Config exists)
+        if(typeof CONTACT_INFO !== 'undefined' && CONTACT_INFO.google_maps_key) {
+            const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`; s.async = true; s.defer = true; document.body.appendChild(s);
+        }
     </script>
 </body>
 </html>
