@@ -14,7 +14,7 @@ if (typeof window.CONTACT_INFO === 'undefined') {
         
         // 🚨 CRITICAL FIX: Added missing map key. 
         // RESTRICT THIS KEY in Google Cloud Console to your domain (sagarborewells.com)
-        google_maps_key: "YOUR_GOOGLE_MAPS_API_KEY_HERE", 
+        google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus", 
 
         social: {
             instagram: "https://www.instagram.com/sagar_bore_wells/",
