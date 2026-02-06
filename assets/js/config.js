@@ -1,94 +1,87 @@
 // FILENAME: assets/js/config.js
 
-// 🟢 ARCHITECTURAL FIX: Use 'var' or window check to prevent re-declaration crashes
-if (typeof window.CONTACT_INFO === 'undefined') {
-    window.CONTACT_INFO = {
-        // 🛠️ OPS IDENTITY
-        whatsapp_api: "916304094177",
-        phone_display: "+91 63040-94177",
-        email: "support@sagarborewells.com",
+const CONTACT_INFO = {
+    // --- MAIN CONTACT ---
+    whatsapp_api: "916304094177", 
+    phone_display: "+91 63040-94177", 
+    email: "support@sagarborewells.com",
+    
+    // --- OFFICE LOCATION ---
+    address_line1: "Gowtham Buddha Rd, beside UCO Bank",
+    address_line2: "Mangalagiri, Andhra Pradesh, India - 522503",
+    
+    // --- SOCIAL MEDIA ---
+    social: {
+        instagram: "https://www.instagram.com/sagar_bore_wells/",
+        youtube: "https://www.youtube.com/@Sagar_Bore_Wells"
+    },
 
-        // 📍 LOCATION DATA
-        address_line1: "Gowtham Buddha Rd, beside UCO Bank",
-        address_line2: "Mangalagiri, Andhra Pradesh, India - 522503",
-        
-        // 🚨 CRITICAL FIX: Added missing map key. 
-        // RESTRICT THIS KEY in Google Cloud Console to your domain (sagarborewells.com)
-        google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus", 
+    // --- FIREBASE CONFIG ---
+    firebase_config: {
+        apiKey: "AIzaSyAp3D__eHpiOaPoQmO2eXL25C2evR0yqfQ",
+        authDomain: "sbw-ops-956b1.firebaseapp.com",
+        projectId: "sbw-ops-956b1",
+        storageBucket: "sbw-ops-956b1.firebasestorage.app",
+        messagingSenderId: "958364659529",
+        appId: "1:958364659529:web:bb3387a1ded9374ed0f498",
+        measurementId: "G-XLMWW4MMTL"
+    },
 
-        social: {
-            instagram: "https://www.instagram.com/sagar_bore_wells/",
-            youtube: "https://www.youtube.com/@Sagar_Bore_Wells"
-        },
+    // --- API KEYS ---
+    google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus", 
+    database_url: "https://script.google.com/macros/s/AKfycbwMJ16yDE-PsghDqyBa6mS4J-QXrMn10OYSEthKZEMRhv9uw6N1NpBN3_FgNX7PsmeSig/exec"
+};
 
-        // 🔥 FIREBASE CONFIG (Ensure Firestore Rules are set to 'allow read/write: if request.auth != null')
-        firebase_config: {
-            apiKey: "AIzaSyAp3D__eHpiOaPoQmO2eXL25C2evR0yqfQ",
-            authDomain: "sbw-ops-956b1.firebaseapp.com",
-            projectId: "sbw-ops-956b1",
-            storageBucket: "sbw-ops-956b1.firebasestorage.app",
-            messagingSenderId: "958364659529",
-            appId: "1:958364659529:web:bb3387a1ded9374ed0f498",
-            measurementId: "G-XLMWW4MMTL"
-        }
-    };
-}
-
-// 🟢 SAFE INITIALIZATION
-// Checks if Firebase SDK is loaded AND if an app hasn't been initialized yet
-if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+/**
+ * 🔐 SECURE CREDENTIAL FETCHER
+ * Retrieves Telegram tokens from Firestore 'config' collection.
+ * This ensures tokens are never hardcoded in the JS file.
+ */
+async function getTelegramCredentials() {
     try {
-        firebase.initializeApp(window.CONTACT_INFO.firebase_config);
-    } catch(e) {
-        console.error("OpsCode Critical: Firebase Init Failed", e);
+        if (!firebase.apps.length) return null;
+        const db = firebase.firestore();
+        
+        // Fetching from a secure collection 'system_config' document 'telegram'
+        const doc = await db.collection('system_config').doc('telegram').get();
+        
+        if (doc.exists) {
+            return doc.data(); // Returns { bot_token: "...", chat_id: "..." }
+        } else {
+            console.error("Telegram Config Not Found in Firebase");
+            return null;
+        }
+    } catch (error) {
+        console.error("Error fetching credentials:", error);
+        return null;
     }
 }
 
-// ---------------------------------------------------------
-// 🔐 SECURE VAULT ACCESSORS
-// ---------------------------------------------------------
-
-async function getGeminiKey() {
-    if (typeof firebase === 'undefined') return null;
-    try {
-        // Optimization: Cache key in session storage to save DB reads?
-        // For now, keep direct fetch for security.
-        const doc = await firebase.firestore().collection('system_config').doc('api_keys').get();
-        return doc.exists ? doc.data().gemini_flash : null;
-    } catch (e) { console.warn("Vault Access Denied"); return null; }
-}
-
-async function getInventoryConfig() {
-    if (typeof firebase === 'undefined') return null;
-    try {
-        const doc = await firebase.firestore().collection('system_config').doc('inventory').get();
-        return doc.exists ? doc.data() : null;
-    } catch (e) { return null; }
-}
-
-// ---------------------------------------------------------
-// 🛠️ UI HYDRATION (Safe)
-// ---------------------------------------------------------
+// HELPER: Injects details automatically on load
 document.addEventListener("DOMContentLoaded", () => {
-    const info = window.CONTACT_INFO;
+    const setTxt = (sel, val) => document.querySelectorAll(sel).forEach(el => el.innerText = val);
+    const setHref = (sel, pre, val) => document.querySelectorAll(sel).forEach(el => { if(el.tagName==='A') el.href = pre + val; });
+
+    setTxt('.dynamic-phone', CONTACT_INFO.phone_display);
+    setHref('.dynamic-phone', 'tel:+', CONTACT_INFO.whatsapp_api);
     
-    // Helper to safely update elements only if they exist
-    const safeSet = (selector, callback) => {
-        const els = document.querySelectorAll(selector);
-        if(els.length > 0) els.forEach(callback);
-    };
-
-    safeSet('.dynamic-phone', el => {
-        el.innerText = info.phone_display;
-        if(el.tagName === 'A') el.href = `tel:+${info.whatsapp_api}`;
-    });
-
-    safeSet('.dynamic-email', el => {
-        el.innerText = info.email;
-        if(el.tagName === 'A') el.href = `mailto:${info.email}`;
-    });
-
-    safeSet('.dynamic-address', el => {
-        el.innerHTML = `${info.address_line1}<br>${info.address_line2}`;
+    setTxt('.dynamic-email', CONTACT_INFO.email);
+    setHref('.dynamic-email', 'mailto:', CONTACT_INFO.email);
+    
+    document.querySelectorAll('.dynamic-address').forEach(el => {
+        el.innerHTML = `${CONTACT_INFO.address_line1}<br>${CONTACT_INFO.address_line2}`;
     });
 });
+
+async function getMasterListUrl() {
+    try {
+        if (!firebase.apps.length) return null;
+        const db = firebase.firestore();
+        const doc = await db.collection('system_config').doc('inventory').get();
+        if (doc.exists) return doc.data().master_sheet_url;
+        return null;
+    } catch (error) {
+        console.error("Config Error:", error);
+        return null;
+    }
+}
