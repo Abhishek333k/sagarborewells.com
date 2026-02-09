@@ -211,12 +211,12 @@
 
                       docs.forEach(data => {
                           const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                          
-                          // Check for active booking to update Hero Tracker
-                          if (data.status !== 'Quote Generated' && !activeBookingFound) {
-                              updateLiveTracker(data);
-                              activeBookingFound = true;
-                          }
+            
+                        // Show tracker only if it's an ACTIVE job (Not Quote, Not Completed)
+                        if (data.status !== 'Quote Generated' && data.status !== 'Completed' && !activeBookingFound) {
+                            updateLiveTracker(data);
+                            activeBookingFound = true;
+                        }
 
                           // 🟢 NEW CARD LAYOUT
                           const card = `
