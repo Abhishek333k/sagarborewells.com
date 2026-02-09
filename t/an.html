@@ -21,6 +21,32 @@
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
+        /* 🟢 GOOGLE MAPS AUTOCOMPLETE DARK THEME */
+        .pac-container {
+            background-color: #1e293b !important; /* Dark Slate Background */
+            border: 1px solid #334155 !important;
+            border-radius: 8px !important;
+            font-family: 'Inter', sans-serif !important;
+            margin-top: 5px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+        }
+        .pac-item {
+            border-top: 1px solid #334155 !important;
+            color: #cbd5e1 !important; /* Light Grey Text */
+            padding: 10px !important;
+            cursor: pointer !important;
+        }
+        .pac-item:hover {
+            background-color: #334155 !important; /* Hover Effect */
+        }
+        .pac-item-query {
+            color: #ffffff !important; /* White text for the main match */
+            font-weight: bold !important;
+        }
+        /* Hide the Google logo if it ruins the vibe (Optional but cleaner) */
+        .pac-logo:after {
+            display: none !important;
+        }
         /* 🟢 MISSING MAP PIN STYLES */
         .map-wrapper { position: relative; width: 100%; height: 350px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
         .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; display: flex; align-items: center; justify-content: center; }
@@ -51,32 +77,6 @@
         
         #previewContent { background-color: #525659; display: flex; justify-content: center; padding: 40px; overflow-y: auto; }
         #previewContent > div { width: 210mm; min-height: 297mm; background: white; box-shadow: 0 0 15px rgba(0,0,0,0.5); box-sizing: border-box; overflow: hidden; }
-        /* 🟢 GOOGLE MAPS AUTOCOMPLETE DARK THEME */
-        .pac-container {
-            background-color: #1e293b !important; /* Dark Slate Background */
-            border: 1px solid #334155 !important;
-            border-radius: 8px !important;
-            font-family: 'Inter', sans-serif !important;
-            margin-top: 5px !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
-        }
-        .pac-item {
-            border-top: 1px solid #334155 !important;
-            color: #cbd5e1 !important; /* Light Grey Text */
-            padding: 10px !important;
-            cursor: pointer !important;
-        }
-        .pac-item:hover {
-            background-color: #334155 !important; /* Hover Effect */
-        }
-        .pac-item-query {
-            color: #ffffff !important; /* White text for the main match */
-            font-weight: bold !important;
-        }
-        /* Hide the Google logo if it ruins the vibe (Optional but cleaner) */
-        .pac-logo:after {
-            display: none !important;
-        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-sm bg-[#0f172a]"> 
@@ -194,6 +194,39 @@
                         <button onclick="loadAdminZones()" class="text-xs text-blue-400 hover:text-white"><i class="ri-refresh-line"></i></button>
                     </div>
                     <div id="zonesList" class="flex-grow overflow-y-auto space-y-2 pr-1 custom-scrollbar"><div class="text-center text-slate-500 text-xs mt-10">Loading database...</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-dataops" class="content-section hidden max-w-5xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-3 bg-blue-900/30 rounded-lg text-blue-400"><i class="ri-cloud-windy-line text-xl"></i></div>
+                        <div><h3 class="text-lg font-bold text-white">WRIS Data Ingestion</h3><p class="text-xs text-slate-400">Import Groundwater Levels from Govt API/JSON</p></div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                            <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 2: JSON/CSV Upload (Reliable)</label>
+                            <p class="text-xs text-slate-400 mb-2">Download data from WRIS website, save as JSON, and upload here. (Auto-Chunking Enabled)</p>
+                            <input type="file" id="jsonUpload" accept=".json,.geojson" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-600"/>
+                            <button onclick="processJsonFile()" class="mt-3 w-full btn-pro bg-emerald-600 hover:bg-emerald-500 text-white">PROCESS & UPLOAD TO FIREBASE</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-3 bg-red-900/30 rounded-lg text-red-400"><i class="ri-alert-line text-xl"></i></div>
+                        <div><h3 class="text-lg font-bold text-white">Regional Risk Mapper</h3><p class="text-xs text-slate-400">Map Districts/Mandals to CGWB Risk Scores</p></div>
+                    </div>
+                    <div class="bg-slate-900 p-4 rounded border border-slate-700 h-64 overflow-y-auto custom-scrollbar" id="riskConsole">
+                        <div class="text-[10px] font-mono text-slate-500">System Ready...</div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <input type="text" id="riskRegion" class="cyber-input" placeholder="Region (e.g. Guntur)">
+                        <select id="riskLevel" class="cyber-input w-32"><option value="Safe">Safe</option><option value="Semi-Critical">Semi-Critical</option><option value="Critical">Critical</option><option value="Over-Exploited">Over-Exploited</option></select>
+                        <button onclick="addRiskRegion()" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white"><i class="ri-add-line"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -639,8 +672,66 @@
         function jumpToCoords() { const lat = parseFloat(document.getElementById('manualLat').value); const lng = parseFloat(document.getElementById('manualLng').value); if(!isNaN(lat) && !isNaN(lng)) { adminMap.setCenter({lat, lng}); adminMap.setZoom(16); } }
         function toggleDrawButtons(isDrawing) { document.getElementById('btnDraw').classList.toggle('hidden', isDrawing); document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing); }
         function enableEditorUI(title, btnText) { document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('zonePanelTitle').innerText = title; document.getElementById('btnSaveZone').innerText = btnText; }
+
+        function addRiskRegion() {
+            const region = document.getElementById('riskRegion').value; const status = document.getElementById('riskLevel').value; if(!region) return notify("Enter Region", "error");
+            db.collection('risk_map').doc(region.toLowerCase()).set({ region: region.toLowerCase(), status: status, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
+                document.getElementById('riskConsole').innerHTML += `<div class="text-green-400">✓ Mapped: ${region} -> ${status}</div>`; notify("Risk Region Added");
+            });
+        }
         
-    
+        function processJsonFile() {
+            const fileInput = document.getElementById('jsonUpload');
+            if(!fileInput.files.length) return notify("Select a file first", "error");
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            notify("Parsing Data...", "info");
+            
+            reader.onload = async function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    const collectionRef = db.collection('layer_waterbodies'); 
+                    const items = Array.isArray(json) ? json : (json.features || []);
+                    
+                    if(items.length === 0) return notify("Empty Data", "error");
+
+                    // 🟢 CHUNKING LOGIC: Firestore Batch limit is 500
+                    const chunkSize = 400; 
+                    let totalIngested = 0;
+
+                    for (let i = 0; i < items.length; i += chunkSize) {
+                        const chunk = items.slice(i, i + chunkSize);
+                        const batch = db.batch();
+                        
+                        chunk.forEach(item => {
+                            const docId = 'wb_' + Math.random().toString(36).substr(2, 9);
+                            const docRef = collectionRef.doc(docId);
+                            const payload = {
+                                name: item.properties?.name || "Unknown Waterbody",
+                                type: "Waterbody",
+                                coords: item.geometry?.coordinates[0]?.map(c => ({lat: c[1], lng: c[0]})) || [], 
+                                color: "#3b82f6", 
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            };
+                            if(payload.coords.length > 0) {
+                                batch.set(docRef, payload);
+                            }
+                        });
+
+                        await batch.commit();
+                        totalIngested += chunk.length;
+                        notify(`Ingested ${totalIngested} / ${items.length}...`);
+                    }
+
+                    notify(`COMPLETE: ${totalIngested} records synced!`, "success");
+
+                } catch (error) {
+                    notify("Invalid JSON File", "error");
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+        }
 
         // --- CORE UTILS ---
         function loadAnalytics() {
