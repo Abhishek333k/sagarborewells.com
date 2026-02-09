@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBW Admin Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/pdf_template.js"></script>
+    <script src="assets/js/certificate_template.js"></script>
+
+    <style>
+        /* CYBER THEME */
+        body { background-color: #0f172a; font-family: 'Inter', sans-serif; color: #e2e8f0; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
+        .glass-modal { background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(20px); border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        .nav-item { display: flex; items-center; gap: 12px; padding: 10px 14px; color: #94a3b8; border-radius: 8px; transition: 0.2s; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+        .nav-item:hover, .nav-item.active { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-left: 3px solid #3b82f6; }
+        .cyber-input { background: #1e293b; border: 1px solid #334155; color: white; padding: 8px 12px; border-radius: 6px; width: 100%; outline: none; font-size: 0.9rem; transition: 0.3s; }
+        .cyber-input:focus { border-color: #3b82f6; background: #0f172a; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        .cyber-select { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%233b82f6%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right .7rem top 50%; background-size: .65rem auto; }
+        .btn-pro { padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background: #2563eb; color: white; } .btn-primary:hover { background: #1d4ed8; }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; } .btn-danger:hover { background: #ef4444; color: white; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
+        .modal-overlay.open { display: flex; opacity: 1; }
+        
+        /* 🟢 MAP PIN & UI FIXES */
+        .map-wrapper { position: relative; width: 100%; height: 350px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
+        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+        .reticle-dot { width: 4px; height: 4px; background-color: #3b82f6; border-radius: 50%; box-shadow: 0 0 8px #3b82f6; }
+        .reticle-ring { width: 40px; height: 40px; border: 1px solid rgba(59, 130, 246, 0.5); border-radius: 50%; position: absolute; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+        @keyframes ping { 75%, 100% { transform: scale(1.5); opacity: 0; } }
+
+        /* 🟢 GOOGLE MAPS AUTOCOMPLETE DARK THEME */
+        .pac-container { background-color: #1e293b; border: 1px solid #334155; font-family: 'Inter', sans-serif; border-radius: 8px; margin-top: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .pac-item { border-top: 1px solid #334155; color: #94a3b8; padding: 10px; cursor: pointer; }
+        .pac-item:hover { background-color: #334155; color: white; }
+        .pac-item-query { color: white; font-weight: bold; }
+        .pac-icon { filter: invert(1); opacity: 0.5; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        #previewContent { background-color: #525659; display: flex; justify-content: center; padding: 40px; overflow-y: auto; }
+        #previewContent > div { width: 210mm; min-height: 297mm; background: white; box-shadow: 0 0 15px rgba(0,0,0,0.5); box-sizing: border-box; overflow: hidden; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-sm bg-[#0f172a]"> 
+    
+    <div id="system-loader" class="fixed inset-0 z-[1000] bg-[#0f172a] flex flex-col items-center justify-center text-white">
+        <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div class="font-mono text-xs tracking-widest animate-pulse text-blue-400">INITIALIZING SBW CONSOLE...</div>
+    </div>
+
+    <aside class="w-64 bg-[#0B1120] border-r border-slate-800 flex flex-col flex-shrink-0 z-20">
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-xl font-black tracking-tight text-white">SBW <span class="text-blue-500 glow-text"> ADMIN</span></h1>
+            <div class="flex items-center gap-2 mt-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><p class="text-[10px] text-emerald-500 font-mono uppercase tracking-widest">LIVE LINK</p></div>
+        </div>
+        <nav class="flex-grow p-4 space-y-1">
+            <div onclick="showSection('leads')" id="nav-leads" class="nav-item active"><i class="ri-radar-line"></i> <span>Live Leads</span></div>
+            <div onclick="showSection('silent')" id="nav-silent" class="nav-item text-yellow-400"><i class="ri-eye-line"></i> <span>Window Shoppers</span></div>
+            <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-archive-line"></i> <span>BWBC Archives</span></div>
+            <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
+            <div onclick="showSection('maproom')" id="nav-maproom" class="nav-item text-purple-400"><i class="ri-map-2-line"></i> <span>Geo-Map Room</span></div>
+            </nav>
+        <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button></div>
+    </aside>
+
+    <main class="flex-grow overflow-y-auto p-8 relative bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
+        
+        <div id="login-overlay" class="modal-overlay" style="z-index: 999;">
+            <div class="glass-card p-8 w-80 text-center border-t-4 border-blue-600">
+                <h2 class="text-xl font-bold text-white mb-6">SECURE ACCESS</h2>
+                <div class="text-left mb-4"><label class="text-[10px] text-blue-400 font-bold uppercase block mb-1">ID Verification</label><div class="flex bg-slate-900 border border-slate-700 rounded overflow-hidden"><span class="px-3 py-2 text-slate-500 border-r border-slate-700 font-mono text-xs">+91</span><input type="tel" id="adminPhone" class="w-full bg-transparent px-3 py-2 text-white outline-none font-mono font-bold text-sm" placeholder="ACCESS ID" maxlength="10"></div></div>
+                <div id="otp-group" class="hidden text-left mb-6"><label class="text-[10px] text-emerald-400 font-bold uppercase block mb-1">Security Code</label><input type="tel" id="adminOtp" class="cyber-input text-center tracking-[0.5em] font-bold text-lg" placeholder="••••••" maxlength="6"></div>
+                <div id="recaptcha-container" class="mb-4 flex justify-center"></div>
+                <button id="sendOtpBtn" onclick="sendAdminOTP()" class="w-full btn-pro btn-primary">Authenticate</button>
+                <button id="verifyOtpBtn" onclick="verifyAdminOTP()" class="hidden w-full btn-pro bg-emerald-600 hover:bg-emerald-500 text-white">Unlock System</button>
+            </div>
+        </div>
+
+        <header class="flex justify-between items-center mb-6">
+            <div><h2 class="text-2xl font-bold text-white">Command Console</h2><p class="text-slate-500 text-xs mt-1">Real-time Operations</p></div>
+            <div class="glass-card px-3 py-1.5 flex items-center gap-2 border border-emerald-500/20"><i class="ri-wifi-line text-emerald-400 text-xs"></i><span class="text-[10px] font-mono text-emerald-400 font-bold">ONLINE</span></div>
+        </header>
+
+        <div id="ceo-dashboard" class="grid grid-cols-3 gap-4 mb-6 hidden">
+            <div class="glass-card p-4 border-l-4 border-blue-500">
+                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Pipeline</p>
+                <h3 class="text-2xl font-bold text-white" id="stat-revenue">₹0</h3>
+                <p class="text-[10px] text-blue-400 mt-1">Active Leads Value</p>
+            </div>
+            <div class="glass-card p-4 border-l-4 border-emerald-500">
+                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Drilled Depth</p>
+                <h3 class="text-2xl font-bold text-white" id="stat-depth">0 ft</h3>
+                <p class="text-[10px] text-emerald-400 mt-1">All Time Total</p>
+            </div>
+            <div class="glass-card p-4 border-l-4 border-purple-500">
+                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Conversion</p>
+                <h3 class="text-2xl font-bold text-white" id="stat-conversion">0%</h3>
+                <p class="text-[10px] text-purple-400 mt-1">Win Rate</p>
+            </div>
+        </div>
+
+        <div id="filter-bar" class="mb-6 flex flex-wrap gap-3 hidden items-end bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+            <div class="flex-grow"><label class="text-[10px] text-slate-500 uppercase font-bold ml-1 mb-1 block">Global Search</label><div class="relative"><i class="ri-search-line absolute left-3 top-2.5 text-slate-500"></i><input type="text" id="searchInput" onkeyup="filterData()" class="cyber-input pl-9" placeholder="Search ID, Name, Mobile..."></div></div>
+            <div><label class="text-[10px] text-slate-500 uppercase font-bold ml-1 mb-1 block">Date Range</label><div class="flex items-center gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700"><input type="date" id="dateStart" onchange="filterData()" class="bg-transparent text-white text-xs outline-none px-2 py-1 w-28"><span class="text-slate-500 text-xs">to</span><input type="date" id="dateEnd" onchange="filterData()" class="bg-transparent text-white text-xs outline-none px-2 py-1 w-28"></div></div>
+            <button onclick="clearFilters()" class="h-[38px] px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700"><i class="ri-filter-off-line"></i></button>
+        </div>
+
+        <div id="section-leads" class="content-section"><div id="leads-list" class="space-y-3"></div></div>
+        <div id="section-projects" class="content-section hidden"><div id="projects-list" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div></div>
+
+        <div id="section-silent" class="content-section hidden">
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-bold text-white mb-4">Window Shoppers</h3>
+                <div id="silent-list" class="space-y-3 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    <div class="text-center text-slate-500">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-maproom" class="content-section hidden max-w-7xl mx-auto h-[85vh]">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+                <div class="lg:col-span-3 glass-card flex flex-col relative overflow-hidden">
+                    <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
+                        <div class="bg-slate-900/90 backdrop-blur border border-slate-700 p-2 rounded-lg shadow-xl">
+                            <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Zone Type</label>
+                            <select id="drawType" class="bg-slate-800 text-white text-xs p-1 rounded w-32 outline-none border border-slate-600 mb-2">
+                                <option value="rock">Hard Rock (Red)</option>
+                                <option value="water">High Yield (Green)</option>
+                                <option value="moderate">Moderate (Yellow)</option>
+                                <option value="saline">Saline/Salty (Blue)</option>
+                                <option value="silt">Loose Silt (Orange)</option>
+                            </select>
+                            <button onclick="enableDrawing()" id="btnDraw" class="w-full bg-white text-slate-900 font-bold text-xs py-2 rounded hover:bg-slate-200 flex items-center justify-center gap-1">
+                                <i class="ri-pencil-line"></i> DRAW SHAPE
+                            </button>
+                            <button onclick="cancelDrawing()" id="btnCancel" class="hidden w-full bg-red-500 text-white font-bold text-xs py-2 rounded hover:bg-red-600 mt-1">
+                                CANCEL
+                            </button>
+                        </div>
+                    </div>
+                    <div id="adminMap" class="w-full h-full bg-slate-900"></div>
+                    <div id="saveZonePanel" class="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900/95 border border-emerald-500 p-4 rounded-xl shadow-2xl z-20 w-80">
+                        <h4 class="text-white text-sm font-bold mb-2" id="zonePanelTitle">Save New Zone</h4>
+                        <input type="hidden" id="editDocId">
+                        <input type="text" id="newZoneName" class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-xs mb-2" placeholder="Zone Name (e.g. Mangalagiri North)">
+                        <div class="flex gap-2">
+                            <button onclick="saveCurrentZone()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded" id="btnSaveZone">CONFIRM SAVE</button>
+                            <button onclick="discardCurrentZone()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded"><i class="ri-close-line"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-4 flex flex-col h-full">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-3">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Saved Zones</h3>
+                        <button onclick="loadAdminZones()" class="text-xs text-blue-400 hover:text-white"><i class="ri-refresh-line"></i></button>
+                    </div>
+                    <div id="zonesList" class="flex-grow overflow-y-auto space-y-2 pr-1 custom-scrollbar"><div class="text-center text-slate-500 text-xs mt-10">Loading database...</div></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="section-create" class="content-section hidden max-w-4xl mx-auto">
+            <div class="glass-card p-8">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-4 mb-6"><div><h3 class="text-lg font-bold text-white">Certificate Manager</h3><p class="text-[10px] text-slate-400 font-mono mt-0.5" id="form-mode-text">CREATING NEW RECORD</p></div><div class="flex items-center gap-2"><span class="text-[10px] text-slate-500 font-bold uppercase">ID:</span><input type="text" id="p_id" class="bg-slate-900 border border-slate-700 text-emerald-400 font-mono font-bold px-2 py-1 rounded w-40 text-center text-xs" readonly></div></div>
+                <form id="projectForm" onsubmit="saveProject(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="col-span-full"><h4 class="text-[10px] text-blue-400 font-bold uppercase mb-2">Identity</h4><div class="grid md:grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-400 block mb-1">Mobile</label><div class="flex bg-slate-800 border border-slate-600 rounded"><span class="px-3 py-2 text-slate-400 border-r border-slate-600 font-mono text-xs">+91</span><input type="tel" id="p_mobile" class="w-full bg-transparent px-3 text-white outline-none text-sm" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"></div></div><div><label class="text-[10px] text-slate-400 block mb-1">Name</label><input type="text" id="p_name" class="cyber-input" required></div></div></div>
+                    <div class="col-span-full border-t border-slate-700 pt-4"><h4 class="text-[10px] text-purple-400 font-bold uppercase mb-2">Location</h4><div class="grid md:grid-cols-2 gap-4"><div class="col-span-full"><input type="text" id="p_loc" class="cyber-input" placeholder="Address..." required></div><div class="col-span-full flex gap-2"><input type="text" id="p_gps" class="cyber-input bg-slate-800 font-mono text-xs" readonly><button type="button" onclick="openMapPicker('p')" class="bg-purple-600 hover:bg-purple-500 text-white px-4 rounded font-bold text-xs flex items-center gap-1"><i class="ri-map-pin-line"></i> MAP</button></div></div></div>
+                    <div class="col-span-full border-t border-slate-700 pt-4"><h4 class="text-[10px] text-orange-400 font-bold uppercase mb-2">Technical</h4><div class="grid grid-cols-2 md:grid-cols-4 gap-3"><div><label class="text-[9px] text-slate-500 uppercase">Depth</label><input type="number" id="p_depth" class="cyber-input" required></div><div><label class="text-[9px] text-slate-500 uppercase">Yield</label><input type="text" id="p_yield" class="cyber-input" required></div><div><label class="text-[9px] text-slate-500 uppercase">Casing</label><input type="number" id="p_casing" class="cyber-input" required></div><div><label class="text-[9px] text-slate-500 uppercase">Type</label><select id="p_casingType" class="cyber-input"><option>PVC 6Kg</option><option>PVC 10Kg</option><option>MS Iron</option></select></div><div class="col-span-2"><label class="text-[9px] text-slate-500 uppercase">Rig</label><select id="p_rig" class="cyber-input"><option value="">-- None --</option><option>Sensor Robotic</option><option>Hydraulic</option></select></div><div class="col-span-2"><label class="text-[9px] text-slate-500 uppercase">Date</label><input type="date" id="p_date" class="cyber-input" required></div><div class="col-span-full"><label class="text-[9px] text-slate-500 uppercase">Motor</label><input type="text" id="p_motor" class="cyber-input"></div></div></div>
+                    <div class="col-span-full pt-6 flex justify-end gap-3"><button type="button" onclick="showSection('projects')" class="px-4 py-2 text-slate-500 font-bold text-xs hover:text-white transition">CANCEL</button><button type="submit" class="btn-pro btn-primary"><i class="ri-save-3-line"></i> <span id="save-btn-text">SAVE RECORD</span></button></div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <div id="detailModal" class="modal-overlay" style="z-index: 100;"><div class="glass-modal p-6 w-full max-w-xl rounded-xl relative shadow-2xl overflow-y-auto max-h-[90vh]"><button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="ri-close-line text-xl"></i></button><div id="modalContent"></div></div></div>
+    <div id="previewModal" class="modal-overlay" style="z-index: 150;"><div class="glass-modal p-4 w-full max-w-2xl rounded-xl h-[85vh] flex flex-col"><div class="flex justify-between items-center mb-3 px-2"><h3 class="text-white font-bold text-sm">Preview</h3><div class="flex gap-2"><button onclick="confirmDownloadPDF()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-xs font-bold">Download PDF</button><button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-400 hover:text-white px-3 py-1.5 text-xs font-bold">Close</button></div></div><div id="previewContent" class="flex-grow bg-white overflow-y-auto rounded shadow-inner p-4 text-black"></div></div></div>
+    <div id="mapModal" class="modal-overlay" style="z-index: 200;"><div class="glass-card p-6 w-full max-w-2xl border border-slate-600 shadow-2xl"><h3 class="text-lg font-bold text-white mb-4 text-center">Satellite Targeting</h3><div class="map-wrapper"><div id="mapContainer" class="w-full h-full"></div><div class="target-reticle"><div class="reticle-dot"></div><div class="reticle-ring"></div><div class="absolute top-[30px] w-[1px] h-[20px] bg-gradient-to-b from-blue-400 to-transparent opacity-50"></div><div class="absolute w-[80px] h-[1px] bg-blue-500/30"></div><div class="absolute h-[80px] w-[1px] bg-blue-500/30"></div></div></div><div class="flex justify-center gap-4 mt-6"><button onclick="document.getElementById('mapModal').classList.remove('open')" class="text-slate-400 hover:text-white font-bold px-6 text-xs">ABORT</button><button onclick="confirmLocation()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded font-bold text-xs shadow-lg shadow-blue-900/50">LOCK COORDINATES</button></div></div></div>
+
+    <script>
+        // 🔴 SAFETY TIMER: Force Loader Hide after 10s (Even if Firebase Fails)
+        setTimeout(() => {
+             const loader = document.getElementById('system-loader');
+             if(loader && loader.style.display !== 'none') {
+                 console.warn("⚠️ System Loader Timed Out - Forcing UI Open");
+                 const loginModal = document.getElementById('login-overlay');
+                 loader.style.display = 'none';
+                 if(loginModal) loginModal.classList.add('open');
+                 if(typeof Toastify === 'function') {
+                     Toastify({ text: "Connection slow or Config missing. Offline mode.", duration: 5000, style: { background: "#f59e0b" } }).showToast();
+                 }
+             }
+        }, 10000);
+
+        // 🔴 FIREBASE INIT WRAPPER
+        let db, auth;
+        try {
+            if(typeof CONTACT_INFO === 'undefined' || !CONTACT_INFO.firebase_config) {
+                throw new Error("Config Missing");
+            }
+            if(firebase.apps.length === 0) {
+                firebase.initializeApp(CONTACT_INFO.firebase_config);
+            }
+            db = firebase.firestore();
+            auth = firebase.auth();
+        } catch (e) {
+            console.error("🔥 CRITICAL FIREBASE ERROR:", e);
+            alert("System Configuration Error: " + e.message);
+        }
+
+        function notify(msg, type='success') {
+            if(typeof Toastify !== 'function') return alert(msg);
+            Toastify({
+                text: msg, duration: 3000, gravity: "top", position: "right",
+                style: { background: type==='success' ? "#059669" : "#dc2626", borderRadius: "8px", boxShadow: "0 4px 15px rgba(0,0,0,0.3)", fontSize: "12px", fontWeight: "bold" }
+            }).showToast();
+        }
+
+        // --- AUTH & SETUP ---
+        if(auth) {
+            auth.onAuthStateChanged(user => {
+                const loader = document.getElementById('system-loader');
+                const loginModal = document.getElementById('login-overlay');
+
+                if(user) {
+                    db.collection('admins').doc(user.phoneNumber).get().then(doc => {
+                        if (doc.exists) {
+                            if(loader) loader.style.display = 'none';
+                            if(loginModal) loginModal.classList.remove('open');
+                            showSection('leads'); 
+                            loadAnalytics(); 
+                        } else { 
+                            notify("UNAUTHORIZED ACCESS", "error"); 
+                            auth.signOut(); 
+                            if(loader) loader.style.display = 'none';
+                            loginModal.classList.add('open');
+                        }
+                    }).catch(e => {
+                        notify("System Error: " + e.message, "error");
+                        if(loader) loader.style.display = 'none';
+                        loginModal.classList.add('open');
+                    });
+                } else {
+                    if(loader) loader.style.display = 'none';
+                    loginModal.classList.add('open');
+                }
+            });
+        }
+
+        function sendAdminOTP() {
+            if(!auth) return notify("System Offline", "error");
+            const phone = document.getElementById('adminPhone').value;
+            if(phone.length !== 10) return notify("INVALID ID", "error");
+            const btn = document.getElementById('sendOtpBtn'); btn.innerText = "TRANSMITTING...";
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
+            auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier).then(cr => {
+                window.confirmationResult = cr; btn.classList.add('hidden');
+                document.getElementById('otp-group').classList.remove('hidden');
+                document.getElementById('verifyOtpBtn').classList.remove('hidden');
+            }).catch(e => notify("TRANSMISSION FAILED", "error"));
+        }
+        function verifyAdminOTP() { window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => notify("INVALID CODE", "error")); }
+        function logout() { auth.signOut(); window.location.reload(); }
+
+        // --- NAVIGATION LOGIC ---
+        function showSection(id) {
+            document.querySelectorAll('.content-section').forEach(e => e.classList.add('hidden'));
+            document.getElementById('section-'+id).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+            document.getElementById('nav-'+id).classList.add('active');
+            
+            const filterBar = document.getElementById('filter-bar');
+            const dashboard = document.getElementById('ceo-dashboard');
+            
+            if(id === 'leads') {
+                filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
+                dashboard.classList.remove('hidden');
+            } else if(id === 'projects') {
+                filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
+                dashboard.classList.add('hidden'); 
+            } else {
+                filterBar.classList.add('hidden'); filterBar.classList.remove('flex');
+                dashboard.classList.add('hidden');
+            }
+
+            if(id === 'leads') loadLeads(); 
+            else if(id === 'projects') loadProjects();
+            else if(id === 'silent') loadSilentLeads(); 
+            else if(id === 'maproom') {
+                initAdminMap();
+                setTimeout(() => { if(adminMap) google.maps.event.trigger(adminMap, 'resize'); }, 300);
+            }
+        }
+
+        // --- GLOBAL DELETE LOGIC ---
+        function deleteRecord(collection, docId) {
+            if(confirm("⚠ PERMANENT DELETE: Are you sure?")) {
+                db.collection(collection).doc(docId).delete().then(() => {
+                    notify("RECORD DELETED", "error"); 
+                    closeModal();
+                });
+            }
+        }
+
+        // --- 🟢 REAL-TIME DATA LOADERS (No Refresh Needed) ---
+        let leadsUnsubscribe, projectsUnsubscribe, silentUnsubscribe;
+        let leadsCache = [], projectsCache = []; let currentView = 'leads';
+
+        function loadLeads() {
+            currentView = 'leads';
+            const el = document.getElementById('leads-list');
+            el.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Connecting to live feed...</div>';
+            
+            if(leadsUnsubscribe) leadsUnsubscribe(); 
+            if(!db) return;
+
+            leadsUnsubscribe = db.collection('leads').orderBy('timestamp','desc').limit(100)
+                .onSnapshot(snap => {
+                    leadsCache = [];
+                    snap.forEach(d => { let data = d.data(); data.docId = d.id; leadsCache.push(data); });
+                    filterData(); 
+                    loadAnalytics(); // 🟢 UPDATE DASHBOARD STATS ON CHANGE
+                });
+        }
+
+        function loadProjects() {
+            currentView = 'projects';
+            const el = document.getElementById('projects-list');
+            el.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Syncing archives...</div>';
+
+            if(projectsUnsubscribe) projectsUnsubscribe();
+            if(!db) return;
+
+            projectsUnsubscribe = db.collection('projects').orderBy('projectId', 'desc')
+                .onSnapshot(snap => {
+                    projectsCache = [];
+                    snap.forEach(d => { let data = d.data(); projectsCache.push(data); });
+                    filterData();
+                });
+        }
+
+        function loadSilentLeads() {
+            const list = document.getElementById('silent-list');
+            list.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Scanning Window Shoppers...</div>';
+            
+            if(silentUnsubscribe) silentUnsubscribe();
+            if(!db) return;
+
+            silentUnsubscribe = db.collection('silent_leads').orderBy('last_updated', 'desc').limit(50)
+                .onSnapshot(snap => {
+                    list.innerHTML = "";
+                    if(snap.empty) { list.innerHTML = '<div class="text-center text-slate-600 mt-10">No Window Shoppers found.</div>'; return; }
+                    
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        const timeRaw = data.last_updated || data.timestamp;
+                        const time = timeRaw ? new Date(timeRaw.toDate()).toLocaleString() : "Recently";
+                        const currentStatus = data.adminStatus || "New";
+
+                        list.innerHTML += `
+                            <div class="bg-slate-900 p-4 rounded border border-slate-700 flex flex-col gap-3 group hover:border-blue-500/50 transition">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="text-lg font-mono font-bold text-white">${data.mobile}</h4>
+                                            <span class="text-[9px] bg-slate-800 px-1 rounded text-slate-400 font-mono">ID: ${doc.id}</span>
+                                        </div>
+                                        <div class="text-xs text-slate-400 mt-1">
+                                            <i class="ri-map-pin-line text-blue-500"></i> ${data.loc}
+                                        </div>
+                                        <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-2">
+                                            <i class="ri-time-line"></i> ${time}
+                                            ${data.activity_log && data.activity_log.length > 1 ? `<span class="text-yellow-500 font-bold">• ${data.activity_log.length} Checks</span>` : ''}
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-emerald-400 font-bold text-sm">₹${parseInt(data.total).toLocaleString()}</div>
+                                        <div class="text-[10px] text-slate-500">${data.depth} ft</div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-4 gap-2 pt-2 border-t border-slate-800">
+                                    <a href="tel:${data.mobile}" class="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white flex items-center justify-center rounded py-1.5 transition">
+                                        <i class="ri-phone-line"></i>
+                                    </a>
+                                    <button onclick="viewSilentHistory('${doc.id}')" class="bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center rounded py-1.5 transition" title="View History">
+                                        <i class="ri-history-line"></i>
+                                    </button>
+                                    <div class="col-span-2">
+                                        <select onchange="updateSilentStatus('${doc.id}', this.value)" class="w-full bg-slate-800 text-white text-[10px] h-full rounded px-2 outline-none border border-slate-600 focus:border-blue-500">
+                                            <option value="New" ${currentStatus==='New'?'selected':''}>⚪ New</option>
+                                            <option value="Contacted" ${currentStatus==='Contacted'?'selected':''}>🔵 Contacted</option>
+                                            <option value="Follow Up" ${currentStatus==='Follow Up'?'selected':''}>🟡 Follow Up</option>
+                                            <option value="Dead" ${currentStatus==='Dead'?'selected':''}>🔴 Dead</option>
+                                            <option value="Converted" ${currentStatus==='Converted'?'selected':''}>🟢 Converted</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+        }
+
+        // --- FILTER & RENDER LOGIC ---
+        function filterData() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const dateStartStr = document.getElementById('dateStart').value;
+            const dateEndStr = document.getElementById('dateEnd').value;
+            
+            let start = dateStartStr ? new Date(dateStartStr).setHours(0,0,0,0) : 0;
+            let end = dateEndStr ? new Date(dateEndStr).setHours(23,59,59,999) : 9999999999999;
+
+            const list = currentView === 'leads' ? leadsCache : projectsCache;
+            
+            const filtered = list.filter(item => {
+                const matchesText = (item.name + item.mobile + item.loc + (item.docId||item.projectId)).toLowerCase().includes(term);
+                let itemDate = 0;
+                if(item.timestamp) itemDate = item.timestamp.toDate().getTime();
+                else if(item.date) itemDate = new Date(item.date).getTime();
+                const matchesDate = itemDate >= start && itemDate <= end;
+                return matchesText && matchesDate;
+            });
+
+            if(currentView === 'leads') renderLeads(filtered); else renderProjects(filtered);
+        }
+
+        function clearFilters() { 
+            document.getElementById('searchInput').value = ""; 
+            document.getElementById('dateStart').value = "";
+            document.getElementById('dateEnd').value = "";
+            filterData(); 
+        }
+
+        function renderLeads(list) {
+            const el = document.getElementById('leads-list'); el.innerHTML = "";
+            if(list.length === 0) { el.innerHTML = '<div class="text-center text-slate-500 py-10">No matching records.</div>'; return; }
+            list.forEach(data => { 
+                el.innerHTML += `<div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 flex justify-between items-center hover:bg-slate-800/50 cursor-pointer border border-slate-800/50 hover:border-blue-500/30"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><i class="ri-user-search-line"></i></div><div><div class="font-bold text-white text-sm">${data.name}</div><div class="text-[10px] text-slate-400 font-mono">${data.loc}</div></div></div><div class="text-right"><div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[9px] text-blue-400 font-mono font-bold uppercase">${data.status || 'Pending'}</div></div></div>`; 
+            });
+        }
+
+        function renderProjects(list) {
+            const el = document.getElementById('projects-list'); el.innerHTML = "";
+            if(list.length === 0) { el.innerHTML = '<div class="text-center text-slate-500 py-10">No matching records.</div>'; return; }
+            list.forEach(data => { 
+                el.innerHTML += `<div onclick="openProjectModal('${data.projectId}')" class="glass-card p-5 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition border-y border-r border-slate-800/50"><div class="absolute top-2 right-2 text-slate-600 text-[9px] font-mono">${data.date}</div><h3 class="font-bold text-base text-white mb-1">${data.location}</h3><p class="text-xs text-slate-400 mb-3 font-mono">${data.customerName}</p><div class="text-[10px] text-emerald-500 font-mono tracking-widest bg-emerald-900/20 inline-block px-2 py-0.5 rounded border border-emerald-900/50">${data.projectId}</div></div>`; 
+            });
+        }
+
+        // --- SILENT LEAD UTILS ---
+        function updateSilentStatus(docId, status) {
+            db.collection('silent_leads').doc(docId).update({ adminStatus: status })
+              .then(() => notify(`Status updated to ${status}`))
+              .catch(e => notify("Update failed", "error"));
+        }
+
+        function viewSilentHistory(docId) {
+            db.collection('silent_leads').doc(docId).get().then(doc => {
+                const data = doc.data();
+                const log = data.activity_log || [];
+                log.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+                let historyHTML = `
+                    <div class="text-center mb-4">
+                        <h3 class="text-white font-bold text-lg">Activity Log</h3>
+                        <p class="text-slate-400 text-xs font-mono">${data.mobile}</p>
+                    </div>
+                    <div class="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                `;
+
+                if (log.length === 0) {
+                    historyHTML += `<div class="text-center text-slate-500 text-xs">No detailed history found.</div>`;
+                } else {
+                    log.forEach(item => {
+                        const dateObj = new Date(item.time);
+                        historyHTML += `
+                            <div class="bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center text-xs">
+                                <div>
+                                    <div class="text-white font-bold">${item.depth} ft <span class="text-slate-500 font-normal">@ ${item.loc || 'Unknown'}</span></div>
+                                    <div class="text-slate-500 text-[10px]">${dateObj.toLocaleDateString()} • ${dateObj.toLocaleTimeString()}</div>
+                                </div>
+                                <div class="text-emerald-400 font-bold">₹${parseInt(item.total).toLocaleString()}</div>
+                            </div>
+                        `;
+                    });
+                }
+                historyHTML += `</div>`;
+                document.getElementById('modalContent').innerHTML = historyHTML;
+                document.getElementById('detailModal').classList.add('open');
+            });
+        }
+
+        // --- MAPS & ZONES LOGIC ---
+        let adminMap, drawingManager, currentPoly;
+        let map; // 🟢 FIX: Global MiniMap variable
+        let mapPolygons = []; 
+
+        const ZONE_CONFIG = {
+            rock: { color: '#ef4444', label: 'Hard Rock' },
+            water: { color: '#10b981', label: 'High Yield' },
+            moderate: { color: '#eab308', label: 'Moderate' },
+            saline: { color: '#3b82f6', label: 'Saline' },
+            silt: { color: '#f97316', label: 'Loose Silt' }
+        };
+
+        function initAdminMap() {
+            if(adminMap) { loadAdminZones(); return; }
+            if(typeof google === 'undefined') { notify("Maps API Loading...", "info"); return; }
+            
+            const startLoc = { lat: 16.4410, lng: 80.5520 }; 
+            adminMap = new google.maps.Map(document.getElementById('adminMap'), {
+                center: startLoc, zoom: 13, mapTypeId: 'hybrid', disableDefaultUI: true, zoomControl: true
+            });
+
+            drawingManager = new google.maps.drawing.DrawingManager({
+                drawingMode: null, drawingControl: false,
+                polygonOptions: { strokeWeight: 2, fillOpacity: 0.35, editable: true, draggable: false }
+            });
+            drawingManager.setMap(adminMap);
+
+            google.maps.event.addListener(drawingManager, 'polygoncomplete', function(poly) {
+                if(currentPoly) discardCurrentZone();
+                currentPoly = poly;
+                enableEditorUI("Save New Zone", "CONFIRM SAVE");
+                drawingManager.setDrawingMode(null);
+                toggleDrawButtons(false);
+            });
+            loadAdminZones();
+        }
+
+        function enableDrawing() {
+            discardCurrentZone();
+            const type = document.getElementById('drawType').value;
+            const color = ZONE_CONFIG[type].color;
+            drawingManager.setOptions({
+                drawingMode: google.maps.drawing.OverlayType.POLYGON,
+                polygonOptions: { fillColor: color, strokeColor: color, fillOpacity: 0.35, strokeWeight: 2, editable: true }
+            });
+            toggleDrawButtons(true);
+            notify(`Draw Mode: ${ZONE_CONFIG[type].label}`);
+        }
+
+        function cancelDrawing() { drawingManager.setDrawingMode(null); discardCurrentZone(); toggleDrawButtons(false); }
+        function discardCurrentZone() {
+            document.getElementById('saveZonePanel').classList.add('hidden');
+            document.getElementById('editDocId').value = ""; document.getElementById('newZoneName').value = "";
+            if (currentPoly) {
+                if (!currentPoly.docId) { currentPoly.setMap(null); } 
+                else { currentPoly.setEditable(false); currentPoly.setOptions({ strokeOpacity: 0.8, fillOpacity: 0.2 }); }
+                currentPoly = null;
+            }
+        }
+        function initEditZone(docId) {
+            discardCurrentZone(); 
+            const targetPoly = mapPolygons.find(p => p.docId === docId);
+            if(!targetPoly) return notify("Error: Zone data not synced.", "error");
+            targetPoly.setEditable(true); targetPoly.setOptions({ strokeOpacity: 1.0, fillOpacity: 0.5 }); 
+            currentPoly = targetPoly; 
+            const data = targetPoly.zoneData;
+            document.getElementById('newZoneName').value = data.name; document.getElementById('drawType').value = data.typeKey; document.getElementById('editDocId').value = docId;
+            enableEditorUI("Edit Existing Zone", "UPDATE SHAPE");
+        }
+        function saveCurrentZone() {
+            const nameRaw = document.getElementById('newZoneName').value; const type = document.getElementById('drawType').value; const editId = document.getElementById('editDocId').value;
+            if(!nameRaw) return notify("Enter Name", "error"); if(!currentPoly) return notify("No shape active", "error");
+            const path = currentPoly.getPath(); let coords = [];
+            for (let i = 0; i < path.getLength(); i++) { const xy = path.getAt(i); coords.push({ lat: xy.lat(), lng: xy.lng() }); }
+            const zoneData = { name: nameRaw, typeKey: type, typeName: ZONE_CONFIG[type].label, color: ZONE_CONFIG[type].color, coords: coords, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+            const btn = document.getElementById('btnSaveZone'); const oldText = btn.innerText; btn.innerText = "SAVING...";
+            if(editId) { db.collection('geo_zones').doc(editId).update(zoneData).then(() => { notify("Zone Updated"); finalizeSave(btn, oldText); }); } 
+            else { const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_'); db.collection('geo_zones').doc(docId).set(zoneData).then(() => { notify("New Zone Created"); finalizeSave(btn, oldText); }); }
+        }
+        function finalizeSave(btn, oldText) { btn.innerText = oldText; if(currentPoly) currentPoly = null; document.getElementById('saveZonePanel').classList.add('hidden'); document.getElementById('editDocId').value = ""; document.getElementById('newZoneName').value = ""; loadAdminZones(); }
+        function deleteZone(collectionName, docId) {
+            if(!confirm(`PERMANENT DELETE from ${collectionName}?`)) return;
+            db.collection(collectionName).doc(docId).delete().then(() => {
+                notify("Object Deleted"); loadAdminZones(); 
+            }).catch(e => notify("Delete Failed", "error"));
+        }
+        function loadAdminZones() {
+            const listEl = document.getElementById('zonesList');
+            if(mapPolygons) mapPolygons.forEach(p => p.setMap(null)); mapPolygons = [];
+            listEl.innerHTML = '<div class="text-center text-slate-500 text-xs mt-4 animate-pulse">Scanning layers...</div>';
+            const layers = [ { id: 'geo_zones', label: 'Manual' }, { id: 'risk_map', label: 'Risk Zone' }, { id: 'layer_lithologs', label: 'Station' } ];
+            const promises = layers.map(l => db.collection(l.id).orderBy('timestamp', 'desc').limit(50).get().then(snap => ({ id: l.id, label: l.label, docs: snap.docs })));
+            Promise.all(promises).then(results => {
+                listEl.innerHTML = ""; let count = 0;
+                results.forEach(res => {
+                    res.docs.forEach(doc => {
+                        const data = doc.data(); const docId = doc.id; const collection = res.id; count++;
+                        let mapObj = null;
+                        if (data.lat && data.lng) {
+                            mapObj = new google.maps.Circle({ strokeColor: data.color||'#06b6d4', fillColor: data.color||'#06b6d4', fillOpacity:0.6, map:adminMap, center:{lat:data.lat,lng:data.lng}, radius:150, clickable:true });
+                        } else if (data.coords) {
+                            mapObj = new google.maps.Polygon({ paths: data.coords, strokeColor: data.color, fillColor: data.color, fillOpacity: 0.2, map: adminMap, clickable: true });
+                        }
+                        if(mapObj) {
+                            mapObj.docId = docId; mapObj.zoneData = data;
+                            mapObj.addListener('click', () => { notify(data.name); if(mapObj.getCenter) adminMap.panTo(mapObj.getCenter()); });
+                            mapPolygons.push(mapObj);
+                            listEl.innerHTML += `<div class="bg-slate-800 p-3 mb-2 rounded border border-slate-700 flex justify-between items-center group hover:border-blue-500 cursor-pointer"><div><div class="text-xs font-bold text-white w-32 truncate">${data.name}</div><div class="text-[9px] text-slate-400">${res.label}</div></div><div class="flex gap-1">${collection === 'geo_zones' ? `<button onclick="initEditZone('${docId}')" class="text-slate-500 hover:text-blue-400 p-1"><i class="ri-edit-line"></i></button>` : ''}<button onclick="deleteZone('${collection}', '${docId}')" class="text-slate-500 hover:text-red-500 p-1"><i class="ri-delete-bin-line"></i></button></div></div>`;
+                        }
+                    });
+                });
+                if(count === 0) listEl.innerHTML = '<div class="text-center text-slate-600 text-xs mt-10">No Zones Found</div>';
+            });
+        }
+        function jumpToCoords() { const lat = parseFloat(document.getElementById('manualLat').value); const lng = parseFloat(document.getElementById('manualLng').value); if(!isNaN(lat) && !isNaN(lng)) { adminMap.setCenter({lat, lng}); adminMap.setZoom(16); } }
+        function toggleDrawButtons(isDrawing) { document.getElementById('btnDraw').classList.toggle('hidden', isDrawing); document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing); }
+        function enableEditorUI(title, btnText) { document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('zonePanelTitle').innerText = title; document.getElementById('btnSaveZone').innerText = btnText; }
+
+        // --- CORE UTILS ---
+        // 🟢 FIX: Exclude 'Completed' or 'Dead' leads from Total Pipeline Revenue
+        function loadAnalytics() {
+            if(!db) return;
+            let totalDepth = 0; let totalRevenue = 0; let leadCount = 0; let projectCount = 0;
+            
+            db.collection('projects').get().then(snap => { 
+                projectCount = snap.size; 
+                snap.forEach(doc => { totalDepth += parseInt(doc.data().depth || 0); }); 
+                document.getElementById('stat-depth').innerText = totalDepth.toLocaleString() + " ft"; 
+                updateConversion(); 
+            });
+            
+            db.collection('leads').get().then(snap => { 
+                leadCount = snap.size; 
+                snap.forEach(doc => { 
+                    const d = doc.data();
+                    // 🟢 LOGIC UPDATE: Only count active leads
+                    if (d.status !== 'Completed' && d.status !== 'Dead') {
+                        totalRevenue += parseInt(d.total || 0); 
+                    }
+                }); 
+                document.getElementById('stat-revenue').innerText = "₹" + (totalRevenue/100000).toFixed(1) + "L"; 
+                updateConversion(); 
+            });
+            
+            function updateConversion() { if(leadCount > 0) document.getElementById('stat-conversion').innerText = ((projectCount / leadCount) * 100).toFixed(1) + "%"; }
+        }
+        
+        function startNewCertificate() { showSection('create'); resetForm(); }
+        function resetForm() {
+            document.getElementById('projectForm').reset(); isEditing = false;
+            document.getElementById('form-mode-text').innerText = "CREATING NEW RECORD"; document.getElementById('save-btn-text').innerText = "SAVE RECORD";
+            const now = new Date(); const yy = now.getFullYear().toString().substr(-2); const mm = (now.getMonth() + 1).toString().padStart(2, '0'); const rand = Math.random().toString(36).substr(2, 4).toUpperCase();
+            document.getElementById('p_id').value = `SBW-${yy}${mm}-${rand}`;
+        }
+        function editProject(projectId) {
+            const data = projectsCache.find(p => p.projectId === projectId); closeModal(); showSection('create'); isEditing = true;
+            document.getElementById('form-mode-text').innerText = "EDITING RECORD: " + projectId; document.getElementById('save-btn-text').innerText = "UPDATE RECORD";
+            document.getElementById('p_id').value = data.projectId; document.getElementById('p_mobile').value = data.mobile.replace('+91',''); document.getElementById('p_name').value = data.customerName; document.getElementById('p_loc').value = data.location; document.getElementById('p_gps').value = data.gps; document.getElementById('p_depth').value = data.depth; document.getElementById('p_yield').value = data.yield; document.getElementById('p_casing').value = data.casing_depth; document.getElementById('p_casingType').value = data.casing_type; document.getElementById('p_rig').value = data.rigType; document.getElementById('p_motor').value = data.motor; document.getElementById('p_date').value = data.date ? new Date(data.date).toISOString().split('T')[0] : '';
+        }
+        function convertToProject(docId) {
+            const lead = leadsCache.find(l => l.docId === docId); startNewCertificate(); closeModal();
+            document.getElementById('p_mobile').value = lead.mobile.replace('+91', ''); document.getElementById('p_name').value = lead.name; document.getElementById('p_loc').value = lead.loc; document.getElementById('p_depth').value = lead.depth;
+            document.getElementById('projectForm').scrollIntoView({behavior: "smooth"});
+        }
+        function saveProject(e) {
+            e.preventDefault(); const id = document.getElementById('p_id').value;
+            const data = { projectId: id, mobile: "+91" + document.getElementById('p_mobile').value, customerName: document.getElementById('p_name').value, location: document.getElementById('p_loc').value, gps: document.getElementById('p_gps').value, depth: document.getElementById('p_depth').value, yield: document.getElementById('p_yield').value, casing_depth: document.getElementById('p_casing').value, casing_type: document.getElementById('p_casingType').value, rigType: document.getElementById('p_rig').value, motor: document.getElementById('p_motor').value, date: document.getElementById('p_date').value, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+            const docRef = db.collection('projects').doc(id);
+            docRef.get().then(doc => { if(doc.exists && !isEditing) { notify("ERROR: ID Exists.", "error"); resetForm(); } else { docRef.set(data, { merge: true }).then(() => { notify(isEditing ? "RECORD UPDATED" : "CERTIFICATE ISSUED"); resetForm(); showSection('projects'); }); } });
+        }
+        
+        let currentPDFElement;
+        
+        function previewQuote(encoded) { 
+            const data = JSON.parse(decodeURIComponent(encoded)); 
+            if (!data.rows) {
+                let remaining = parseInt(data.depth || 0); let rows = ""; let floor = 0; let currentRate = 70;
+                if (remaining > 0) {
+                    while(remaining > 0) {
+                        let chunk = (remaining >= 50) ? 50 : remaining;
+                        let cost = chunk * currentRate;
+                        rows += `<tr><td>${floor}-${floor+chunk}ft</td><td style="text-align:right">₹${cost.toLocaleString()}</td></tr>`;
+                        remaining -= chunk; floor += chunk; currentRate += 10;
+                    }
+                }
+                data.rows = rows;
+            }
+            const content = getInvoiceHTML(data); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); 
+        }
+
+        function previewCert(encoded) { 
+            const data = JSON.parse(decodeURIComponent(encoded)); 
+            const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType }; 
+            const content = getCertificateHTML(certData); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); 
+        }
+
+        function confirmDownloadPDF() { const el = document.createElement('div'); el.innerHTML = currentPDFElement; document.body.appendChild(el); html2pdf().from(el).save('Document.pdf').then(() => document.body.removeChild(el)); }
+        function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
+        
+        function openProjectModal(projectId) {
+            const data = projectsCache.find(p => p.projectId === projectId);
+            const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Project Archive</h2><p class="text-slate-400 font-mono text-xs">${data.projectId}</p></div><div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.customerName}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.location}</div></div></div><div class="grid grid-cols-3 gap-2 mb-6 text-center"> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">DEPTH</span><span class="text-white font-bold">${data.depth}ft</span></div> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">YIELD</span><span class="text-emerald-400 font-bold">${data.yield}</span></div> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">DATE</span><span class="text-white font-bold">${data.date}</span></div> </div><div class="grid grid-cols-2 gap-3 mb-4"><button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-file-paper-line"></i> Certificate</button><button onclick="editProject('${data.projectId}')" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-edit-line"></i> Edit Record</button></div><div class="text-center pt-2"><button onclick="deleteRecord('projects', '${data.projectId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE ARCHIVE</button></div>`;
+            document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open');
+        }
+
+        function openLeadModal(docId) {
+            const data = leadsCache.find(l => l.docId === docId); const notes = data.adminNotes || "";
+            const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Lead Details</h2><p class="text-slate-400 font-mono text-xs">Quote: ${data.docId}</p></div><div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.name}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.loc}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Depth</span><div class="text-yellow-400 font-mono font-bold">${data.depth} ft</div></div></div><div class="mb-6 grid grid-cols-2 gap-4"><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Status</label>
+            <select class="cyber-input cyber-select w-full text-xs" onchange="updateLeadStatus('${data.docId}', this.value)">
+                <option value="Pending" ${data.status==='Pending'?'selected':''}>⏳ Pending Review</option>
+                <option value="Contacted" ${data.status==='Contacted'?'selected':''}>📞 Contacted</option>
+                <option value="Survey" ${data.status==='Survey'?'selected':''}>🗺️ Survey Scheduled</option>
+                <option value="Rig Move" ${data.status==='Rig Move'?'selected':''}>🚛 Rig Mobilized</option>
+                <option value="Drilling" ${data.status==='Drilling'?'selected':''}>⚙️ Drilling Active</option>
+                <option value="Water" ${data.status==='Water'?'selected':''}>💧 Water Struck</option>
+                <option value="Completed" ${data.status==='Completed'?'selected':''}>✅ Project Closed</option>
+                <option value="Dead" ${data.status==='Dead'?'selected':''}>❌ Dead Lead</option>
+            </select>
+            </div><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Mission Log</label><div class="flex gap-2"><textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Notes...">${notes}</textarea><button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-2 rounded text-white"><i class="ri-save-line"></i></button></div></div></div><div class="grid grid-cols-2 gap-3 mb-4"><a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="btn-pro bg-green-600 hover:bg-green-500 text-white"><i class="ri-whatsapp-line"></i> Chat</a><a href="tel:${data.mobile}" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-phone-line"></i> Call</a><button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-eye-line"></i> View</button><button onclick="convertToProject('${data.docId}')" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white border border-purple-400/30"><i class="ri-magic-line"></i> Convert</button></div><div class="text-center pt-2"><button onclick="deleteRecord('leads', '${data.docId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE LEAD</button></div>`;
+            document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open');
+        }
+        function updateLeadStatus(docId, status) { 
+            db.collection('leads').doc(docId).update({ status: status }).then(() => {
+                // Refresh logic will auto-run due to onSnapshot, which will re-run loadAnalytics
+                notify("Status Updated");
+            });
+        }
+        function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
+        
+        // 🟢 FIX: Global callback for Google Maps
+        window.initMapTools = function() { 
+            const input = document.getElementById('p_loc'); 
+            if(input) { 
+                const ac = new google.maps.places.Autocomplete(input); 
+                ac.addListener('place_changed', () => { 
+                    const p = ac.getPlace(); 
+                    if(p.geometry && map) map.setCenter(p.geometry.location); 
+                }); 
+            } 
+        };
+        
+        function openMapPicker() { if(typeof google === 'undefined') { notify("System Initializing...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
+        function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
+        
+        // 🟢 FIX: Load Script Only After Config is Ready (if Config exists)
+        if(typeof CONTACT_INFO !== 'undefined' && CONTACT_INFO.google_maps_key) {
+            const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`; s.async = true; s.defer = true; document.body.appendChild(s);
+        }
+    </script>
+</body>
+</html>
