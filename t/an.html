@@ -199,6 +199,7 @@
         </div>
 
         
+        
         <div id="section-create" class="content-section hidden max-w-4xl mx-auto">
             <div class="glass-card p-8">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-4 mb-6"><div><h3 class="text-lg font-bold text-white">Certificate Manager</h3><p class="text-[10px] text-slate-400 font-mono mt-0.5" id="form-mode-text">CREATING NEW RECORD</p></div><div class="flex items-center gap-2"><span class="text-[10px] text-slate-500 font-bold uppercase">ID:</span><input type="text" id="p_id" class="bg-slate-900 border border-slate-700 text-emerald-400 font-mono font-bold px-2 py-1 rounded w-40 text-center text-xs" readonly></div></div>
@@ -641,7 +642,7 @@
         function toggleDrawButtons(isDrawing) { document.getElementById('btnDraw').classList.toggle('hidden', isDrawing); document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing); }
         function enableEditorUI(title, btnText) { document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('zonePanelTitle').innerText = title; document.getElementById('btnSaveZone').innerText = btnText; }
 
-     
+  
 
         // --- CORE UTILS ---
         function loadAnalytics() {
