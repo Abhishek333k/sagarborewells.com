@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         <li><a href="quote" class="hover:text-blue-400 transition">Get Estimate</a></li>
                         <li><a href="dashboard" class="hover:text-blue-400 transition">Account Login</a></li>
                         <li><a href="f/blog" class="hover:text-blue-400 transition">Blog</a></li>
-                        <li><a href="f/science" class="hover:text-blue-400 transition">Science POrtal</a></li>
+                        <li><a href="f/science" class="hover:text-blue-400 transition">Science Portal</a></li>
                         <li><a href="f/motors" class="hover:text-blue-400 transition">Motor Recommendations</a></li>
                         <li><a href="f/finance" class="hover:text-blue-400 transition">Financial Assist</a></li>
                         <li><a href="about" class="hover:text-blue-400 transition">About Us</a></li>
