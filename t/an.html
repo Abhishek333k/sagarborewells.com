@@ -21,6 +21,38 @@
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
+        /* 🟢 GOOGLE MAPS AUTOCOMPLETE DARK THEME */
+        .pac-container {
+            background-color: #1e293b !important; /* Dark Slate Background */
+            border: 1px solid #334155 !important;
+            border-radius: 8px !important;
+            font-family: 'Inter', sans-serif !important;
+            margin-top: 5px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+        }
+        .pac-item {
+            border-top: 1px solid #334155 !important;
+            color: #cbd5e1 !important; /* Light Grey Text */
+            padding: 10px !important;
+            cursor: pointer !important;
+        }
+        .pac-item:hover {
+            background-color: #334155 !important; /* Hover Effect */
+        }
+        .pac-item-query {
+            color: #ffffff !important; /* White text for the main match */
+            font-weight: bold !important;
+        }
+        /* Hide the Google logo if it ruins the vibe (Optional but cleaner) */
+        .pac-logo:after {
+            display: none !important;
+        }
+        /* 🟢 MISSING MAP PIN STYLES */
+        .map-wrapper { position: relative; width: 100%; height: 350px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
+        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+        .reticle-dot { width: 4px; height: 4px; background-color: #3b82f6; border-radius: 50%; box-shadow: 0 0 8px #3b82f6; }
+        .reticle-ring { width: 40px; height: 40px; border: 1px solid rgba(59, 130, 246, 0.5); border-radius: 50%; position: absolute; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+        @keyframes ping { 75%, 100% { transform: scale(1.5); opacity: 0; } }
         /* CYBER THEME */
         body { background-color: #0f172a; font-family: 'Inter', sans-serif; color: #e2e8f0; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
@@ -37,21 +69,7 @@
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; } .btn-danger:hover { background: #ef4444; color: white; }
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
         .modal-overlay.open { display: flex; opacity: 1; }
-        
-        /* 🟢 MAP PIN & UI FIXES */
         .map-wrapper { position: relative; width: 100%; height: 350px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
-        .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; display: flex; align-items: center; justify-content: center; }
-        .reticle-dot { width: 4px; height: 4px; background-color: #3b82f6; border-radius: 50%; box-shadow: 0 0 8px #3b82f6; }
-        .reticle-ring { width: 40px; height: 40px; border: 1px solid rgba(59, 130, 246, 0.5); border-radius: 50%; position: absolute; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
-        @keyframes ping { 75%, 100% { transform: scale(1.5); opacity: 0; } }
-
-        /* 🟢 GOOGLE MAPS AUTOCOMPLETE DARK THEME */
-        .pac-container { background-color: #1e293b; border: 1px solid #334155; font-family: 'Inter', sans-serif; border-radius: 8px; margin-top: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .pac-item { border-top: 1px solid #334155; color: #94a3b8; padding: 10px; cursor: pointer; }
-        .pac-item:hover { background-color: #334155; color: white; }
-        .pac-item-query { color: white; font-weight: bold; }
-        .pac-icon { filter: invert(1); opacity: 0.5; }
-
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
@@ -79,7 +97,8 @@
             <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-archive-line"></i> <span>BWBC Archives</span></div>
             <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
             <div onclick="showSection('maproom')" id="nav-maproom" class="nav-item text-purple-400"><i class="ri-map-2-line"></i> <span>Geo-Map Room</span></div>
-            </nav>
+            
+        </nav>
         <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button></div>
     </aside>
 
@@ -178,6 +197,7 @@
                 </div>
             </div>
         </div>
+
         
         <div id="section-create" class="content-section hidden max-w-4xl mx-auto">
             <div class="glass-card p-8">
@@ -196,39 +216,18 @@
     <div id="previewModal" class="modal-overlay" style="z-index: 150;"><div class="glass-modal p-4 w-full max-w-2xl rounded-xl h-[85vh] flex flex-col"><div class="flex justify-between items-center mb-3 px-2"><h3 class="text-white font-bold text-sm">Preview</h3><div class="flex gap-2"><button onclick="confirmDownloadPDF()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-xs font-bold">Download PDF</button><button onclick="document.getElementById('previewModal').classList.remove('open')" class="text-slate-400 hover:text-white px-3 py-1.5 text-xs font-bold">Close</button></div></div><div id="previewContent" class="flex-grow bg-white overflow-y-auto rounded shadow-inner p-4 text-black"></div></div></div>
     <div id="mapModal" class="modal-overlay" style="z-index: 200;"><div class="glass-card p-6 w-full max-w-2xl border border-slate-600 shadow-2xl"><h3 class="text-lg font-bold text-white mb-4 text-center">Satellite Targeting</h3><div class="map-wrapper"><div id="mapContainer" class="w-full h-full"></div><div class="target-reticle"><div class="reticle-dot"></div><div class="reticle-ring"></div><div class="absolute top-[30px] w-[1px] h-[20px] bg-gradient-to-b from-blue-400 to-transparent opacity-50"></div><div class="absolute w-[80px] h-[1px] bg-blue-500/30"></div><div class="absolute h-[80px] w-[1px] bg-blue-500/30"></div></div></div><div class="flex justify-center gap-4 mt-6"><button onclick="document.getElementById('mapModal').classList.remove('open')" class="text-slate-400 hover:text-white font-bold px-6 text-xs">ABORT</button><button onclick="confirmLocation()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded font-bold text-xs shadow-lg shadow-blue-900/50">LOCK COORDINATES</button></div></div></div>
 
-    <script>
-        // 🔴 SAFETY TIMER: Force Loader Hide after 10s (Even if Firebase Fails)
-        setTimeout(() => {
-             const loader = document.getElementById('system-loader');
-             if(loader && loader.style.display !== 'none') {
-                 console.warn("⚠️ System Loader Timed Out - Forcing UI Open");
-                 const loginModal = document.getElementById('login-overlay');
-                 loader.style.display = 'none';
-                 if(loginModal) loginModal.classList.add('open');
-                 if(typeof Toastify === 'function') {
-                     Toastify({ text: "Connection slow or Config missing. Offline mode.", duration: 5000, style: { background: "#f59e0b" } }).showToast();
-                 }
-             }
-        }, 10000);
 
-        // 🔴 FIREBASE INIT WRAPPER
-        let db, auth;
-        try {
-            if(typeof CONTACT_INFO === 'undefined' || !CONTACT_INFO.firebase_config) {
-                throw new Error("Config Missing");
-            }
-            if(firebase.apps.length === 0) {
-                firebase.initializeApp(CONTACT_INFO.firebase_config);
-            }
-            db = firebase.firestore();
-            auth = firebase.auth();
-        } catch (e) {
-            console.error("🔥 CRITICAL FIREBASE ERROR:", e);
-            alert("System Configuration Error: " + e.message);
+<script>
+        // 🟢 FIX 1: Prevent Duplicate Initialization Crash
+        // We only initialize if no apps exist yet.
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+            firebase.initializeApp(CONTACT_INFO.firebase_config);
         }
 
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
         function notify(msg, type='success') {
-            if(typeof Toastify !== 'function') return alert(msg);
             Toastify({
                 text: msg, duration: 3000, gravity: "top", position: "right",
                 style: { background: type==='success' ? "#059669" : "#dc2626", borderRadius: "8px", boxShadow: "0 4px 15px rgba(0,0,0,0.3)", fontSize: "12px", fontWeight: "bold" }
@@ -236,49 +235,63 @@
         }
 
         // --- AUTH & SETUP ---
-        if(auth) {
-            auth.onAuthStateChanged(user => {
-                const loader = document.getElementById('system-loader');
-                const loginModal = document.getElementById('login-overlay');
+        auth.onAuthStateChanged(user => {
+            const loader = document.getElementById('system-loader');
+            const loginModal = document.getElementById('login-overlay');
 
-                if(user) {
-                    db.collection('admins').doc(user.phoneNumber).get().then(doc => {
-                        if (doc.exists) {
-                            if(loader) loader.style.display = 'none';
-                            if(loginModal) loginModal.classList.remove('open');
-                            showSection('leads'); 
-                            loadAnalytics(); 
-                        } else { 
-                            notify("UNAUTHORIZED ACCESS", "error"); 
-                            auth.signOut(); 
-                            if(loader) loader.style.display = 'none';
-                            loginModal.classList.add('open');
-                        }
-                    }).catch(e => {
-                        notify("System Error: " + e.message, "error");
+            if(user) {
+                // Check if user is an admin
+                db.collection('admins').doc(user.phoneNumber).get().then(doc => {
+                    if (doc.exists) {
+                        if(loader) loader.style.display = 'none';
+                        if(loginModal) loginModal.classList.remove('open');
+                        showSection('leads'); 
+                        loadAnalytics(); 
+                    } else { 
+                        notify("UNAUTHORIZED ACCESS", "error"); 
+                        auth.signOut(); 
                         if(loader) loader.style.display = 'none';
                         loginModal.classList.add('open');
-                    });
-                } else {
+                    }
+                }).catch(e => {
+                    console.error(e); // Log error for debugging
+                    notify("System Error: " + e.message, "error");
                     if(loader) loader.style.display = 'none';
                     loginModal.classList.add('open');
-                }
+                });
+            } else {
+                // No user logged in
+                if(loader) loader.style.display = 'none';
+                loginModal.classList.add('open');
+            }
+        });
+
+        function sendAdminOTP() {
+            const phone = document.getElementById('adminPhone').value;
+            if(phone.length !== 10) return notify("INVALID ID", "error");
+            
+            const btn = document.getElementById('sendOtpBtn'); 
+            btn.innerText = "TRANSMITTING...";
+            
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
+            
+            auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier).then(cr => {
+                window.confirmationResult = cr; 
+                btn.classList.add('hidden');
+                document.getElementById('otp-group').classList.remove('hidden');
+                document.getElementById('verifyOtpBtn').classList.remove('hidden');
+            }).catch(e => {
+                console.error(e);
+                notify("TRANSMISSION FAILED: " + e.message, "error");
+                btn.innerText = "Authenticate"; // Reset button text
             });
         }
 
-        function sendAdminOTP() {
-            if(!auth) return notify("System Offline", "error");
-            const phone = document.getElementById('adminPhone').value;
-            if(phone.length !== 10) return notify("INVALID ID", "error");
-            const btn = document.getElementById('sendOtpBtn'); btn.innerText = "TRANSMITTING...";
-            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
-            auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier).then(cr => {
-                window.confirmationResult = cr; btn.classList.add('hidden');
-                document.getElementById('otp-group').classList.remove('hidden');
-                document.getElementById('verifyOtpBtn').classList.remove('hidden');
-            }).catch(e => notify("TRANSMISSION FAILED", "error"));
+        function verifyAdminOTP() { 
+            const code = document.getElementById('adminOtp').value;
+            window.confirmationResult.confirm(code).catch((e) => notify("INVALID CODE", "error")); 
         }
-        function verifyAdminOTP() { window.confirmationResult.confirm(document.getElementById('adminOtp').value).catch(() => notify("INVALID CODE", "error")); }
+
         function logout() { auth.signOut(); window.location.reload(); }
 
         // --- NAVIGATION LOGIC ---
@@ -291,6 +304,7 @@
             const filterBar = document.getElementById('filter-bar');
             const dashboard = document.getElementById('ceo-dashboard');
             
+            // UI Toggle Logic
             if(id === 'leads') {
                 filterBar.classList.remove('hidden'); filterBar.classList.add('flex');
                 dashboard.classList.remove('hidden');
@@ -302,6 +316,7 @@
                 dashboard.classList.add('hidden');
             }
 
+            // Data Loading Logic
             if(id === 'leads') loadLeads(); 
             else if(id === 'projects') loadProjects();
             else if(id === 'silent') loadSilentLeads(); 
@@ -321,7 +336,7 @@
             }
         }
 
-        // --- 🟢 REAL-TIME DATA LOADERS (No Refresh Needed) ---
+        // --- 🟢 REAL-TIME DATA LOADERS ---
         let leadsUnsubscribe, projectsUnsubscribe, silentUnsubscribe;
         let leadsCache = [], projectsCache = []; let currentView = 'leads';
 
@@ -331,14 +346,12 @@
             el.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Connecting to live feed...</div>';
             
             if(leadsUnsubscribe) leadsUnsubscribe(); 
-            if(!db) return;
-
+            
             leadsUnsubscribe = db.collection('leads').orderBy('timestamp','desc').limit(100)
                 .onSnapshot(snap => {
                     leadsCache = [];
                     snap.forEach(d => { let data = d.data(); data.docId = d.id; leadsCache.push(data); });
                     filterData(); 
-                    loadAnalytics(); // 🟢 UPDATE DASHBOARD STATS ON CHANGE
                 });
         }
 
@@ -348,7 +361,6 @@
             el.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Syncing archives...</div>';
 
             if(projectsUnsubscribe) projectsUnsubscribe();
-            if(!db) return;
 
             projectsUnsubscribe = db.collection('projects').orderBy('projectId', 'desc')
                 .onSnapshot(snap => {
@@ -363,7 +375,6 @@
             list.innerHTML = '<div class="text-center text-slate-500 animate-pulse">Scanning Window Shoppers...</div>';
             
             if(silentUnsubscribe) silentUnsubscribe();
-            if(!db) return;
 
             silentUnsubscribe = db.collection('silent_leads').orderBy('last_updated', 'desc').limit(50)
                 .onSnapshot(snap => {
@@ -453,6 +464,7 @@
         function renderLeads(list) {
             const el = document.getElementById('leads-list'); el.innerHTML = "";
             if(list.length === 0) { el.innerHTML = '<div class="text-center text-slate-500 py-10">No matching records.</div>'; return; }
+            
             list.forEach(data => { 
                 el.innerHTML += `<div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 flex justify-between items-center hover:bg-slate-800/50 cursor-pointer border border-slate-800/50 hover:border-blue-500/30"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><i class="ri-user-search-line"></i></div><div><div class="font-bold text-white text-sm">${data.name}</div><div class="text-[10px] text-slate-400 font-mono">${data.loc}</div></div></div><div class="text-right"><div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[9px] text-blue-400 font-mono font-bold uppercase">${data.status || 'Pending'}</div></div></div>`; 
             });
@@ -461,6 +473,7 @@
         function renderProjects(list) {
             const el = document.getElementById('projects-list'); el.innerHTML = "";
             if(list.length === 0) { el.innerHTML = '<div class="text-center text-slate-500 py-10">No matching records.</div>'; return; }
+
             list.forEach(data => { 
                 el.innerHTML += `<div onclick="openProjectModal('${data.projectId}')" class="glass-card p-5 border-l-4 border-emerald-500 relative overflow-hidden group cursor-pointer hover:bg-slate-800/50 transition border-y border-r border-slate-800/50"><div class="absolute top-2 right-2 text-slate-600 text-[9px] font-mono">${data.date}</div><h3 class="font-bold text-base text-white mb-1">${data.location}</h3><p class="text-xs text-slate-400 mb-3 font-mono">${data.customerName}</p><div class="text-[10px] text-emerald-500 font-mono tracking-widest bg-emerald-900/20 inline-block px-2 py-0.5 rounded border border-emerald-900/50">${data.projectId}</div></div>`; 
             });
@@ -511,7 +524,7 @@
 
         // --- MAPS & ZONES LOGIC ---
         let adminMap, drawingManager, currentPoly;
-        let map; // 🟢 FIX: Global MiniMap variable
+        let map;    
         let mapPolygons = []; 
 
         const ZONE_CONFIG = {
@@ -628,32 +641,13 @@
         function toggleDrawButtons(isDrawing) { document.getElementById('btnDraw').classList.toggle('hidden', isDrawing); document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing); }
         function enableEditorUI(title, btnText) { document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('zonePanelTitle').innerText = title; document.getElementById('btnSaveZone').innerText = btnText; }
 
+     
+
         // --- CORE UTILS ---
-        // 🟢 FIX: Exclude 'Completed' or 'Dead' leads from Total Pipeline Revenue
         function loadAnalytics() {
-            if(!db) return;
             let totalDepth = 0; let totalRevenue = 0; let leadCount = 0; let projectCount = 0;
-            
-            db.collection('projects').get().then(snap => { 
-                projectCount = snap.size; 
-                snap.forEach(doc => { totalDepth += parseInt(doc.data().depth || 0); }); 
-                document.getElementById('stat-depth').innerText = totalDepth.toLocaleString() + " ft"; 
-                updateConversion(); 
-            });
-            
-            db.collection('leads').get().then(snap => { 
-                leadCount = snap.size; 
-                snap.forEach(doc => { 
-                    const d = doc.data();
-                    // 🟢 LOGIC UPDATE: Only count active leads
-                    if (d.status !== 'Completed' && d.status !== 'Dead') {
-                        totalRevenue += parseInt(d.total || 0); 
-                    }
-                }); 
-                document.getElementById('stat-revenue').innerText = "₹" + (totalRevenue/100000).toFixed(1) + "L"; 
-                updateConversion(); 
-            });
-            
+            db.collection('projects').get().then(snap => { projectCount = snap.size; snap.forEach(doc => { totalDepth += parseInt(doc.data().depth || 0); }); document.getElementById('stat-depth').innerText = totalDepth.toLocaleString() + " ft"; updateConversion(); });
+            db.collection('leads').get().then(snap => { leadCount = snap.size; snap.forEach(doc => { totalRevenue += parseInt(doc.data().total || 0); }); document.getElementById('stat-revenue').innerText = "₹" + (totalRevenue/100000).toFixed(1) + "L"; updateConversion(); });
             function updateConversion() { if(leadCount > 0) document.getElementById('stat-conversion').innerText = ((projectCount / leadCount) * 100).toFixed(1) + "%"; }
         }
         
@@ -686,7 +680,11 @@
         function previewQuote(encoded) { 
             const data = JSON.parse(decodeURIComponent(encoded)); 
             if (!data.rows) {
-                let remaining = parseInt(data.depth || 0); let rows = ""; let floor = 0; let currentRate = 70;
+                let remaining = parseInt(data.depth || 0); 
+                let rows = "";
+                let floor = 0; 
+                let currentRate = 70;
+                
                 if (remaining > 0) {
                     while(remaining > 0) {
                         let chunk = (remaining >= 50) ? 50 : remaining;
@@ -697,13 +695,21 @@
                 }
                 data.rows = rows;
             }
-            const content = getInvoiceHTML(data); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); 
+            
+            const content = getInvoiceHTML(data); 
+            
+            document.getElementById('previewContent').innerHTML = content; 
+            currentPDFElement = content; 
+            document.getElementById('previewModal').classList.add('open'); 
         }
 
         function previewCert(encoded) { 
             const data = JSON.parse(decodeURIComponent(encoded)); 
             const certData = { id: data.projectId, name: data.customerName, loc: data.location, date: data.date, gps: data.gps, depth: data.depth, casing_depth: data.casing_depth, casing_type: data.casing_type, yield: data.yield, motor: data.motor, rigType: data.rigType }; 
-            const content = getCertificateHTML(certData); document.getElementById('previewContent').innerHTML = content; currentPDFElement = content; document.getElementById('previewModal').classList.add('open'); 
+            const content = getCertificateHTML(certData); 
+            document.getElementById('previewContent').innerHTML = content; 
+            currentPDFElement = content; 
+            document.getElementById('previewModal').classList.add('open'); 
         }
 
         function confirmDownloadPDF() { const el = document.createElement('div'); el.innerHTML = currentPDFElement; document.body.appendChild(el); html2pdf().from(el).save('Document.pdf').then(() => document.body.removeChild(el)); }
@@ -712,7 +718,8 @@
         function openProjectModal(projectId) {
             const data = projectsCache.find(p => p.projectId === projectId);
             const content = `<div class="text-center mb-6"><h2 class="text-xl font-bold text-white">Project Archive</h2><p class="text-slate-400 font-mono text-xs">${data.projectId}</p></div><div class="grid grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800"><div><span class="text-[10px] text-slate-500 uppercase">Customer</span><div class="text-white font-bold text-sm">${data.customerName}</div></div><div><span class="text-[10px] text-slate-500 uppercase">Mobile</span><div class="text-blue-400 font-mono text-sm">${data.mobile}</div></div><div class="col-span-2"><span class="text-[10px] text-slate-500 uppercase">Location</span><div class="text-white text-sm">${data.location}</div></div></div><div class="grid grid-cols-3 gap-2 mb-6 text-center"> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">DEPTH</span><span class="text-white font-bold">${data.depth}ft</span></div> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">YIELD</span><span class="text-emerald-400 font-bold">${data.yield}</span></div> <div class="bg-slate-800 p-2 rounded"><span class="text-[9px] text-slate-500 block">DATE</span><span class="text-white font-bold">${data.date}</span></div> </div><div class="grid grid-cols-2 gap-3 mb-4"><button onclick="previewCert('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-file-paper-line"></i> Certificate</button><button onclick="editProject('${data.projectId}')" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-edit-line"></i> Edit Record</button></div><div class="text-center pt-2"><button onclick="deleteRecord('projects', '${data.projectId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE ARCHIVE</button></div>`;
-            document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open');
+            document.getElementById('modalContent').innerHTML = content; 
+            document.getElementById('detailModal').classList.add('open');
         }
 
         function openLeadModal(docId) {
@@ -726,38 +733,23 @@
                 <option value="Drilling" ${data.status==='Drilling'?'selected':''}>⚙️ Drilling Active</option>
                 <option value="Water" ${data.status==='Water'?'selected':''}>💧 Water Struck</option>
                 <option value="Completed" ${data.status==='Completed'?'selected':''}>✅ Project Closed</option>
-                <option value="Dead" ${data.status==='Dead'?'selected':''}>❌ Dead Lead</option>
             </select>
             </div><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Mission Log</label><div class="flex gap-2"><textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Notes...">${notes}</textarea><button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-2 rounded text-white"><i class="ri-save-line"></i></button></div></div></div><div class="grid grid-cols-2 gap-3 mb-4"><a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="btn-pro bg-green-600 hover:bg-green-500 text-white"><i class="ri-whatsapp-line"></i> Chat</a><a href="tel:${data.mobile}" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-phone-line"></i> Call</a><button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-eye-line"></i> View</button><button onclick="convertToProject('${data.docId}')" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white border border-purple-400/30"><i class="ri-magic-line"></i> Convert</button></div><div class="text-center pt-2"><button onclick="deleteRecord('leads', '${data.docId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE LEAD</button></div>`;
             document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open');
         }
-        function updateLeadStatus(docId, status) { 
-            db.collection('leads').doc(docId).update({ status: status }).then(() => {
-                // Refresh logic will auto-run due to onSnapshot, which will re-run loadAnalytics
-                notify("Status Updated");
-            });
-        }
+        function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }); }
         function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
-        
-        // 🟢 FIX: Global callback for Google Maps
-        window.initMapTools = function() { 
-            const input = document.getElementById('p_loc'); 
-            if(input) { 
-                const ac = new google.maps.places.Autocomplete(input); 
-                ac.addListener('place_changed', () => { 
-                    const p = ac.getPlace(); 
-                    if(p.geometry && map) map.setCenter(p.geometry.location); 
-                }); 
-            } 
-        };
-        
+        function initMapTools() { const input = document.getElementById('p_loc'); if(input) { const ac = new google.maps.places.Autocomplete(input); ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); } }
         function openMapPicker() { if(typeof google === 'undefined') { notify("System Initializing...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
         function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
         
-        // 🟢 FIX: Load Script Only After Config is Ready (if Config exists)
-        if(typeof CONTACT_INFO !== 'undefined' && CONTACT_INFO.google_maps_key) {
-            const s = document.createElement('script'); s.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,drawing,geometry&callback=initMapTools`; s.async = true; s.defer = true; document.body.appendChild(s);
-        }
+        // 🟢 FIX: Ensure Google Maps Key is Defined
+        const mapKey = (typeof CONTACT_INFO !== 'undefined' && CONTACT_INFO.google_maps_key) ? CONTACT_INFO.google_maps_key : 'YOUR_API_KEY_HERE';
+        const s = document.createElement('script'); 
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${mapKey}&libraries=places,drawing,geometry&callback=initMapTools`; 
+        s.async = true; 
+        s.defer = true; 
+        document.body.appendChild(s);
     </script>
 </body>
 </html>
