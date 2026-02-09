@@ -51,6 +51,32 @@
         
         #previewContent { background-color: #525659; display: flex; justify-content: center; padding: 40px; overflow-y: auto; }
         #previewContent > div { width: 210mm; min-height: 297mm; background: white; box-shadow: 0 0 15px rgba(0,0,0,0.5); box-sizing: border-box; overflow: hidden; }
+        /* 🟢 GOOGLE MAPS AUTOCOMPLETE DARK THEME */
+        .pac-container {
+            background-color: #1e293b !important; /* Dark Slate Background */
+            border: 1px solid #334155 !important;
+            border-radius: 8px !important;
+            font-family: 'Inter', sans-serif !important;
+            margin-top: 5px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+        }
+        .pac-item {
+            border-top: 1px solid #334155 !important;
+            color: #cbd5e1 !important; /* Light Grey Text */
+            padding: 10px !important;
+            cursor: pointer !important;
+        }
+        .pac-item:hover {
+            background-color: #334155 !important; /* Hover Effect */
+        }
+        .pac-item-query {
+            color: #ffffff !important; /* White text for the main match */
+            font-weight: bold !important;
+        }
+        /* Hide the Google logo if it ruins the vibe (Optional but cleaner) */
+        .pac-logo:after {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-sm bg-[#0f172a]"> 
