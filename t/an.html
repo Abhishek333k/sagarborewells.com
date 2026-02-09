@@ -21,32 +21,6 @@
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
-        /* 🟢 GOOGLE MAPS AUTOCOMPLETE DARK THEME */
-        .pac-container {
-            background-color: #1e293b !important; /* Dark Slate Background */
-            border: 1px solid #334155 !important;
-            border-radius: 8px !important;
-            font-family: 'Inter', sans-serif !important;
-            margin-top: 5px !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
-        }
-        .pac-item {
-            border-top: 1px solid #334155 !important;
-            color: #cbd5e1 !important; /* Light Grey Text */
-            padding: 10px !important;
-            cursor: pointer !important;
-        }
-        .pac-item:hover {
-            background-color: #334155 !important; /* Hover Effect */
-        }
-        .pac-item-query {
-            color: #ffffff !important; /* White text for the main match */
-            font-weight: bold !important;
-        }
-        /* Hide the Google logo if it ruins the vibe (Optional but cleaner) */
-        .pac-logo:after {
-            display: none !important;
-        }
         /* 🟢 MISSING MAP PIN STYLES */
         .map-wrapper { position: relative; width: 100%; height: 350px; border-radius: 12px; overflow: hidden; border: 2px solid #3b82f6; }
         .target-reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; display: flex; align-items: center; justify-content: center; }
@@ -77,6 +51,32 @@
         
         #previewContent { background-color: #525659; display: flex; justify-content: center; padding: 40px; overflow-y: auto; }
         #previewContent > div { width: 210mm; min-height: 297mm; background: white; box-shadow: 0 0 15px rgba(0,0,0,0.5); box-sizing: border-box; overflow: hidden; }
+        /* 🟢 GOOGLE MAPS AUTOCOMPLETE DARK THEME */
+        .pac-container {
+            background-color: #1e293b !important; /* Dark Slate Background */
+            border: 1px solid #334155 !important;
+            border-radius: 8px !important;
+            font-family: 'Inter', sans-serif !important;
+            margin-top: 5px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+        }
+        .pac-item {
+            border-top: 1px solid #334155 !important;
+            color: #cbd5e1 !important; /* Light Grey Text */
+            padding: 10px !important;
+            cursor: pointer !important;
+        }
+        .pac-item:hover {
+            background-color: #334155 !important; /* Hover Effect */
+        }
+        .pac-item-query {
+            color: #ffffff !important; /* White text for the main match */
+            font-weight: bold !important;
+        }
+        /* Hide the Google logo if it ruins the vibe (Optional but cleaner) */
+        .pac-logo:after {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-sm bg-[#0f172a]"> 
@@ -97,7 +97,6 @@
             <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-archive-line"></i> <span>BWBC Archives</span></div>
             <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
             <div onclick="showSection('maproom')" id="nav-maproom" class="nav-item text-purple-400"><i class="ri-map-2-line"></i> <span>Geo-Map Room</span></div>
-            
         </nav>
         <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button></div>
     </aside>
@@ -673,65 +672,6 @@
         function toggleDrawButtons(isDrawing) { document.getElementById('btnDraw').classList.toggle('hidden', isDrawing); document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing); }
         function enableEditorUI(title, btnText) { document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('zonePanelTitle').innerText = title; document.getElementById('btnSaveZone').innerText = btnText; }
 
-        function addRiskRegion() {
-            const region = document.getElementById('riskRegion').value; const status = document.getElementById('riskLevel').value; if(!region) return notify("Enter Region", "error");
-            db.collection('risk_map').doc(region.toLowerCase()).set({ region: region.toLowerCase(), status: status, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
-                document.getElementById('riskConsole').innerHTML += `<div class="text-green-400">✓ Mapped: ${region} -> ${status}</div>`; notify("Risk Region Added");
-            });
-        }
-        
-        function processJsonFile() {
-            const fileInput = document.getElementById('jsonUpload');
-            if(!fileInput.files.length) return notify("Select a file first", "error");
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            notify("Parsing Data...", "info");
-            
-            reader.onload = async function(e) {
-                try {
-                    const json = JSON.parse(e.target.result);
-                    const collectionRef = db.collection('layer_waterbodies'); 
-                    const items = Array.isArray(json) ? json : (json.features || []);
-                    
-                    if(items.length === 0) return notify("Empty Data", "error");
-
-                    // 🟢 CHUNKING LOGIC: Firestore Batch limit is 500
-                    const chunkSize = 400; 
-                    let totalIngested = 0;
-
-                    for (let i = 0; i < items.length; i += chunkSize) {
-                        const chunk = items.slice(i, i + chunkSize);
-                        const batch = db.batch();
-                        
-                        chunk.forEach(item => {
-                            const docId = 'wb_' + Math.random().toString(36).substr(2, 9);
-                            const docRef = collectionRef.doc(docId);
-                            const payload = {
-                                name: item.properties?.name || "Unknown Waterbody",
-                                type: "Waterbody",
-                                coords: item.geometry?.coordinates[0]?.map(c => ({lat: c[1], lng: c[0]})) || [], 
-                                color: "#3b82f6", 
-                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                            };
-                            if(payload.coords.length > 0) {
-                                batch.set(docRef, payload);
-                            }
-                        });
-
-                        await batch.commit();
-                        totalIngested += chunk.length;
-                        notify(`Ingested ${totalIngested} / ${items.length}...`);
-                    }
-
-                    notify(`COMPLETE: ${totalIngested} records synced!`, "success");
-
-                } catch (error) {
-                    notify("Invalid JSON File", "error");
-                    console.error(error);
-                }
-            };
-            reader.readAsText(file);
-        }
 
         // --- CORE UTILS ---
         function loadAnalytics() {
@@ -829,7 +769,18 @@
         }
         function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }); }
         function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
-        function initMapTools() { const input = document.getElementById('p_loc'); if(input) { const ac = new google.maps.places.Autocomplete(input); ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); } }
+       
+        window.initMapTools = function() { 
+            const input = document.getElementById('p_loc'); 
+            if(input) { 
+                const ac = new google.maps.places.Autocomplete(input); 
+                ac.addListener('place_changed', () => { 
+                    const p = ac.getPlace(); 
+                    if(p.geometry && map) map.setCenter(p.geometry.location); 
+                }); 
+            } 
+        };
+    
         function openMapPicker() { if(typeof google === 'undefined') { notify("System Initializing...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
         function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
         
