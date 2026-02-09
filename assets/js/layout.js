@@ -154,15 +154,22 @@ document.addEventListener("DOMContentLoaded", function() {
                     <ul class="space-y-2 text-sm">
                         <li><a href="index" class="hover:text-blue-400 transition">Home</a></li>
                         <li><a href="quote" class="hover:text-blue-400 transition">Get Estimate</a></li>
-                        <li><a href="dashboard" class="hover:text-blue-400 transition">Client Login</a></li>
+                        <li><a href="dashboard" class="hover:text-blue-400 transition">Account Login</a></li>
+                        <li><a href="f/blog" class="hover:text-blue-400 transition">Blog</a></li>
+                      //<li><a href="f/science" class="hover:text-blue-400 transition">Science POrtal</a></li>
+                        <li><a href="f/motor" class="hover:text-blue-400 transition">Motor Recommendations</a></li>
+                        <li><a href="f/finance" class="hover:text-blue-400 transition">Financial Assist</a></li>
+                        <li><a href="about" class="hover:text-blue-400 transition">About Us</a></li>
+                        <li><a href="contact" class="hover:text-blue-400 transition">Contact Us</a></li>
                     </ul>
                 </div>
 
                 <div>
                     <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Legal</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="terms" class="hover:text-blue-400 transition">Terms of Service</a></li>
-                        <li><a href="privacy" class="hover:text-blue-400 transition">Privacy Policy</a></li>
+                        <li><a href="policy/terms" class="hover:text-blue-400 transition">Terms of Service</a></li>
+                        <li><a href="policy/privacy" class="hover:text-blue-400 transition">Privacy Policy</a></li>
+                        <li><a href="policy/refund" class="hover:text-blue-400 transition">Refund Policy</a></li>
                     </ul>
                 </div>
 
