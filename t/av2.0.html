@@ -219,6 +219,17 @@
 
 
 <script>
+			// 🟢 SAFETY TIMER: Force Loader Hide after 5s (Prevents Infinite Spin)
+		setTimeout(() => {
+		     const loader = document.getElementById('system-loader');
+		     if(loader && loader.style.display !== 'none') {
+		         console.warn("⚠️ System Loader Timed Out - Forcing UI Open");
+		         const loginModal = document.getElementById('login-overlay');
+		         loader.style.display = 'none';
+		         if(loginModal) loginModal.classList.add('open');
+		     }
+		}, 5000); // 5 seconds timeout
+	
         // 🟢 FIX 1: Prevent Duplicate Initialization Crash
         // We only initialize if no apps exist yet.
         if (typeof firebase !== 'undefined' && !firebase.apps.length) {
