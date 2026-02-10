@@ -97,6 +97,7 @@
             <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-archive-line"></i> <span>BWBC Archives</span></div>
             <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
             <div onclick="showSection('maproom')" id="nav-maproom" class="nav-item text-purple-400"><i class="ri-map-2-line"></i> <span>Geo-Map Room</span></div>
+           
         </nav>
         <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button></div>
     </aside>
@@ -197,38 +198,7 @@
             </div>
         </div>
 
-        <div id="section-dataops" class="content-section hidden max-w-5xl mx-auto">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass-card p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="p-3 bg-blue-900/30 rounded-lg text-blue-400"><i class="ri-cloud-windy-line text-xl"></i></div>
-                        <div><h3 class="text-lg font-bold text-white">WRIS Data Ingestion</h3><p class="text-xs text-slate-400">Import Groundwater Levels from Govt API/JSON</p></div>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="bg-slate-900 p-4 rounded border border-slate-700">
-                            <label class="text-[10px] text-slate-500 uppercase font-bold mb-2 block">Method 2: JSON/CSV Upload (Reliable)</label>
-                            <p class="text-xs text-slate-400 mb-2">Download data from WRIS website, save as JSON, and upload here. (Auto-Chunking Enabled)</p>
-                            <input type="file" id="jsonUpload" accept=".json,.geojson" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-600"/>
-                            <button onclick="processJsonFile()" class="mt-3 w-full btn-pro bg-emerald-600 hover:bg-emerald-500 text-white">PROCESS & UPLOAD TO FIREBASE</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="glass-card p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="p-3 bg-red-900/30 rounded-lg text-red-400"><i class="ri-alert-line text-xl"></i></div>
-                        <div><h3 class="text-lg font-bold text-white">Regional Risk Mapper</h3><p class="text-xs text-slate-400">Map Districts/Mandals to CGWB Risk Scores</p></div>
-                    </div>
-                    <div class="bg-slate-900 p-4 rounded border border-slate-700 h-64 overflow-y-auto custom-scrollbar" id="riskConsole">
-                        <div class="text-[10px] font-mono text-slate-500">System Ready...</div>
-                    </div>
-                    <div class="mt-4 flex gap-2">
-                        <input type="text" id="riskRegion" class="cyber-input" placeholder="Region (e.g. Guntur)">
-                        <select id="riskLevel" class="cyber-input w-32"><option value="Safe">Safe</option><option value="Semi-Critical">Semi-Critical</option><option value="Critical">Critical</option><option value="Over-Exploited">Over-Exploited</option></select>
-                        <button onclick="addRiskRegion()" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white"><i class="ri-add-line"></i></button>
-                    </div>
-                </div>
-            </div>
-        </div>
+       
         
         <div id="section-create" class="content-section hidden max-w-4xl mx-auto">
             <div class="glass-card p-8">
@@ -672,6 +642,65 @@
         function toggleDrawButtons(isDrawing) { document.getElementById('btnDraw').classList.toggle('hidden', isDrawing); document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing); }
         function enableEditorUI(title, btnText) { document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('zonePanelTitle').innerText = title; document.getElementById('btnSaveZone').innerText = btnText; }
 
+        function addRiskRegion() {
+            const region = document.getElementById('riskRegion').value; const status = document.getElementById('riskLevel').value; if(!region) return notify("Enter Region", "error");
+            db.collection('risk_map').doc(region.toLowerCase()).set({ region: region.toLowerCase(), status: status, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
+                document.getElementById('riskConsole').innerHTML += `<div class="text-green-400">✓ Mapped: ${region} -> ${status}</div>`; notify("Risk Region Added");
+            });
+        }
+        
+        function processJsonFile() {
+            const fileInput = document.getElementById('jsonUpload');
+            if(!fileInput.files.length) return notify("Select a file first", "error");
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            notify("Parsing Data...", "info");
+            
+            reader.onload = async function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    const collectionRef = db.collection('layer_waterbodies'); 
+                    const items = Array.isArray(json) ? json : (json.features || []);
+                    
+                    if(items.length === 0) return notify("Empty Data", "error");
+
+                    // 🟢 CHUNKING LOGIC: Firestore Batch limit is 500
+                    const chunkSize = 400; 
+                    let totalIngested = 0;
+
+                    for (let i = 0; i < items.length; i += chunkSize) {
+                        const chunk = items.slice(i, i + chunkSize);
+                        const batch = db.batch();
+                        
+                        chunk.forEach(item => {
+                            const docId = 'wb_' + Math.random().toString(36).substr(2, 9);
+                            const docRef = collectionRef.doc(docId);
+                            const payload = {
+                                name: item.properties?.name || "Unknown Waterbody",
+                                type: "Waterbody",
+                                coords: item.geometry?.coordinates[0]?.map(c => ({lat: c[1], lng: c[0]})) || [], 
+                                color: "#3b82f6", 
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            };
+                            if(payload.coords.length > 0) {
+                                batch.set(docRef, payload);
+                            }
+                        });
+
+                        await batch.commit();
+                        totalIngested += chunk.length;
+                        notify(`Ingested ${totalIngested} / ${items.length}...`);
+                    }
+
+                    notify(`COMPLETE: ${totalIngested} records synced!`, "success");
+
+                } catch (error) {
+                    notify("Invalid JSON File", "error");
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+        }
 
         // --- CORE UTILS ---
         function loadAnalytics() {
@@ -769,18 +798,7 @@
         }
         function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }); }
         function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
-       
-        window.initMapTools = function() { 
-            const input = document.getElementById('p_loc'); 
-            if(input) { 
-                const ac = new google.maps.places.Autocomplete(input); 
-                ac.addListener('place_changed', () => { 
-                    const p = ac.getPlace(); 
-                    if(p.geometry && map) map.setCenter(p.geometry.location); 
-                }); 
-            } 
-        };
-    
+        function initMapTools() { const input = document.getElementById('p_loc'); if(input) { const ac = new google.maps.places.Autocomplete(input); ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); } }
         function openMapPicker() { if(typeof google === 'undefined') { notify("System Initializing...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
         function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }
         
