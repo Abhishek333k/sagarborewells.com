@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engineering Lab | Sagar Borewells</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="assets/js/config.js"></script>
+
+    <style>
+        /* ENGINEERING THEME: Technical Blue & Slate */
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: white; }
+        
+        /* Glass Cards */
+        .sci-card { 
+            background: rgba(30, 41, 59, 0.7); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            backdrop-filter: blur(12px); 
+            border-radius: 16px; 
+            padding: 24px; 
+            transition: 0.3s; 
+            display: flex; flex-direction: column;
+        }
+        .sci-card:hover { border-color: rgba(56, 189, 248, 0.3); box-shadow: 0 0 30px rgba(56, 189, 248, 0.05); }
+        
+        /* Inputs & Buttons */
+        .sci-input { 
+            background: #1e293b; 
+            border: 1px solid #334155; 
+            color: white; 
+            padding: 12px 16px; 
+            border-radius: 8px; 
+            width: 100%; 
+            outline: none; 
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            transition: 0.3s; 
+        }
+        .sci-input:focus { border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+        
+        .btn-calc {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white; font-weight: 800; text-transform: uppercase;
+            padding: 12px; border-radius: 8px; width: 100%; letter-spacing: 1px;
+            font-size: 0.8rem; margin-top: auto; transition: 0.2s;
+        }
+        .btn-calc:hover { transform: translateY(-2px); shadow: 0 5px 15px rgba(14, 165, 233, 0.4); }
+
+        .result-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px dashed #475569;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .res-value { font-size: 1.8rem; font-weight: 800; color: #38bdf8; }
+        .res-unit { font-size: 0.8rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+
+        .label-tech { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; display: block; }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+
+    <header class="max-w-6xl mx-auto mb-10 flex justify-between items-end border-b border-slate-800 pb-6">
+        <div>
+            <h1 class="text-4xl font-extrabold text-white tracking-tight">SAGAR BOREWELLS</h1>
+            <p class="text-sm font-bold text-blue-400 mt-1 flex items-center gap-2">
+                <i class="ri-flask-line"></i> ENGINEERING LAB & TOOLS
+            </p>
+        </div>
+        <a href="index.html" class="text-slate-400 hover:text-white flex items-center gap-2 transition font-bold text-sm">
+            <i class="ri-arrow-left-line"></i> HQ
+        </a>
+    </header>
+
+    <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <div class="sci-card border-t-4 border-t-emerald-500">
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="ri-timer-flash-line text-emerald-400"></i> Yield Calculator</h2>
+            <p class="text-xs text-slate-400 mb-6">Calculate flow rate using the "Bucket Test" method.</p>
+            
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="label-tech">Bucket Size (L)</label>
+                    <input type="number" id="yieldVol" class="sci-input" value="20">
+                </div>
+                <div>
+                    <label class="label-tech">Fill Time (Sec)</label>
+                    <input type="number" id="yieldTime" class="sci-input" placeholder="e.g. 15">
+                </div>
+            </div>
+
+            <div class="result-box">
+                <div class="res-value" id="resYield">0</div>
+                <div class="res-unit">Gallons Per Hour (GPH)</div>
+            </div>
+
+            <button onclick="calcYield()" class="btn-calc mt-4 bg-emerald-600 hover:bg-emerald-500">Calculate Flow</button>
+        </div>
+
+        <div class="sci-card border-t-4 border-t-blue-500">
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="ri-exchange-line text-blue-400"></i> Field Converter</h2>
+            <p class="text-xs text-slate-400 mb-6">Essential conversions for site measurements.</p>
+            
+            <div class="mb-4">
+                <label class="label-tech">Input Value</label>
+                <input type="number" id="convInput" class="sci-input" placeholder="Enter value..." oninput="calcConv()">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <button onclick="setConvMode('ft_m')" id="mode_ft_m" class="bg-slate-800 text-xs py-2 rounded text-slate-300 border border-slate-700 hover:border-blue-500 hover:text-white transition">Ft ➡ Meters</button>
+                <button onclick="setConvMode('m_ft')" id="mode_m_ft" class="bg-slate-800 text-xs py-2 rounded text-slate-300 border border-slate-700 hover:border-blue-500 hover:text-white transition">Meters ➡ Ft</button>
+                <button onclick="setConvMode('hp_kw')" id="mode_hp_kw" class="bg-slate-800 text-xs py-2 rounded text-slate-300 border border-slate-700 hover:border-blue-500 hover:text-white transition">HP ➡ KW</button>
+                <button onclick="setConvMode('kw_hp')" id="mode_kw_hp" class="bg-slate-800 text-xs py-2 rounded text-slate-300 border border-slate-700 hover:border-blue-500 hover:text-white transition">KW ➡ HP</button>
+            </div>
+
+            <div class="result-box">
+                <div class="res-value" id="resConv">--</div>
+                <div class="res-unit" id="unitConv">Select Mode</div>
+            </div>
+        </div>
+
+        <div class="sci-card border-t-4 border-t-orange-500">
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="ri-layout-grid-line text-orange-400"></i> Gravel Pack Volume</h2>
+            <p class="text-xs text-slate-400 mb-6">Calculate filter media volume for annular space.</p>
+            
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="label-tech">Bore Size (Inch)</label>
+                    <input type="number" id="gravelBore" class="sci-input" value="6.5">
+                </div>
+                <div>
+                    <label class="label-tech">Casing Size (Inch)</label>
+                    <input type="number" id="gravelCasing" class="sci-input" value="5">
+                </div>
+                <div class="col-span-2">
+                    <label class="label-tech">Depth (Feet)</label>
+                    <input type="number" id="gravelDepth" class="sci-input" placeholder="e.g. 400">
+                </div>
+            </div>
+
+            <div class="result-box">
+                <div class="res-value" id="resGravel">0</div>
+                <div class="res-unit">Cubic Feet (CFT)</div>
+            </div>
+
+            <button onclick="calcGravel()" class="btn-calc mt-4 bg-orange-600 hover:bg-orange-500">Calculate Volume</button>
+        </div>
+
+    </main>
+
+    <script>
+        // --- 1. YIELD CALCULATOR ---
+        function calcYield() {
+            const vol = parseFloat(document.getElementById('yieldVol').value);
+            const sec = parseFloat(document.getElementById('yieldTime').value);
+            if(!vol || !sec) return;
+            
+            // Formula: (Volume / Time) * 3600 = Liters Per Hour
+            // Convert to Gallons: LPH / 3.785 = GPH
+            const lph = (vol / sec) * 3600;
+            const gph = lph / 3.785;
+            
+            document.getElementById('resYield').innerText = Math.round(gph).toLocaleString();
+        }
+
+        // --- 2. FIELD CONVERTER ---
+        let convMode = 'ft_m'; // Default
+        function setConvMode(mode) {
+            convMode = mode;
+            // Reset UI
+            document.querySelectorAll('[id^="mode_"]').forEach(b => b.classList.replace('bg-blue-600','bg-slate-800'));
+            document.querySelectorAll('[id^="mode_"]').forEach(b => b.classList.replace('text-white','text-slate-300'));
+            // Active UI
+            const btn = document.getElementById('mode_'+mode);
+            btn.classList.replace('bg-slate-800','bg-blue-600');
+            btn.classList.replace('text-slate-300','text-white');
+            calcConv();
+        }
+        function calcConv() {
+            const val = parseFloat(document.getElementById('convInput').value);
+            const disp = document.getElementById('resConv');
+            const unit = document.getElementById('unitConv');
+            
+            if(isNaN(val)) { disp.innerText = "--"; return; }
+
+            if(convMode === 'ft_m') {
+                disp.innerText = (val * 0.3048).toFixed(2);
+                unit.innerText = "Meters";
+            } else if(convMode === 'm_ft') {
+                disp.innerText = (val * 3.28084).toFixed(2);
+                unit.innerText = "Feet";
+            } else if(convMode === 'hp_kw') {
+                disp.innerText = (val * 0.7457).toFixed(2);
+                unit.innerText = "Kilowatts (kW)";
+            } else if(convMode === 'kw_hp') {
+                disp.innerText = (val * 1.341).toFixed(2);
+                unit.innerText = "Horsepower (HP)";
+            }
+        }
+        // Initialize first button state
+        setConvMode('ft_m');
+
+        // --- 3. GRAVEL CALCULATOR ---
+        function calcGravel() {
+            const D = parseFloat(document.getElementById('gravelBore').value); // Hole Dia
+            const d = parseFloat(document.getElementById('gravelCasing').value); // Pipe Dia
+            const h = parseFloat(document.getElementById('gravelDepth').value); // Depth
+            
+            if(!D || !d || !h) return;
+
+            // Annular Volume in CFT
+            // Formula: V = π * h * ( (D/2)^2 - (d/2)^2 ) / 144 (since D,d are inches)
+            // Wait, simplified: V (cft) = (D^2 - d^2) * h * 0.005454
+            
+            const vol = ( (D*D) - (d*d) ) * h * 0.005454;
+            
+            document.getElementById('resGravel').innerText = vol.toFixed(1);
+        }
+    </script>
+</body>
+</html>
