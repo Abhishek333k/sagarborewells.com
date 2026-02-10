@@ -97,7 +97,7 @@
             <div onclick="showSection('projects')" id="nav-projects" class="nav-item"><i class="ri-archive-line"></i> <span>BWBC Archives</span></div>
             <div onclick="startNewCertificate()" id="nav-create" class="nav-item text-emerald-400"><i class="ri-add-box-line"></i> <span>New BWBC</span></div>
             <div onclick="showSection('maproom')" id="nav-maproom" class="nav-item text-purple-400"><i class="ri-map-2-line"></i> <span>Geo-Map Room</span></div>
-            <div onclick="showSection('dataops')" id="nav-dataops" class="nav-item text-orange-400"><i class="ri-database-line"></i> <span>Govt Data Sync</span></div>
+            
         </nav>
         <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="flex items-center gap-3 text-xs text-slate-500 hover:text-red-400 transition font-bold"><i class="ri-shut-down-line"></i> LOGOUT</button></div>
     </aside>
@@ -250,6 +250,18 @@
 
 
 <script>
+                // 🟢 SAFETY TIMER: Force Loader Hide after 5s (Prevents Infinite Spin)
+        setTimeout(() => {
+             const loader = document.getElementById('system-loader');
+             if(loader && loader.style.display !== 'none') {
+                 console.warn("⚠️ System Loader Timed Out - Forcing UI Open");
+                 const loginModal = document.getElementById('login-overlay');
+                 loader.style.display = 'none';
+                 if(loginModal) loginModal.classList.add('open');
+             }
+        }, 5000); // 5 seconds timeout
+
+    
         // 🟢 FIX 1: Prevent Duplicate Initialization Crash
         // We only initialize if no apps exist yet.
         if (typeof firebase !== 'undefined' && !firebase.apps.length) {
