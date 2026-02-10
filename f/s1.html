@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Science Lab | Sagar Borewells</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="assets/js/config.js"></script>
+
+    <style>
+        /* ENGINEERING THEME: Deep Space & Neon Blue */
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: white; }
+        
+        /* Glass Cards */
+        .sci-card { 
+            background: rgba(30, 41, 59, 0.4); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            backdrop-filter: blur(12px); 
+            border-radius: 16px; 
+            padding: 24px; 
+            transition: 0.3s; 
+            display: flex; flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        .sci-card:hover { border-color: rgba(56, 189, 248, 0.3); box-shadow: 0 0 30px rgba(56, 189, 248, 0.05); transform: translateY(-2px); }
+        
+        /* Decoration Line */
+        .sci-card::before { content:''; position: absolute; top:0; left:0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.5), transparent); }
+
+        /* Inputs & Buttons */
+        .sci-input { 
+            background: #1e293b; 
+            border: 1px solid #334155; 
+            color: white; 
+            padding: 12px 16px; 
+            border-radius: 8px; 
+            width: 100%; 
+            outline: none; 
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            transition: 0.3s; 
+        }
+        .sci-input:focus { border-color: #38bdf8; background: #0f172a; }
+        
+        .btn-calc {
+            background: #3b82f6;
+            color: white; font-weight: 800; text-transform: uppercase;
+            padding: 12px; border-radius: 8px; width: 100%; letter-spacing: 1px;
+            font-size: 0.75rem; margin-top: auto; transition: 0.2s;
+        }
+        .btn-calc:hover { background: #2563eb; shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+
+        .result-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px dashed #475569;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .res-value { font-size: 1.5rem; font-weight: 800; color: #38bdf8; }
+        .res-unit { font-size: 0.7rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; margin-top: 2px; }
+
+        .label-tech { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
+        
+        /* Status Badges for TDS */
+        .badge-safe { color: #34d399; background: rgba(52, 211, 153, 0.1); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        .badge-warn { color: #facc15; background: rgba(250, 204, 21, 0.1); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        .badge-danger { color: #f87171; background: rgba(248, 113, 113, 0.1); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+
+    <header class="max-w-6xl mx-auto mb-10 flex justify-between items-end border-b border-slate-800 pb-6">
+        <div>
+            <h1 class="text-3xl font-extrabold text-white tracking-tight">SAGAR BOREWELLS</h1>
+            <p class="text-xs font-bold text-blue-400 mt-1 flex items-center gap-2 tracking-widest">
+                <i class="ri-flask-line"></i> SCIENCE LAB
+            </p>
+        </div>
+        <a href="index.html" class="text-slate-400 hover:text-white flex items-center gap-2 transition font-bold text-xs bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+            <i class="ri-arrow-left-line"></i> BACK TO HQ
+        </a>
+    </header>
+
+    <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+        <div class="sci-card">
+            <h2 class="text-sm font-bold mb-4 flex items-center gap-2 text-slate-200"><i class="ri-exchange-line text-blue-400"></i> Field Converter</h2>
+            
+            <div class="mb-4">
+                <label class="label-tech">Input Value</label>
+                <input type="number" id="convInput" class="sci-input" placeholder="0" oninput="calcConv()">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <button onclick="setConvMode('ft_m')" id="mode_ft_m" class="bg-blue-600 text-white text-[10px] py-1.5 rounded border border-slate-600">Ft ⮕ Mtr</button>
+                <button onclick="setConvMode('m_ft')" id="mode_m_ft" class="bg-slate-800 text-slate-400 text-[10px] py-1.5 rounded border border-slate-600">Mtr ⮕ Ft</button>
+                <button onclick="setConvMode('hp_kw')" id="mode_hp_kw" class="bg-slate-800 text-slate-400 text-[10px] py-1.5 rounded border border-slate-600">HP ⮕ KW</button>
+                <button onclick="setConvMode('kw_hp')" id="mode_kw_hp" class="bg-slate-800 text-slate-400 text-[10px] py-1.5 rounded border border-slate-600">KW ⮕ HP</button>
+            </div>
+
+            <div class="result-box mt-auto">
+                <div class="res-value" id="resConv">--</div>
+                <div class="res-unit" id="unitConv">Meters</div>
+            </div>
+        </div>
+
+        <div class="sci-card">
+            <h2 class="text-sm font-bold mb-4 flex items-center gap-2 text-slate-200"><i class="ri-drop-line text-cyan-400"></i> TDS Analyzer</h2>
+            
+            <div class="mb-4">
+                <label class="label-tech">TDS Value (PPM)</label>
+                <input type="number" id="tdsInput" class="sci-input" placeholder="e.g. 450" oninput="calcTDS()">
+            </div>
+
+            <div class="flex-grow flex flex-col items-center justify-center p-4 bg-slate-900/50 rounded-lg border border-slate-800 text-center">
+                <div id="tdsStatus" class="badge-safe mb-2">--</div>
+                <p id="tdsDesc" class="text-[10px] text-slate-400">Enter value to check usability.</p>
+            </div>
+        </div>
+
+        <div class="sci-card">
+            <h2 class="text-sm font-bold mb-4 flex items-center gap-2 text-slate-200"><i class="ri-flashlight-line text-yellow-400"></i> Cable Sizer</h2>
+            
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                    <label class="label-tech">Motor HP</label>
+                    <select id="cableHP" class="sci-input">
+                        <option value="1">1 HP</option>
+                        <option value="1.5">1.5 HP</option>
+                        <option value="2">2 HP</option>
+                        <option value="3">3 HP</option>
+                        <option value="5">5 HP</option>
+                        <option value="7.5">7.5 HP</option>
+                        <option value="10">10 HP</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="label-tech">Length (Ft)</label>
+                    <input type="number" id="cableLen" class="sci-input" placeholder="400">
+                </div>
+            </div>
+
+            <button onclick="calcCable()" class="btn-calc bg-yellow-600 hover:bg-yellow-500 text-black">Calculate Size</button>
+
+            <div class="result-box">
+                <div class="res-value" id="resCable">--</div>
+                <div class="res-unit">Copper Wire (Sq.mm)</div>
+            </div>
+        </div>
+
+        <div class="sci-card">
+            <h2 class="text-sm font-bold mb-4 flex items-center gap-2 text-slate-200"><i class="ri-timer-line text-purple-400"></i> Tank Timer</h2>
+            
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                    <label class="label-tech">Pump Flow (LPH)</label>
+                    <input type="number" id="tankFlow" class="sci-input" placeholder="3000">
+                </div>
+                <div>
+                    <label class="label-tech">Tank Size (Ltr)</label>
+                    <input type="number" id="tankSize" class="sci-input" placeholder="1000">
+                </div>
+            </div>
+
+            <button onclick="calcTank()" class="btn-calc bg-purple-600 hover:bg-purple-500">Get Time</button>
+
+            <div class="result-box">
+                <div class="res-value" id="resTank">--</div>
+                <div class="res-unit">Minutes to Full</div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- 1. FIELD CONVERTER ---
+        let convMode = 'ft_m';
+        function setConvMode(mode) {
+            convMode = mode;
+            document.querySelectorAll('[id^="mode_"]').forEach(b => {
+                b.className = 'bg-slate-800 text-slate-400 text-[10px] py-1.5 rounded border border-slate-600 hover:border-slate-400 transition';
+            });
+            const activeBtn = document.getElementById('mode_'+mode);
+            activeBtn.className = 'bg-blue-600 text-white text-[10px] py-1.5 rounded border border-blue-500 shadow-sm';
+            calcConv();
+        }
+        function calcConv() {
+            const val = parseFloat(document.getElementById('convInput').value);
+            const disp = document.getElementById('resConv');
+            const unit = document.getElementById('unitConv');
+            
+            if(isNaN(val)) { disp.innerText = "--"; return; }
+
+            if(convMode === 'ft_m') { disp.innerText = (val * 0.3048).toFixed(2); unit.innerText = "Meters"; }
+            else if(convMode === 'm_ft') { disp.innerText = (val * 3.28084).toFixed(2); unit.innerText = "Feet"; }
+            else if(convMode === 'hp_kw') { disp.innerText = (val * 0.7457).toFixed(2); unit.innerText = "Kilowatts (kW)"; }
+            else if(convMode === 'kw_hp') { disp.innerText = (val * 1.341).toFixed(2); unit.innerText = "Horsepower (HP)"; }
+        }
+
+        // --- 2. TDS ANALYZER ---
+        function calcTDS() {
+            const val = parseInt(document.getElementById('tdsInput').value);
+            const status = document.getElementById('tdsStatus');
+            const desc = document.getElementById('tdsDesc');
+
+            if(isNaN(val)) { status.innerText = "--"; status.className = ""; desc.innerText = "Enter value..."; return; }
+
+            if(val < 50) {
+                status.innerText = "Too Low"; status.className = "badge-warn"; desc.innerText = "Lacks minerals. Flat taste.";
+            } else if(val <= 300) {
+                status.innerText = "Excellent"; status.className = "badge-safe"; desc.innerText = "Perfect for drinking.";
+            } else if(val <= 600) {
+                status.innerText = "Good"; status.className = "badge-safe"; desc.innerText = "Acceptable. Slight hardness.";
+            } else if(val <= 1200) {
+                status.innerText = "High TDS"; status.className = "badge-warn"; desc.innerText = "Use RO. Not recommended for direct drinking.";
+            } else {
+                status.innerText = "Hazardous"; status.className = "badge-danger"; desc.innerText = "Unsafe. High salinity/contamination.";
+            }
+        }
+
+        // --- 3. CABLE SIZER (Simplified Engineering Table) ---
+        function calcCable() {
+            const hp = parseFloat(document.getElementById('cableHP').value);
+            const len = parseFloat(document.getElementById('cableLen').value);
+            if(!hp || !len) return;
+
+            // Simplified selection logic based on standard submersible charts (Copper)
+            let size = 0;
+            // Logic: Load current (approx) * Length Factor / Voltage Drop
+            // Using a lookup approach for robustness
+            if (hp <= 2) {
+                if(len < 250) size = 1.5; else if(len < 400) size = 2.5; else size = 4;
+            } else if (hp <= 5) {
+                if(len < 200) size = 2.5; else if(len < 350) size = 4; else size = 6;
+            } else if (hp <= 7.5) {
+                if(len < 200) size = 4; else if(len < 300) size = 6; else size = 10;
+            } else {
+                if(len < 150) size = 6; else if(len < 250) size = 10; else size = 16;
+            }
+            
+            document.getElementById('resCable').innerText = size + " mm²";
+        }
+
+        // --- 4. TANK TIMER ---
+        function calcTank() {
+            const flow = parseFloat(document.getElementById('tankFlow').value); // LPH
+            const size = parseFloat(document.getElementById('tankSize').value); // Liters
+            
+            if(!flow || !size) return;
+
+            // Formula: (Size / Flow) * 60 minutes
+            const time = (size / flow) * 60;
+            
+            // Format: Hours and Minutes if > 60
+            if(time > 60) {
+                const hrs = Math.floor(time / 60);
+                const mins = Math.round(time % 60);
+                document.getElementById('resTank').innerText = `${hrs}h ${mins}m`;
+            } else {
+                document.getElementById('resTank').innerText = Math.round(time) + " min";
+            }
+        }
+    </script>
+</body>
+</html>
