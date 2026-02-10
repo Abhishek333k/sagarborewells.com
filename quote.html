@@ -98,20 +98,23 @@
                         <input type="text" id="custName" class="custom-input" placeholder="Your Name">
                     </div>
                     <div>
-                        <label class="form-label">Mobile Number</label>
-                        <div class="relative">
-                            <input type="tel" id="custMobile" class="custom-input pr-24" placeholder="98765 43210" maxlength="10">
-                            <button id="sendOtpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-4 rounded-lg font-bold text-xs hover:bg-black transition">VERIFY</button>
-                            <button id="editMobileBtn" onclick="resetOTP()" class="absolute right-2 top-2 bottom-2 text-blue-600 border border-blue-200 bg-blue-50 px-4 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition-all hidden shadow-sm uppercase tracking-wider">EDIT</button>
-                                                           
-                            <div id="verifiedBadge" class="absolute right-4 top-4 text-emerald-600 font-bold text-xs uppercase hidden flex items-center gap-1"><i class="ri-checkbox-circle-fill"></i> Verified</div>
-                        </div>
-                        <div id="otpSection" class="hidden mt-2 flex gap-2">
-                            <input type="text" id="otpInput" class="custom-input text-center tracking-widest" placeholder="OTP" maxlength="6">
-                            <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold hover:bg-emerald-700">OK</button>
-                        </div>
-                        <div id="recaptcha-container"></div>
-                    </div>
+    <label class="form-label">Mobile Number</label>
+    <div class="relative">
+        <input type="tel" id="custMobile" class="custom-input pr-44" placeholder="98765 43210" maxlength="10">
+        
+        <button id="sendOtpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-4 rounded-lg font-bold text-xs hover:bg-black transition shadow-md">VERIFY</button>
+        <button id="editMobileBtn" onclick="resetOTP()" class="absolute right-2 top-2 bottom-2 text-blue-600 border border-blue-200 bg-blue-50 px-4 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition-all hidden shadow-sm uppercase tracking-wider z-20">EDIT</button>
+        <div id="verifiedBadge" class="absolute right-24 top-0 bottom-0 flex items-center gap-1 text-emerald-600 font-bold text-xs uppercase hidden pointer-events-none z-10">
+        <i class="ri-verified-badge-fill text-base"></i> Verified</div>
+        
+    </div>
+    
+    <div id="otpSection" class="hidden mt-2 flex gap-2">
+        <input type="text" id="otpInput" class="custom-input text-center tracking-widest" placeholder="OTP" maxlength="6">
+        <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold hover:bg-emerald-700">OK</button>
+    </div>
+    <div id="recaptcha-container"></div>
+</div>
                 </div>
 
                 <div>
