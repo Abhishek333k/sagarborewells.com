@@ -498,7 +498,7 @@
             if(list.length === 0) { el.innerHTML = '<div class="text-center text-slate-500 py-10">No matching records.</div>'; return; }
             
             list.forEach(data => { 
-                el.innerHTML += `<div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 flex justify-between items-center hover:bg-slate-800/50 cursor-pointer border border-slate-800/50 hover:border-blue-500/30"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><i class="ri-user-search-line"></i></div><div><div class="font-bold text-white text-sm">${data.name}</div><div class="text-[10px] text-slate-400 font-mono">${data.loc}</div></div></div><div class="text-right"><div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[9px] text-blue-400 font-mono font-bold uppercase">${data.status || 'Pending'}</div></div></div>`; 
+                el.innerHTML += `<div onclick="openLeadModal('${data.docId}')" class="glass-card p-4 flex justify-between items-center hover:bg-slate-800/50 cursor-pointer border border-slate-800/50 hover:border-blue-500/30"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><i class="ri-user-search-line"></i></div><div><div class="font-bold text-white text-sm">${data.name}</div><div class="text-[10px] text-slate-400 font-mono">${data.loc}</div> <div class="text-[9px] text-emerald-500 font-mono mt-0.5 tracking-wider bg-emerald-900/20 inline-block px-1 rounded border border-emerald-500/30">REF: ${data.id || data.docId}</div></div></div><div class="text-right"><div class="font-bold text-emerald-400 text-sm">₹${parseInt(data.total).toLocaleString()}</div><div class="text-[9px] text-blue-400 font-mono font-bold uppercase">${data.status || 'Pending'}</div></div></div>`; 
             });
         }
 
@@ -673,65 +673,6 @@
         function toggleDrawButtons(isDrawing) { document.getElementById('btnDraw').classList.toggle('hidden', isDrawing); document.getElementById('btnCancel').classList.toggle('hidden', !isDrawing); }
         function enableEditorUI(title, btnText) { document.getElementById('saveZonePanel').classList.remove('hidden'); document.getElementById('zonePanelTitle').innerText = title; document.getElementById('btnSaveZone').innerText = btnText; }
 
-        function addRiskRegion() {
-            const region = document.getElementById('riskRegion').value; const status = document.getElementById('riskLevel').value; if(!region) return notify("Enter Region", "error");
-            db.collection('risk_map').doc(region.toLowerCase()).set({ region: region.toLowerCase(), status: status, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
-                document.getElementById('riskConsole').innerHTML += `<div class="text-green-400">✓ Mapped: ${region} -> ${status}</div>`; notify("Risk Region Added");
-            });
-        }
-        
-        function processJsonFile() {
-            const fileInput = document.getElementById('jsonUpload');
-            if(!fileInput.files.length) return notify("Select a file first", "error");
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            notify("Parsing Data...", "info");
-            
-            reader.onload = async function(e) {
-                try {
-                    const json = JSON.parse(e.target.result);
-                    const collectionRef = db.collection('layer_waterbodies'); 
-                    const items = Array.isArray(json) ? json : (json.features || []);
-                    
-                    if(items.length === 0) return notify("Empty Data", "error");
-
-                    // 🟢 CHUNKING LOGIC: Firestore Batch limit is 500
-                    const chunkSize = 400; 
-                    let totalIngested = 0;
-
-                    for (let i = 0; i < items.length; i += chunkSize) {
-                        const chunk = items.slice(i, i + chunkSize);
-                        const batch = db.batch();
-                        
-                        chunk.forEach(item => {
-                            const docId = 'wb_' + Math.random().toString(36).substr(2, 9);
-                            const docRef = collectionRef.doc(docId);
-                            const payload = {
-                                name: item.properties?.name || "Unknown Waterbody",
-                                type: "Waterbody",
-                                coords: item.geometry?.coordinates[0]?.map(c => ({lat: c[1], lng: c[0]})) || [], 
-                                color: "#3b82f6", 
-                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                            };
-                            if(payload.coords.length > 0) {
-                                batch.set(docRef, payload);
-                            }
-                        });
-
-                        await batch.commit();
-                        totalIngested += chunk.length;
-                        notify(`Ingested ${totalIngested} / ${items.length}...`);
-                    }
-
-                    notify(`COMPLETE: ${totalIngested} records synced!`, "success");
-
-                } catch (error) {
-                    notify("Invalid JSON File", "error");
-                    console.error(error);
-                }
-            };
-            reader.readAsText(file);
-        }
 
         // --- CORE UTILS ---
         function loadAnalytics() {
