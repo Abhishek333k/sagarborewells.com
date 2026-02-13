@@ -23,6 +23,11 @@ const CONTACT_INFO = {
         youtube: "https://www.youtube.com/@Sagar_Bore_Wells"
     },
 
+     // Maps Links
+    map_link: "https://maps.app.goo.gl/VGqQCjRQCx729Qmd6", 
+    // Just the link inside quotes. No HTML tags here.
+    map_embed_url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3826.917849365705!2d80.56584199999999!3d16.428998099999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a35f1606165d7b7%3A0xc31ff66a47bd70ce!2sSAGAR%20BOREWELLS!5e0!3m2!1sen!2sin!4v1769782593951!5m2!1sen!2sin",
+
     // --- FIREBASE CONFIG ---
     firebase_config: {
         apiKey: "AIzaSyAp3D__eHpiOaPoQmO2eXL25C2evR0yqfQ",
