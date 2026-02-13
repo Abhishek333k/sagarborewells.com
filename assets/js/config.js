@@ -5,6 +5,17 @@ const CONTACT_INFO = {
     whatsapp_api: "916304094177", 
     phone_display: "+91 63040-94177", 
     email: "support@sagarborewells.com",
+
+
+     // --- ADDITIONAL NUMBERS ---
+    extra_phones: [
+        { label: "Emergency", number: "+91 93470-08871" },
+        { label: "Proprietor", number: "+91 96522-46869" }
+    ],
+
+     // Tech Keys
+    google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus", 
+
     
     // --- OFFICE LOCATION ---
     address_line1: "Gowtham Buddha Rd, beside UCO Bank",
