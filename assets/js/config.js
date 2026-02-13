@@ -6,16 +6,11 @@ const CONTACT_INFO = {
     phone_display: "+91 63040-94177", 
     email: "support@sagarborewells.com",
 
-
-     // --- ADDITIONAL NUMBERS ---
+    // --- ADDITIONAL NUMBERS ---
     extra_phones: [
         { label: "Emergency", number: "+91 93470-08871" },
         { label: "Proprietor", number: "+91 96522-46869" }
     ],
-
-     // Tech Keys
-    google_maps_key: "AIzaSyDkHaU8FfYd2vQWHiU02yjA_7DrsOWHYus", 
-
     
     // --- OFFICE LOCATION ---
     address_line1: "Gowtham Buddha Rd, beside UCO Bank",
@@ -45,33 +40,53 @@ const CONTACT_INFO = {
 
 /**
  * 🔐 SECURE CREDENTIAL FETCHER
- * Retrieves Telegram tokens from Firestore 'config' collection.
+ * Retrieves Telegram tokens from Firestore 'system_config' collection.
  * This ensures tokens are never hardcoded in the JS file.
  */
 async function getTelegramCredentials() {
     try {
-        if (!firebase.apps.length) return null;
+        if (typeof firebase === 'undefined' || !firebase.apps.length) return null;
         const db = firebase.firestore();
         
-        // Fetching from a secure collection 'system_config' document 'telegram'
         const doc = await db.collection('system_config').doc('telegram').get();
-        
         if (doc.exists) {
             return doc.data(); // Returns { bot_token: "...", chat_id: "..." }
         } else {
-            console.error("Telegram Config Not Found in Firebase");
+            console.warn("Telegram Config Not Found in Firebase");
             return null;
         }
     } catch (error) {
-        console.error("Error fetching credentials:", error);
+        console.error("Error fetching Telegram credentials:", error);
         return null;
     }
 }
 
-// HELPER: Injects details automatically on load
+/**
+ * 📄 SECURE INVENTORY FETCHER
+ */
+async function getMasterListUrl() {
+    try {
+        if (typeof firebase === 'undefined' || !firebase.apps.length) return null;
+        const db = firebase.firestore();
+        
+        const doc = await db.collection('system_config').doc('inventory').get();
+        if (doc.exists) return doc.data().master_sheet_url;
+        return null;
+    } catch (error) {
+        console.error("Error fetching Inventory Config:", error);
+        return null;
+    }
+}
+
+// ⚙️ HELPER: Injects contact details automatically on load
 document.addEventListener("DOMContentLoaded", () => {
+    // Only query the DOM if CONTACT_INFO is safely loaded
+    if (typeof CONTACT_INFO === 'undefined') return;
+
     const setTxt = (sel, val) => document.querySelectorAll(sel).forEach(el => el.innerText = val);
-    const setHref = (sel, pre, val) => document.querySelectorAll(sel).forEach(el => { if(el.tagName==='A') el.href = pre + val; });
+    const setHref = (sel, pre, val) => document.querySelectorAll(sel).forEach(el => { 
+        if(el.tagName === 'A') el.href = pre + val; 
+    });
 
     setTxt('.dynamic-phone', CONTACT_INFO.phone_display);
     setHref('.dynamic-phone', 'tel:+', CONTACT_INFO.whatsapp_api);
@@ -83,16 +98,3 @@ document.addEventListener("DOMContentLoaded", () => {
         el.innerHTML = `${CONTACT_INFO.address_line1}<br>${CONTACT_INFO.address_line2}`;
     });
 });
-
-async function getMasterListUrl() {
-    try {
-        if (!firebase.apps.length) return null;
-        const db = firebase.firestore();
-        const doc = await db.collection('system_config').doc('inventory').get();
-        if (doc.exists) return doc.data().master_sheet_url;
-        return null;
-    } catch (error) {
-        console.error("Config Error:", error);
-        return null;
-    }
-}
