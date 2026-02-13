@@ -8,8 +8,9 @@ const CONTACT_INFO = {
 
     // --- ADDITIONAL NUMBERS ---
     extra_phones: [
-        { label: "Emergency", number: "+91 93470-08871" },
-        { label: "Proprietor", number: "+91 96522-46869" }
+        
+        { label: "Proprietor", number: "+91 96522-46869" },
+        { label: "Emergency", number: "+91 93470-08871" }
     ],
     
     // --- OFFICE LOCATION ---
