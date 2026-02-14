@@ -18,32 +18,41 @@
         
         /* 🟢 OPTIMIZED MODAL STYLES */
         .article-modal { 
-            position: fixed; inset: 0; z-index: 9999; /* Ensure it's above everything */
+            position: fixed; inset: 0; z-index: 9999; 
             background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); 
             display: none; align-items: center; justify-content: center; 
             opacity: 0; transition: opacity 0.3s ease-in-out; 
-            padding: 1rem; /* Padding for mobile breathing room */
+            padding: 1rem; 
         }
         .article-modal.open { display: flex; opacity: 1; }
         
         .paper-card { 
-            background: white; width: 100%; max-width: 800px; 
-            max-height: 90vh; /* Changed from fixed height */
-            border-radius: 16px; overflow: hidden; /* Hide overflow at card level */
+            background: white; width: 100%; max-width: 850px; 
+            height: 90vh; /* Fixed height for internal scrolling */
+            border-radius: 16px; overflow: hidden; 
             position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); 
-            display: flex; flex-direction: column; /* Flex layout for internal scrolling */
+            display: flex; flex-direction: column; 
             transform: translateY(20px); transition: transform 0.3s ease-out;
         }
         .article-modal.open .paper-card { transform: translateY(0); }
 
+        /* Sticky Action Bar inside Modal */
+        .modal-action-bar {
+            position: sticky; top: 0; z-index: 50;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
+            border-bottom: 1px solid #e2e8f0;
+            display: flex; justify-content: flex-end; padding: 12px 20px;
+        }
+
         .modal-body-scroll {
             overflow-y: auto;
-            flex-grow: 1; /* Take up remaining space */
-            -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+            flex-grow: 1;
+            -webkit-overflow-scrolling: touch;
+            background: #ffffff;
         }
         
         /* 🟢 ENHANCED PROSE STYLING */
-        .prose { color: #334155; line-height: 1.75; font-size: 1.05rem; }
+        .prose { color: #334155; line-height: 1.8; font-size: 1.05rem; }
         .prose h1, .prose h2, .prose h3, .prose h4 { color: #0f172a; font-weight: 800; margin-top: 2em; margin-bottom: 0.75em; line-height: 1.3; }
         .prose p { margin-bottom: 1.25em; }
         .prose img { max-width: 100%; height: auto; border-radius: 12px; margin: 2em auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: block; }
@@ -51,23 +60,28 @@
         .prose ul { list-style-type: disc; }
         .prose ol { list-style-type: decimal; }
         .prose li { margin-bottom: 0.5em; }
-        .prose a { color: #2563eb; text-decoration: none; font-weight: 600; transition: color 0.2s; }
-        .prose a:hover { color: #1d4ed8; text-decoration: underline; }
+        .prose a { color: #2563eb; text-decoration: underline; font-weight: 600; }
         .prose blockquote { border-left: 4px solid #3b82f6; padding: 1em 1.5em; color: #475569; font-style: italic; background: #eff6ff; border-radius: 0 12px 12px 0; margin: 1.5em 0; }
         .prose iframe { max-width: 100%; border-radius: 12px; margin: 2em auto; display: block; }
 
-        /* Card Image Fallback Gradient */
-        .fallback-gradient { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
+        /* Dedicated Fallback Gradient for Text-Only Cards */
+        .text-only-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
-    <div id="navbar-mount" style="min-height: 80px;"></div>
+    <div id="navbar-mount"></div>
 
     <main class="flex-grow container mx-auto px-4 py-12 max-w-7xl">
-        <div class="text-center mb-16">
-            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">News & Insights</h1>
-            <p class="text-slate-500 text-lg max-w-2xl mx-auto">Latest updates on groundwater technology, company news, and geological breakthroughs.</p>
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-12 border-b border-slate-200 pb-8 gap-6">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 tracking-tight">News & Insights</h1>
+                <p class="text-slate-500 text-lg">Updates on groundwater tech and geological breakthroughs.</p>
+            </div>
+            <a href="index.html" class="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-5 py-2.5 rounded-lg font-bold hover:bg-slate-50 hover:text-blue-600 transition shadow-sm">
+                <i class="ri-home-4-line"></i> Back to Home
+            </a>
         </div>
 
         <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -81,31 +95,37 @@
     <div id="articleView" class="article-modal" onclick="if(event.target === this) closeArticle()">
         <div class="paper-card">
             
-            <button onclick="closeArticle()" class="absolute top-4 right-4 w-10 h-10 bg-white/80 hover:bg-white text-slate-800 rounded-full flex items-center justify-center transition-all z-20 shadow-md border border-slate-200" title="Close (Esc)">
-                <i class="ri-close-line text-2xl font-bold"></i>
-            </button>
+            <div class="modal-action-bar">
+                <button onclick="closeArticle()" class="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold transition px-4 py-2 rounded-lg hover:bg-slate-100">
+                    <i class="ri-arrow-left-line"></i> Back to News
+                </button>
+            </div>
             
             <div class="modal-body-scroll">
-                <div id="modal-image-container" class="w-full relative h-64 sm:h-80 hidden bg-slate-900">
-                    <img id="view-img" src="" alt="Article cover" class="w-full h-full object-cover opacity-90">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent"></div>
+                
+                <div id="modal-header-block" class="relative w-full overflow-hidden shrink-0 min-h-[250px] flex flex-col justify-end p-8 sm:p-12 text-only-gradient">
+                    
+                    <img id="view-img" src="" class="absolute inset-0 w-full h-full object-cover hidden">
+                    
+                    <div id="view-overlay" class="absolute inset-0 bg-slate-900/70 hidden"></div>
+                    
+                    <div class="relative z-10">
+                        <span id="view-date" class="inline-block text-xs font-bold text-white bg-blue-600 px-3 py-1 rounded-full mb-4 shadow-md uppercase tracking-widest"></span>
+                        <h1 id="view-title" class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight drop-shadow-md"></h1>
+                    </div>
                 </div>
 
-                <div class="p-6 sm:p-10 relative bg-white">
-                    <div id="modal-header-content" class="mb-8 relative z-10 transition-all">
-                        <span id="view-date" class="inline-block text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full mb-3 border border-blue-100 uppercase tracking-wide"></span>
-                        <h1 id="view-title" class="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight mb-4"></h1>
-                    </div>
-
-                    <div id="view-content" class="prose max-w-none"></div>
+                <div class="p-8 sm:p-12 bg-white max-w-4xl mx-auto">
+                    <div id="view-content" class="prose"></div>
                     
-                    <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between items-center">
-                        <p class="text-sm text-slate-400 font-medium">Source: Sagar Borewells Dispatch</p>
-                        <button onclick="closeArticle()" class="px-6 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition">
-                            Close
+                    <div class="mt-16 pt-8 border-t border-slate-200 text-center">
+                        <p class="text-sm text-slate-400 font-medium mb-6">End of Dispatch</p>
+                        <button onclick="closeArticle()" class="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition shadow-lg inline-flex items-center gap-2">
+                            <i class="ri-close-circle-line"></i> Close Article
                         </button>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
@@ -113,62 +133,51 @@
     <div id="footer-mount"></div>
 
     <script>
-        // 🟢 CONFIGURATION
-        // Replace with your actual Blogger URL if different
         const BLOG_BASE_URL = 'https://sagarborewells-news.blogspot.com'; 
         let postsCache = [];
 
-        /**
-         * Parses the JSONP feed from Blogger and renders the cards.
-         */
         function handleBloggerFeed(data) {
             const grid = document.getElementById('blog-grid');
             
-            // Safety check: is feed valid?
             if (!data || !data.feed || !data.feed.entry) {
                 renderErrorState("No articles available at this time.");
                 return;
             }
 
             const posts = data.feed.entry;
-            grid.innerHTML = ""; // Clear loading state
+            grid.innerHTML = ""; 
             postsCache = []; 
 
             posts.forEach((post, index) => {
                 const title = post.title.$t || "Untitled Dispatch";
-                // Content fallback: try content, then summary, then empty
                 const contentHTML = post.content ? post.content.$t : (post.summary ? post.summary.$t : "<p>No content available.</p>");
                 
                 const dateObj = new Date(post.published.$t);
                 const dateStr = isNaN(dateObj) ? "Recent" : dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
-                // 🟢 OPTIMIZED IMAGE EXTRACTION
                 let imgUrl = null;
                 if (post.media$thumbnail) {
-                    // Upgrade thumbnail to higher resolution
                     imgUrl = post.media$thumbnail.url.replace(/\/s\d+-c/, '/s800'); 
                 } else {
-                    // Fast Regex extraction instead of DOM parsing
                     const imgMatch = contentHTML.match(/<img[^>]+src="([^">]+)"/);
                     if (imgMatch && imgMatch[1]) {
                         imgUrl = imgMatch[1];
                     }
                 }
 
-                // Clean Summary for Card (Strip HTML, slice cleanly)
                 let summaryText = contentHTML.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
                 summaryText = summaryText.length > 130 ? summaryText.substring(0, 130) + "..." : summaryText;
 
-                // Store in cache for modal view
                 postsCache.push({ title, date: dateStr, img: imgUrl, content: contentHTML });
 
-                // 🟢 RENDER CARD
+                // Card Thumbnail Render
                 const imageSection = imgUrl 
                     ? `<div class="h-48 sm:h-56 w-full overflow-hidden relative bg-slate-200">
-                         <img src="${imgUrl}" alt="${title}" loading="lazy" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500">
+                         <img src="${imgUrl}" alt="Thumbnail" loading="lazy" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500">
                        </div>`
-                    : `<div class="h-48 sm:h-56 w-full fallback-gradient relative flex items-center justify-center">
-                         <i class="ri-newspaper-line text-white/30 text-6xl"></i>
+                    : `<div class="h-48 sm:h-56 w-full text-only-gradient relative flex flex-col items-center justify-center p-6 text-center">
+                         <i class="ri-article-line text-white/20 text-6xl mb-2"></i>
+                         <span class="text-white/60 font-bold text-xs uppercase tracking-widest">Text Dispatch</span>
                        </div>`; 
 
                 const cardHTML = `
@@ -194,9 +203,6 @@
             });
         }
 
-        /**
-         * Displays an error message in the grid area if the feed fails.
-         */
         function renderErrorState(message) {
             const grid = document.getElementById('blog-grid');
             grid.innerHTML = `
@@ -211,11 +217,7 @@
             `;
         }
 
-        /**
-         * Injects the JSONP script to fetch Blogger data.
-         */
         function initBlog() {
-            // Ensure loading state is visible
             const grid = document.getElementById('blog-grid');
             if(!document.getElementById('loading-state') && grid.children.length === 0) {
                  grid.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center py-20" id="loading-state"><div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div><p class="text-slate-500 font-medium">Fetching latest dispatches...</p></div>`;
@@ -227,79 +229,64 @@
 
             const script = document.createElement('script');
             script.id = scriptId;
-            // Fetch latest 9 posts. Adjust max-results if needed.
             script.src = `${BLOG_BASE_URL}/feeds/posts/default?alt=json-in-script&callback=handleBloggerFeed&max-results=9`;
-            
             script.onerror = () => renderErrorState("Could not reach the news server. Please check your connection.");
-            
             document.body.appendChild(script);
         }
 
-        /**
-         * Populates and displays the modal with article content.
-         */
         function openArticle(index) {
             const data = postsCache[index];
             if(!data) return;
 
             const modal = document.getElementById('articleView');
-            const imgContainer = document.getElementById('modal-image-container');
+            const headerBlock = document.getElementById('modal-header-block');
             const imgEl = document.getElementById('view-img');
-            const headerContent = document.getElementById('modal-header-content');
+            const overlayEl = document.getElementById('view-overlay');
 
-            // Populate Text Data
             document.getElementById('view-title').innerText = data.title;
             document.getElementById('view-date').innerText = data.date;
             document.getElementById('view-content').innerHTML = data.content;
 
-            // 🟢 Handle Image Layout Logic Cleanly
+            // 🟢 Explicit Header Logic
             if (data.img) {
+                // Has Image: Show image, show dark overlay to read text
                 imgEl.src = data.img;
-                imgContainer.classList.remove('hidden');
-                // Pull text up slightly over the image gradient for a premium look
-                headerContent.classList.add('-mt-20'); 
-                document.getElementById('view-title').classList.replace('text-slate-900', 'text-white');
+                imgEl.classList.remove('hidden');
+                overlayEl.classList.remove('hidden');
+                headerBlock.classList.remove('text-only-gradient');
             } else {
+                // Text Only: Hide image/overlay, apply deep blue gradient
                 imgEl.src = "";
-                imgContainer.classList.add('hidden');
-                // Standard layout if no image
-                headerContent.classList.remove('-mt-20');
-                document.getElementById('view-title').classList.replace('text-white', 'text-slate-900');
+                imgEl.classList.add('hidden');
+                overlayEl.classList.add('hidden');
+                headerBlock.classList.add('text-only-gradient');
             }
             
-            // Show Modal and Prevent Background Scrolling
             modal.classList.add('open');
             document.body.style.overflow = 'hidden';
-            
-            // Scroll modal body to top
             modal.querySelector('.modal-body-scroll').scrollTop = 0;
         }
 
-        /**
-         * Hides the modal.
-         */
         function closeArticle() {
             const modal = document.getElementById('articleView');
             modal.classList.remove('open');
-            
-            // Small delay before restoring scroll to allow fade-out animation to finish
             setTimeout(() => {
                 document.body.style.overflow = '';
-                // Optional: clear iframe sources inside content to stop playing videos
                 const content = document.getElementById('view-content');
                 const iframes = content.querySelectorAll('iframe');
                 iframes.forEach(iframe => iframe.src = iframe.src);
             }, 300);
         }
 
-        // Initialize on load
-        document.addEventListener('DOMContentLoaded', initBlog);
+        document.addEventListener('DOMContentLoaded', () => {
+            initBlog();
+            // Explicitly call layout.js functions if they exist to ensure nav mounts
+            if(typeof renderNavbar === 'function') renderNavbar();
+            if(typeof renderFooter === 'function') renderFooter();
+        });
         
-        // Accessibility: Close modal on ESC key
         document.addEventListener('keydown', (e) => { 
-            if(e.key === "Escape" && document.getElementById('articleView').classList.contains('open')) {
-                closeArticle(); 
-            }
+            if(e.key === "Escape" && document.getElementById('articleView').classList.contains('open')) closeArticle(); 
         });
     </script>
 </body>
