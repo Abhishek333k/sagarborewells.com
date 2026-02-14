@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Room | Sagar Borewells</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/layout.js"></script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
+        
+        /* Modal Styles */
+        .article-modal { position: fixed; inset: 0; z-index: 100; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+        .article-modal.open { display: flex; opacity: 1; }
+        .paper-card { background: white; width: 100%; max-width: 800px; height: 90vh; border-radius: 16px; overflow-y: auto; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        
+        /* Content Styling */
+        .prose { padding: 0 10px; color: #334155; line-height: 1.8; font-size: 1.05rem; }
+        .prose h1, .prose h2, .prose h3 { color: #0f172a; font-weight: 800; margin-top: 1.5em; margin-bottom: 0.5em; }
+        .prose p { margin-bottom: 1em; }
+        .prose img { max-width: 100%; height: auto; border-radius: 8px; margin: 1em 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .prose ul { list-style: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .prose a { color: #2563eb; text-decoration: underline; }
+        .prose blockquote { border-left: 4px solid #2563eb; padding-left: 1em; color: #475569; font-style: italic; background: #f8fafc; padding: 1em; border-radius: 0 8px 8px 0; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <div id="navbar-mount" style="min-height: 80px;"></div>
+
+    <main class="flex-grow container mx-auto px-4 py-12">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-slate-900 mb-2">News Room</h1>
+            <p class="text-slate-500">Updates from the field and technological advancements.</p>
+        </div>
+
+        <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="col-span-full text-center py-20">
+                <i class="ri-loader-4-line text-4xl text-blue-600 animate-spin"></i>
+                <p class="text-slate-400 mt-2 text-sm">Connecting to Satellite Feed...</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="articleView" class="article-modal">
+        <div class="paper-card">
+            
+            <button onclick="closeArticle()" class="absolute top-4 right-4 bg-black/40 hover:bg-black/70 p-2 rounded-full transition z-50 backdrop-blur-md text-white border border-white/20">
+                <i class="ri-close-line text-xl"></i>
+            </button>
+            
+            <div id="modal-header" class="w-full relative bg-slate-900 transition-all duration-300 min-h-[120px]">
+                <img id="view-img" src="" class="w-full h-80 object-cover opacity-100 transition-opacity">
+                
+                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent p-8 pt-20">
+                    <span id="view-date" class="text-xs font-bold text-white bg-blue-600 px-3 py-1 rounded-full shadow-lg"></span>
+                    <h1 id="view-title" class="text-2xl sm:text-3xl font-extrabold text-white mt-3 leading-tight drop-shadow-md"></h1>
+                </div>
+            </div>
+
+            <div class="p-8 sm:p-12">
+                <div id="view-content" class="prose max-w-none"></div>
+                
+                <div class="mt-12 pt-8 border-t border-slate-100 text-center">
+                    <button onclick="closeArticle()" class="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition shadow-lg">
+                        Close Article
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-mount"></div>
+
+    <script>
+        // ⚙️ CONFIGURATION
+        const BLOG_BASE_URL = 'https://sagarborewells-news.blogspot.com'; 
+        let postsCache = [];
+
+        function handleBloggerFeed(data) {
+            const grid = document.getElementById('blog-grid');
+            const posts = data.feed.entry;
+
+            if (!posts || posts.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center text-slate-400">No news found.</div>';
+                return;
+            }
+
+            grid.innerHTML = ""; 
+            postsCache = []; 
+
+            posts.forEach((post, index) => {
+                const title = post.title.$t;
+                const content = post.content ? post.content.$t : (post.summary ? post.summary.$t : "");
+                const dateObj = new Date(post.published.$t);
+                const dateStr = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+                // 🔵 OPTIMIZATION: Extract image securely via Regex instead of DOM Injection (Prevents execution of malicious onerror tags)
+                let imgUrl = null;
+                if (post.media$thumbnail) {
+                    imgUrl = post.media$thumbnail.url.replace('s72-c', 's800'); 
+                } else {
+                    const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
+                    if (imgMatch) imgUrl = imgMatch[1];
+                }
+
+                // Clean Summary securely
+                const summary = content.replace(/<[^>]*>?/gm, '').substring(0, 120) + "...";
+                postsCache.push({ title, date: dateStr, img: imgUrl, content });
+
+                // 🔵 OPTIMIZATION: Added loading="lazy" to the image tag
+                const imageSection = imgUrl 
+                    ? `<div class="h-56 bg-slate-200 overflow-hidden relative">
+                         <img src="${imgUrl}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.style.display='none'">
+                         <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm">${dateStr}</div>
+                       </div>`
+                    : `<div class="h-6 bg-gradient-to-r from-blue-600 to-blue-400 w-full relative">
+                         <div class="absolute top-2 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm">${dateStr}</div>
+                       </div>`; 
+
+                grid.innerHTML += `
+                    <article onclick="openArticle(${index})" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition border border-slate-100 group cursor-pointer h-full flex flex-col">
+                        ${imageSection}
+                        <div class="p-6 flex flex-col flex-grow">
+                            <h3 class="text-xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-blue-600 transition">${title}</h3>
+                            <p class="text-slate-500 text-sm line-clamp-3 mb-4 flex-grow">${summary}</p>
+                            <span class="text-blue-600 font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">Read Full Story <i class="ri-arrow-right-line"></i></span>
+                        </div>
+                    </article>
+                `;
+            });
+        }
+
+        // 🔴 CRITICAL FIX: Modernized to use standard Fetch API instead of JSONP Script Injection
+        async function initBlog() {
+            try {
+                // Using standard JSON response instead of executing an external script
+                const response = await fetch(`${BLOG_BASE_URL}/feeds/posts/default?alt=json&max-results=9`);
+                if (!response.ok) throw new Error('Network response failed');
+                const data = await response.json();
+                handleBloggerFeed(data);
+            } catch (error) {
+                console.error("Feed Error:", error);
+                document.getElementById('blog-grid').innerHTML = `<div class="col-span-full text-center text-red-400">Connection Failed. Check Network.</div>`;
+            }
+        }
+
+        function openArticle(index) {
+            const data = postsCache[index];
+            if(!data) return;
+
+            const modal = document.getElementById('articleView');
+            const imgEl = document.getElementById('view-img');
+            const headerEl = document.getElementById('modal-header');
+
+            document.getElementById('view-title').innerText = data.title;
+            document.getElementById('view-date').innerText = data.date;
+            document.getElementById('view-content').innerHTML = data.content;
+
+            imgEl.style.display = 'block';
+            imgEl.classList.add('h-80');
+            headerEl.classList.remove('pt-24'); 
+
+            if (data.img) {
+                imgEl.src = data.img;
+                imgEl.onerror = function() { 
+                    this.style.display = 'none'; 
+                    headerEl.classList.add('pt-24'); 
+                };
+            } else {
+                imgEl.style.display = 'none'; 
+                headerEl.classList.add('pt-24');
+            }
+            
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeArticle() {
+            document.getElementById('articleView').classList.remove('open');
+            // 🟠 WARNING FIX: Clear the style instead of forcing 'auto'
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('DOMContentLoaded', initBlog);
+        document.addEventListener('keydown', (e) => { if(e.key === "Escape") closeArticle(); });
+    </script>
+</body>
+</html>
