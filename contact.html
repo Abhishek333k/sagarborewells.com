@@ -125,6 +125,16 @@
             const msg = WA_MSG.expert_call();
             window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
         }
+
+        // 🟢 FIX: Added missing function for the Get Directions button
+        function openDirections() {
+            if (CONTACT_INFO.map_link) {
+                window.open(CONTACT_INFO.map_link, '_blank');
+            } else {
+                alert("Map link not configured yet.");
+            }
+        }
+    
     </script>
 </body>
 </html>
