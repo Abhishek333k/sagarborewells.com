@@ -8,68 +8,103 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
 
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
         
-        /* Modal Styles */
-        .article-modal { position: fixed; inset: 0; z-index: 100; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+        /* 🟢 OPTIMIZED MODAL STYLES */
+        .article-modal { 
+            position: fixed; inset: 0; z-index: 9999; /* Ensure it's above everything */
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); 
+            display: none; align-items: center; justify-content: center; 
+            opacity: 0; transition: opacity 0.3s ease-in-out; 
+            padding: 1rem; /* Padding for mobile breathing room */
+        }
         .article-modal.open { display: flex; opacity: 1; }
-        .paper-card { background: white; width: 100%; max-width: 800px; height: 90vh; border-radius: 16px; overflow-y: auto; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         
-        /* Content Styling */
-        .prose { padding: 0 10px; color: #334155; line-height: 1.8; font-size: 1.05rem; }
-        .prose h1, .prose h2, .prose h3 { color: #0f172a; font-weight: 800; margin-top: 1.5em; margin-bottom: 0.5em; }
-        .prose p { margin-bottom: 1em; }
-        .prose img { max-width: 100%; height: auto; border-radius: 8px; margin: 1em 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .prose ul { list-style: disc; padding-left: 1.5em; margin-bottom: 1em; }
-        .prose a { color: #2563eb; text-decoration: underline; }
-        .prose blockquote { border-left: 4px solid #2563eb; padding-left: 1em; color: #475569; font-style: italic; background: #f8fafc; padding: 1em; border-radius: 0 8px 8px 0; }
+        .paper-card { 
+            background: white; width: 100%; max-width: 800px; 
+            max-height: 90vh; /* Changed from fixed height */
+            border-radius: 16px; overflow: hidden; /* Hide overflow at card level */
+            position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); 
+            display: flex; flex-direction: column; /* Flex layout for internal scrolling */
+            transform: translateY(20px); transition: transform 0.3s ease-out;
+        }
+        .article-modal.open .paper-card { transform: translateY(0); }
+
+        .modal-body-scroll {
+            overflow-y: auto;
+            flex-grow: 1; /* Take up remaining space */
+            -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+        }
+        
+        /* 🟢 ENHANCED PROSE STYLING */
+        .prose { color: #334155; line-height: 1.75; font-size: 1.05rem; }
+        .prose h1, .prose h2, .prose h3, .prose h4 { color: #0f172a; font-weight: 800; margin-top: 2em; margin-bottom: 0.75em; line-height: 1.3; }
+        .prose p { margin-bottom: 1.25em; }
+        .prose img { max-width: 100%; height: auto; border-radius: 12px; margin: 2em auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: block; }
+        .prose ul, .prose ol { padding-left: 1.5em; margin-bottom: 1.25em; }
+        .prose ul { list-style-type: disc; }
+        .prose ol { list-style-type: decimal; }
+        .prose li { margin-bottom: 0.5em; }
+        .prose a { color: #2563eb; text-decoration: none; font-weight: 600; transition: color 0.2s; }
+        .prose a:hover { color: #1d4ed8; text-decoration: underline; }
+        .prose blockquote { border-left: 4px solid #3b82f6; padding: 1em 1.5em; color: #475569; font-style: italic; background: #eff6ff; border-radius: 0 12px 12px 0; margin: 1.5em 0; }
+        .prose iframe { max-width: 100%; border-radius: 12px; margin: 2em auto; display: block; }
+
+        /* Card Image Fallback Gradient */
+        .fallback-gradient { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
     <div id="navbar-mount" style="min-height: 80px;"></div>
 
-    <main class="flex-grow container mx-auto px-4 py-12">
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-extrabold text-slate-900 mb-2">News Room</h1>
-            <p class="text-slate-500">Updates from the field and technological advancements.</p>
+    <main class="flex-grow container mx-auto px-4 py-12 max-w-7xl">
+        <div class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">News & Insights</h1>
+            <p class="text-slate-500 text-lg max-w-2xl mx-auto">Latest updates on groundwater technology, company news, and geological breakthroughs.</p>
         </div>
 
         <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div class="col-span-full text-center py-20">
-                <i class="ri-loader-4-line text-4xl text-blue-600 animate-spin"></i>
-                <p class="text-slate-400 mt-2 text-sm">Connecting to Satellite Feed...</p>
+            <div class="col-span-full flex flex-col items-center justify-center py-20" id="loading-state">
+                <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                <p class="text-slate-500 font-medium">Fetching latest dispatches...</p>
             </div>
         </div>
     </main>
 
-    <div id="articleView" class="article-modal">
+    <div id="articleView" class="article-modal" onclick="if(event.target === this) closeArticle()">
         <div class="paper-card">
             
-            <button onclick="closeArticle()" class="absolute top-4 right-4 bg-black/40 hover:bg-black/70 p-2 rounded-full transition z-50 backdrop-blur-md text-white border border-white/20">
-                <i class="ri-close-line text-xl"></i>
+            <button onclick="closeArticle()" class="absolute top-4 right-4 w-10 h-10 bg-white/80 hover:bg-white text-slate-800 rounded-full flex items-center justify-center transition-all z-20 shadow-md border border-slate-200" title="Close (Esc)">
+                <i class="ri-close-line text-2xl font-bold"></i>
             </button>
             
-            <div id="modal-header" class="w-full relative bg-slate-900 transition-all duration-300 min-h-[120px]">
-                <img id="view-img" src="" class="w-full h-80 object-cover opacity-100 transition-opacity">
-                
-                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent p-8 pt-20">
-                    <span id="view-date" class="text-xs font-bold text-white bg-blue-600 px-3 py-1 rounded-full shadow-lg"></span>
-                    <h1 id="view-title" class="text-2xl sm:text-3xl font-extrabold text-white mt-3 leading-tight drop-shadow-md"></h1>
+            <div class="modal-body-scroll">
+                <div id="modal-image-container" class="w-full relative h-64 sm:h-80 hidden bg-slate-900">
+                    <img id="view-img" src="" alt="Article cover" class="w-full h-full object-cover opacity-90">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent"></div>
                 </div>
-            </div>
 
-            <div class="p-8 sm:p-12">
-                <div id="view-content" class="prose max-w-none"></div>
-                
-                <div class="mt-12 pt-8 border-t border-slate-100 text-center">
-                    <button onclick="closeArticle()" class="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition shadow-lg">
-                        Close Article
-                    </button>
+                <div class="p-6 sm:p-10 relative bg-white">
+                    <div id="modal-header-content" class="mb-8 relative z-10 transition-all">
+                        <span id="view-date" class="inline-block text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full mb-3 border border-blue-100 uppercase tracking-wide"></span>
+                        <h1 id="view-title" class="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight mb-4"></h1>
+                    </div>
+
+                    <div id="view-content" class="prose max-w-none"></div>
+                    
+                    <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between items-center">
+                        <p class="text-sm text-slate-400 font-medium">Source: Sagar Borewells Dispatch</p>
+                        <button onclick="closeArticle()" class="px-6 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition">
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -78,117 +113,194 @@
     <div id="footer-mount"></div>
 
     <script>
-        // ⚙️ CONFIGURATION
+        // 🟢 CONFIGURATION
+        // Replace with your actual Blogger URL if different
         const BLOG_BASE_URL = 'https://sagarborewells-news.blogspot.com'; 
         let postsCache = [];
 
+        /**
+         * Parses the JSONP feed from Blogger and renders the cards.
+         */
         function handleBloggerFeed(data) {
             const grid = document.getElementById('blog-grid');
-            const posts = data.feed.entry;
-
-            if (!posts || posts.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center text-slate-400">No news found.</div>';
+            
+            // Safety check: is feed valid?
+            if (!data || !data.feed || !data.feed.entry) {
+                renderErrorState("No articles available at this time.");
                 return;
             }
 
-            grid.innerHTML = ""; 
+            const posts = data.feed.entry;
+            grid.innerHTML = ""; // Clear loading state
             postsCache = []; 
 
             posts.forEach((post, index) => {
-                const title = post.title.$t;
-                const content = post.content ? post.content.$t : (post.summary ? post.summary.$t : "");
+                const title = post.title.$t || "Untitled Dispatch";
+                // Content fallback: try content, then summary, then empty
+                const contentHTML = post.content ? post.content.$t : (post.summary ? post.summary.$t : "<p>No content available.</p>");
+                
                 const dateObj = new Date(post.published.$t);
-                const dateStr = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                const dateStr = isNaN(dateObj) ? "Recent" : dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
-                // 🔵 OPTIMIZATION: Extract image securely via Regex instead of DOM Injection (Prevents execution of malicious onerror tags)
+                // 🟢 OPTIMIZED IMAGE EXTRACTION
                 let imgUrl = null;
                 if (post.media$thumbnail) {
-                    imgUrl = post.media$thumbnail.url.replace('s72-c', 's800'); 
+                    // Upgrade thumbnail to higher resolution
+                    imgUrl = post.media$thumbnail.url.replace(/\/s\d+-c/, '/s800'); 
                 } else {
-                    const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
-                    if (imgMatch) imgUrl = imgMatch[1];
+                    // Fast Regex extraction instead of DOM parsing
+                    const imgMatch = contentHTML.match(/<img[^>]+src="([^">]+)"/);
+                    if (imgMatch && imgMatch[1]) {
+                        imgUrl = imgMatch[1];
+                    }
                 }
 
-                // Clean Summary securely
-                const summary = content.replace(/<[^>]*>?/gm, '').substring(0, 120) + "...";
-                postsCache.push({ title, date: dateStr, img: imgUrl, content });
+                // Clean Summary for Card (Strip HTML, slice cleanly)
+                let summaryText = contentHTML.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+                summaryText = summaryText.length > 130 ? summaryText.substring(0, 130) + "..." : summaryText;
 
-                // 🔵 OPTIMIZATION: Added loading="lazy" to the image tag
+                // Store in cache for modal view
+                postsCache.push({ title, date: dateStr, img: imgUrl, content: contentHTML });
+
+                // 🟢 RENDER CARD
                 const imageSection = imgUrl 
-                    ? `<div class="h-56 bg-slate-200 overflow-hidden relative">
-                         <img src="${imgUrl}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.style.display='none'">
-                         <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm">${dateStr}</div>
+                    ? `<div class="h-48 sm:h-56 w-full overflow-hidden relative bg-slate-200">
+                         <img src="${imgUrl}" alt="${title}" loading="lazy" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500">
                        </div>`
-                    : `<div class="h-6 bg-gradient-to-r from-blue-600 to-blue-400 w-full relative">
-                         <div class="absolute top-2 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm">${dateStr}</div>
+                    : `<div class="h-48 sm:h-56 w-full fallback-gradient relative flex items-center justify-center">
+                         <i class="ri-newspaper-line text-white/30 text-6xl"></i>
                        </div>`; 
 
-                grid.innerHTML += `
-                    <article onclick="openArticle(${index})" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition border border-slate-100 group cursor-pointer h-full flex flex-col">
+                const cardHTML = `
+                    <article onclick="openArticle(${index})" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200 group cursor-pointer h-full flex flex-col transform hover:-translate-y-1">
                         ${imageSection}
-                        <div class="p-6 flex flex-col flex-grow">
-                            <h3 class="text-xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-blue-600 transition">${title}</h3>
-                            <p class="text-slate-500 text-sm line-clamp-3 mb-4 flex-grow">${summary}</p>
-                            <span class="text-blue-600 font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">Read Full Story <i class="ri-arrow-right-line"></i></span>
+                        <div class="p-6 flex flex-col flex-grow relative">
+                            <div class="absolute -top-4 right-6 bg-white px-3 py-1 rounded-full text-[10px] font-bold text-blue-600 shadow-sm border border-slate-100 uppercase tracking-wider">
+                                ${dateStr}
+                            </div>
+                            
+                            <h3 class="text-xl font-extrabold text-slate-900 mb-3 leading-snug group-hover:text-blue-600 transition-colors">${title}</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed mb-6 flex-grow">${summaryText}</p>
+                            
+                            <div class="mt-auto pt-4 border-t border-slate-50">
+                                <span class="inline-flex items-center gap-2 text-blue-600 font-bold text-sm group-hover:text-blue-700 transition-colors">
+                                    Read Article <i class="ri-arrow-right-line transform group-hover:translate-x-1 transition-transform"></i>
+                                </span>
+                            </div>
                         </div>
                     </article>
                 `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
             });
         }
 
-        // 🔴 CRITICAL FIX: Modernized to use standard Fetch API instead of JSONP Script Injection
-        async function initBlog() {
-            try {
-                // Using standard JSON response instead of executing an external script
-                const response = await fetch(`${BLOG_BASE_URL}/feeds/posts/default?alt=json&max-results=9`);
-                if (!response.ok) throw new Error('Network response failed');
-                const data = await response.json();
-                handleBloggerFeed(data);
-            } catch (error) {
-                console.error("Feed Error:", error);
-                document.getElementById('blog-grid').innerHTML = `<div class="col-span-full text-center text-red-400">Connection Failed. Check Network.</div>`;
-            }
+        /**
+         * Displays an error message in the grid area if the feed fails.
+         */
+        function renderErrorState(message) {
+            const grid = document.getElementById('blog-grid');
+            grid.innerHTML = `
+                <div class="col-span-full flex flex-col items-center justify-center py-20 text-center">
+                    <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center text-3xl mb-4">
+                        <i class="ri-error-warning-line"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Connection Issue</h3>
+                    <p class="text-slate-500">${message}</p>
+                    <button onclick="initBlog()" class="mt-6 px-6 py-2 bg-slate-900 text-white rounded-lg font-bold hover:bg-black transition">Try Again</button>
+                </div>
+            `;
         }
 
+        /**
+         * Injects the JSONP script to fetch Blogger data.
+         */
+        function initBlog() {
+            // Ensure loading state is visible
+            const grid = document.getElementById('blog-grid');
+            if(!document.getElementById('loading-state') && grid.children.length === 0) {
+                 grid.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center py-20" id="loading-state"><div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div><p class="text-slate-500 font-medium">Fetching latest dispatches...</p></div>`;
+            }
+
+            const scriptId = 'blogger-jsonp';
+            const oldScript = document.getElementById(scriptId);
+            if(oldScript) oldScript.remove();
+
+            const script = document.createElement('script');
+            script.id = scriptId;
+            // Fetch latest 9 posts. Adjust max-results if needed.
+            script.src = `${BLOG_BASE_URL}/feeds/posts/default?alt=json-in-script&callback=handleBloggerFeed&max-results=9`;
+            
+            script.onerror = () => renderErrorState("Could not reach the news server. Please check your connection.");
+            
+            document.body.appendChild(script);
+        }
+
+        /**
+         * Populates and displays the modal with article content.
+         */
         function openArticle(index) {
             const data = postsCache[index];
             if(!data) return;
 
             const modal = document.getElementById('articleView');
+            const imgContainer = document.getElementById('modal-image-container');
             const imgEl = document.getElementById('view-img');
-            const headerEl = document.getElementById('modal-header');
+            const headerContent = document.getElementById('modal-header-content');
 
+            // Populate Text Data
             document.getElementById('view-title').innerText = data.title;
             document.getElementById('view-date').innerText = data.date;
             document.getElementById('view-content').innerHTML = data.content;
 
-            imgEl.style.display = 'block';
-            imgEl.classList.add('h-80');
-            headerEl.classList.remove('pt-24'); 
-
+            // 🟢 Handle Image Layout Logic Cleanly
             if (data.img) {
                 imgEl.src = data.img;
-                imgEl.onerror = function() { 
-                    this.style.display = 'none'; 
-                    headerEl.classList.add('pt-24'); 
-                };
+                imgContainer.classList.remove('hidden');
+                // Pull text up slightly over the image gradient for a premium look
+                headerContent.classList.add('-mt-20'); 
+                document.getElementById('view-title').classList.replace('text-slate-900', 'text-white');
             } else {
-                imgEl.style.display = 'none'; 
-                headerEl.classList.add('pt-24');
+                imgEl.src = "";
+                imgContainer.classList.add('hidden');
+                // Standard layout if no image
+                headerContent.classList.remove('-mt-20');
+                document.getElementById('view-title').classList.replace('text-white', 'text-slate-900');
             }
             
+            // Show Modal and Prevent Background Scrolling
             modal.classList.add('open');
             document.body.style.overflow = 'hidden';
+            
+            // Scroll modal body to top
+            modal.querySelector('.modal-body-scroll').scrollTop = 0;
         }
 
+        /**
+         * Hides the modal.
+         */
         function closeArticle() {
-            document.getElementById('articleView').classList.remove('open');
-            // 🟠 WARNING FIX: Clear the style instead of forcing 'auto'
-            document.body.style.overflow = '';
+            const modal = document.getElementById('articleView');
+            modal.classList.remove('open');
+            
+            // Small delay before restoring scroll to allow fade-out animation to finish
+            setTimeout(() => {
+                document.body.style.overflow = '';
+                // Optional: clear iframe sources inside content to stop playing videos
+                const content = document.getElementById('view-content');
+                const iframes = content.querySelectorAll('iframe');
+                iframes.forEach(iframe => iframe.src = iframe.src);
+            }, 300);
         }
 
+        // Initialize on load
         document.addEventListener('DOMContentLoaded', initBlog);
-        document.addEventListener('keydown', (e) => { if(e.key === "Escape") closeArticle(); });
+        
+        // Accessibility: Close modal on ESC key
+        document.addEventListener('keydown', (e) => { 
+            if(e.key === "Escape" && document.getElementById('articleView').classList.contains('open')) {
+                closeArticle(); 
+            }
+        });
     </script>
 </body>
 </html>
