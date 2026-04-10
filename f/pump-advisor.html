@@ -89,102 +89,94 @@
 
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #e2e8f0; }
-
-        /* Glow button animation */
-        @keyframes glow-pulse {
-            0%, 100% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.3), 0 0 40px rgba(34, 211, 238, 0.1); }
-            50% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.5), 0 0 60px rgba(34, 211, 238, 0.2); }
-        }
-        .glow-btn { animation: glow-pulse 3s ease-in-out infinite; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8f9fa; color: #1f2937; }
 
         /* Leaflet map container */
         .map-container {
             height: 100%; min-height: 380px; border-radius: 16px; overflow: hidden;
-            border: 1px solid #1e293b; position: relative; background: #0f172a;
+            border: 1px solid #e5e7eb; position: relative; background: #f3f4f6;
         }
         .map-container .leaflet-container { height: 100% !important; width: 100% !important; z-index: 1 !important; }
         .map-container .leaflet-control-zoom, .map-container .leaflet-control-layers,
         .map-container .leaflet-control-attribution { z-index: 10 !important; }
 
-        /* Topo badges */
+        /* Topo badges — light theme */
         .topo-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
-        .topo-badge.active { background: #064e3b; color: #6ee7b7; border: 1px solid #059669; }
-        .topo-badge.inactive { background: #1e293b; color: #64748b; border: 1px solid #334155; }
-        .topo-badge.loading { background: #422006; color: #fbbf24; border: 1px solid #a16207; }
-        .topo-badge.point-a { background: #1e3a5f; color: #60a5fa; border: 1px solid #2563eb; }
-        .topo-badge.point-b { background: #3b0764; color: #c084fc; border: 1px solid #9333ea; }
+        .topo-badge.active { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .topo-badge.inactive { background: #f3f4f6; color: #9ca3af; border: 1px solid #e5e7eb; }
+        .topo-badge.loading { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .topo-badge.point-a { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
+        .topo-badge.point-b { background: #f3e8ff; color: #7c3aed; border: 1px solid #c4b5fd; }
 
         /* Pulse marker */
         @keyframes pulse-ring {
-            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(34, 211, 238, 0); }
-            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
         }
 
-        /* Terminal overlay */
+        /* AI Loading Modal — Gemini-style clean white */
         .terminal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(2, 6, 23, 0.98); z-index: 9999;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(243, 244, 246, 0.92); backdrop-filter: blur(8px);
+            z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center;
         }
         .terminal-box {
-            width: 90%; max-width: 640px; color: #22d3ee; font-family: 'JetBrains Mono', monospace;
+            width: 90%; max-width: 560px; background: #ffffff; border-radius: 24px;
+            padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
         }
-        .log-line { margin-bottom: 6px; font-size: 13px; opacity: 0; animation: typeIn 0.2s forwards; }
-        .log-line.highlight { color: #facc15; font-weight: bold; }
-        .log-line.error { color: #f87171; }
-        .log-line.info { color: #60a5fa; }
+        .log-line { margin-bottom: 6px; font-size: 13px; opacity: 0; animation: typeIn 0.2s forwards; color: #374151; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .log-line.highlight { color: #2563eb; font-weight: 600; }
+        .log-line.error { color: #dc2626; }
+        .log-line.info { color: #3b82f6; }
         @keyframes typeIn { to { opacity: 1; } }
 
-        /* Input styling */
+        /* Input styling — light theme */
         .dark-input {
-            background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; color: #e2e8f0;
-            padding: 12px 16px; font-weight: 600; width: 100%; transition: border-color 0.2s;
+            background: #f3f4f6; border: 1px solid transparent; border-radius: 12px; color: #111827;
+            padding: 12px 16px; font-weight: 500; width: 100%; transition: all 0.2s; font-size: 0.875rem;
         }
-        .dark-input:focus { outline: none; border-color: #22d3ee; box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1); }
-        .dark-input::placeholder { color: #475569; }
+        .dark-input:focus { outline: none; background: #ffffff; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .dark-input::placeholder { color: #9ca3af; }
         .dark-select {
-            background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; color: #e2e8f0;
-            padding: 12px 16px; font-weight: 600; width: 100%; cursor: pointer; appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background: #f3f4f6; border: 1px solid transparent; border-radius: 12px; color: #111827;
+            padding: 12px 16px; font-weight: 500; width: 100%; cursor: pointer; appearance: none; font-size: 0.875rem;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%236b7280' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
             background-repeat: no-repeat; background-position: right 12px center; background-size: 24px;
+            transition: all 0.2s;
         }
-        .dark-select:focus { outline: none; border-color: #22d3ee; }
-        .dark-select option { background: #0f172a; color: #e2e8f0; }
+        .dark-select:focus { outline: none; background-color: #ffffff; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .dark-select option { background: #ffffff; color: #111827; }
 
-        /* Range slider */
-        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #1e293b; outline: none; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #22d3ee; cursor: pointer; border: 2px solid #0f172a; box-shadow: 0 0 8px rgba(34, 211, 238, 0.5); }
+        /* HUD value display — light theme */
+        .hud-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.8rem; font-weight: 800; color: #111827; }
+        .hud-label { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
 
-        /* HUD value display */
-        .hud-value { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 800; color: #22d3ee; }
-        .hud-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+        /* Point info cards — light theme */
+        .point-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; }
+        .point-card.a { border-left: 3px solid #3b82f6; }
+        .point-card.b { border-left: 3px solid #8b5cf6; }
 
-        /* Point info cards */
-        .point-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 12px; }
-        .point-card.a { border-left: 3px solid #22d3ee; }
-        .point-card.b { border-left: 3px solid #c084fc; }
+        /* Result card — light theme */
+        .result-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
 
-        /* Result card */
-        .result-card { background: linear-gradient(135deg, #0f172a, #1e293b); border: 1px solid #334155; border-radius: 20px; overflow: hidden; }
-
-        /* Toast */
+        /* Toast — light theme */
         .pa-toast {
             position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 12px;
-            font-size: 13px; font-weight: 700; z-index: 10001; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            max-width: 360px; font-family: 'Plus Jakarta Sans', sans-serif; color: white;
+            font-size: 13px; font-weight: 600; z-index: 10001;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 360px;
+            font-family: 'Plus Jakarta Sans', sans-serif; color: white;
         }
 
-        /* Product cards */
-        .product-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 14px; padding: 16px; transition: all 0.2s; }
-        .product-card:hover { border-color: #22d3ee; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(34, 211, 238, 0.1); }
+        /* Product cards — light theme */
+        .product-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+        .product-card:hover { border-color: #bfdbfe; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
 
-        /* Scrollbar */
+        /* Scrollbar — light theme */
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #020617; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        ::-webkit-scrollbar-track { background: #f3f4f6; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -192,18 +184,20 @@
     <!-- Navbar mount point (layout.js renders here) -->
     <div id="navbar-mount"></div>
 
-    <!-- ==================== AI TERMINAL OVERLAY ==================== -->
+    <!-- ==================== AI LOADING OVERLAY ==================== -->
     <div id="aiTerminal" class="terminal-overlay">
         <div class="terminal-box">
-            <div class="flex items-center gap-3 mb-6 border-b border-slate-800 pb-4">
-                <i class="ri-cpu-line text-cyan-400 animate-pulse text-xl"></i>
-                <span class="text-xs text-slate-500 tracking-[0.2em]">SBW PUMP ADVISOR v6 — TDH ENGINE</span>
+            <div class="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 flex items-center justify-center">
+                    <i class="ri-sparkling-2-fill text-white text-sm"></i>
+                </div>
+                <span class="text-sm font-semibold text-gray-800">Analyzing your site parameters…</span>
             </div>
-            <div id="terminalLogs" class="h-64 overflow-y-auto mb-4"></div>
-            <div class="h-1 w-full bg-slate-900 rounded-full overflow-hidden">
-                <div id="terminalProgress" class="h-full bg-cyan-400 transition-all duration-300" style="width: 0%"></div>
+            <div id="terminalLogs" class="h-56 overflow-y-auto mb-4"></div>
+            <div class="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div id="terminalProgress" class="h-full bg-blue-500 transition-all duration-300" style="width: 0%"></div>
             </div>
-            <p class="text-center text-slate-600 text-[10px] mt-4 tracking-widest uppercase">Computing Total Dynamic Head...</p>
+            <p class="text-center text-gray-400 text-[10px] mt-4 tracking-widest uppercase">Computing Total Dynamic Head…</p>
         </div>
     </div>
 
@@ -212,17 +206,17 @@
 
         <!-- Header -->
         <div class="text-center mb-8">
-            <span class="bg-cyan-900/40 text-cyan-400 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider border border-cyan-800/50">GPS Elevation-Aware TDH Engine</span>
-            <h1 class="text-3xl md:text-4xl font-extrabold text-white mt-3">Smart Pump Advisor</h1>
-            <p class="text-slate-400 mt-2 max-w-2xl mx-auto">Topo elevation + 3D slant distance + dynamic friction physics + AI-ranked live inventory from Sagar Traders.</p>
+            <span class="bg-blue-50 text-blue-600 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider border border-blue-100">GPS Elevation-Aware TDH Engine</span>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mt-3">Smart Pump Advisor</h1>
+            <p class="text-gray-500 mt-2 max-w-2xl mx-auto">Topo elevation + 3D slant distance + dynamic friction physics + AI-ranked live inventory from Sagar Traders.</p>
         </div>
 
         <!-- ======== TOP ROW: PANELS A + B ======== -->
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
 
             <!-- PANEL A — INPUTS (Left, 2 cols) -->
-            <div class="lg:col-span-2 bg-[#0c1222] border border-slate-800 rounded-2xl p-6">
-                <h2 class="text-sm font-bold text-cyan-400 uppercase tracking-wider mb-5 flex items-center gap-2">
+            <div class="lg:col-span-2 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <h2 class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-5 flex items-center gap-2">
                     <i class="ri-settings-4-line"></i> Pump Parameters
                 </h2>
 
@@ -230,15 +224,15 @@
 
                     <!-- Water Source -->
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Water Source</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Water Source</label>
                         <div class="grid grid-cols-3 gap-2">
-                            <button onclick="setSource('borewell')" id="src-borewell" class="src-btn bg-[#0f172a] border border-slate-700 rounded-xl py-3 text-center text-xs font-bold text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition">
+                            <button onclick="setSource('borewell')" id="src-borewell" class="src-btn bg-white border border-gray-200 rounded-xl py-3 text-center text-xs font-bold text-gray-500 hover:border-blue-300 hover:text-blue-600 transition shadow-sm">
                                 <i class="ri-arrow-down-circle-line text-xl block mb-1"></i> Borewell
                             </button>
-                            <button onclick="setSource('openwell')" id="src-openwell" class="src-btn bg-[#0f172a] border border-slate-700 rounded-xl py-3 text-center text-xs font-bold text-slate-400 hover:border-emerald-500 hover:text-emerald-400 transition">
+                            <button onclick="setSource('openwell')" id="src-openwell" class="src-btn bg-white border border-gray-200 rounded-xl py-3 text-center text-xs font-bold text-gray-500 hover:border-emerald-300 hover:text-emerald-600 transition shadow-sm">
                                 <i class="ri-drop-line text-xl block mb-1"></i> Open Well
                             </button>
-                            <button onclick="setSource('sewage')" id="src-sewage" class="src-btn bg-[#0f172a] border border-slate-700 rounded-xl py-3 text-center text-xs font-bold text-slate-400 hover:border-orange-500 hover:text-orange-400 transition">
+                            <button onclick="setSource('sewage')" id="src-sewage" class="src-btn bg-white border border-gray-200 rounded-xl py-3 text-center text-xs font-bold text-gray-500 hover:border-orange-300 hover:text-orange-600 transition shadow-sm">
                                 <i class="ri-delete-bin-line text-xl block mb-1"></i> Sewage
                             </button>
                         </div>
@@ -246,13 +240,13 @@
 
                     <!-- Borewell Depth -->
                     <div id="grp-depth" class="hidden">
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Borewell Depth (ft)</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Borewell Depth (ft)</label>
                         <input type="number" id="inp-depth" class="dark-input" placeholder="e.g. 450" oninput="S.depth=parseInt(this.value)||0; hud();">
                     </div>
 
                     <!-- Borewell Delivery Height -->
                     <div id="grp-deliveryH" class="hidden">
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Delivery Pipe Height Above Ground (ft)</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Delivery Pipe Height Above Ground (ft)</label>
                         <input type="number" id="inp-deliveryH" class="dark-input" placeholder="e.g. 30" value="0" oninput="S.deliveryH=parseInt(this.value)||0; hud();">
                     </div>
 
@@ -260,29 +254,29 @@
                     <div id="grp-openwell" class="hidden space-y-3">
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase">Suction (ft)</label>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase">Suction (ft)</label>
                                 <input type="number" id="inp-suction" class="dark-input" oninput="hud();">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase">Delivery (ft)</label>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase">Delivery (ft)</label>
                                 <input type="number" id="inp-delivery" class="dark-input" oninput="hud();">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Flat Distance (ft)</label>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Flat Distance (ft)</label>
                             <input type="number" id="inp-flat" class="dark-input" oninput="hud();">
                         </div>
                     </div>
 
                     <!-- Sewage Lift -->
                     <div id="grp-sewage" class="hidden">
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Lift Height (ft)</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Lift Height (ft)</label>
                         <input type="number" id="inp-lift" class="dark-input" oninput="hud();">
                     </div>
 
                     <!-- Pipe Diameter (borewell) -->
                     <div id="grp-pipe" class="hidden">
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Delivery Pipe Diameter</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Delivery Pipe Diameter</label>
                         <select id="inp-pipe" class="dark-select" onchange="S.pipeDia=parseFloat(this.value); hud();">
                             <option value="1.5">1.5" PVC — High Friction (28 m / 100 m)</option>
                             <option value="2.0" selected>2.0" PVC — Standard (8 m / 100 m)</option>
@@ -292,13 +286,13 @@
 
                     <!-- Casing Diameter (borewell) -->
                     <div id="grp-casing" class="hidden">
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Casing Diameter</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Casing Diameter</label>
                         <div class="flex gap-3">
-                            <label class="flex-1 flex items-center justify-center gap-2 bg-[#0f172a] border border-slate-700 rounded-xl px-4 py-3 cursor-pointer hover:border-cyan-500 transition has-[:checked]:border-cyan-500 has-[:checked]:bg-cyan-950/30">
-                                <input type="radio" name="casing" value="4" class="accent-cyan-400"> 4"
+                            <label class="flex-1 flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 cursor-pointer hover:border-blue-300 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                <input type="radio" name="casing" value="4" class="accent-blue-600"> 4"
                             </label>
-                            <label class="flex-1 flex items-center justify-center gap-2 bg-[#0f172a] border border-slate-700 rounded-xl px-4 py-3 cursor-pointer hover:border-cyan-500 transition has-[:checked]:border-cyan-500 has-[:checked]:bg-cyan-950/30">
-                                <input type="radio" name="casing" value="6" checked class="accent-cyan-400"> 6"
+                            <label class="flex-1 flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 cursor-pointer hover:border-blue-300 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                <input type="radio" name="casing" value="6" checked class="accent-blue-600"> 6"
                             </label>
                         </div>
                     </div>
@@ -306,18 +300,18 @@
                     <!-- Discharge & Efficiency (borewell) -->
                     <div id="grp-hp" class="hidden grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Discharge (LPS)</label>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Discharge (LPS)</label>
                             <input type="number" id="inp-lps" class="dark-input" value="10" min="1" max="50" step="1" oninput="S.lps=parseFloat(this.value)||10; hud();">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Pump Efficiency (%)</label>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Pump Efficiency (%)</label>
                             <input type="number" id="inp-eff" class="dark-input" value="55" min="30" max="80" step="5" oninput="S.eff=(parseFloat(this.value)||55)/100; hud();">
                         </div>
                     </div>
 
                     <!-- Phase -->
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Power Supply</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Power Supply</label>
                         <select id="inp-phase" class="dark-select" onchange="S.phase=parseInt(this.value);">
                             <option value="1">Single Phase (Home)</option>
                             <option value="3">Three Phase (Agriculture)</option>
@@ -326,18 +320,18 @@
 
                     <!-- Site Pincode (for TDS/Salinity lookup) -->
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Site Pincode <span class="text-slate-600 font-normal">(Optional)</span></label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Site Pincode <span class="text-gray-400 font-normal">(Optional)</span></label>
                         <input type="text" id="inp-pincode" class="dark-input" placeholder="e.g. 522503" maxlength="6" oninput="S.pincode=this.value.replace(/\D/g,'');">
-                        <p class="text-[10px] text-slate-600 mt-1 flex items-center gap-1"><i class="ri-information-line"></i> Used to fetch regional groundwater TDS/Salinity data</p>
+                        <p class="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><i class="ri-information-line"></i> Used to fetch regional groundwater TDS/Salinity data</p>
                     </div>
 
                 </div>
             </div>
 
             <!-- PANEL B — TOPO MAP (Right, 3 cols) -->
-            <div class="lg:col-span-3 bg-[#0c1222] border border-slate-800 rounded-2xl p-6 flex flex-col">
+            <div class="lg:col-span-3 bg-white border border-gray-200 rounded-2xl p-6 flex flex-col shadow-sm">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-sm font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+                    <h2 class="text-sm font-bold text-blue-600 uppercase tracking-wider flex items-center gap-2">
                         <i class="ri-earth-line"></i> Topo Elevation &amp; Slant Distance
                     </h2>
                     <span id="topoBadge" class="topo-badge inactive">
@@ -346,7 +340,7 @@
                 </div>
 
                 <!-- Instruction Banner -->
-                <div id="topoInstruction" class="bg-slate-900 text-cyan-400 text-center py-2.5 rounded-lg mb-3 font-mono text-xs font-bold tracking-wide shadow-inner">
+                <div id="topoInstruction" class="bg-blue-50 text-blue-700 text-center py-2.5 rounded-lg mb-3 font-mono text-xs font-bold tracking-wide">
                     Tap map to place Point A (Start) and Point B (End)
                 </div>
 
@@ -355,13 +349,13 @@
 
                 <!-- Map Controls -->
                 <div class="grid grid-cols-3 gap-2 mb-3">
-                    <button onclick="Topo.locate()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2.5 rounded-lg text-xs transition flex items-center justify-center gap-1">
+                    <button onclick="Topo.locate()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs transition flex items-center justify-center gap-1 shadow-sm">
                         <i class="ri-radar-line"></i> Locate
                     </button>
-                    <button onclick="Topo.reset()" class="bg-red-900/40 hover:bg-red-900/60 text-red-400 font-bold py-2.5 rounded-lg text-xs transition border border-red-800/50 flex items-center justify-center gap-1">
+                    <button onclick="Topo.reset()" class="bg-white hover:bg-red-50 text-red-500 font-bold py-2.5 rounded-lg text-xs transition border border-gray-200 flex items-center justify-center gap-1">
                         <i class="ri-refresh-line"></i> Reset
                     </button>
-                    <button onclick="skipMap()" class="bg-emerald-700 hover:bg-emerald-600 text-emerald-200 font-bold py-2.5 rounded-lg text-xs transition flex items-center justify-center gap-1">
+                    <button onclick="skipMap()" class="bg-white hover:bg-emerald-50 text-emerald-600 font-bold py-2.5 rounded-lg text-xs transition border border-gray-200 flex items-center justify-center gap-1">
                         <i class="ri-skip-forward-line"></i> Skip Map
                     </button>
                 </div>
@@ -369,51 +363,51 @@
                 <!-- Point Info Cards -->
                 <div class="grid grid-cols-2 gap-3">
                     <div id="cardA" class="hidden point-card a">
-                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Point A — Borewell</p>
-                        <p class="text-xs font-mono text-slate-400 mt-1" id="coordA">--</p>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Point A — Borewell</p>
+                        <p class="text-xs font-mono text-gray-500 mt-1" id="coordA">--</p>
                         <div class="flex items-baseline gap-2 mt-1">
-                            <span class="text-lg font-black text-cyan-400" id="elevA">--</span>
-                            <span class="text-[10px] text-slate-500">m</span>
-                            <span class="text-xs font-mono text-slate-500" id="elevAFt">-- ft</span>
+                            <span class="text-lg font-black text-blue-600" id="elevA">--</span>
+                            <span class="text-[10px] text-gray-400">m</span>
+                            <span class="text-xs font-mono text-gray-400" id="elevAFt">-- ft</span>
                         </div>
                     </div>
                     <div id="cardB" class="hidden point-card b">
-                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Point B — Delivery</p>
-                        <p class="text-xs font-mono text-slate-400 mt-1" id="coordB">--</p>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Point B — Delivery</p>
+                        <p class="text-xs font-mono text-gray-500 mt-1" id="coordB">--</p>
                         <div class="flex items-baseline gap-2 mt-1">
-                            <span class="text-lg font-black text-purple-400" id="elevB">--</span>
-                            <span class="text-[10px] text-slate-500">m</span>
-                            <span class="text-xs font-mono text-slate-500" id="elevBFt">-- ft</span>
+                            <span class="text-lg font-black text-purple-600" id="elevB">--</span>
+                            <span class="text-[10px] text-gray-400">m</span>
+                            <span class="text-xs font-mono text-gray-400" id="elevBFt">-- ft</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Topo Results -->
-                <div id="topoResults" class="hidden mt-3 bg-[#0f172a] border border-slate-700 rounded-xl p-4">
-                    <h5 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <div id="topoResults" class="hidden mt-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                    <h5 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                         <i class="ri-calculator-line"></i> Topo Calculation
                     </h5>
                     <div class="grid grid-cols-2 gap-y-1 text-xs">
-                        <span class="text-slate-500">Δh Elevation Diff</span>
-                        <span class="font-mono font-bold text-right text-white" id="topoDeltaH">--</span>
-                        <span class="text-slate-500">2D Ground Dist</span>
-                        <span class="font-mono font-bold text-right text-white" id="topoDist2D">--</span>
-                        <span class="text-slate-500">3D Slant Dist</span>
-                        <span class="font-mono font-bold text-right text-cyan-400" id="topoDist3D">--</span>
-                        <span class="text-slate-500">Incline Angle</span>
-                        <span class="font-mono font-bold text-right text-white" id="topoAngle">--</span>
+                        <span class="text-gray-500">Δh Elevation Diff</span>
+                        <span class="font-mono font-bold text-right text-gray-900" id="topoDeltaH">--</span>
+                        <span class="text-gray-500">2D Ground Dist</span>
+                        <span class="font-mono font-bold text-right text-gray-900" id="topoDist2D">--</span>
+                        <span class="text-gray-500">3D Slant Dist</span>
+                        <span class="font-mono font-bold text-right text-blue-600" id="topoDist3D">--</span>
+                        <span class="text-gray-500">Incline Angle</span>
+                        <span class="font-mono font-bold text-right text-gray-900" id="topoAngle">--</span>
                     </div>
                 </div>
 
-                <p class="text-[10px] text-slate-600 mt-auto pt-2 flex items-center gap-1">
+                <p class="text-[10px] text-gray-400 mt-auto pt-2 flex items-center gap-1">
                     <i class="ri-information-line"></i> Elevation via Open-Meteo (free). Map: OpenStreetMap + ESRI Satellite.
                 </p>
             </div>
         </div>
 
         <!-- ======== PANEL C — LIVE HUD + AI TRIGGER ======== -->
-        <div class="bg-[#0c1222] border border-slate-800 rounded-2xl p-6 mb-6">
-            <h2 class="text-sm font-bold text-cyan-400 uppercase tracking-wider mb-5 flex items-center gap-2">
+        <div class="bg-white border border-gray-200 rounded-2xl p-6 mb-6 shadow-sm">
+            <h2 class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-5 flex items-center gap-2">
                 <i class="ri-dashboard-line"></i> Live TDH HUD
             </h2>
 
@@ -424,33 +418,33 @@
                     <div class="hud-label mt-1">Depth (ft)</div>
                 </div>
                 <div class="text-center">
-                    <div class="hud-value text-purple-400" id="hud-elev">0</div>
+                    <div class="hud-value text-blue-600" id="hud-elev">0</div>
                     <div class="hud-label mt-1">Elev Δh (ft)</div>
                 </div>
                 <div class="text-center">
-                    <div class="hud-value text-amber-400" id="hud-friction">0</div>
+                    <div class="hud-value text-amber-600" id="hud-friction">0</div>
                     <div class="hud-label mt-1">Friction (ft)</div>
                 </div>
                 <div class="text-center">
-                    <div class="hud-value text-emerald-400" id="hud-tdh">0</div>
+                    <div class="hud-value text-emerald-600" id="hud-tdh">0</div>
                     <div class="hud-label mt-1">Total TDH (ft)</div>
                 </div>
                 <div class="text-center col-span-2 md:col-span-1">
-                    <div class="hud-value text-pink-400" id="hud-hp">0</div>
+                    <div class="hud-value text-pink-600" id="hud-hp">0</div>
                     <div class="hud-label mt-1">Est. HP</div>
                 </div>
             </div>
 
             <!-- Friction note -->
-            <p class="text-[10px] text-slate-500 text-center mb-4" id="hudFrictionNote">
+            <p class="text-[10px] text-gray-400 text-center mb-4" id="hudFrictionNote">
                 Friction based on 2.0" PVC (8 m / 100 m)
             </p>
 
             <!-- AI Button -->
-            <button onclick="run()" id="btn-ai" class="glow-btn w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-extrabold text-lg py-5 rounded-2xl transition-all hover:scale-[1.01] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:animate-none" disabled>
+            <button onclick="run()" id="btn-ai" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-lg py-5 rounded-full transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-blue-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-md shadow-blue-100" disabled>
                 <i class="ri-sparkling-2-fill mr-2"></i> GENERATE AI PUMP RECOMMENDATION
             </button>
-            <p class="text-[10px] text-slate-600 text-center mt-2">Powered by Gemini AI + live SagarTraders.in inventory</p>
+            <p class="text-[10px] text-gray-400 text-center mt-2">Powered by Gemini AI + live SagarTraders.in inventory</p>
         </div>
 
         <!-- ======== PANEL D — AI RESULTS (hidden until return) ======== -->
@@ -458,44 +452,44 @@
 
             <!-- TDH Summary Card -->
             <div class="result-card mb-6 p-6">
-                <h3 class="text-sm font-bold text-cyan-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <h3 class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <i class="ri-file-chart-line"></i> Your TDH Analysis
                 </h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div>
-                        <div class="text-2xl font-black text-white font-mono" id="r-depth">--</div>
-                        <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-1">Depth (ft)</div>
+                        <div class="text-2xl font-black text-gray-900 font-mono" id="r-depth">--</div>
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider mt-1">Depth (ft)</div>
                     </div>
                     <div>
-                        <div class="text-2xl font-black text-purple-400 font-mono" id="r-elev">--</div>
-                        <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-1">Elev Δh (ft)</div>
+                        <div class="text-2xl font-black text-blue-600 font-mono" id="r-elev">--</div>
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider mt-1">Elev Δh (ft)</div>
                     </div>
                     <div>
-                        <div class="text-2xl font-black text-amber-400 font-mono" id="r-extra">--</div>
-                        <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-1">Delivery + Friction</div>
+                        <div class="text-2xl font-black text-amber-600 font-mono" id="r-extra">--</div>
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider mt-1">Delivery + Friction</div>
                     </div>
                     <div>
-                        <div class="text-2xl font-black text-emerald-400 font-mono" id="r-tdh">--</div>
-                        <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-1">Total TDH (ft)</div>
+                        <div class="text-2xl font-black text-emerald-600 font-mono" id="r-tdh">--</div>
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider mt-1">Total TDH (ft)</div>
                     </div>
                 </div>
                 <div class="mt-4 text-center">
-                    <span class="text-lg font-black text-cyan-400 font-mono" id="r-hp">--</span>
-                    <span class="text-xs text-slate-400 ml-1">Recommended Motor</span>
+                    <span class="text-lg font-black text-blue-600 font-mono" id="r-hp">--</span>
+                    <span class="text-xs text-gray-400 ml-1">Recommended Motor</span>
                 </div>
-                <p class="text-[10px] text-slate-500 text-center mt-2" id="r-note"></p>
+                <p class="text-[10px] text-gray-400 text-center mt-2" id="r-note"></p>
             </div>
 
             <!-- Product Grid -->
             <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-            <div id="noMatch" class="hidden text-center py-12 text-slate-500">
+            <div id="noMatch" class="hidden text-center py-12 text-gray-400">
                 <i class="ri-ghost-line text-4xl mb-2 block"></i>
                 No exact recommendations found. Try adjusting parameters.
             </div>
 
-            <div class="text-center mt-8 pt-6 border-t border-slate-800">
-                <p class="text-xs text-slate-600">
-                    Recommendations from <strong class="text-slate-400">SagarTraders.in</strong> live inventory + Gemini AI analysis.
+            <div class="text-center mt-8 pt-6 border-t border-gray-100">
+                <p class="text-xs text-gray-400">
+                    Recommendations from <strong class="text-gray-500">SagarTraders.in</strong> live inventory + Gemini AI analysis.
                 </p>
             </div>
         </div>
@@ -555,11 +549,11 @@
         S.source = src;
 
         // Highlight
-        document.querySelectorAll('.src-btn').forEach(b => { b.classList.remove('border-cyan-500','text-cyan-400','border-emerald-500','text-emerald-400','border-orange-500','text-orange-400','bg-cyan-950/30','bg-emerald-950/30','bg-orange-950/30'); });
+        document.querySelectorAll('.src-btn').forEach(b => { b.classList.remove('border-blue-500','text-blue-600','border-emerald-500','text-emerald-600','border-orange-500','text-orange-600','bg-blue-50','bg-emerald-50','bg-orange-50'); });
         const btn = document.getElementById('src-' + src);
-        if (src==='borewell') { btn.classList.add('border-cyan-500','text-cyan-400','bg-cyan-950/30'); }
-        if (src==='openwell') { btn.classList.add('border-emerald-500','text-emerald-400','bg-emerald-950/30'); }
-        if (src==='sewage')  { btn.classList.add('border-orange-500','text-orange-400','bg-orange-950/30'); }
+        if (src==='borewell') { btn.classList.add('border-blue-500','text-blue-600','bg-blue-50'); }
+        if (src==='openwell') { btn.classList.add('border-emerald-500','text-emerald-600','bg-emerald-50'); }
+        if (src==='sewage')  { btn.classList.add('border-orange-500','text-orange-600','bg-orange-50'); }
 
         // Show/hide groups
         const show = (id, vis) => { const el = document.getElementById(id); if(el) el.classList.toggle('hidden', !vis); };
@@ -676,7 +670,7 @@
 
             const { lat, lng } = e.latlng;
             const isA = this.markers.length === 0;
-            const color = isA ? '#22d3ee' : '#c084fc';
+            const color = isA ? '#3b82f6' : '#8b5cf6';
             const icon = L.divIcon({
                 html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 15px ${color};animation:pulse-ring 2s infinite;margin:-7px 0 0 -7px;"></div>`,
                 iconSize: [0, 0], className: ''
@@ -711,7 +705,7 @@
                 document.getElementById('cardB').classList.remove('hidden');
                 document.getElementById('topoInstruction').textContent = 'Calculating topo data...';
 
-                this.line = L.polyline(this.markers.map(m => [m.lat, m.lng]), { color: '#22d3ee', dashArray: '6 10', weight: 2 }).addTo(this.map);
+                this.line = L.polyline(this.markers.map(m => [m.lat, m.lng]), { color: '#3b82f6', dashArray: '6 10', weight: 2 }).addTo(this.map);
                 this.map.fitBounds(this.line.getBounds(), { padding: [40, 40] });
 
                 try {
@@ -928,10 +922,10 @@
         const note = document.getElementById('r-note');
         if (S.topoReady) {
             note.innerHTML = `<i class="ri-earth-line"></i> Topo verified: 3D slant ${S.dist3D.toFixed(1)}m, incline ${S.angleDeg.toFixed(1)}°`;
-            note.className = 'text-[10px] text-cyan-400 mt-2 flex items-center justify-center gap-1';
+            note.className = 'text-[10px] text-blue-600 mt-2 flex items-center justify-center gap-1';
         } else {
             note.innerHTML = `<i class="ri-information-line"></i> Standard head calculation (no topo)`;
-            note.className = 'text-[10px] text-amber-400 mt-2 flex items-center justify-center gap-1';
+            note.className = 'text-[10px] text-amber-600 mt-2 flex items-center justify-center gap-1';
         }
 
         // Products
@@ -943,33 +937,33 @@
 
         list.forEach(p => {
             const stock = p.source === 'shopify';
-            let badge = 'DIRECT', badgeCls = 'bg-blue-900/40 text-blue-400';
+            let badge = 'DIRECT', badgeCls = 'bg-blue-50 text-blue-600';
             const brand = (p.brand||'').toUpperCase();
-            if (stock)  { badge='IN STOCK'; badgeCls='bg-emerald-900/40 text-emerald-400'; }
-            else if (brand.includes('KIRLOSKAR')||brand.includes('KOEL')) { badge='KOEL DIRECT'; badgeCls='bg-green-900/40 text-green-400'; }
-            else if (brand.includes('KSB')) { badge='KSB DIRECT'; badgeCls='bg-orange-900/40 text-orange-400'; }
+            if (stock)  { badge='IN STOCK'; badgeCls='bg-emerald-50 text-emerald-600'; }
+            else if (brand.includes('KIRLOSKAR')||brand.includes('KOEL')) { badge='KOEL DIRECT'; badgeCls='bg-green-50 text-green-700'; }
+            else if (brand.includes('KSB')) { badge='KSB DIRECT'; badgeCls='bg-orange-50 text-orange-600'; }
 
             const btnTxt = stock ? 'BUY NOW' : 'CHECK AVAILABILITY';
-            const btnBg  = stock ? 'bg-cyan-600 hover:bg-cyan-500' : 'bg-slate-700 hover:bg-slate-600';
+            const btnBg  = stock ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-800 hover:bg-gray-700';
             const img = p.image || FALLBACK_IMG;
 
             grid.innerHTML += `
             <div class="product-card flex gap-4 items-center">
-                <div class="w-16 h-16 bg-[#020617] rounded-lg flex-shrink-0 border border-slate-700 p-1 flex items-center justify-center overflow-hidden">
+                <div class="w-16 h-16 bg-gray-50 rounded-lg flex-shrink-0 border border-gray-100 p-1 flex items-center justify-center overflow-hidden">
                     <img src="${esc(img)}" class="max-w-full max-h-full object-contain" alt="${esc(p.title)}" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';">
                 </div>
                 <div class="flex-grow min-w-0">
                     <div class="flex justify-between items-start gap-2">
                         <div class="min-w-0">
-                            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">${esc(p.brand||'Premium')}</div>
-                            <h4 class="font-bold text-slate-200 text-sm leading-tight truncate">${esc(p.title)}</h4>
+                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">${esc(p.brand||'Premium')}</div>
+                            <h4 class="font-bold text-gray-900 text-sm leading-tight truncate">${esc(p.title)}</h4>
                             <div class="flex gap-2 mt-1">
                                 <span class="${badgeCls} text-[10px] font-bold px-2 py-0.5 rounded">${badge}</span>
                             </div>
                         </div>
-                        <div class="font-bold text-cyan-400 text-right whitespace-nowrap">₹${parseInt(p.price||0).toLocaleString()}</div>
+                        <div class="font-bold text-blue-600 text-right whitespace-nowrap">₹${parseInt(p.price||0).toLocaleString()}</div>
                     </div>
-                    ${p.reason ? `<div class="text-[10px] text-slate-500 italic mt-1 border-t border-slate-800 pt-1">✨ ${esc(p.reason)}</div>` : ''}
+                    ${p.reason ? `<div class="text-[10px] text-gray-400 italic mt-1 border-t border-gray-100 pt-1">✨ ${esc(p.reason)}</div>` : ''}
                     <a href="${esc(p.link)}" target="_blank" class="block w-full ${btnBg} text-white text-center text-[10px] font-bold py-2 rounded-lg mt-2 transition">${btnTxt}</a>
                 </div>
             </div>`;
