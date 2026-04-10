@@ -270,6 +270,7 @@
 
         const db = firebase.firestore();
         const auth = firebase.auth();
+        let isEditing = false;
 
         function notify(msg, type='success') {
             Toastify({
@@ -374,9 +375,9 @@
         function deleteRecord(collection, docId) {
             if(confirm("⚠ PERMANENT DELETE: Are you sure?")) {
                 db.collection(collection).doc(docId).delete().then(() => {
-                    notify("RECORD DELETED", "error"); 
+                    notify("RECORD DELETED", "error");
                     closeModal();
-                });
+                }).catch(error => notify("Error: " + error.message, "error"));
             }
         }
 
@@ -527,7 +528,7 @@
         function updateSilentStatus(docId, status) {
             db.collection('silent_leads').doc(docId).update({ adminStatus: status })
               .then(() => notify(`Status updated to ${status}`))
-              .catch(e => notify("Update failed", "error"));
+              .catch(error => notify("Error: " + error.message, "error"));
         }
 
         function viewSilentHistory(docId) {
@@ -643,15 +644,15 @@
             for (let i = 0; i < path.getLength(); i++) { const xy = path.getAt(i); coords.push({ lat: xy.lat(), lng: xy.lng() }); }
             const zoneData = { name: nameRaw, typeKey: type, typeName: ZONE_CONFIG[type].label, color: ZONE_CONFIG[type].color, coords: coords, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
             const btn = document.getElementById('btnSaveZone'); const oldText = btn.innerText; btn.innerText = "SAVING...";
-            if(editId) { db.collection('geo_zones').doc(editId).update(zoneData).then(() => { notify("Zone Updated"); finalizeSave(btn, oldText); }); } 
-            else { const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_'); db.collection('geo_zones').doc(docId).set(zoneData).then(() => { notify("New Zone Created"); finalizeSave(btn, oldText); }); }
+            if(editId) { db.collection('geo_zones').doc(editId).update(zoneData).then(() => { notify("Zone Updated"); finalizeSave(btn, oldText); }).catch(error => { notify("Error: " + error.message, "error"); btn.innerText = oldText; }); }
+            else { const docId = nameRaw.toLowerCase().replace(/[^a-z0-9]/g, '_'); db.collection('geo_zones').doc(docId).set(zoneData).then(() => { notify("New Zone Created"); finalizeSave(btn, oldText); }).catch(error => { notify("Error: " + error.message, "error"); btn.innerText = oldText; }); }
         }
         function finalizeSave(btn, oldText) { btn.innerText = oldText; if(currentPoly) currentPoly = null; document.getElementById('saveZonePanel').classList.add('hidden'); document.getElementById('editDocId').value = ""; document.getElementById('newZoneName').value = ""; loadAdminZones(); }
         function deleteZone(collectionName, docId) {
             if(!confirm(`PERMANENT DELETE from ${collectionName}?`)) return;
             db.collection(collectionName).doc(docId).delete().then(() => {
-                notify("Object Deleted"); loadAdminZones(); 
-            }).catch(e => notify("Delete Failed", "error"));
+                notify("Object Deleted"); loadAdminZones();
+            }).catch(error => notify("Error: " + error.message, "error"));
         }
         function loadAdminZones() {
             const listEl = document.getElementById('zonesList');
@@ -715,7 +716,7 @@
             e.preventDefault(); const id = document.getElementById('p_id').value;
             const data = { projectId: id, mobile: "+91" + document.getElementById('p_mobile').value, customerName: document.getElementById('p_name').value, location: document.getElementById('p_loc').value, gps: document.getElementById('p_gps').value, depth: document.getElementById('p_depth').value, yield: document.getElementById('p_yield').value, casing_depth: document.getElementById('p_casing').value, casing_type: document.getElementById('p_casingType').value, rigType: document.getElementById('p_rig').value, motor: document.getElementById('p_motor').value, date: document.getElementById('p_date').value, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
             const docRef = db.collection('projects').doc(id);
-            docRef.get().then(doc => { if(doc.exists && !isEditing) { notify("ERROR: ID Exists.", "error"); resetForm(); } else { docRef.set(data, { merge: true }).then(() => { notify(isEditing ? "RECORD UPDATED" : "CERTIFICATE ISSUED"); resetForm(); showSection('projects'); }); } });
+            docRef.get().then(doc => { if(doc.exists && !isEditing) { notify("ERROR: ID Exists.", "error"); resetForm(); } else { docRef.set(data, { merge: true }).then(() => { notify(isEditing ? "RECORD UPDATED" : "CERTIFICATE ISSUED"); resetForm(); showSection('projects'); }).catch(error => notify("Error: " + error.message, "error")); } });
         }
         
         let currentPDFElement;
@@ -780,8 +781,8 @@
             </div><div><label class="text-[10px] text-slate-500 uppercase block mb-1">Mission Log</label><div class="flex gap-2"><textarea id="adminNotes" class="cyber-input text-xs" rows="1" placeholder="Notes...">${notes}</textarea><button onclick="saveNote('${data.docId}')" class="bg-blue-600 px-2 rounded text-white"><i class="ri-save-line"></i></button></div></div></div><div class="grid grid-cols-2 gap-3 mb-4"><a href="https://wa.me/${data.mobile.replace('+','')}" target="_blank" class="btn-pro bg-green-600 hover:bg-green-500 text-white"><i class="ri-whatsapp-line"></i> Chat</a><a href="tel:${data.mobile}" class="btn-pro bg-blue-600 hover:bg-blue-500 text-white"><i class="ri-phone-line"></i> Call</a><button onclick="previewQuote('${encodeURIComponent(JSON.stringify(data))}')" class="btn-pro bg-slate-700 hover:bg-slate-600 text-white"><i class="ri-eye-line"></i> View</button><button onclick="convertToProject('${data.docId}')" class="btn-pro bg-purple-600 hover:bg-purple-500 text-white border border-purple-400/30"><i class="ri-magic-line"></i> Convert</button></div><div class="text-center pt-2"><button onclick="deleteRecord('leads', '${data.docId}')" class="btn-danger text-xs px-3 py-1 rounded-md">DELETE LEAD</button></div>`;
             document.getElementById('modalContent').innerHTML = content; document.getElementById('detailModal').classList.add('open');
         }
-        function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }); }
-        function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")); }
+        function updateLeadStatus(docId, status) { db.collection('leads').doc(docId).update({ status: status }).catch(error => notify("Error: " + error.message, "error")); }
+        function saveNote(docId) { db.collection('leads').doc(docId).update({ adminNotes: document.getElementById('adminNotes').value }).then(() => notify("Note Saved")).catch(error => notify("Error: " + error.message, "error")); }
         function initMapTools() { const input = document.getElementById('p_loc'); if(input) { const ac = new google.maps.places.Autocomplete(input); ac.addListener('place_changed', () => { const p = ac.getPlace(); if(p.geometry && map) map.setCenter(p.geometry.location); }); } }
         function openMapPicker() { if(typeof google === 'undefined') { notify("System Initializing...", "error"); return; } document.getElementById('mapModal').classList.add('open'); if(!map) { map = new google.maps.Map(document.getElementById('mapContainer'), { center: {lat: 16.44, lng: 80.55}, zoom: 16, disableDefaultUI: true, styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }, { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }, { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }] }); } setTimeout(() => google.maps.event.trigger(map, 'resize'), 100); }
         function confirmLocation() { const c = map.getCenter(); document.getElementById('p_gps').value = `${c.lat().toFixed(6)}, ${c.lng().toFixed(6)}`; document.getElementById('mapModal').classList.remove('open'); }

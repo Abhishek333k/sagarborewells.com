@@ -197,4 +197,149 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>
         </footer>`;
     }
+
+    // ================================================================
+    // 🟢 UNIVERSAL SEO INJECTION (Auto-applied to every page)
+    // Dynamically sets <title>, meta descriptions, OpenGraph,
+    // Twitter Cards, and LocalBusiness JSON-LD schema.
+    // ================================================================
+    (function injectSEO() {
+        // --- Page-specific titles & descriptions ---
+        const path = window.location.pathname;
+        const pageMap = {
+            '/':              { t: 'Sagar Borewells — Precision Drilling & Zone-Based Pricing | Mangalagiri', d: 'Andhra Pradesh\'s most trusted borewell drilling company. GPS-powered estimates, geological zone analysis, and instant PDF quotes. 7500+ projects completed since 2010.' },
+            '/index.html':    { t: 'Sagar Borewells — Precision Drilling & Zone-Based Pricing | Mangalagiri', d: 'Andhra Pradesh\'s most trusted borewell drilling company. GPS-powered estimates, geological zone analysis, and instant PDF quotes. 7500+ projects completed since 2010.' },
+            '/quote.html':    { t: 'Instant Borewell Quotation — Sagar Borewells', d: 'Get an instant drilling cost estimate for your borewell. GPS location, depth slider, tiered pricing, and downloadable PDF quote.' },
+            '/quote':         { t: 'Instant Borewell Quotation — Sagar Borewells', d: 'Get an instant drilling cost estimate for your borewell. GPS location, depth slider, tiered pricing, and downloadable PDF quote.' },
+            '/login.html':    { t: 'Client Login — Sagar Borewells', d: 'Access your borewell project dashboard, track rig status, download BWBC certificates and estimates.' },
+            '/login':         { t: 'Client Login — Sagar Borewells', d: 'Access your borewell project dashboard, track rig status, download BWBC certificates and estimates.' },
+            '/dashboard.html':{ t: 'Mission Control Dashboard — Sagar Borewells', d: 'Track your active borewell project in real-time. View estimates, download certificates, and manage your drilling history.' },
+            '/dashboard':     { t: 'Mission Control Dashboard — Sagar Borewells', d: 'Track your active borewell project in real-time. View estimates, download certificates, and manage your drilling history.' },
+            '/about.html':    { t: 'About Us — 41+ Years of Drilling Excellence | Sagar Borewells', d: 'Learn about Sagar Borewells — trusted by L&T Construction, Amaravati Developers. 7500+ borewells, 96% success rate.' },
+            '/about':         { t: 'About Us — 41+ Years of Drilling Excellence | Sagar Borewells', d: 'Learn about Sagar Borewells — trusted by L&T Construction, Amaravati Developers. 7500+ borewells, 96% success rate.' },
+            '/contact.html':  { t: 'Contact Sagar Borewells — Phone, WhatsApp, Office', d: 'Reach Sagar Borewells in Mangalagiri, AP. Call +91 63040-94177, WhatsApp us, or visit our office on Gowtham Buddha Road.' },
+            '/contact':       { t: 'Contact Sagar Borewells — Phone, WhatsApp, Office', d: 'Reach Sagar Borewells in Mangalagiri, AP. Call +91 63040-94177, WhatsApp us, or visit our office on Gowtham Buddha Road.' },
+            '/admin.html':    { t: 'SBW Admin Console', d: '' },
+            '/f/blog.html':   { t: 'News Room — Borewell Tips & Updates | Sagar Borewells', d: 'Latest news, borewell drilling tips, groundwater updates, and success stories from Sagar Borewells.' },
+            '/f/blog':        { t: 'News Room — Borewell Tips & Updates | Sagar Borewells', d: 'Latest news, borewell drilling tips, groundwater updates, and success stories from Sagar Borewells.' },
+            '/f/science.html':{ t: 'Science Lab — Groundwater Intelligence | Sagar Borewells', d: 'Interactive groundwater zone map, TDS water quality checker, pump recommendation engine, and geological risk analysis.' },
+            '/f/science':     { t: 'Science Lab — Groundwater Intelligence | Sagar Borewells', d: 'Interactive groundwater zone map, TDS water quality checker, pump recommendation engine, and geological risk analysis.' },
+            '/f/motors.html': { t: 'AI Motor Architect — Pump Recommendation | Sagar Borewells', d: 'AI-powered borewell pump recommendation using live inventory from SagarTraders. Find the exact motor you need.' },
+            '/f/motors':      { t: 'AI Motor Architect — Pump Recommendation | Sagar Borewells', d: 'AI-powered borewell pump recommendation using live inventory from SagarTraders. Find the exact motor you need.' },
+            '/f/pump-advisor.html': { t: 'Smart Pump Advisor — GPS Elevation TDH Calculator | Sagar Borewells', d: 'Calculate Total Dynamic Head using GPS elevation, topo data, and friction loss. AI-ranked pump recommendations from SagarTraders inventory.' },
+            '/f/pump-advisor':{ t: 'Smart Pump Advisor — GPS Elevation TDH Calculator | Sagar Borewells', d: 'Calculate Total Dynamic Head using GPS elevation, topo data, and friction loss. AI-ranked pump recommendations from SagarTraders inventory.' },
+            '/f/finance.html':{ t: 'Financial Assistance — YSR Jala Kala & EMI Calculator | Sagar Borewells', d: 'Check YSR Jala Kala scheme eligibility, calculate borewell loan EMI, and get financial assistance for your borewell project.' },
+            '/f/finance':     { t: 'Financial Assistance — YSR Jala Kala & EMI Calculator | Sagar Borewells', d: 'Check YSR Jala Kala scheme eligibility, calculate borewell loan EMI, and get financial assistance for your borewell project.' },
+            '/f/locate.html': { t: 'Site Locator — Pin Your Borewell Location | Sagar Borewells', d: 'Drag the map to pinpoint your exact borewell site location. GPS coordinates captured for precise quotation.' },
+            '/f/s.html':      { t: 'Engineering Lab — Yield, Conversion & Gravel Calculators | Sagar Borewells', d: 'Borewell engineering calculators: yield (GPH), field unit converter, and gravel pack volume estimator.' },
+            '/f/s1.html':     { t: 'Science Lab v2 — Field Tools | Sagar Borewells', d: 'Quick engineering tools: unit converter, TDS analyzer, cable sizer, and tank fill timer.' },
+        };
+
+        const currentPage = pageMap[path] || { t: 'Sagar Borewells — Precision Drilling Company | Mangalagiri, AP', d: 'Expert borewell drilling services in Andhra Pradesh. GPS estimates, groundwater science, AI pump recommendations, and digital certificates. Since 2010.' };
+
+        // --- 1. Dynamic Title ---
+        if (currentPage.t) document.title = currentPage.t;
+
+        // --- 2. Meta Description ---
+        if (currentPage.d && !document.querySelector('meta[name="description"]')) {
+            const meta = document.createElement('meta');
+            meta.name = 'description';
+            meta.content = currentPage.d;
+            document.head.appendChild(meta);
+        }
+
+        // --- 3. OpenGraph Tags (Facebook / WhatsApp / iMessage sharing) ---
+        const ogTags = [
+            { property: 'og:title', content: currentPage.t || 'Sagar Borewells' },
+            { property: 'og:description', content: currentPage.d || 'Precision borewell drilling with GPS-powered estimates and AI pump recommendations.' },
+            { property: 'og:image', content: 'https://sagarborewells.com/assets/img/og-share-image.png' },
+            { property: 'og:url', content: window.location.href },
+            { property: 'og:type', content: 'website' },
+            { property: 'og:site_name', content: 'Sagar Borewells' },
+            { property: 'og:locale', content: 'en_IN' }
+        ];
+
+        ogTags.forEach(tag => {
+            if (!document.querySelector(`meta[property="${tag.property}"]`)) {
+                const meta = document.createElement('meta');
+                meta.setAttribute('property', tag.property);
+                meta.content = tag.content;
+                document.head.appendChild(meta);
+            }
+        });
+
+        // --- 4. Twitter Card Tags ---
+        const twitterTags = [
+            { name: 'twitter:card', content: 'summary_large_image' },
+            { name: 'twitter:title', content: currentPage.t || 'Sagar Borewells' },
+            { name: 'twitter:description', content: currentPage.d || 'Precision borewell drilling in Andhra Pradesh.' },
+            { name: 'twitter:image', content: 'https://sagarborewells.com/assets/img/og-share-image.png' }
+        ];
+
+        twitterTags.forEach(tag => {
+            if (!document.querySelector(`meta[name="${tag.name}"]`)) {
+                const meta = document.createElement('meta');
+                meta.name = tag.name;
+                meta.content = tag.content;
+                document.head.appendChild(meta);
+            }
+        });
+
+        // --- 5. Canonical URL ---
+        if (!document.querySelector('link[rel="canonical"]')) {
+            const canonical = document.createElement('link');
+            canonical.rel = 'canonical';
+            canonical.href = window.location.href.split('?')[0];
+            document.head.appendChild(canonical);
+        }
+
+        // --- 6. LocalBusiness JSON-LD Schema (Google Search / Maps) ---
+        if (!document.querySelector('script[type="application/ld+json"]')) {
+            const schema = document.createElement('script');
+            schema.type = 'application/ld+json';
+            schema.textContent = JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "LocalBusiness",
+                "name": "Sagar Borewells",
+                "image": "https://sagarborewells.com/assets/img/og-share-image.png",
+                "url": "https://sagarborewells.com",
+                "telephone": "+916304094177",
+                "email": "support@sagarborewells.com",
+                "address": {
+                    "@type": "PostalAddress",
+                    "streetAddress": "Gowtham Buddha Rd, beside UCO Bank",
+                    "addressLocality": "Mangalagiri",
+                    "addressRegion": "Andhra Pradesh",
+                    "postalCode": "522503",
+                    "addressCountry": "IN"
+                },
+                "geo": {
+                    "@type": "GeoCoordinates",
+                    "latitude": 16.4410,
+                    "longitude": 80.5658
+                },
+                "openingHoursSpecification": {
+                    "@type": "OpeningHoursSpecification",
+                    "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+                    "opens": "06:00",
+                    "closes": "21:00"
+                },
+                "priceRange": "₹₹",
+                "description": "Expert borewell drilling services with GPS-powered estimates, groundwater zone analysis, AI pump recommendations, and digital borewell commissioning certificates. Serving Andhra Pradesh since 2010.",
+                "areaServed": {
+                    "@type": "State",
+                    "name": "Andhra Pradesh"
+                },
+                "founder": {
+                    "@type": "Person",
+                    "name": "Sagar Borewells"
+                },
+                "sameAs": [
+                    "https://www.instagram.com/sagar_bore_wells/",
+                    "https://www.youtube.com/@Sagar_Bore_Wells"
+                ]
+            });
+            document.head.appendChild(schema);
+        }
+    })();
 });

@@ -3,6 +3,25 @@
 const SHOPIFY_DOMAIN = "sagartraders.in";
 const API_TIMEOUT_MS = 15000; // 15 Second Timeout
 
+// 🔐 SECURE CREDENTIAL FETCHERS (FIX: These were called but never defined)
+async function getGeminiKey() {
+    try {
+        const db = firebase.firestore();
+        const doc = await db.collection('system_config').doc('ai').get();
+        if (doc.exists) return doc.data().geminiKey || null;
+        return null;
+    } catch (e) { console.error("Gemini key fetch failed:", e); return null; }
+}
+
+async function getInventoryConfig() {
+    try {
+        const db = firebase.firestore();
+        const doc = await db.collection('system_config').doc('inventory').get();
+        if (doc.exists) return doc.data();
+        return null;
+    } catch (e) { console.error("Inventory config fetch failed:", e); return null; }
+}
+
 // GLOBAL STATE
 window.EngineState = {
     usage: 'domestic',
