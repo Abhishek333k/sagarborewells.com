@@ -42,7 +42,7 @@
         .log-line.info { color: #38bdf8; }
         @keyframes typeIn { to { opacity: 1; } }
 
-        .option-card { cursor: pointer; border: 2px solid #e2e8f0; border-radius: 16px; padding: 24px; transition: all 0.25s; background: white; }
+        .option-card { cursor: pointer; border: 2px solid #e2e8f0; border-radius: 16px; padding: 24px; transition: all 0.25s; background: white; position: relative; z-index: 1; }
         .option-card:hover { border-color: #3b82f6; transform: translateY(-3px); box-shadow: 0 12px 24px -6px rgba(59, 130, 246, 0.2); }
         .option-card.selected { border-color: #2563eb; background: #eff6ff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
 
@@ -61,13 +61,21 @@
         .topo-badge.point-a { background: #dbeafe; color: #1e40af; }
         .topo-badge.point-b { background: #f3e8ff; color: #7c3aed; }
 
-        /* Topo Map Container */
+        /* 🟢 FIX: Topo Map Container — strict z-index containment so Leaflet tiles never escape */
         .topo-map-container {
-            height: 300px; border-radius: 16px; overflow: hidden;
+            height: 320px; border-radius: 16px; overflow: hidden;
             border: 2px solid #e2e8f0; position: relative;
-            background: #f1f5f9;
+            background: #f1f5f9; z-index: 1;
         }
-        .topo-map-container .leaflet-container { height: 100%; width: 100%; }
+        .topo-map-container .leaflet-container {
+            height: 100% !important; width: 100% !important;
+            z-index: 1 !important;
+        }
+        .topo-map-container .leaflet-control-zoom,
+        .topo-map-container .leaflet-control-layers,
+        .topo-map-container .leaflet-control-attribution {
+            z-index: 10 !important;
+        }
 
         /* Topo Point Info Cards */
         .point-info-card {
@@ -150,11 +158,13 @@
                 <div id="progressBar" class="h-full bg-blue-600 transition-all duration-500" style="width: 25%"></div>
             </div>
 
-            <!-- ========== STEP 1: WATER SOURCE ========== -->
+            <!-- ========== STEP 1: CORE SPECS ========== -->
             <div id="step1" class="wizard-step active">
-                <h3 class="text-lg font-bold text-slate-800 mb-2">1. Water Source</h3>
-                <p class="text-sm text-slate-500 mb-6">Where will the pump be installed?</p>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <h3 class="text-lg font-bold text-slate-800 mb-2">1. Core Specs</h3>
+                <p class="text-sm text-slate-500 mb-6">Select your water source and enter pump specifications.</p>
+
+                <!-- Water Source Selection -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="option-card" onclick="selectSource('borewell')">
                         <i class="ri-arrow-down-circle-line text-4xl text-blue-500 mb-2 block"></i>
                         <h4 class="font-bold">Borewell</h4>
@@ -171,12 +181,114 @@
                         <p class="text-xs text-slate-500 mt-1">Drainage / Transfer</p>
                     </div>
                 </div>
+
+                <!-- Borewell-Specific Inputs -->
+                <div id="step1-borewell" class="hidden space-y-4 pt-4 border-t border-slate-100">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Borewell Depth (Feet)</label>
+                    <input type="number" id="inp-depth-step1" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold" placeholder="e.g. 450" oninput="window.PAState.depth = parseInt(this.value)||0; updateTDHPreview();">
+
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Delivery Pipe Height above ground (ft)</label>
+                    <input type="number" id="inp-delivery-height-step1" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold" placeholder="e.g. 30 (tank on terrace)" value="0" oninput="window.PAState.deliveryHeight = parseInt(this.value)||0; updateTDHPreview();">
+
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Delivery Pipe Diameter <span class="text-xs text-slate-400 font-normal">(critical for friction loss)</span></label>
+                    <select id="inp-pipe-dia-step1" class="w-full border-2 border-slate-200 rounded-xl p-3 bg-white font-bold" onchange="window.PAState.pipeDiameter = parseFloat(this.value); updateTDHPreview();">
+                        <option value="1.5">1.5" PVC — High Friction (28m loss per 100m)</option>
+                        <option value="2.0" selected>2.0" PVC — Standard (8m loss per 100m)</option>
+                        <option value="3.0">3.0" PVC — Low Friction (1.3m loss per 100m)</option>
+                    </select>
+
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Casing Diameter</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
+                            <input type="radio" name="dia" value="4"> 4 Inch
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
+                            <input type="radio" name="dia" value="6" checked> 6 Inch
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase">Expected Discharge (LPS)</label>
+                            <input type="number" id="inp-lps-step1" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold" value="10" min="1" max="50" step="1" oninput="window.PAState.dischargeLPS = parseFloat(this.value)||10; updateTDHPreview();">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase">Pump Efficiency (%)</label>
+                            <input type="number" id="inp-eff-step1" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold" value="55" min="30" max="80" step="5" oninput="window.PAState.efficiency = (parseFloat(this.value)||55)/100; updateTDHPreview();">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Open Well Inputs (Step 1) -->
+                <div id="step1-openwell" class="hidden space-y-4 pt-4 border-t border-slate-100">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase">Suction (ft)</label>
+                            <input type="number" id="inp-suction-step1" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold" oninput="updateTDHPreview();">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase">Delivery (ft)</label>
+                            <input type="number" id="inp-delivery-step1" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold" oninput="updateTDHPreview();">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase">Flat Distance (ft)</label>
+                        <input type="number" id="inp-flat-step1" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold" oninput="updateTDHPreview();">
+                    </div>
+                </div>
+
+                <!-- Sewage Inputs (Step 1) -->
+                <div id="step1-sewage" class="hidden space-y-4 pt-4 border-t border-slate-100">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Lift Height (ft)</label>
+                    <input type="number" id="inp-lift-step1" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold" oninput="updateTDHPreview();">
+                </div>
+
+                <!-- Power Supply (always shown after source selected) -->
+                <div id="step1-phase" class="hidden pt-4 border-t border-slate-100">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Power Supply</label>
+                    <select id="inp-phase-step1" class="w-full border-2 border-slate-200 rounded-xl p-3 bg-white font-bold" onchange="window.PAState.phase = parseInt(this.value);">
+                        <option value="1">Single Phase (Home)</option>
+                        <option value="3">Three Phase (Agriculture)</option>
+                    </select>
+                </div>
+
+                <!-- TDH Preview (shown when enough data) -->
+                <div id="tdhPreviewStep1" class="hidden tdh-breakdown mt-4">
+                    <h4 class="text-sm font-bold text-emerald-800 mb-2 flex items-center gap-2">
+                        <i class="ri-calculator-line"></i> Quick TDH Estimate
+                    </h4>
+                    <div class="tdh-row">
+                        <span class="tdh-label">Vertical Lift</span>
+                        <span class="tdh-val" id="tdh1Depth">--</span>
+                    </div>
+                    <div class="tdh-row">
+                        <span class="tdh-label">Elevation Difference (Topo Δh)</span>
+                        <span class="tdh-val" id="tdh1ElevDiff">--</span>
+                    </div>
+                    <div class="tdh-row">
+                        <span class="tdh-label">Delivery Head</span>
+                        <span class="tdh-val" id="tdh1Delivery">--</span>
+                    </div>
+                    <div class="tdh-row">
+                        <span class="tdh-label">Friction Loss (<span id="tdh1PipeLabel">2.0"</span> PVC)</span>
+                        <span class="tdh-val" id="tdh1Friction">--</span>
+                    </div>
+                    <div class="tdh-row">
+                        <span class="tdh-label">ESTIMATED TDH</span>
+                        <span class="tdh-val" id="tdh1Total">--</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <button onclick="goToStep(2)" id="btn-to-step2" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg mt-6 flex justify-center items-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <span>CONTINUE TO MAP & COMPUTE</span> <i class="ri-arrow-right-line"></i>
+                </button>
             </div>
 
-            <!-- ========== STEP 2: SITE LOGISTICS + TOPO MAP ========== -->
+            <!-- ========== STEP 2: TOPO & TERRAIN ========== -->
             <div id="step2" class="wizard-step">
-                <h3 class="text-lg font-bold text-slate-800 mb-2">2. Site Logistics & Topo Elevation</h3>
-                <p class="text-sm text-slate-500 mb-6">Use the terrain map to mark your borewell site (Point A) and delivery point (Point B), or enter dimensions manually.</p>
+                <h3 class="text-lg font-bold text-slate-800 mb-2">2. Topo & Terrain</h3>
+                <p class="text-sm text-slate-500 mb-6">Use the terrain map to mark elevation, or skip to compute with standard values.</p>
 
                 <div class="space-y-6">
 
@@ -196,7 +308,7 @@
                             Tap map to place Point A (Borewell Site)
                         </div>
 
-                        <!-- Leaflet Map -->
+                        <!-- Leaflet Map — VISIBLE on page load -->
                         <div id="topoMap" class="topo-map-container mb-3"></div>
 
                         <!-- Map Control Buttons -->
@@ -208,6 +320,9 @@
                                 <i class="ri-refresh-line"></i> Reset
                             </button>
                         </div>
+                        <button onclick="skipMapAndCompute()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-sm transition flex items-center justify-center gap-2">
+                            <i class="ri-skip-forward-line"></i> Skip Map — Compute Now
+                        </button>
 
                         <!-- Point Info Cards (shown after points placed) -->
                         <div id="pointAInfo" class="hidden point-info-card point-a mb-2">
@@ -258,114 +373,13 @@
                         </p>
                     </div>
 
-                    <!-- ===== BOREWELL-SPECIFIC INPUTS ===== -->
-                    <div id="opt-borewell" class="hidden spec-box">
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Borewell Depth (Feet)</label>
-                        <input type="number" id="inp-depth" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold mb-4" placeholder="e.g. 450">
-
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Delivery Pipe Height above ground (ft)</label>
-                        <input type="number" id="inp-delivery-height" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold mb-4" placeholder="e.g. 30 (tank on terrace)" value="0">
-
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Casing Diameter</label>
-                        <div class="flex gap-4 mb-4">
-                            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
-                                <input type="radio" name="dia" value="4"> 4 Inch
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
-                                <input type="radio" name="dia" value="6" checked> 6 Inch
-                            </label>
-                        </div>
-
-                        <!-- 🟢 NEW: Pipe Diameter for friction calculation -->
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Delivery Pipe Diameter <span class="text-xs text-slate-400 font-normal">(affects friction loss)</span></label>
-                        <select id="inp-pipe-dia" class="w-full border-2 border-slate-200 rounded-xl p-3 bg-white font-bold mb-4" onchange="window.PAState.pipeDiameter = parseFloat(this.value); updateTDHPreview();">
-                            <option value="1.5">1.5" PVC — High Friction (28m/100m)</option>
-                            <option value="2.0" selected>2.0" PVC — Standard (8m/100m)</option>
-                            <option value="3.0">3.0" PVC — Low Friction (1.3m/100m)</option>
-                        </select>
-                    </div>
-
-                    <!-- ===== OPEN WELL INPUTS ===== -->
-                    <div id="opt-openwell" class="hidden spec-box">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase">Suction (ft)</label>
-                                <input type="number" id="inp-suction" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase">Delivery (ft)</label>
-                                <input type="number" id="inp-delivery" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold">
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <label class="block text-xs font-bold text-slate-500 uppercase">Flat Distance (ft)</label>
-                            <input type="number" id="inp-flat" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold">
-                        </div>
-                    </div>
-
-                    <!-- ===== SEWAGE INPUTS ===== -->
-                    <div id="opt-sewage" class="hidden spec-box">
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Lift Height (ft)</label>
-                        <input type="number" id="inp-lift" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold">
-                    </div>
-
-                    <!-- ===== POWER SUPPLY ===== -->
-                    <div class="pt-4 border-t border-slate-100">
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Power Supply</label>
-                        <select id="inp-phase" class="w-full border-2 border-slate-200 rounded-xl p-3 bg-white font-bold">
-                            <option value="1">Single Phase (Home)</option>
-                            <option value="3">Three Phase (Agriculture)</option>
-                        </select>
-                    </div>
-
-                    <!-- ===== BOREWELL: Discharge & Efficiency for HP calc ===== -->
-                    <div id="borewellHPInputs" class="hidden grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase">Expected Discharge (LPS)</label>
-                            <input type="number" id="inp-lps" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold" value="10" min="1" max="50" step="1">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase">Pump Efficiency (%)</label>
-                            <input type="number" id="inp-eff" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold" value="55" min="30" max="80" step="5">
-                        </div>
-                    </div>
-
-                    <!-- ===== TDH PREVIEW (shown after topo + depth entered) ===== -->
-                    <div id="tdhPreview" class="hidden tdh-breakdown">
-                        <h4 class="text-sm font-bold text-emerald-800 mb-2 flex items-center gap-2">
-                            <i class="ri-calculator-line"></i> Total Dynamic Head Breakdown
-                        </h4>
-                        <div class="tdh-row">
-                            <span class="tdh-label">Vertical Lift (Borewell Depth)</span>
-                            <span class="tdh-val" id="tdhDepth">--</span>
-                        </div>
-                        <div class="tdh-row">
-                            <span class="tdh-label">Elevation Difference (Topo Δh)</span>
-                            <span class="tdh-val" id="tdhElevDiff">--</span>
-                        </div>
-                        <div class="tdh-row">
-                            <span class="tdh-label">Delivery Head (Above Ground)</span>
-                            <span class="tdh-val" id="tdhDelivery">--</span>
-                        </div>
-                        <div class="tdh-row">
-                            <span class="tdh-label">Friction Loss (3D pipe-based)</span>
-                            <span class="tdh-val" id="tdhFriction">--</span>
-                        </div>
-                        <div class="tdh-row">
-                            <span class="tdh-label">TOTAL DYNAMIC HEAD</span>
-                            <span class="tdh-val" id="tdhTotal">--</span>
-                        </div>
-                        <div class="tdh-row" style="border-bottom: none; color: #065f46;">
-                            <span class="tdh-label">Estimated HP Required</span>
-                            <span class="tdh-val" id="tdhHP">--</span>
-                        </div>
-                    </div>
-
                     <!-- ===== ACTION BUTTONS ===== -->
-                    <button onclick="runPumpAdvisor()" id="btn-search" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg mt-6 flex justify-center items-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                    <button onclick="runPumpAdvisor()" id="btn-search" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
                         <span>COMPUTE TDH & FIND PUMPS</span> <i class="ri-cpu-line"></i>
                     </button>
-                    <button onclick="goToStep(1)" class="w-full mt-3 text-slate-400 font-bold text-xs py-2 hover:text-slate-600">Back</button>
+                    <button onclick="goToStep(1)" class="w-full mt-3 text-slate-400 font-bold text-xs py-2 hover:text-slate-600">
+                        <i class="ri-arrow-left-line"></i> Back to Core Specs
+                    </button>
                 </div>
             </div>
 
@@ -501,7 +515,7 @@
             .replace(/'/g, "&#039;");
     };
 
-    // --- 5. UI REFERENCES ---
+    // --- 5. UI REFERENCES (Step 1 inputs) ---
     const UI = {
         get terminal() { return document.getElementById('aiTerminal'); },
         get logs() { return document.getElementById('terminalLogs'); },
@@ -509,15 +523,16 @@
         get debug() { return document.getElementById('calcDebug'); },
         get grid() { return document.getElementById('results-grid'); },
         get noMatch() { return document.getElementById('no-match-msg'); },
-        get phase() { return document.getElementById('inp-phase'); },
-        get depth() { return document.getElementById('inp-depth'); },
-        get suction() { return document.getElementById('inp-suction'); },
-        get delivery() { return document.getElementById('inp-delivery'); },
-        get flat() { return document.getElementById('inp-flat'); },
-        get lift() { return document.getElementById('inp-lift'); },
-        get deliveryHeight() { return document.getElementById('inp-delivery-height'); },
-        get lps() { return document.getElementById('inp-lps'); },
-        get eff() { return document.getElementById('inp-eff'); }
+        get phase() { return document.getElementById('inp-phase-step1'); },
+        get depth() { return document.getElementById('inp-depth-step1'); },
+        get suction() { return document.getElementById('inp-suction-step1'); },
+        get delivery() { return document.getElementById('inp-delivery-step1'); },
+        get flat() { return document.getElementById('inp-flat-step1'); },
+        get lift() { return document.getElementById('inp-lift-step1'); },
+        get deliveryHeight() { return document.getElementById('inp-delivery-height-step1'); },
+        get lps() { return document.getElementById('inp-lps-step1'); },
+        get eff() { return document.getElementById('inp-eff-step1'); },
+        get pipeDia() { return document.getElementById('inp-pipe-dia-step1'); }
     };
 
     // --- 6. TERMINAL SYSTEM ---
@@ -541,26 +556,60 @@
         TopoEngine.resetMap();
 
         window.PAState.source = s;
-        document.querySelectorAll('.wizard-step').forEach(e => e.classList.remove('active'));
-        document.getElementById('step2').classList.add('active');
-        document.getElementById('progressBar').style.width = "50%";
-        document.querySelectorAll('.spec-box').forEach(e => e.classList.add('hidden'));
-        const opt = document.getElementById('opt-' + s);
-        if (opt) opt.classList.remove('hidden');
 
-        // Show borewell-specific extra inputs
-        if (s === 'borewell') {
-            document.getElementById('borewellHPInputs').classList.remove('hidden');
-        } else {
-            document.getElementById('borewellHPInputs').classList.add('hidden');
-        }
+        // Highlight selected source card
+        document.querySelectorAll('#step1 .option-card').forEach(card => card.classList.remove('selected'));
+        event.currentTarget.classList.add('selected');
+
+        // Show/hide source-specific input sections in Step 1
+        document.getElementById('step1-borewell').classList.toggle('hidden', s !== 'borewell');
+        document.getElementById('step1-openwell').classList.toggle('hidden', s !== 'openwell');
+        document.getElementById('step1-sewage').classList.toggle('hidden', s !== 'sewage');
+        document.getElementById('step1-phase').classList.remove('hidden');
+
+        // Enable continue button once source is selected
+        const btn = document.getElementById('btn-to-step2');
+        if (btn) btn.disabled = false;
+
+        updateTDHPreview();
     };
 
     window.goToStep = function(n) {
+        // Validate before allowing move to Step 2
+        if (n === 2 && !window.PAState.source) {
+            notifyUser("Please select a water source first.", "error");
+            return;
+        }
+
         document.querySelectorAll('.wizard-step').forEach(e => e.classList.remove('active'));
         const step = document.getElementById('step' + n);
         if (step) step.classList.add('active');
         document.getElementById('progressBar').style.width = (n * 33) + "%";
+
+        // 🟢 FIX: Lazy-init map on first entry to Step 2 (prevents display:none Leaflet bug)
+        if (n === 2 && !TopoEngine.topoMapInitialized) {
+            // Small delay to ensure container is visible
+            setTimeout(() => TopoEngine.initMap(), 100);
+        }
+
+        // Invalidate map size after container becomes visible
+        if (n === 2 && TopoEngine.map) {
+            setTimeout(() => TopoEngine.map.invalidateSize(), 200);
+        }
+    };
+
+    // 🟢 NEW: Skip map and go straight to compute
+    window.skipMapAndCompute = function() {
+        if (!window.PAState.source) {
+            notifyUser("Please select a water source in Step 1 first.", "error");
+            return;
+        }
+        if (window.PAState.source === 'borewell' && window.PAState.depth <= 0) {
+            notifyUser("Please enter borewell depth before computing.", "error");
+            return;
+        }
+        notifyUser("Computing with standard values (no topo data).", "info");
+        runPumpAdvisor();
     };
 
     // ================================================================
@@ -896,14 +945,14 @@
 
     function updateTDHPreview() {
         const s = window.PAState;
-
-        // 🟢 FIX: Don't early-return for non-borewell. Show topo data for all sources.
         if (s.source === '') return; // nothing selected yet
 
-        const depth = parseInt(UI.depth?.value || 0);
-        const deliveryH = parseInt(UI.deliveryHeight?.value || 0);
-        const lps = parseFloat(UI.lps?.value || 10);
-        const eff = parseFloat(UI.eff?.value || 55) / 100;
+        // Read from Step 1 inputs
+        const depth = s.source === 'borewell' ? (parseInt(UI.depth?.value || 0) || s.depth || 0) : 0;
+        const deliveryH = s.source === 'borewell' ? (parseInt(UI.deliveryHeight?.value || 0) || s.deliveryHeight || 0) : 0;
+        const lps = s.source === 'borewell' ? (parseFloat(UI.lps?.value || 10) || s.dischargeLPS || 10) : 10;
+        const eff = s.source === 'borewell' ? ((parseFloat(UI.eff?.value || 55) || 55) / 100) : (s.efficiency || 0.55);
+        const pipeDia = s.pipeDiameter || 2.0;
 
         // Update state from UI
         s.depth = depth;
@@ -911,38 +960,59 @@
         s.dischargeLPS = lps;
         s.efficiency = eff;
 
-        // Only show full TDH breakdown for borewell
+        const card = document.getElementById('tdhPreviewStep1');
+        if (!card) return;
+
+        // For non-borewell sources, show simplified info
         if (s.source !== 'borewell' || depth <= 0) {
-            // For non-borewell or incomplete input, show topo summary if available
+            // Show topo summary if available for non-borewell
             if (s.topoReady) {
-                document.getElementById('tdhElevDiff').textContent = '+' + (s.deltaH * 3.28084).toFixed(1) + ' ft';
-                document.getElementById('tdhFriction').textContent = '+' + (s.frictionM * 3.28084).toFixed(1) + ' ft';
-                document.getElementById('tdhTotal').textContent = s.topoHeadFt.toFixed(0) + ' ft (topo only)';
-                document.getElementById('tdhPreview').classList.remove('hidden');
+                document.getElementById('tdh1Depth').textContent = s.source === 'openwell' ? 'N/A' : '--';
+                document.getElementById('tdh1ElevDiff').textContent = '+' + (s.deltaH * 3.28084).toFixed(1) + ' ft';
+                document.getElementById('tdh1Delivery').textContent = '--';
+                document.getElementById('tdh1Friction').textContent = '+' + (s.frictionM * 3.28084).toFixed(1) + ' ft';
+                document.getElementById('tdh1PipeLabel').textContent = pipeDia + '"';
+                document.getElementById('tdh1Total').textContent = s.topoHeadFt.toFixed(0) + ' ft (topo only)';
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
             }
             return;
         }
 
-        // Recalculate complete TDH
-        const result = recalcCompleteTDH();
+        // Borewell with depth: calculate full TDH
+        const lossPer100 = FRICTION_LOSS_PER_100M[pipeDia] || 8.0;
+        let elevDiffFt = 0;
+        let frictionFt = 0;
 
-        const elevDiffFt = s.topoReady ? (s.deltaH * 3.28084) : 0;
-        const frictionFt = s.topoReady ? (s.frictionM * 3.28084) : Math.round((depth + deliveryH) * 0.25);
+        if (s.topoReady) {
+            elevDiffFt = s.deltaH * 3.28084;
+            frictionFt = s.frictionM * 3.28084;
+        } else {
+            // 🟢 FIX: Fallback friction based on selected pipe diameter (not magic *0.25)
+            const estPipeM = (depth + deliveryH) / 3.28084; // vertical pipe estimate in meters
+            frictionFt = ((estPipeM / 100) * lossPer100) * 3.28084;
+        }
 
-        document.getElementById('tdhDepth').textContent = depth + ' ft';
-        document.getElementById('tdhElevDiff').textContent = s.topoReady
+        const totalHeadFt = depth + elevDiffFt + deliveryH + frictionFt;
+        const totalHeadM = totalHeadFt / 3.28084;
+        const hp = (lps * totalHeadM) / (75 * eff);
+
+        // Update Step 1 TDH preview card
+        document.getElementById('tdh1Depth').textContent = depth + ' ft';
+        document.getElementById('tdh1ElevDiff').textContent = s.topoReady
             ? '+' + elevDiffFt.toFixed(1) + ' ft'
             : 'N/A (no topo)';
-        document.getElementById('tdhDelivery').textContent = '+' + deliveryH + ' ft';
-        document.getElementById('tdhFriction').textContent = '+' + frictionFt.toFixed(1) + ' ft';
-        document.getElementById('tdhTotal').textContent = Math.round(result.totalHeadFt) + ' ft';
-        document.getElementById('tdhHP').textContent = result.hp + ' HP (est.)';
-        document.getElementById('tdhPreview').classList.remove('hidden');
+        document.getElementById('tdh1Delivery').textContent = '+' + deliveryH + ' ft';
+        document.getElementById('tdh1Friction').textContent = '+' + frictionFt.toFixed(1) + ' ft';
+        document.getElementById('tdh1PipeLabel').textContent = pipeDia + '"';
+        document.getElementById('tdh1Total').textContent = Math.round(totalHeadFt) + ' ft';
+        card.classList.remove('hidden');
     }
 
-    // Listen for input changes
+    // Listen for input changes on Step 1 fields
     document.addEventListener('input', (e) => {
-        if (['inp-depth', 'inp-delivery-height', 'inp-lps', 'inp-eff'].includes(e.target.id)) {
+        if (['inp-depth-step1', 'inp-delivery-height-step1', 'inp-lps-step1', 'inp-eff-step1'].includes(e.target.id)) {
             updateTDHPreview();
         }
     });
@@ -963,8 +1033,8 @@
             s.deliveryHeight = deliveryH;
             s.dischargeLPS = parseFloat(UI.lps?.value || 10);
             s.efficiency = parseFloat(UI.eff?.value || 55) / 100;
-            // 🟢 FIX: Pipe diameter from dropdown
-            s.pipeDiameter = parseFloat(document.getElementById('inp-pipe-dia')?.value || 2.0);
+            // 🟢 FIX: Pipe diameter from Step 1 dropdown
+            s.pipeDiameter = parseFloat(UI.pipeDia?.value || 2.0);
 
             if (depthVal <= 0) return alert("Please enter the borewell depth.");
 
@@ -1341,17 +1411,10 @@
         setTimeout(() => toast.remove(), 4000);
     }
 
-    // --- 16. INIT ---
-    document.addEventListener('DOMContentLoaded', () => {
-        // Initialize topo map after a short delay to ensure DOM is ready
-        setTimeout(() => {
-            try {
-                TopoEngine.initMap();
-            } catch (e) {
-                console.warn("Topo map init failed:", e);
-            }
-        }, 200);
-    });
+    // --- 16. INIT — 🟢 FIX: Map is lazy-initialized when user enters Step 2 ---
+    // No init needed on page load. Step 1 is visible, Step 2 (with map) is hidden.
+    // When goToStep(2) is called, TopoEngine.initMap() runs after a short delay
+    // to ensure the container is visible (prevents Leaflet display:none bug).
     </script>
 </body>
 </html>
