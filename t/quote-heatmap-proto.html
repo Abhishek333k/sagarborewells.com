@@ -355,36 +355,19 @@
 
     // --- 3. HEATMAP MAP STATE ---
     let heatmap = null;          // Leaflet map instance
-    let heatmapMarkers = [];     // Mock borewell markers
+    let heatmapLayers = [];      // Live project markers + circles
     let heatmapInitialized = false;
 
     // ================================================================
-    //  HEATMAP LOGIC — Mock successful borewells near user coords
+    //  HEATMAP LOGIC — Live projects from Firestore
     // ================================================================
 
-    /**
-     * Generate N random points within R meters of a center lat/lng.
-     * Uses a simple equirectangular projection for small distances.
-     */
-    function scatterPoints(lat, lng, count, minM, maxM) {
-        const pts = [];
-        for (let i = 0; i < count; i++) {
-            const dist = minM + Math.random() * (maxM - minM); // meters
-            const bearing = Math.random() * 2 * Math.PI;
-            // Convert offset to lat/lng deltas (approx at equator; fine for ~5km)
-            const dLat = (dist * Math.cos(bearing)) / 111320;
-            const dLng = (dist * Math.sin(bearing)) / (111320 * Math.cos(lat * Math.PI / 180));
-            pts.push({ lat: lat + dLat, lng: lng + dLng });
-        }
-        return pts;
-    }
-
-    function initHeatmap(lat, lng) {
+    async function initHeatmap(lat, lng) {
         if (heatmapInitialized) {
-            // Re-center existing map
+            // Re-center existing map, clear old layers
             heatmap.setView([lat, lng], 13);
-            heatmapMarkers.forEach(m => heatmap.removeLayer(m));
-            heatmapMarkers = [];
+            heatmapLayers.forEach(l => heatmap.removeLayer(l));
+            heatmapLayers = [];
         } else {
             heatmap = L.map('heatmap-map', { zoomControl: true, attributionControl: false }).setView([lat, lng], 13);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -394,15 +377,7 @@
             heatmapInitialized = true;
         }
 
-        // Generate 5-10 mock successful borewells within 2-5 km
-        const count = 5 + Math.floor(Math.random() * 6); // 5-10
-        const pts = scatterPoints(lat, lng, count, 2000, 5000); // 2-5 km
-
-        // Custom success icon
-        const successIcon = L.divIcon({
-            html: `<div style="width:12px;height:12px;border-radius:50%;background:#059669;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
-            iconSize: [0, 0], className: ''
-        });
+        const userLatLng = L.latLng(lat, lng);
 
         // User location icon (blue pulse)
         const userIcon = L.divIcon({
@@ -411,29 +386,73 @@
         });
 
         // User marker
-        L.marker([lat, lng], { icon: userIcon }).addTo(heatmap)
+        const userMarker = L.marker([lat, lng], { icon: userIcon })
             .bindPopup('<strong style="font-size:12px;">Your Site</strong>');
+        userMarker.addTo(heatmap);
+        heatmapLayers.push(userMarker);
 
-        // Mock successful borewells
-        pts.forEach(p => {
-            const m = L.marker([p.lat, p.lng], { icon: successIcon }).addTo(heatmap);
-            const depth = Math.floor(150 + Math.random() * 400);
-            m.bindPopup(`<strong style="font-size:12px;">Successful Borewell</strong><br><span style="font-size:11px;color:#64748b;">Depth: ~${depth} ft</span>`);
-            heatmapMarkers.push(m);
-        });
-
-        // Draw a subtle radius circle
-        L.circle([lat, lng], {
+        // 5km radius circle
+        const radiusCircle = L.circle([lat, lng], {
             radius: 5000, color: '#059669', fillColor: '#059669',
             fillOpacity: 0.04, weight: 1, dashArray: '6 8'
-        }).addTo(heatmap);
+        });
+        radiusCircle.addTo(heatmap);
+        heatmapLayers.push(radiusCircle);
 
-        // Update count
-        document.getElementById('heatmap-count').textContent = count;
+        // --- LIVE: Fetch completed projects from Firestore ---
+        let nearbyCount = 0;
 
-        // Fit bounds
-        const bounds = L.latLngBounds([[lat, lng], ...pts.map(p => [p.lat, p.lng])]);
-        heatmap.fitBounds(bounds, { padding: [40, 40] });
+        if (db) {
+            try {
+                const snapshot = await db.collection('projects').get();
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.gps) {
+                        // gps stored as "lat, lng" string or {lat, lng} object
+                        let pLat, pLng;
+                        if (typeof data.gps === 'string') {
+                            [pLat, pLng] = data.gps.split(',').map(Number);
+                        } else if (typeof data.gps === 'object') {
+                            pLat = data.gps.lat || data.gps.latitude;
+                            pLng = data.gps.lng || data.gps.longitude || data.gps.lon;
+                        }
+
+                        if (pLat && pLng && !isNaN(pLat)) {
+                            const projectLatLng = L.latLng(pLat, pLng);
+                            const distanceMeters = userLatLng.distanceTo(projectLatLng);
+
+                            if (distanceMeters <= 5000) {
+                                nearbyCount++;
+                                const marker = L.circleMarker(projectLatLng, {
+                                    radius: 6,
+                                    fillColor: '#10b981',
+                                    color: '#fff',
+                                    weight: 2,
+                                    opacity: 1,
+                                    fillOpacity: 0.9
+                                }).addTo(heatmap)
+                                .bindPopup(`<b>Successful Drill</b><br>Depth: ${data.depth || '--'} ft<br>Yield: ${data.yield || '--'}"`);
+                                heatmapLayers.push(marker);
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.warn("Could not fetch projects for heatmap:", e);
+            }
+        }
+
+        // Update the UI overlay with the real count
+        document.getElementById('heatmap-count').textContent = nearbyCount;
+
+        // If we found projects, fit bounds to include them
+        const allPoints = [[lat, lng]];
+        heatmapLayers.forEach(l => {
+            if (l.getLatLng) allPoints.push(l.getLatLng());
+        });
+        if (allPoints.length > 1) {
+            heatmap.fitBounds(L.latLngBounds(allPoints), { padding: [40, 40] });
+        }
     }
 
     function showHeatmap(lat, lng) {
@@ -611,6 +630,11 @@
             }, { merge: true });
 
             hasLoggedPrice = true;
+
+            // 🔔 Telegram alert for quote generation
+            const quoteMsg = `🚨 *New Quote Request*\nName: ${name}\nMobile: +91${document.getElementById('custMobile').value}\nLocation: ${loc}\nDepth: ${totalDepth}ft\nEst: ₹${grandTotal.toLocaleString()}`;
+            sendTelegramAlert(quoteMsg);
+
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
             window.scrollTo(0, 0);
@@ -629,20 +653,30 @@
         const finalData = { ...leadData, userId: user ? user.uid : null, source: 'web_quote', status: 'Booked' };
         try {
             await db.collection('leads').doc(leadData.id).set(finalData);
+
+            // 🔔 Telegram alert for booking
+            const bookMsg = `🚨 *New Quote Request*\nName: ${leadData.name}\nMobile: ${leadData.mobile}\nLocation: ${leadData.loc}\nDepth: ${leadData.depth}ft\nEst: ₹${leadData.total.toLocaleString()}`;
+            sendTelegramAlert(bookMsg);
+
             document.getElementById('step-2').classList.add('hidden');
             document.getElementById('step-3').classList.remove('hidden');
         } catch (e) { alert("Error saving booking: " + e.message); }
     }
 
-    async function sendTelegram(msg) {
-        if (typeof getTelegramCredentials === 'function') {
-            const creds = await getTelegramCredentials();
-            if (creds && creds.bot_token && creds.chat_id) {
-                try {
-                    await fetch(`https://api.telegram.org/bot${creds.bot_token}/sendMessage?chat_id=${creds.chat_id}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`);
-                } catch (e) { console.log("Notify Error", e); }
+    // --- SECURE TELEGRAM ALERT ---
+    function sendTelegramAlert(message) {
+        if (!db) return;
+        db.collection('system_config').doc('telegram').get().then(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                const token = data.botToken || data.bot_token;
+                const chatId = data.chatId || data.chat_id;
+                if (token && chatId) {
+                    const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
+                    fetch(url).catch(e => console.error("Telegram error:", e));
+                }
             }
-        }
+        }).catch(e => console.error("DB Error fetching Telegram config:", e));
     }
 
     if (auth) {
@@ -754,7 +788,7 @@
             disp.className = "text-xs text-right mt-1 font-bold font-mono text-emerald-600";
         }
 
-        // 🟢 TRIGGER: Reveal the heatmap with mock successful borewells
+        // 🟢 TRIGGER: Reveal the heatmap with live project data
         showHeatmap(lat, lng);
 
         // Enable generate button if name is filled
