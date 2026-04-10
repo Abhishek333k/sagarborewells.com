@@ -324,6 +324,13 @@
                         </select>
                     </div>
 
+                    <!-- Site Pincode (for TDS/Salinity lookup) -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Site Pincode <span class="text-slate-600 font-normal">(Optional)</span></label>
+                        <input type="text" id="inp-pincode" class="dark-input" placeholder="e.g. 522503" maxlength="6" oninput="S.pincode=this.value.replace(/\D/g,'');">
+                        <p class="text-[10px] text-slate-600 mt-1 flex items-center gap-1"><i class="ri-information-line"></i> Used to fetch regional groundwater TDS/Salinity data</p>
+                    </div>
+
                 </div>
             </div>
 
@@ -340,7 +347,7 @@
 
                 <!-- Instruction Banner -->
                 <div id="topoInstruction" class="bg-slate-900 text-cyan-400 text-center py-2.5 rounded-lg mb-3 font-mono text-xs font-bold tracking-wide shadow-inner">
-                    Select water source, then tap map to place Point A
+                    Tap map to place Point A (Start) and Point B (End)
                 </div>
 
                 <!-- Map -->
@@ -521,7 +528,7 @@
     // --- 3. STATE ---
     const S = window.S = {
         source: '', depth: 0, deliveryH: 0, pipeDia: 2.0, casing: 6,
-        phase: 1, lps: 10, eff: 0.55,
+        phase: 1, lps: 10, eff: 0.55, pincode: '',
         topoReady: false, pointA: null, pointB: null,
         dist2D: 0, dist3D: 0, deltaH: 0, angleDeg: 0, frictionM: 0,
         topoHeadM: 0, topoHeadFt: 0, totalHeadM: 0, totalHeadFt: 0, hp: 0
@@ -591,7 +598,7 @@
 
         S.totalHeadFt = tdhFt; S.totalHeadM = tdhM; S.hp = hp;
 
-        // Update HUD
+        // HUD always runs — shows topo data even without a source selected
         document.getElementById('hud-depth').textContent   = depth;
         document.getElementById('hud-elev').textContent    = elevFt.toFixed(1);
         document.getElementById('hud-friction').textContent = fricFt.toFixed(1);
@@ -603,7 +610,7 @@
             `Friction based on ${pipeDia}" PVC (${lossPer} m / 100 m)` +
             (S.topoReady ? ` | 3D slant: ${S.dist3D.toFixed(1)}m` : '');
 
-        // Enable AI button when minimum data exists
+        // AI button: requires a source AND minimum params — topo map is decoupled
         const ready = S.source && (
             (S.source === 'borewell' && depth > 0) ||
             (S.source === 'openwell' && (document.getElementById('inp-suction')?.value || document.getElementById('inp-delivery')?.value)) ||
@@ -647,7 +654,7 @@
             if (this.line) this.map.removeLayer(this.line);
             this.markers = []; this.line = null;
 
-            document.getElementById('topoInstruction').textContent = S.source ? 'Tap map to place Point A' : 'Select water source, then tap map to place Point A';
+            document.getElementById('topoInstruction').textContent = 'Tap map to place Point A (Start) and Point B (End)';
             document.getElementById('cardA').classList.add('hidden');
             document.getElementById('cardB').classList.add('hidden');
             document.getElementById('topoResults').classList.add('hidden');
@@ -662,12 +669,6 @@
         },
 
         async click(e) {
-            if (!S.source) {
-                toast('Select a water source first (left panel)', 'error');
-                document.getElementById('topoInstruction').textContent = '⚠ Select source first!';
-                setTimeout(() => { document.getElementById('topoInstruction').textContent = S.source ? 'Tap map to place Point A' : 'Select water source, then tap map to place Point A'; }, 3000);
-                return;
-            }
             if (this.markers.length >= 2) {
                 if (!confirm('Reset terrain points and start over?')) return;
                 this.reset();
