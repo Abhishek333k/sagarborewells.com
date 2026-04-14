@@ -363,8 +363,11 @@
     // ================================================================
 
     /**
-     * Fetches completed projects from Firestore and draws markers
+     * Fetches anonymized public borewell pins from Firestore and draws markers
      * for those within 5km of the user's location.
+     *
+     * Uses the 'public_pins' collection — each doc contains ONLY a gps field
+     * (e.g. "16.44, 80.55"). No depth, yield, or customer data is exposed.
      */
     async function loadNearbyProjects(userLat, userLng) {
         const userPt = L.latLng(userLat, userLng);
@@ -372,13 +375,13 @@
         const projectPoints = [];
 
         if (!db) {
-            console.warn("Firestore not available — skipping live project fetch.");
+            console.warn("Firestore not available — skipping live pin fetch.");
             document.getElementById('heatmap-count').textContent = '0';
             return;
         }
 
         try {
-            const snap = await db.collection('projects').get();
+            const snap = await db.collection('public_pins').get();
 
             snap.forEach(docSnap => {
                 const data = docSnap.data();
@@ -396,17 +399,14 @@
                 }
                 // Handle GPS stored as GeoPoint or object {lat, lng}
                 else if (typeof data.gps === 'object') {
-                    // Firestore GeoPoint has .latitude and .longitude
                     if (data.gps.latitude !== undefined && data.gps.longitude !== undefined) {
                         pLat = data.gps.latitude;
                         pLng = data.gps.longitude;
                     }
-                    // Plain object with lat/lng
                     else if (data.gps.lat !== undefined && data.gps.lng !== undefined) {
                         pLat = data.gps.lat;
                         pLng = data.gps.lng;
                     }
-                    // Fallback: lon instead of lng
                     else if (data.gps.lat !== undefined && data.gps.lon !== undefined) {
                         pLat = data.gps.lat;
                         pLng = data.gps.lon;
@@ -432,16 +432,13 @@
                         fillOpacity: 0.9
                     }).addTo(heatmap);
 
-                    const depthVal = data.depth ? `${data.depth}` : '--';
-                    const yieldVal = data.yield ? `${data.yield}"` : '--';
-                    const popupContent = `<b>Successful Drill</b><br>Depth: ${depthVal} ft<br>Yield: ${yieldVal}`;
-                    marker.bindPopup(popupContent);
+                    marker.bindPopup('<b>Verified Sagar Borewell</b><br>Status: Successfully Commissioned');
 
                     heatmapLayers.push(marker);
                 }
             });
         } catch (e) {
-            console.warn("Could not fetch projects for heatmap:", e);
+            console.warn("Could not fetch public pins for heatmap:", e);
         }
 
         // Update the UI overlay card with the dynamic count
@@ -464,7 +461,7 @@
             }
         }
 
-        // Fit bounds to include all nearby projects + user location
+        // Fit bounds to include all nearby pins + user location
         const allPoints = [[userLat, userLng], ...projectPoints];
         if (allPoints.length > 1) {
             heatmap.fitBounds(L.latLngBounds(allPoints), { padding: [40, 40] });
