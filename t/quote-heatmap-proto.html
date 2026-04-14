@@ -362,6 +362,115 @@
     //  HEATMAP LOGIC — Live projects from Firestore
     // ================================================================
 
+    /**
+     * Fetches completed projects from Firestore and draws markers
+     * for those within 5km of the user's location.
+     */
+    async function loadNearbyProjects(userLat, userLng) {
+        const userPt = L.latLng(userLat, userLng);
+        let nearbyCount = 0;
+        const projectPoints = [];
+
+        if (!db) {
+            console.warn("Firestore not available — skipping live project fetch.");
+            document.getElementById('heatmap-count').textContent = '0';
+            return;
+        }
+
+        try {
+            const snap = await db.collection('projects').get();
+
+            snap.forEach(docSnap => {
+                const data = docSnap.data();
+                if (!data.gps) return;
+
+                let pLat, pLng;
+
+                // Handle GPS stored as "lat, lng" string
+                if (typeof data.gps === 'string') {
+                    const parts = data.gps.split(',').map(s => parseFloat(s.trim()));
+                    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                        pLat = parts[0];
+                        pLng = parts[1];
+                    }
+                }
+                // Handle GPS stored as GeoPoint or object {lat, lng}
+                else if (typeof data.gps === 'object') {
+                    // Firestore GeoPoint has .latitude and .longitude
+                    if (data.gps.latitude !== undefined && data.gps.longitude !== undefined) {
+                        pLat = data.gps.latitude;
+                        pLng = data.gps.longitude;
+                    }
+                    // Plain object with lat/lng
+                    else if (data.gps.lat !== undefined && data.gps.lng !== undefined) {
+                        pLat = data.gps.lat;
+                        pLng = data.gps.lng;
+                    }
+                    // Fallback: lon instead of lng
+                    else if (data.gps.lat !== undefined && data.gps.lon !== undefined) {
+                        pLat = data.gps.lat;
+                        pLng = data.gps.lon;
+                    }
+                }
+
+                // Skip if coordinates are invalid
+                if (!pLat || !pLng || isNaN(pLat) || isNaN(pLng)) return;
+
+                const projectPt = L.latLng(pLat, pLng);
+                const distanceMeters = userPt.distanceTo(projectPt);
+
+                if (distanceMeters <= 5000) {
+                    nearbyCount++;
+                    projectPoints.push([pLat, pLng]);
+
+                    const marker = L.circleMarker(projectPt, {
+                        radius: 7,
+                        fillColor: '#10b981',
+                        color: '#ffffff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    }).addTo(heatmap);
+
+                    const depthVal = data.depth ? `${data.depth}` : '--';
+                    const yieldVal = data.yield ? `${data.yield}"` : '--';
+                    const popupContent = `<b>Successful Drill</b><br>Depth: ${depthVal} ft<br>Yield: ${yieldVal}`;
+                    marker.bindPopup(popupContent);
+
+                    heatmapLayers.push(marker);
+                }
+            });
+        } catch (e) {
+            console.warn("Could not fetch projects for heatmap:", e);
+        }
+
+        // Update the UI overlay card with the dynamic count
+        const countEl = document.getElementById('heatmap-count');
+        const subEl = document.querySelector('.heatmap-overlay-sub');
+
+        if (nearbyCount === 0) {
+            countEl.textContent = '0';
+            if (subEl) {
+                subEl.textContent = 'Be the first in your area! Our rigs are ready.';
+                subEl.style.color = '#1e3a8a';
+                subEl.style.fontWeight = '600';
+            }
+        } else {
+            countEl.textContent = nearbyCount;
+            if (subEl) {
+                subEl.textContent = `Verified Sagar Borewells within 5 km of your site`;
+                subEl.style.color = '';
+                subEl.style.fontWeight = '';
+            }
+        }
+
+        // Fit bounds to include all nearby projects + user location
+        const allPoints = [[userLat, userLng], ...projectPoints];
+        if (allPoints.length > 1) {
+            heatmap.fitBounds(L.latLngBounds(allPoints), { padding: [40, 40] });
+        }
+    }
+
     async function initHeatmap(lat, lng) {
         if (heatmapInitialized) {
             // Re-center existing map, clear old layers
@@ -399,60 +508,8 @@
         radiusCircle.addTo(heatmap);
         heatmapLayers.push(radiusCircle);
 
-        // --- LIVE: Fetch completed projects from Firestore ---
-        let nearbyCount = 0;
-
-        if (db) {
-            try {
-                const snapshot = await db.collection('projects').get();
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.gps) {
-                        // gps stored as "lat, lng" string or {lat, lng} object
-                        let pLat, pLng;
-                        if (typeof data.gps === 'string') {
-                            [pLat, pLng] = data.gps.split(',').map(Number);
-                        } else if (typeof data.gps === 'object') {
-                            pLat = data.gps.lat || data.gps.latitude;
-                            pLng = data.gps.lng || data.gps.longitude || data.gps.lon;
-                        }
-
-                        if (pLat && pLng && !isNaN(pLat)) {
-                            const projectLatLng = L.latLng(pLat, pLng);
-                            const distanceMeters = userLatLng.distanceTo(projectLatLng);
-
-                            if (distanceMeters <= 5000) {
-                                nearbyCount++;
-                                const marker = L.circleMarker(projectLatLng, {
-                                    radius: 6,
-                                    fillColor: '#10b981',
-                                    color: '#fff',
-                                    weight: 2,
-                                    opacity: 1,
-                                    fillOpacity: 0.9
-                                }).addTo(heatmap)
-                                .bindPopup(`<b>Successful Drill</b><br>Depth: ${data.depth || '--'} ft<br>Yield: ${data.yield || '--'}"`);
-                                heatmapLayers.push(marker);
-                            }
-                        }
-                    }
-                });
-            } catch (e) {
-                console.warn("Could not fetch projects for heatmap:", e);
-            }
-        }
-
-        // Update the UI overlay with the real count
-        document.getElementById('heatmap-count').textContent = nearbyCount;
-
-        // If we found projects, fit bounds to include them
-        const allPoints = [[lat, lng]];
-        heatmapLayers.forEach(l => {
-            if (l.getLatLng) allPoints.push(l.getLatLng());
-        });
-        if (allPoints.length > 1) {
-            heatmap.fitBounds(L.latLngBounds(allPoints), { padding: [40, 40] });
-        }
+        // 🟢 LIVE DATA: Fetch nearby projects from Firestore
+        await loadNearbyProjects(lat, lng);
     }
 
     function showHeatmap(lat, lng) {
