@@ -1,0 +1,15 @@
+# Ignore node_modules directory if you're using npm or yarn for dependencies
+node_modules/
+
+# Ignore build output directories like dist, build, or out
+/dist/
+/build/
+/out/# Ignore node_modules directory if you're using npm or yarn for dependencies
+node_modules/
+
+# Ignore build output directories like dist, build, or out
+/dist/
+/build/
+/out/
+/.qwen/
+/.continue/

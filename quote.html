@@ -600,7 +600,7 @@
                 const projectPt = L.latLng(pLat, pLng);
                 const distanceMeters = userPt.distanceTo(projectPt);
 
-                if (distanceMeters <= 25000) {
+                if (distanceMeters <= 5000) {
                     nearbyCount++;
                     projectPoints.push([pLat, pLng]);
 
@@ -634,7 +634,7 @@
         } else {
             countEl.textContent = nearbyCount;
             if (subEl) {
-                subEl.textContent = `Verified Sagar Borewells within 25 km of your site`;
+                subEl.textContent = `Verified Sagar Borewells within 5 km of your site`;
                 subEl.style.color = '';
                 subEl.style.fontWeight = '';
             }
@@ -676,7 +676,7 @@
 
         // 25km radius circle
         const radiusCircle = L.circle([lat, lng], {
-            radius: 25000, color: '#059669', fillColor: '#059669',
+            radius: 5000, color: '#059669', fillColor: '#059669',
             fillOpacity: 0.04, weight: 1, dashArray: '6 8'
         });
         radiusCircle.addTo(heatmap);
