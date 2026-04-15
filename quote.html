@@ -1,22 +1,28 @@
 <!DOCTYPE html>
-<html lang="en"> 
-<head> 
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Get Quote | Sagar Borewells</title>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
+    <!-- Leaflet CSS / JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- Firebase Compat SDK 9.x -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
-    <script src="assets/js/quote_constants.js"></script> 
+    <script src="assets/js/quote_constants.js"></script>
     <script src="assets/js/pdf_template.js"></script>
     <script src="assets/js/notifications.js"></script>
     <script src="assets/js/whatsapp_templates.js"></script>
@@ -25,7 +31,7 @@
         /* BASE STYLES */
         :root { --primary: #1e3a8a; --bg: #f8fafc; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: #1e293b; }
-        
+
         .quote-card { background: #ffffff; border-radius: 24px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); padding: 40px; max-width: 800px; margin: 40px auto; }
         .form-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
         .custom-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 1rem; color: #1e293b; background: #f8fafc; outline: none; transition: 0.3s; }
@@ -39,7 +45,7 @@
         /* SLIDER & ELASTIC CONTAINER */
         .slider-container { background: #f1f5f9; border-radius: 20px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; transition: background 0.3s ease, border-color 0.3s ease; }
         .slider-container.expanded { border-color: #f59e0b; background: #fffbeb; }
-        
+
         .range-slider { width: 100%; height: 12px; border-radius: 6px; background: #cbd5e1; outline: none; -webkit-appearance: none; }
         .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: var(--primary); border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.1s; }
         .range-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
@@ -52,7 +58,7 @@
         .est-header { background: #ffffff; padding: 30px; border-bottom: 2px solid #1e3a8a; }
         .est-total-block { text-align: right; }
         .est-amount { font-size: 2.2rem; font-weight: 800; color: #1e3a8a; line-height: 1; margin-top: 5px; }
-        
+
         .est-meta { display: flex; justify-content: space-between; margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; }
         .est-meta-item strong { display: block; font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
         .est-meta-item span { font-size: 0.95rem; font-weight: 700; color: #334155; }
@@ -62,21 +68,114 @@
         .est-table th { text-align: left; padding: 8px; color: #64748b; font-size: 0.7rem; text-transform: uppercase; font-weight: 700; }
         .est-table td { padding: 10px 8px; border-bottom: 1px dashed #e2e8f0; font-weight: 600; color: #334155; }
         .est-table tfoot td { border-top: 2px solid #e2e8f0; font-weight: 800; color: #1e3a8a; padding-top: 15px; font-size: 1rem; border-bottom: none; }
-        
+
         .var-box { background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 12px; padding: 20px; margin-top: 20px; }
         .var-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 30px; font-size: 0.85rem; }
         .var-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed #dbeafe; }
         .var-badge { background: #fff; color: #1e40af; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #bfdbfe; }
 
-        /* MAPS */
+        /* Section title */
+        .section-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+        /* Fade-in animation */
+        .fade-in-up { animation: fadeUp 0.5s ease; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ====== LEAFLET MAP PICKER MODAL ====== */
+        .map-picker-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .map-picker-overlay.active { display: flex; }
+
+        .map-picker-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px;
+            width: 90%;
+            max-width: 520px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+        }
+
+        .map-picker-container {
+            position: relative;
+            width: 100%;
+            height: 340px;
+            background: #eee;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #picker-map { width: 100%; height: 100%; }
+
+        /* Crosshair centered over the map */
+        .crosshair-marker {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -100%);
+            z-index: 1000;
+            font-size: 36px;
+            color: #ef4444;
+            pointer-events: none;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+        }
+
+        /* ====== HEATMAP REVEAL ====== */
+        #success-map-container {
+            overflow: hidden;
+            transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease, margin 0.5s ease;
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+        }
+        #success-map-container.visible {
+            max-height: 600px;
+            opacity: 1;
+            margin-top: 24px;
+        }
+
+        .heatmap-wrapper {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            position: relative;
+        }
+
+        .heatmap-map { height: 340px; width: 100%; z-index: 1; }
+
+        .heatmap-overlay {
+            position: absolute; top: 12px; left: 12px; z-index: 1000;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(6px);
+            border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 10px 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            max-width: 280px;
+        }
+        .heatmap-overlay-title {
+            font-size: 0.75rem; font-weight: 800; color: #059669;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .heatmap-overlay-sub {
+            font-size: 0.65rem; color: #64748b; margin-top: 2px;
+        }
+
+        /* Pulse marker on Leaflet */
+        @keyframes sbw-pulse {
+            0%   { transform: scale(0.85); box-shadow: 0 0 0 0 rgba(30, 58, 138, 0.5); }
+            70%  { transform: scale(1);    box-shadow: 0 0 0 12px rgba(30, 58, 138, 0); }
+            100% { transform: scale(0.85); box-shadow: 0 0 0 0 rgba(30, 58, 138, 0); }
+        }
+
+        /* Google Places autocomplete dropdown */
         .pac-container { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: none; font-family: inherit; }
         .pac-item { padding: 10px 15px; font-size: 14px; }
-        
-        .map-center-marker {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%);
-            z-index: 10; font-size: 32px; color: #ef4444; pointer-events: none;
-            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -84,7 +183,8 @@
     <div id="navbar-mount"></div>
 
     <main class="flex-grow">
-        
+
+        <!-- ========== STEP 1: INPUTS ========== -->
         <div id="step-1" class="container mx-auto px-4 py-8 fade-in-up">
             <div class="quote-card">
                 <div class="text-center mb-8">
@@ -98,35 +198,49 @@
                         <input type="text" id="custName" class="custom-input" placeholder="Your Name">
                     </div>
                     <div>
-    <label class="form-label">Mobile Number</label>
-    <div class="relative">
-        <input type="tel" id="custMobile" class="custom-input pr-44" placeholder="98765 43210" maxlength="10">
-        
-        <button id="sendOtpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-4 rounded-lg font-bold text-xs hover:bg-black transition shadow-md">VERIFY</button>
-        <button id="editMobileBtn" onclick="resetOTP()" class="absolute right-2 top-2 bottom-2 text-blue-600 border border-blue-200 bg-blue-50 px-4 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition-all hidden shadow-sm uppercase tracking-wider z-20">EDIT</button>
-        <div id="verifiedBadge" class="absolute right-24 top-0 bottom-0 flex items-center gap-1 text-emerald-600 font-bold text-xs uppercase hidden pointer-events-none z-10">
-        <i class="ri-verified-badge-fill text-base"></i> Verified</div>
-        
-    </div>
-    
-    <div id="otpSection" class="hidden mt-2 flex gap-2">
-        <input type="text" id="otpInput" class="custom-input text-center tracking-widest" placeholder="OTP" maxlength="6">
-        <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold hover:bg-emerald-700">OK</button>
-    </div>
-    <div id="recaptcha-container"></div>
-</div>
+                        <label class="form-label">Mobile Number</label>
+                        <div class="relative">
+                            <input type="tel" id="custMobile" class="custom-input pr-44" placeholder="98765 43210" maxlength="10">
+                            <button id="sendOtpBtn" onclick="sendOTP()" class="absolute right-2 top-2 bottom-2 bg-slate-800 text-white px-4 rounded-lg font-bold text-xs hover:bg-black transition shadow-md">VERIFY</button>
+                            <button id="editMobileBtn" onclick="resetOTP()" class="absolute right-2 top-2 bottom-2 text-blue-600 border border-blue-200 bg-blue-50 px-4 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition-all hidden shadow-sm uppercase tracking-wider z-20">EDIT</button>
+                            <div id="verifiedBadge" class="absolute right-24 top-0 bottom-0 flex items-center gap-1 text-emerald-600 font-bold text-xs uppercase hidden pointer-events-none z-10">
+                                <i class="ri-verified-badge-fill text-base"></i> Verified
+                            </div>
+                        </div>
+                        <div id="otpSection" class="hidden mt-2 flex gap-2">
+                            <input type="text" id="otpInput" class="custom-input text-center tracking-widest" placeholder="OTP" maxlength="6">
+                            <button onclick="verifyOTP()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold hover:bg-emerald-700">OK</button>
+                        </div>
+                        <div id="recaptcha-container"></div>
+                    </div>
                 </div>
 
+                <!-- ===== LOCATION INPUT (Google Places Autocomplete) ===== -->
                 <div>
                     <label class="form-label">Site Location</label>
                     <div class="relative flex gap-2">
-                        <input type="text" id="locInput" class="custom-input pr-24" placeholder="Start typing address...">
+                        <input type="text" id="locInput" class="custom-input pr-24" placeholder="Start typing address..." autocomplete="off">
                         <button onclick="detectGPS()" class="absolute right-14 top-2 bottom-2 bg-blue-100 text-blue-600 px-3 rounded-lg font-bold text-xs hover:bg-blue-200 transition">DETECT</button>
-                        <button onclick="openMiniMap()" class="absolute right-2 top-2 bottom-2 bg-slate-100 text-slate-600 px-3 rounded-lg hover:bg-slate-200 transition" title="Pick on Map"><i class="ri-map-2-line text-lg"></i></button>
+                        <button onclick="openMapPicker()" class="absolute right-2 top-2 bottom-2 bg-slate-100 text-slate-600 px-3 rounded-lg hover:bg-slate-200 transition" title="Pick on Map"><i class="ri-map-2-line text-lg"></i></button>
                     </div>
                     <p id="distDisplay" class="text-xs text-right mt-1 text-slate-400 font-mono"></p>
                 </div>
 
+                <!-- ===== HEATMAP REVEAL CONTAINER ===== -->
+                <div id="success-map-container">
+                    <div class="heatmap-wrapper">
+                        <div class="heatmap-overlay">
+                            <div class="heatmap-overlay-title">
+                                <i class="ri-map-pin-2-fill"></i>
+                                <span id="heatmap-count">0</span> Successful Borewells Nearby
+                            </div>
+                            <div class="heatmap-overlay-sub">Verified Sagar Borewells within 5 km of your site</div>
+                        </div>
+                        <div id="heatmap-map" class="heatmap-map"></div>
+                    </div>
+                </div>
+
+                <!-- ===== DEPTH SLIDER ===== -->
                 <div class="mb-10 mt-8">
                     <label class="form-label text-center mb-4">ESTIMATED DEPTH REQUIRED</label>
                     <div id="sliderBox" class="slider-container">
@@ -134,19 +248,16 @@
                             <span id="display-val" class="text-6xl font-extrabold text-blue-800">100</span>
                             <span class="text-xl font-bold text-slate-400 align-top">FT</span>
                         </div>
-                        
                         <input type="range" id="depthSlider" class="range-slider" min="100" max="500" value="100" step="10">
-                        
                         <div class="flex justify-between text-xs font-bold text-slate-400 mt-2">
                             <span>100 FT</span>
                             <span id="maxLabel">500 FT</span>
                         </div>
-
                         <div id="expertAlert" class="expert-alert">
                             <div class="flex flex-col items-center gap-2">
                                 <div class="flex items-center text-red-600 font-bold">
-                                    <i class="ri-error-warning-fill mr-2"></i> 
-                                    High Depth Zone (>600ft)
+                                    <i class="ri-error-warning-fill mr-2"></i>
+                                    High Depth Zone (&gt;600ft)
                                 </div>
                                 <p class="text-xs text-slate-500 font-medium">Complex geology detected. Technical consultation recommended.</p>
                                 <button onclick="consultExpert()" class="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-100 transition shadow-sm uppercase tracking-wide">
@@ -163,7 +274,8 @@
             </div>
         </div>
 
-        <div id="step-2" class="container mx-auto px-4 pb-12 hidden">
+        <!-- ========== STEP 2: ESTIMATE CARD ========== -->
+        <div id="step-2" class="container mx-auto px-4 pb-12 hidden fade-in-up">
             <div class="flex justify-between items-center max-w-4xl mx-auto mb-4">
                 <button onclick="goToStep1()" class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-1"><i class="ri-arrow-left-line"></i> Edit Details</button>
                 <div class="flex gap-2">
@@ -175,13 +287,13 @@
             <div class="est-card max-w-4xl mx-auto" id="invoice-capture">
                 <div class="est-header">
                     <div class="flex justify-between items-start">
-                        <div class="est-brand">
-                            <h2>SAGAR BOREWELLS</h2>
-                            <p>Advanced Geological Infrastructure</p>
+                        <div>
+                            <h2 class="text-xl font-extrabold text-slate-900">SAGAR BOREWELLS</h2>
+                            <p class="text-xs text-slate-500 mt-1">Advanced Geological Infrastructure</p>
                         </div>
                         <div class="est-total-block">
                             <div class="est-label">ESTIMATED TOTAL</div>
-                            <div class="est-amount" id="invTotal">₹0</div>
+                            <div class="est-amount" id="invTotal">&#x20b9;0</div>
                         </div>
                     </div>
                     <div class="est-meta">
@@ -190,20 +302,19 @@
                         <div class="est-meta-item"><strong>Ref ID</strong><span id="invRef">--</span></div>
                     </div>
                 </div>
-
                 <div class="est-body">
                     <div class="section-title"><i class="ri-bar-chart-grouped-line"></i> Drilling Cost Structure</div>
                     <table class="est-table">
                         <thead><tr><th>Depth Range</th><th class="text-center">Rate / ft</th><th class="text-right">Amount</th></tr></thead>
                         <tbody id="drillBody"></tbody>
-                        <tfoot><tr><td colspan="2">Drilling Subtotal</td><td class="text-right" id="drillSubtotal">₹0</td></tr></tfoot>
+                        <tfoot><tr><td colspan="2">Drilling Subtotal</td><td class="text-right" id="drillSubtotal">&#x20b9;0</td></tr></tfoot>
                     </table>
 
                     <div id="opsSection">
-                        <div class="section-title"><i class="ri-shield-check-line"></i> Operational & Labour</div>
+                        <div class="section-title"><i class="ri-shield-check-line"></i> Operational &amp; Labour</div>
                         <table class="est-table">
                             <tbody id="opsBody"></tbody>
-                            <tfoot><tr><td style="font-weight:700;">Subtotal (Fixed)</td><td class="text-right" id="opsSubtotal">₹0</td></tr></tfoot>
+                            <tfoot><tr><td style="font-weight:700;">Subtotal (Fixed)</td><td class="text-right" id="opsSubtotal">&#x20b9;0</td></tr></tfoot>
                         </table>
                     </div>
 
@@ -214,22 +325,21 @@
                     </div>
 
                     <div class="text-center mt-10">
-                        <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">
-                            Confirm Booking
-                        </button>
-                        <p class="text-xs text-slate-400 mt-3 uppercase tracking-wide">Valid for 30 Days • Computer Generated Estimate</p>
+                        <button onclick="confirmBooking()" class="bg-slate-900 text-white font-bold py-4 px-12 rounded-xl text-lg hover:bg-black transition shadow-lg">Confirm Booking</button>
+                        <p class="text-xs text-slate-400 mt-3 uppercase tracking-wide">Valid for 30 Days &bull; Computer Generated Estimate</p>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- ========== STEP 3: CONFIRMATION ========== -->
         <div id="step-3" class="container mx-auto px-4 fade-in-up hidden py-12">
             <div class="quote-card text-center max-w-lg mx-auto">
                 <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
                     <i class="ri-check-line text-4xl text-emerald-600"></i>
                 </div>
                 <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Booking Confirmed!</h1>
-                <p class="text-slate-500 mb-8">We have received your request. A representative will call you shortly to discuss site logistics.</p>
+                <p class="text-slate-500 mb-8">We have received your request. A representative will call you shortly.</p>
                 <div class="flex justify-center gap-4">
                     <a href="dashboard.html" class="py-3 px-6 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50">Dashboard</a>
                     <button onclick="openChatSupport()" class="py-3 px-6 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">Chat Support</button>
@@ -241,310 +351,628 @@
 
     <div id="footer-mount"></div>
 
-    <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
-        <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl relative">
+    <!-- ===== LEAFLET MAP PICKER MODAL ===== -->
+    <div id="mapPickerModal" class="map-picker-overlay">
+        <div class="map-picker-card">
             <h3 class="font-bold text-slate-800 mb-2 text-center">Pinpoint Location</h3>
-            <div style="position: relative; width: 100%; height: 300px; background: #eee; border-radius: 10px; overflow: hidden;">
-                <div id="quoteMapContainer" style="width:100%; height:100%;"></div>
-                <i class="ri-map-pin-fill map-center-marker"></i>
+            <div class="map-picker-container">
+                <div id="picker-map"></div>
+                <i class="ri-map-pin-fill crosshair-marker"></i>
             </div>
             <div class="flex justify-end gap-2 mt-4">
-                <button onclick="document.getElementById('miniMapModal').style.display='none'" class="px-4 py-2 font-bold text-slate-500">Cancel</button>
-                <button onclick="confirmQuoteLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg">Set Location</button>
+                <button onclick="closeMapPicker()" class="px-4 py-2 font-bold text-slate-500 rounded-lg hover:bg-slate-100">Cancel</button>
+                <button onclick="confirmPickerLocation()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Set Location</button>
             </div>
         </div>
     </div>
 
+    <!-- ==================== ENGINE ==================== -->
     <script>
-        
-        // 🟢 INIT FIREBASE
-        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
-            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+
+    // ================================================================
+    //  1. FIREBASE INIT (Compat SDK 9.x)
+    // ================================================================
+    if (typeof firebase !== 'undefined' && CONTACT_INFO && CONTACT_INFO.firebase_config) {
+        if (!firebase.apps || !firebase.apps.length) {
+            firebase.initializeApp(CONTACT_INFO.firebase_config);
         }
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+    }
+    const db = typeof firebase !== 'undefined' ? firebase.firestore() : null;
+    const auth = typeof firebase !== 'undefined' ? firebase.auth() : null;
 
-        // 🟢 LOAD CONSTANTS
-        const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : {
-            PRICING_MODEL: { base_rate: 70, increments: { phase_1: 10, phase_2: 20, phase_3: 50 }, boundaries: { phase_2_start: 200, phase_3_start: 300 } },
-            MATERIALS: []
-        };
-        const { PRICING_MODEL, MATERIALS, TRANSPORT_THRESHOLD_KM, TRANSPORT_BASE_RATE, LABOUR_CHARGE, OFFICE_LOCATION } = CFG;
+    // ================================================================
+    //  2. CONSTANTS
+    // ================================================================
+    const CFG = (typeof QUOTE_CONFIG !== 'undefined') ? QUOTE_CONFIG : {
+        PRICING_MODEL: {
+            base_rate: 70,
+            increments: { phase_1: 10, phase_2: 20, phase_3: 50 },
+            boundaries: { phase_2_start: 200, phase_3_start: 300 }
+        },
+        MATERIALS: [],
+        TRANSPORT_THRESHOLD_KM: 30,
+        TRANSPORT_BASE_RATE: 1000,
+        LABOUR_CHARGE: 1000,
+        OFFICE_LOCATION: { lat: 16.4410, lng: 80.5520 }
+    };
+    const { PRICING_MODEL, MATERIALS } = CFG;
+    const TRANSPORT_THRESHOLD_KM = CFG.TRANSPORT_THRESHOLD_KM;
+    const TRANSPORT_BASE_RATE = CFG.TRANSPORT_BASE_RATE;
+    const LABOUR_CHARGE = CFG.LABOUR_CHARGE;
+    const OFFICE_LOCATION = CFG.OFFICE_LOCATION;
 
-        let transportDist = 0;
-        let siteCoords = null;
-        let leadData = {};
-        let currentQuoteID = null;   
-        let hasLoggedPrice = false; 
+    let transportDist = 0;
+    let siteCoords = null;   // { lat, lng } — stored after location lock
+    let leadData = {};
+    let currentQuoteID = null;
+    let hasLoggedPrice = false;
 
-        // 🟢 UNIFIED INITIALIZATION (Materials & Pre-Fill)
-        window.addEventListener('DOMContentLoaded', () => {
-            const matGrid = document.getElementById('materialsGrid');
-            if(matGrid) {
-                matGrid.innerHTML = MATERIALS.map(m => `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹${m.price}${m.unit}</span></div>`).join('');
-            }
+    // DOM reference
+    const locInput = document.getElementById('locInput');
 
-            const params = new URLSearchParams(window.location.search);
-            let shouldCalc = false;
-            
-            if (params.has('loc')) {
-                const loc = decodeURIComponent(params.get('loc'));
-                document.getElementById('locInput').value = loc;
-                shouldCalc = true;
-            }
-
-            if (params.has('depth')) {
-                const depth = parseInt(params.get('depth'));
-                const slider = document.getElementById('depthSlider');
-                const display = document.getElementById('display-val');
-                const sliderBox = document.getElementById('sliderBox');
-                
-                slider.value = depth;
-                display.innerText = depth;
-
-                if (depth > 500) { 
-                    slider.max = (depth > 900) ? 1200 : 900;
-                    sliderBox.classList.add('expanded');
-                }
-                
-                const pct = ((depth - slider.min) / (slider.max - slider.min)) * 100;
-                slider.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
-                document.getElementById('expertAlert').style.display = (depth > 600) ? 'block' : 'none';
-                shouldCalc = true;
-            }
-
-            if(shouldCalc) {
-                setTimeout(() => {
-                    if(!document.getElementById('generateBtn').disabled) {
-                        calculateEstimate();
-                    }
-                }, 1000);
+    // ================================================================
+    //  3. GOOGLE MAPS INIT (Places Autocomplete)
+    // ================================================================
+    function initMapTools() {
+        const autocomplete = new google.maps.places.Autocomplete(locInput, {
+            componentRestrictions: { country: 'in' }
+        });
+        autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (place.geometry) {
+                const lat = place.geometry.location.lat();
+                const lng = place.geometry.location.lng();
+                locInput.dataset.lat = lat;
+                locInput.dataset.lng = lng;
+                calculateDist(lat, lng);
             }
         });
+    }
 
-        // 🟢 SLIDER LOGIC
-        const slider = document.getElementById('depthSlider');
-        const sliderBox = document.getElementById('sliderBox');
-        const maxLabel = document.getElementById('maxLabel');
-        const expertAlert = document.getElementById('expertAlert');
+    // ================================================================
+    //  5. DISTANCE CALCULATION (Haversine)
+    // ================================================================
+    function calculateDist(lat, lng) {
+        siteCoords = { lat, lng };
+        const R = 6371;
+        const dLat = (lat - OFFICE_LOCATION.lat) * Math.PI / 180;
+        const dLon = (lng - OFFICE_LOCATION.lng) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(OFFICE_LOCATION.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+        transportDist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        slider.addEventListener('input', function() {
-            let val = parseInt(this.value);
-            let currentMax = parseInt(this.max);
-
-            document.getElementById('display-val').innerText = val;
-
-            if (val > 500) sliderBox.classList.add('expanded');
-            else sliderBox.classList.remove('expanded');
-
-            if (val >= currentMax) {
-                if (currentMax === 500) { this.max = 900; maxLabel.innerText = "900 FT"; }
-                else if (currentMax === 900) { this.max = 1200; maxLabel.innerText = "1200 FT"; }
-            } 
-            else if (val < 450 && currentMax > 500) {
-                this.max = 500; maxLabel.innerText = "500 FT";
-                this.value = val; 
-            }
-            
-            expertAlert.style.display = (val > 600) ? 'block' : 'none';
-            const pct = ((val - this.min) / (this.max - this.min)) * 100;
-            this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
-        });
-
-        // 🟢 SECURE ID GENERATOR
-        async function getUniqueQuoteID() {
-            const maxRetries = 5;
-            let attempt = 0;
-            
-            while(attempt < maxRetries) {
-                const now = new Date();
-                const yy = now.getFullYear().toString().substr(-2);
-                const mm = (now.getMonth() + 1).toString().padStart(2, '0');
-                const rand = Math.floor(1000 + Math.random() * 9000); 
-                const candidateID = `QT-${yy}${mm}-${rand}`; 
-
-                try {
-                    // 🔴 FIXED: Check silent_leads (Superset) instead of leads
-                    const doc = await db.collection('silent_leads').doc(candidateID).get();
-                    if (!doc.exists) {
-                        return candidateID; 
-                    }
-                    console.warn(`Collision detected for ${candidateID}. Retrying...`);
-                } catch(e) {
-                    console.error("DB Check Failed", e);
-                    return `QT-${yy}${mm}-${rand}-${Date.now().toString().slice(-4)}`;
-                }
-                
-                attempt++;
-            }
-            return `QT-${Date.now()}`; 
+        const disp = document.getElementById('distDisplay');
+        if (transportDist > TRANSPORT_THRESHOLD_KM) {
+            disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Extra Charges)`;
+            disp.className = "text-xs text-right mt-1 font-bold font-mono text-orange-600";
+        } else {
+            disp.innerText = `Distance: ${transportDist.toFixed(1)} km (Free Transport)`;
+            disp.className = "text-xs text-right mt-1 font-bold font-mono text-emerald-600";
         }
 
-        // 🟢 CALCULATION ENGINE
-        async function calculateEstimate() {
-            if(document.getElementById('generateBtn').disabled) return;
-            const name = document.getElementById('custName').value;
-            const loc = document.getElementById('locInput').value;
-            
-            if(!name || !loc) { alert("Please fill details"); return; }
+        // Trigger heatmap reveal
+        showHeatmap(lat, lng);
 
-            const genBtn = document.getElementById('generateBtn');
-            const originalBtnText = genBtn.innerHTML;
-            genBtn.disabled = true;
-            genBtn.innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Generating ID...`;
+        // Enable generate button if name is filled
+        if (document.getElementById('custName').value) {
+            document.getElementById('generateBtn').disabled = false;
+        }
+    }
 
+    // ================================================================
+    //  6. GPS DETECTION (Google Geocoder)
+    // ================================================================
+    function detectGPS() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                calculateDist(lat, lng);
+
+                // Google reverse geocode for readable address
+                if (typeof google !== 'undefined' && google.maps) {
+                    new google.maps.Geocoder().geocode({ location: { lat, lng } }, (results, status) => {
+                        if (status === 'OK' && results[0]) {
+                            locInput.value = results[0].formatted_address;
+                        } else {
+                            locInput.value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                        }
+                        locInput.dataset.lat = lat;
+                        locInput.dataset.lng = lng;
+                    });
+                }
+            }, () => {
+                alert("Location access denied. Please type your address or pick on the map.");
+            });
+        }
+    }
+
+    // ================================================================
+    //  7. LEAFLET MAP PICKER MODAL
+    // ================================================================
+    let pickerMap = null;
+    let pickerInitialized = false;
+
+    function openMapPicker() {
+        const modal = document.getElementById('mapPickerModal');
+        modal.classList.add('active');
+
+        setTimeout(() => {
+            if (!pickerInitialized) {
+                pickerMap = L.map('picker-map', { zoomControl: true, attributionControl: false }).setView(
+                    [OFFICE_LOCATION.lat, OFFICE_LOCATION.lng], 13
+                );
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', {
+                    subdomains: 'abcd',
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
+                }).addTo(pickerMap);
+                L.control.attribution({ prefix: false, position: 'bottomright' }).addTo(pickerMap);
+                pickerInitialized = true;
+            } else {
+                pickerMap.invalidateSize();
+            }
+        }, 400);
+    }
+
+    function closeMapPicker() {
+        document.getElementById('mapPickerModal').classList.remove('active');
+    }
+
+    function confirmPickerLocation() {
+        const center = pickerMap.getCenter();
+        const lat = center.lat;
+        const lng = center.lng;
+        closeMapPicker();
+        calculateDist(lat, lng);
+
+        // Google reverse geocode for readable address
+        if (typeof google !== 'undefined' && google.maps) {
+            new google.maps.Geocoder().geocode({ location: { lat, lng } }, (results, status) => {
+                if (status === 'OK' && results[0]) {
+                    locInput.value = results[0].formatted_address;
+                } else {
+                    locInput.value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                }
+                locInput.dataset.lat = lat;
+                locInput.dataset.lng = lng;
+            });
+        } else {
+            locInput.value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            locInput.dataset.lat = lat;
+            locInput.dataset.lng = lng;
+        }
+    }
+
+    // ================================================================
+    //  8. HEATMAP — Live projects from Firestore (public_pins)
+    // ================================================================
+    let heatmap = null;
+    let heatmapLayers = [];
+    let heatmapInitialized = false;
+    let heatmapKilled = false;  // Kill-switch flag
+
+    async function loadNearbyProjects(userLat, userLng) {
+        const userPt = L.latLng(userLat, userLng);
+        let nearbyCount = 0;
+        const projectPoints = [];
+
+        if (!db) {
+            console.warn("Firestore not available — skipping live pin fetch.");
+            document.getElementById('heatmap-count').textContent = '0';
+            return;
+        }
+
+        try {
+            const snap = await db.collection('public_pins').get();
+
+            snap.forEach(docSnap => {
+                const data = docSnap.data();
+                if (!data.gps) return;
+
+                let pLat, pLng;
+
+                // Handle GPS stored as "lat, lng" string
+                if (typeof data.gps === 'string') {
+                    const parts = data.gps.split(',').map(s => parseFloat(s.trim()));
+                    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                        pLat = parts[0];
+                        pLng = parts[1];
+                    }
+                }
+                // Handle GPS stored as GeoPoint or object {lat, lng}
+                else if (typeof data.gps === 'object') {
+                    if (data.gps.latitude !== undefined && data.gps.longitude !== undefined) {
+                        pLat = data.gps.latitude;
+                        pLng = data.gps.longitude;
+                    }
+                    else if (data.gps.lat !== undefined && data.gps.lng !== undefined) {
+                        pLat = data.gps.lat;
+                        pLng = data.gps.lng;
+                    }
+                    else if (data.gps.lat !== undefined && data.gps.lon !== undefined) {
+                        pLat = data.gps.lat;
+                        pLng = data.gps.lon;
+                    }
+                }
+
+                if (!pLat || !pLng || isNaN(pLat) || isNaN(pLng)) return;
+
+                const projectPt = L.latLng(pLat, pLng);
+                const distanceMeters = userPt.distanceTo(projectPt);
+
+                if (distanceMeters <= 25000) {
+                    nearbyCount++;
+                    projectPoints.push([pLat, pLng]);
+
+                    const marker = L.circleMarker(projectPt, {
+                        radius: 7,
+                        fillColor: '#10b981',
+                        color: '#ffffff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    }).addTo(heatmap);
+
+                    marker.bindPopup('<b>Verified Sagar Borewell</b><br>Status: Successfully Commissioned');
+                    heatmapLayers.push(marker);
+                }
+            });
+        } catch (e) {
+            console.warn("Could not fetch public pins for heatmap:", e);
+        }
+
+        const countEl = document.getElementById('heatmap-count');
+        const subEl = document.querySelector('.heatmap-overlay-sub');
+
+        if (nearbyCount === 0) {
+            countEl.textContent = '0';
+            if (subEl) {
+                subEl.textContent = 'Be the first in your area! Our rigs are ready.';
+                subEl.style.color = '#1e3a8a';
+                subEl.style.fontWeight = '600';
+            }
+        } else {
+            countEl.textContent = nearbyCount;
+            if (subEl) {
+                subEl.textContent = `Verified Sagar Borewells within 25 km of your site`;
+                subEl.style.color = '';
+                subEl.style.fontWeight = '';
+            }
+        }
+
+        const allPoints = [[userLat, userLng], ...projectPoints];
+        if (allPoints.length > 1) {
+            heatmap.fitBounds(L.latLngBounds(allPoints), { padding: [40, 40] });
+        }
+    }
+
+    async function initHeatmap(lat, lng) {
+        if (heatmapInitialized) {
+            heatmap.setView([lat, lng], 11);
+            heatmapLayers.forEach(l => heatmap.removeLayer(l));
+            heatmapLayers = [];
+        } else {
+            heatmap = L.map('heatmap-map', { zoomControl: true, attributionControl: false }).setView([lat, lng], 11);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                subdomains: 'abcd', maxZoom: 19
+            }).addTo(heatmap);
+            L.control.attribution({ prefix: false }).addTo(heatmap);
+            heatmapInitialized = true;
+        }
+
+        const userLatLng = L.latLng(lat, lng);
+
+        // User location icon (blue pulse)
+        const userIcon = L.divIcon({
+            html: `<div style="width:16px;height:16px;border-radius:50%;background:#1e3a8a;border:3px solid #fff;box-shadow:0 0 12px rgba(30,58,138,0.4);animation:sbw-pulse 2s infinite;margin:-8px 0 0 -8px;"></div>`,
+            iconSize: [0, 0],
+            className: ''
+        });
+
+        const userMarker = L.marker([lat, lng], { icon: userIcon })
+            .bindPopup('<strong style="font-size:12px;">Your Site</strong>');
+        userMarker.addTo(heatmap);
+        heatmapLayers.push(userMarker);
+
+        // 25km radius circle
+        const radiusCircle = L.circle([lat, lng], {
+            radius: 25000, color: '#059669', fillColor: '#059669',
+            fillOpacity: 0.04, weight: 1, dashArray: '6 8'
+        });
+        radiusCircle.addTo(heatmap);
+        heatmapLayers.push(radiusCircle);
+
+        await loadNearbyProjects(lat, lng);
+    }
+
+    async function showHeatmap(lat, lng) {
+        const container = document.getElementById('success-map-container');
+
+        // 🔴 KILL-SWITCH: Check admin setting before rendering
+        try {
+            if (db) {
+                const settingsDoc = await db.collection('system_config').doc('website_settings').get();
+                const showMap = settingsDoc.exists ? settingsDoc.data().show_heatmap : true;
+
+                if (!showMap) {
+                    // Hide map, show success badge instead
+                    container.innerHTML = `
+                        <div class="bg-emerald-50 text-emerald-700 p-4 rounded-xl text-center font-bold border border-emerald-200">
+                            <i class="ri-map-pin-user-fill mr-2"></i> Location Locked Successfully!
+                        </div>`;
+                    container.classList.add('visible');
+                    heatmapKilled = true;
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn("Kill-switch check failed, proceeding with heatmap:", e);
+        }
+
+        if (!container.classList.contains('visible')) {
+            container.classList.add('visible');
+            setTimeout(() => {
+                initHeatmap(lat, lng);
+                if (heatmap) heatmap.invalidateSize();
+            }, 200);
+        } else {
+            initHeatmap(lat, lng);
+            if (heatmap) heatmap.invalidateSize();
+        }
+    }
+
+    // ================================================================
+    //  9. MATERIALS GRID INIT
+    // ================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+        const matGrid = document.getElementById('materialsGrid');
+        if (matGrid) {
+            matGrid.innerHTML = MATERIALS.map(m =>
+                `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">&#x20b9;${m.price}${m.unit}</span></div>`
+            ).join('');
+        }
+
+        // URL params auto-fill
+        const params = new URLSearchParams(window.location.search);
+        let shouldCalc = false;
+        if (params.has('loc')) {
+            locInput.value = decodeURIComponent(params.get('loc'));
+            shouldCalc = true;
+        }
+        if (params.has('depth')) {
+            const depth = parseInt(params.get('depth'));
+            const slider = document.getElementById('depthSlider');
+            const display = document.getElementById('display-val');
+            const sliderBox = document.getElementById('sliderBox');
+            slider.value = depth;
+            display.innerText = depth;
+            if (depth > 500) {
+                slider.max = (depth > 900) ? 1200 : 900;
+                sliderBox.classList.add('expanded');
+            }
+            const pct = ((depth - slider.min) / (slider.max - slider.min)) * 100;
+            slider.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
+            document.getElementById('expertAlert').style.display = (depth > 600) ? 'block' : 'none';
+            shouldCalc = true;
+        }
+        if (shouldCalc) {
+            setTimeout(() => {
+                if (!document.getElementById('generateBtn').disabled) calculateEstimate();
+            }, 1000);
+        }
+    });
+
+    // ================================================================
+    //  10. SLIDER LOGIC
+    // ================================================================
+    const slider = document.getElementById('depthSlider');
+    const sliderBox = document.getElementById('sliderBox');
+    const maxLabel = document.getElementById('maxLabel');
+    const expertAlert = document.getElementById('expertAlert');
+
+    slider.addEventListener('input', function () {
+        let val = parseInt(this.value);
+        let currentMax = parseInt(this.max);
+        document.getElementById('display-val').innerText = val;
+        if (val > 500) sliderBox.classList.add('expanded');
+        else sliderBox.classList.remove('expanded');
+        if (val >= currentMax) {
+            if (currentMax === 500) { this.max = 900; maxLabel.innerText = "900 FT"; }
+            else if (currentMax === 900) { this.max = 1200; maxLabel.innerText = "1200 FT"; }
+        } else if (val < 450 && currentMax > 500) {
+            this.max = 500; maxLabel.innerText = "500 FT";
+            this.value = val;
+        }
+        expertAlert.style.display = (val > 600) ? 'block' : 'none';
+        const pct = ((val - this.min) / (this.max - this.min)) * 100;
+        this.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${pct}%, #cbd5e1 ${pct}%, #cbd5e1 100%)`;
+    });
+
+    // ================================================================
+    //  11. UNIQUE QUOTE ID
+    // ================================================================
+    async function getUniqueQuoteID() {
+        const maxRetries = 5;
+        let attempt = 0;
+        while (attempt < maxRetries) {
+            const now = new Date();
+            const yy = now.getFullYear().toString().substr(-2);
+            const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+            const rand = Math.floor(1000 + Math.random() * 9000);
+            const candidateID = `QT-${yy}${mm}-${rand}`;
             try {
-                if (!currentQuoteID) {
-                    currentQuoteID = await getUniqueQuoteID();
-                }
-
-                const totalDepth = parseInt(slider.value);
-                
-                let drillHtml = "";
-                let breakdownText = ""; 
-                let drillCost = 0;
-                let currentDepth = 0;
-                let currentRate = PRICING_MODEL.base_rate; 
-                const jumps = PRICING_MODEL.increments;
-                const bounds = PRICING_MODEL.boundaries;
-
-                const firstChunk = Math.min(totalDepth, 100);
-                if(firstChunk > 0) {
-                    const cost = firstChunk * currentRate;
-                    drillCost += cost;
-                    drillHtml += `<tr><td>0 - ${firstChunk} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                    breakdownText += `• 0-${firstChunk}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
-                    currentDepth += firstChunk;
-                }
-
-                while(currentDepth < totalDepth) {
-                    let increment = jumps.phase_1; 
-                    if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3; 
-                    else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2; 
-                    
-                    currentRate += increment; 
-                    let nextChunk = Math.min(50, totalDepth - currentDepth);
-                    let cost = nextChunk * currentRate;
-                    drillCost += cost;
-                    
-                    const endDepth = currentDepth + nextChunk;
-                    drillHtml += `<tr><td>${currentDepth + 1} - ${endDepth} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                    breakdownText += `• ${currentDepth + 1}-${endDepth}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
-                    
-                    currentDepth += nextChunk;
-                }
-
-                let opsHtml = "";
-                let opsCost = 0;
-                if (transportDist > TRANSPORT_THRESHOLD_KM) {
-                    const excessKm = transportDist - TRANSPORT_THRESHOLD_KM;
-                    const blocks = Math.ceil(excessKm / 30);
-                    const transCost = blocks * TRANSPORT_BASE_RATE; 
-                    opsHtml += `<tr><td>Transport (${excessKm.toFixed(1)} km extra)</td><td class="text-right">₹${transCost.toLocaleString()}</td></tr>`;
-                    breakdownText += `• Transport: ₹${transCost.toLocaleString()}\n`;
-                    opsCost += transCost;
-                }
-                opsHtml += `<tr><td>Rig Erection & Material Handling</td><td class="text-right">₹${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
-                breakdownText += `• Labour: ₹${LABOUR_CHARGE.toLocaleString()}\n`;
-                opsCost += LABOUR_CHARGE;
-
-                const grandTotal = drillCost + opsCost;
-
-                document.getElementById('opsSection').style.display = 'block';
-                document.getElementById('opsBody').innerHTML = opsHtml;
-                document.getElementById('opsSubtotal').innerText = "₹" + opsCost.toLocaleString();
-                document.getElementById('drillBody').innerHTML = drillHtml;
-                document.getElementById('drillSubtotal').innerText = "₹" + drillCost.toLocaleString();
-                document.getElementById('invTotal').innerText = "₹" + grandTotal.toLocaleString();
-                document.getElementById('invLoc').innerText = loc;
-                document.getElementById('invDepth').innerText = totalDepth + " ft";
-                document.getElementById('invRef').innerText = currentQuoteID;
-
-                leadData = { 
-                    id: currentQuoteID, 
-                    name, 
-                    mobile: "+91"+document.getElementById('custMobile').value, 
-                    loc, depth: totalDepth, total: grandTotal, 
-                    status: "Quote Generated", 
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    summary: breakdownText,
-                    rows: drillHtml
-                };
-
-                const statusLog = hasLoggedPrice ? "Updated Price Check" : "Viewed Price / Not Booked";
-                if (hasLoggedPrice) {
-                     leadData.summary = "🔄 *UPDATED QUOTE*\n" + leadData.summary;
-                }
-
-                db.collection('silent_leads').doc(leadData.id).set({
-                    ...leadData, 
-                    status: statusLog,
-                    last_updated: firebase.firestore.FieldValue.serverTimestamp(),
-                    // 🟢 UPGRADE: Array Append Logic
-                    activity_log: firebase.firestore.FieldValue.arrayUnion({
-                        depth: totalDepth,
-                        total: grandTotal,
-                        loc: loc,
-                        time: new Date().toISOString()
-                    })
-                }, { merge: true }); 
-
-                if(typeof NOTIFY_TEMPLATES !== 'undefined') {
-                    sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
-                }
-                
-                hasLoggedPrice = true; 
-
-                document.getElementById('step-1').classList.add('hidden');
-                document.getElementById('step-2').classList.remove('hidden');
-                window.scrollTo(0,0);
-
-            } catch (error) {
-                console.error("Calculation Error:", error);
-                alert("System busy. Please try again.");
-            } finally {
-                genBtn.disabled = false;
-                genBtn.innerHTML = originalBtnText;
+                const doc = await db.collection('silent_leads').doc(candidateID).get();
+                if (!doc.exists) return candidateID;
+                console.warn(`Collision detected for ${candidateID}. Retrying...`);
+            } catch (e) {
+                console.error("DB Check Failed", e);
+                return `QT-${yy}${mm}-${rand}-${Date.now().toString().slice(-4)}`;
             }
+            attempt++;
         }
+        return `QT-${Date.now()}`;
+    }
 
-        async function confirmBooking() {
-            const user = auth.currentUser;
-            const finalData = { 
-                ...leadData, 
-                userId: user ? user.uid : null, 
-                source: 'web_quote',
-                status: 'Booked' 
+    // ================================================================
+    //  12. CALCULATION ENGINE
+    // ================================================================
+    async function calculateEstimate() {
+        if (document.getElementById('generateBtn').disabled) return;
+        const name = document.getElementById('custName').value;
+        const loc = locInput.value;
+        if (!name || !loc) { alert("Please fill in your name and location."); return; }
+
+        const genBtn = document.getElementById('generateBtn');
+        const originalText = genBtn.innerHTML;
+        genBtn.disabled = true;
+        genBtn.innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Generating ID...`;
+
+        try {
+            if (!currentQuoteID) currentQuoteID = await getUniqueQuoteID();
+            const totalDepth = parseInt(slider.value);
+
+            let drillHtml = "", drillCost = 0, currentDepth = 0, currentRate = PRICING_MODEL.base_rate;
+            const jumps = PRICING_MODEL.increments, bounds = PRICING_MODEL.boundaries;
+            let breakdownText = "";
+
+            const firstChunk = Math.min(totalDepth, 100);
+            if (firstChunk > 0) {
+                const cost = firstChunk * currentRate;
+                drillCost += cost;
+                drillHtml += `<tr><td>0 - ${firstChunk} ft</td><td class="text-center">&#x20b9;${currentRate}</td><td class="text-right">&#x20b9;${cost.toLocaleString()}</td></tr>`;
+                breakdownText += `&#x2022; 0-${firstChunk}ft: &#x20b9;${cost.toLocaleString()} (@${currentRate}/ft)\n`;
+                currentDepth += firstChunk;
+            }
+            while (currentDepth < totalDepth) {
+                let increment = jumps.phase_1;
+                if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3;
+                else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2;
+                currentRate += increment;
+                let nextChunk = Math.min(50, totalDepth - currentDepth);
+                let cost = nextChunk * currentRate;
+                drillCost += cost;
+                const endDepth = currentDepth + nextChunk;
+                drillHtml += `<tr><td>${currentDepth + 1} - ${endDepth} ft</td><td class="text-center">&#x20b9;${currentRate}</td><td class="text-right">&#x20b9;${cost.toLocaleString()}</td></tr>`;
+                breakdownText += `&#x2022; ${currentDepth + 1}-${endDepth}ft: &#x20b9;${cost.toLocaleString()} (@${currentRate}/ft)\n`;
+                currentDepth += nextChunk;
+            }
+
+            let opsHtml = "", opsCost = 0;
+            if (transportDist > TRANSPORT_THRESHOLD_KM) {
+                const excess = transportDist - TRANSPORT_THRESHOLD_KM;
+                const transCost = Math.ceil(excess / 30) * TRANSPORT_BASE_RATE;
+                opsHtml += `<tr><td>Transport (${excess.toFixed(1)} km extra)</td><td class="text-right">&#x20b9;${transCost.toLocaleString()}</td></tr>`;
+                breakdownText += `&#x2022; Transport: &#x20b9;${transCost.toLocaleString()}\n`;
+                opsCost += transCost;
+            }
+            opsHtml += `<tr><td>Rig Erection &amp; Material Handling</td><td class="text-right">&#x20b9;${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
+            breakdownText += `&#x2022; Labour: &#x20b9;${LABOUR_CHARGE.toLocaleString()}\n`;
+            opsCost += LABOUR_CHARGE;
+
+            const grandTotal = drillCost + opsCost;
+
+            document.getElementById('opsSection').style.display = 'block';
+            document.getElementById('opsBody').innerHTML = opsHtml;
+            document.getElementById('opsSubtotal').innerText = "&#x20b9;" + opsCost.toLocaleString();
+            document.getElementById('drillBody').innerHTML = drillHtml;
+            document.getElementById('drillSubtotal').innerText = "&#x20b9;" + drillCost.toLocaleString();
+            document.getElementById('invTotal').innerText = "&#x20b9;" + grandTotal.toLocaleString();
+            document.getElementById('invLoc').innerText = loc;
+            document.getElementById('invDepth').innerText = totalDepth + " ft";
+            document.getElementById('invRef').innerText = currentQuoteID;
+
+            leadData = {
+                id: currentQuoteID,
+                name,
+                mobile: "+91" + document.getElementById('custMobile').value,
+                loc,
+                depth: totalDepth,
+                total: grandTotal,
+                lat: siteCoords ? siteCoords.lat : null,
+                lng: siteCoords ? siteCoords.lng : null,
+                status: "Quote Generated",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                summary: breakdownText,
+                rows: drillHtml
             };
 
-            try {
-                await db.collection('leads').doc(leadData.id).set(finalData);
-                
-                if(typeof NOTIFY_TEMPLATES !== 'undefined') {
-                    await sendTelegram(NOTIFY_TEMPLATES.booking(finalData));
-                }
+            const statusLog = hasLoggedPrice ? "Updated Price Check" : "Viewed Price / Not Booked";
+            if (hasLoggedPrice) leadData.summary = "🔄 *UPDATED QUOTE*\n" + leadData.summary;
 
-                document.getElementById('step-2').classList.add('hidden');
-                document.getElementById('step-3').classList.remove('hidden');
-            } catch (e) {
-                alert("Error saving booking: " + e.message);
+            await db.collection('silent_leads').doc(leadData.id).set({
+                ...leadData,
+                status: statusLog,
+                last_updated: firebase.firestore.FieldValue.serverTimestamp(),
+                activity_log: firebase.firestore.FieldValue.arrayUnion({
+                    depth: totalDepth, total: grandTotal, loc: loc,
+                    time: new Date().toISOString()
+                })
+            }, { merge: true });
+
+            hasLoggedPrice = true;
+
+            // Telegram alert
+            if (typeof NOTIFY_TEMPLATES !== 'undefined') {
+                sendTelegram(NOTIFY_TEMPLATES.price_check(leadData));
             }
-        }
 
-        async function sendTelegram(msg) {
-            if(typeof getTelegramCredentials === 'function') {
-                const creds = await getTelegramCredentials();
-                if(creds && creds.bot_token && creds.chat_id) {
-                    const url = `https://api.telegram.org/bot${creds.bot_token}/sendMessage?chat_id=${creds.chat_id}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
-                    try {
-                        await fetch(url);
-                    } catch(e) { console.log("Notify Error", e); }
-                }
-            } else {
-                console.warn("Secure Credential Fetcher not found.");
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
+            window.scrollTo(0, 0);
+
+        } catch (error) {
+            console.error("Calculation Error:", error);
+            alert("System busy. Please try again.");
+        } finally {
+            genBtn.disabled = false;
+            genBtn.innerHTML = originalText;
+        }
+    }
+
+    // ================================================================
+    //  13. CONFIRM BOOKING → writes to 'leads' collection
+    // ================================================================
+    async function confirmBooking() {
+        const user = auth ? auth.currentUser : null;
+        const finalData = {
+            ...leadData,
+            userId: user ? user.uid : null,
+            source: 'web_quote',
+            status: 'Booked'
+        };
+        try {
+            await db.collection('leads').doc(leadData.id).set(finalData);
+
+            if (typeof NOTIFY_TEMPLATES !== 'undefined') {
+                await sendTelegram(NOTIFY_TEMPLATES.booking(finalData));
             }
-        }
 
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-3').classList.remove('hidden');
+        } catch (e) {
+            alert("Error saving booking: " + e.message);
+        }
+    }
+
+    // ================================================================
+    //  14. TELEGRAM ALERT (Secure)
+    // ================================================================
+    async function sendTelegram(msg) {
+        if (typeof getTelegramCredentials === 'function') {
+            const creds = await getTelegramCredentials();
+            if (creds && creds.bot_token && creds.chat_id) {
+                const url = `https://api.telegram.org/bot${creds.bot_token}/sendMessage?chat_id=${creds.chat_id}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
+                try { await fetch(url); } catch (e) { console.log("Notify Error", e); }
+            }
+        } else {
+            console.warn("Secure Credential Fetcher not found.");
+        }
+    }
+
+    // ================================================================
+    //  15. AUTH STATE LISTENER
+    // ================================================================
+    if (auth) {
         auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
@@ -552,125 +980,115 @@
                 document.getElementById('sendOtpBtn').classList.add('hidden');
                 document.getElementById('editMobileBtn').classList.remove('hidden');
                 document.getElementById('verifiedBadge').classList.remove('hidden');
-                document.getElementById('generateBtn').disabled = false; 
+                document.getElementById('generateBtn').disabled = false;
             }
         });
+    }
 
-        function goToStep1() { document.getElementById('step-2').classList.add('hidden'); document.getElementById('step-1').classList.remove('hidden'); }
-        
-        function downloadPDF() { 
-            const element = document.createElement('div');
-            if(typeof getInvoiceHTML === 'function') {
-                element.innerHTML = getInvoiceHTML(leadData);
-            } else {
-                element.innerHTML = document.getElementById('invoice-capture').innerHTML;
-                element.innerHTML += '<br><br><h3>Generated via Sagar Borewells Online</h3>';
-            }
+    // ================================================================
+    //  16. NAVIGATION
+    // ================================================================
+    function goToStep1() {
+        document.getElementById('step-2').classList.add('hidden');
+        document.getElementById('step-1').classList.remove('hidden');
+    }
 
-            if(typeof html2pdf !== 'undefined') {
-                html2pdf().from(element).save(`Estimate_${leadData.id}.pdf`);
-            } else {
-                alert("PDF System Loading... Please wait 5 seconds and try again, or check your internet connection.");
-            }
+    function downloadPDF() {
+        const element = document.createElement('div');
+        if (typeof getInvoiceHTML === 'function') {
+            element.innerHTML = getInvoiceHTML(leadData);
+        } else {
+            element.innerHTML = document.getElementById('invoice-capture').innerHTML;
+            element.innerHTML += '<br><br><h3>Generated via Sagar Borewells Online</h3>';
         }
-        
-        function shareWhatsApp() { 
-            let msg = "";
-            let phone = CONTACT_INFO.whatsapp_api;
+        if (typeof html2pdf !== 'undefined') {
+            html2pdf().from(element).save(`Estimate_${leadData.id}.pdf`);
+        } else {
+            alert("PDF engine still loading. Please try again in a moment.");
+        }
+    }
 
-            if(typeof WA_MSG !== 'undefined') {
-                msg = WA_MSG.booking_share(leadData);
-                window.open(WA_MSG.link(phone, msg), '_blank');
-            } else {
-                msg = `*ESTIMATE: ${leadData.id}*\n\nDepth: ${leadData.depth} ft\nTotal: ₹${leadData.total.toLocaleString()}\n\nI want to proceed.`;
-                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-            }
+    function shareWhatsApp() {
+        let msg = "";
+        let phone = CONTACT_INFO.whatsapp_api;
+        if (typeof WA_MSG !== 'undefined') {
+            msg = WA_MSG.booking_share(leadData);
+            window.open(WA_MSG.link(phone, msg), '_blank');
+        } else {
+            msg = `*ESTIMATE: ${leadData.id}*\n\nDepth: ${leadData.depth} ft\nTotal: &#x20b9;${leadData.total.toLocaleString()}\n\nI want to proceed.`;
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
         }
-        
-        function consultExpert() {
-            const depth = document.getElementById('depthSlider').value;
-            if(typeof WA_MSG !== 'undefined') {
-                const msg = WA_MSG.deep_drill(depth);
-                window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
-            } else {
-                window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=I need expert advice for ${depth}ft drilling.`, '_blank');
-            }
-        }
-        
-        function openChatSupport() {
-             if(typeof WA_MSG !== 'undefined') {
-                const msg = WA_MSG.chat_support();
-                window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
-            } else {
-                window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=Support Request`, '_blank');
-            }
-        }
+    }
 
-        function sendOTP() {
-            const p = document.getElementById('custMobile').value;
-            if(p.length!=10) return alert("Enter 10 digit number");
-            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
-            
-            document.getElementById('custMobile').disabled = true;
+    function consultExpert() {
+        const depth = document.getElementById('depthSlider').value;
+        if (typeof WA_MSG !== 'undefined') {
+            const msg = WA_MSG.deep_drill(depth);
+            window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+        } else {
+            window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=I need expert advice for ${depth}ft drilling.`, '_blank');
+        }
+    }
 
-            auth.signInWithPhoneNumber('+91'+p, window.recaptchaVerifier).then(cr=>{
-                window.confirmationResult=cr; 
-                document.getElementById('otpSection').classList.remove('hidden'); 
-                document.getElementById('sendOtpBtn').classList.add('hidden');
-                document.getElementById('editMobileBtn').classList.remove('hidden');
-            }).catch(e=>{ 
-                console.error(e); 
-                alert("SMS Error: " + e.message); 
-                document.getElementById('custMobile').disabled = false; 
-            });
+    function openChatSupport() {
+        if (typeof WA_MSG !== 'undefined') {
+            const msg = WA_MSG.chat_support();
+            window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
+        } else {
+            window.open(`https://wa.me/${CONTACT_INFO.whatsapp_api}?text=Support Request`, '_blank');
         }
+    }
 
-        function resetOTP() {
-             document.getElementById('otpSection').classList.add('hidden');
-             document.getElementById('sendOtpBtn').classList.remove('hidden');
-             document.getElementById('editMobileBtn').classList.add('hidden');
-             document.getElementById('custMobile').disabled = false;
-             document.getElementById('custMobile').focus();
-             document.getElementById('verifiedBadge').classList.add('hidden');
-             document.getElementById('generateBtn').disabled = true; 
+    // ================================================================
+    //  17. OTP FLOW (Firebase Phone Auth)
+    // ================================================================
+    function sendOTP() {
+        const p = document.getElementById('custMobile').value;
+        if (p.length !== 10) return alert("Enter 10 digit number");
+        if (!auth) return alert("Firebase Auth not initialized");
+        if (!window.recaptchaVerifier) {
+            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
         }
-        
-        function verifyOTP() { 
-            window.confirmationResult.confirm(document.getElementById('otpInput').value).then(()=> {
-                document.getElementById('otpSection').classList.add('hidden');
-                document.getElementById('generateBtn').disabled = false; 
-            }).catch(e => alert("Invalid OTP"));
-        }
+        document.getElementById('custMobile').disabled = true;
+        auth.signInWithPhoneNumber('+91' + p, window.recaptchaVerifier).then(cr => {
+            window.confirmationResult = cr;
+            document.getElementById('otpSection').classList.remove('hidden');
+            document.getElementById('sendOtpBtn').classList.add('hidden');
+            document.getElementById('editMobileBtn').classList.remove('hidden');
+        }).catch(e => {
+            console.error(e);
+            alert("SMS Error: " + e.message);
+            document.getElementById('custMobile').disabled = false;
+        });
+    }
 
-        let qMap;
-        function initMapTools() {
-            const input = document.getElementById('locInput');
-            const ac = new google.maps.places.Autocomplete(input);
-            ac.addListener('place_changed', () => { const p=ac.getPlace(); if(p.geometry) calculateDist(p.geometry.location.lat(), p.geometry.location.lng()); });
-        }
-        function calculateDist(lat, lng) {
-            const R=6371, dLat=(lat-OFFICE_LOCATION.lat)*Math.PI/180, dLon=(lng-OFFICE_LOCATION.lng)*Math.PI/180;
-            const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(OFFICE_LOCATION.lat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
-            transportDist=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-            const disp=document.getElementById('distDisplay');
-            if(transportDist>TRANSPORT_THRESHOLD_KM) { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Extra Charges)`; disp.className="text-xs text-right mt-1 font-bold font-mono text-orange-600"; }
-            else { disp.innerText=`Distance: ${transportDist.toFixed(1)} km (Free Transport)`; disp.className="text-xs text-right mt-1 font-bold font-mono text-emerald-600"; }
-        }
-        function openMiniMap() { 
-            document.getElementById('miniMapModal').style.display='flex'; 
-            if(!qMap && typeof google!=='undefined') {
-                qMap = new google.maps.Map(document.getElementById('quoteMapContainer'), {center:{lat:16.44,lng:80.55},zoom:15, disableDefaultUI: true}); 
-            }
-            setTimeout(()=>google.maps.event.trigger(qMap,'resize'),100); 
-        }
-        function confirmQuoteLocation() { const p=qMap.getCenter(); new google.maps.Geocoder().geocode({location:p},(r,s)=>{if(s==='OK'){document.getElementById('locInput').value=r[0].formatted_address; calculateDist(p.lat(),p.lng());}}); document.getElementById('miniMapModal').style.display='none'; }
-        function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{calculateDist(p.coords.latitude,p.coords.longitude); new google.maps.Geocoder().geocode({location:{lat:p.coords.latitude,lng:p.coords.longitude}},(r,s)=>{if(s==='OK')document.getElementById('locInput').value=r[0].formatted_address;});}); }
+    function resetOTP() {
+        document.getElementById('otpSection').classList.add('hidden');
+        document.getElementById('sendOtpBtn').classList.remove('hidden');
+        document.getElementById('editMobileBtn').classList.add('hidden');
+        document.getElementById('custMobile').disabled = false;
+        document.getElementById('custMobile').focus();
+        document.getElementById('verifiedBadge').classList.add('hidden');
+        document.getElementById('generateBtn').disabled = true;
+    }
 
-        const s = document.createElement('script'); 
-        s.src=`https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
-        s.async=true; 
-        s.defer=true; 
-        document.body.appendChild(s);
+    function verifyOTP() {
+        window.confirmationResult.confirm(document.getElementById('otpInput').value).then(() => {
+            document.getElementById('otpSection').classList.add('hidden');
+            document.getElementById('verifiedBadge').classList.remove('hidden');
+            document.getElementById('generateBtn').disabled = false;
+        }).catch(() => alert("Invalid OTP"));
+    }
+
+    // ================================================================
+    //  17. GOOGLE MAPS DYNAMIC INJECTION
+    // ================================================================
+    const _gmScript = document.createElement('script');
+    _gmScript.src = `https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`;
+    _gmScript.async = true;
+    _gmScript.defer = true;
+    document.body.appendChild(_gmScript);
+
     </script>
 </body>
 </html>

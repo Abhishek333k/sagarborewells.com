@@ -1,0 +1,10 @@
+name: Local Config
+version: 1.0.0
+schema: v1
+
+models:
+  - name: Local Qwen (LM Studio)
+    provider: openai
+    model: qwen2.5-coder
+    apiKey: EMPTY
+    apiBase: http://192.168.0.100:1234/v1
