@@ -813,10 +813,14 @@
     //  12. CALCULATION ENGINE
     // ================================================================
     async function calculateEstimate() {
-        if (!isPhoneVerified) { alert('Please verify your mobile number via OTP first.'); return; }
-        const name = document.getElementById('custName').value;
-        const loc = locInput.value;
-        if (!name || !loc) { alert("Please fill in your name and location."); return; }
+        if (!isPhoneVerified) { 
+            alert("Security Lock: Please verify your mobile number via OTP."); 
+            return; 
+        }
+        if (!document.getElementById('custName').value || !document.getElementById('locInput').value) {
+            alert("Please fill in your Name and Site Location before calculating.");
+            return;
+        }
 
         const genBtn = document.getElementById('generateBtn');
         const originalText = genBtn.innerHTML;
@@ -972,6 +976,7 @@
         auth.onAuthStateChanged((user) => {
             if (user) {
                 isPhoneVerified = true;
+                document.getElementById('generateBtn').disabled = false;
                 document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
                 document.getElementById('custMobile').disabled = true;
                 document.getElementById('sendOtpBtn').classList.add('hidden');
@@ -1072,6 +1077,7 @@
     }
 
     function resetOTP() {
+        isPhoneVerified = false;
         document.getElementById('otpSection').classList.add('hidden');
         document.getElementById('sendOtpBtn').classList.remove('hidden');
         document.getElementById('editMobileBtn').classList.add('hidden');
@@ -1084,6 +1090,7 @@
     function verifyOTP() {
         window.confirmationResult.confirm(document.getElementById('otpInput').value).then(() => {
             isPhoneVerified = true;
+            document.getElementById('generateBtn').disabled = false;
             document.getElementById('otpSection').classList.add('hidden');
             document.getElementById('verifiedBadge').classList.remove('hidden');
         }).catch(() => alert("Invalid OTP"));
