@@ -293,7 +293,7 @@
                         </div>
                         <div class="est-total-block">
                             <div class="est-label">ESTIMATED TOTAL</div>
-                            <div class="est-amount" id="invTotal">&#x20b9;0</div>
+                            <div class="est-amount" id="invTotal">₹;0</div>
                         </div>
                     </div>
                     <div class="est-meta">
@@ -307,14 +307,14 @@
                     <table class="est-table">
                         <thead><tr><th>Depth Range</th><th class="text-center">Rate / ft</th><th class="text-right">Amount</th></tr></thead>
                         <tbody id="drillBody"></tbody>
-                        <tfoot><tr><td colspan="2">Drilling Subtotal</td><td class="text-right" id="drillSubtotal">&#x20b9;0</td></tr></tfoot>
+                        <tfoot><tr><td colspan="2">Drilling Subtotal</td><td class="text-right" id="drillSubtotal">₹;0</td></tr></tfoot>
                     </table>
 
                     <div id="opsSection">
                         <div class="section-title"><i class="ri-shield-check-line"></i> Operational &amp; Labour</div>
                         <table class="est-table">
                             <tbody id="opsBody"></tbody>
-                            <tfoot><tr><td style="font-weight:700;">Subtotal (Fixed)</td><td class="text-right" id="opsSubtotal">&#x20b9;0</td></tr></tfoot>
+                            <tfoot><tr><td style="font-weight:700;">Subtotal (Fixed)</td><td class="text-right" id="opsSubtotal">₹;0</td></tr></tfoot>
                         </table>
                     </div>
 
@@ -728,7 +728,7 @@
         const matGrid = document.getElementById('materialsGrid');
         if (matGrid) {
             matGrid.innerHTML = MATERIALS.map(m =>
-                `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">&#x20b9;${m.price}${m.unit}</span></div>`
+                `<div class="var-item"><span class="font-bold text-slate-700 text-xs">${m.label}</span><span class="var-badge">₹;${m.price}${m.unit}</span></div>`
             ).join('');
         }
 
@@ -839,8 +839,8 @@
             if (firstChunk > 0) {
                 const cost = firstChunk * currentRate;
                 drillCost += cost;
-                drillHtml += `<tr><td>0 - ${firstChunk} ft</td><td class="text-center">&#x20b9;${currentRate}</td><td class="text-right">&#x20b9;${cost.toLocaleString()}</td></tr>`;
-                breakdownText += `&#x2022; 0-${firstChunk}ft: &#x20b9;${cost.toLocaleString()} (@${currentRate}/ft)\n`;
+                drillHtml += `<tr><td>0 - ${firstChunk} ft</td><td class="text-center">₹;${currentRate}</td><td class="text-right">₹;${cost.toLocaleString()}</td></tr>`;
+                breakdownText += `&#x2022; 0-${firstChunk}ft: ₹;${cost.toLocaleString()} (@${currentRate}/ft)\n`;
                 currentDepth += firstChunk;
             }
             while (currentDepth < totalDepth) {
@@ -852,8 +852,8 @@
                 let cost = nextChunk * currentRate;
                 drillCost += cost;
                 const endDepth = currentDepth + nextChunk;
-                drillHtml += `<tr><td>${currentDepth + 1} - ${endDepth} ft</td><td class="text-center">&#x20b9;${currentRate}</td><td class="text-right">&#x20b9;${cost.toLocaleString()}</td></tr>`;
-                breakdownText += `&#x2022; ${currentDepth + 1}-${endDepth}ft: &#x20b9;${cost.toLocaleString()} (@${currentRate}/ft)\n`;
+                drillHtml += `<tr><td>${currentDepth + 1} - ${endDepth} ft</td><td class="text-center">₹;${currentRate}</td><td class="text-right">₹;${cost.toLocaleString()}</td></tr>`;
+                breakdownText += `&#x2022; ${currentDepth + 1}-${endDepth}ft: ₹;${cost.toLocaleString()} (@${currentRate}/ft)\n`;
                 currentDepth += nextChunk;
             }
 
@@ -861,22 +861,22 @@
             if (transportDist > TRANSPORT_THRESHOLD_KM) {
                 const excess = transportDist - TRANSPORT_THRESHOLD_KM;
                 const transCost = Math.ceil(excess / 30) * TRANSPORT_BASE_RATE;
-                opsHtml += `<tr><td>Transport (${excess.toFixed(1)} km extra)</td><td class="text-right">&#x20b9;${transCost.toLocaleString()}</td></tr>`;
-                breakdownText += `&#x2022; Transport: &#x20b9;${transCost.toLocaleString()}\n`;
+                opsHtml += `<tr><td>Transport (${excess.toFixed(1)} km extra)</td><td class="text-right">₹;${transCost.toLocaleString()}</td></tr>`;
+                breakdownText += `&#x2022; Transport: ₹;${transCost.toLocaleString()}\n`;
                 opsCost += transCost;
             }
-            opsHtml += `<tr><td>Rig Erection &amp; Material Handling</td><td class="text-right">&#x20b9;${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
-            breakdownText += `&#x2022; Labour: &#x20b9;${LABOUR_CHARGE.toLocaleString()}\n`;
+            opsHtml += `<tr><td>Rig Erection &amp; Material Handling</td><td class="text-right">₹;${LABOUR_CHARGE.toLocaleString()}</td></tr>`;
+            breakdownText += `&#x2022; Labour: ₹;${LABOUR_CHARGE.toLocaleString()}\n`;
             opsCost += LABOUR_CHARGE;
 
             const grandTotal = drillCost + opsCost;
 
             document.getElementById('opsSection').style.display = 'block';
             document.getElementById('opsBody').innerHTML = opsHtml;
-            document.getElementById('opsSubtotal').innerText = "&#x20b9;" + opsCost.toLocaleString();
+            document.getElementById('opsSubtotal').innerText = "₹;" + opsCost.toLocaleString();
             document.getElementById('drillBody').innerHTML = drillHtml;
-            document.getElementById('drillSubtotal').innerText = "&#x20b9;" + drillCost.toLocaleString();
-            document.getElementById('invTotal').innerText = "&#x20b9;" + grandTotal.toLocaleString();
+            document.getElementById('drillSubtotal').innerText = "₹;" + drillCost.toLocaleString();
+            document.getElementById('invTotal').innerText = "₹;" + grandTotal.toLocaleString();
             document.getElementById('invLoc').innerText = loc;
             document.getElementById('invDepth').innerText = totalDepth + " ft";
             document.getElementById('invRef').innerText = currentQuoteID;
@@ -1015,7 +1015,7 @@
             msg = WA_MSG.booking_share(leadData);
             window.open(WA_MSG.link(phone, msg), '_blank');
         } else {
-            msg = `*ESTIMATE: ${leadData.id}*\n\nDepth: ${leadData.depth} ft\nTotal: &#x20b9;${leadData.total.toLocaleString()}\n\nI want to proceed.`;
+            msg = `*ESTIMATE: ${leadData.id}*\n\nDepth: ${leadData.depth} ft\nTotal: ₹;${leadData.total.toLocaleString()}\n\nI want to proceed.`;
             window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
         }
     }
