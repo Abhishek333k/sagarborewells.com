@@ -406,6 +406,7 @@
     let leadData = {};
     let currentQuoteID = null;
     let hasLoggedPrice = false;
+    let isPhoneVerified = false;
 
     // DOM reference
     const locInput = document.getElementById('locInput');
@@ -451,11 +452,6 @@
 
         // Trigger heatmap reveal
         showHeatmap(lat, lng);
-
-        // Enable generate button if name is filled
-        if (document.getElementById('custName').value) {
-            document.getElementById('generateBtn').disabled = false;
-        }
     }
 
     // ================================================================
@@ -817,7 +813,7 @@
     //  12. CALCULATION ENGINE
     // ================================================================
     async function calculateEstimate() {
-        if (document.getElementById('generateBtn').disabled) return;
+        if (!isPhoneVerified) { alert('Please verify your mobile number via OTP first.'); return; }
         const name = document.getElementById('custName').value;
         const loc = locInput.value;
         if (!name || !loc) { alert("Please fill in your name and location."); return; }
@@ -975,12 +971,12 @@
     if (auth) {
         auth.onAuthStateChanged((user) => {
             if (user) {
+                isPhoneVerified = true;
                 document.getElementById('custMobile').value = user.phoneNumber.replace('+91', '');
                 document.getElementById('custMobile').disabled = true;
                 document.getElementById('sendOtpBtn').classList.add('hidden');
                 document.getElementById('editMobileBtn').classList.remove('hidden');
                 document.getElementById('verifiedBadge').classList.remove('hidden');
-                document.getElementById('generateBtn').disabled = false;
             }
         });
     }
@@ -1056,9 +1052,22 @@
             document.getElementById('sendOtpBtn').classList.add('hidden');
             document.getElementById('editMobileBtn').classList.remove('hidden');
         }).catch(e => {
-            console.error(e);
-            alert("SMS Error: " + e.message);
+            console.error("OTP Error:", e);
+            
+            // Check if it's a strict browser blocking the reCAPTCHA
+            if (e.message.includes("invalid-app-credential") || e.message.includes("reCAPTCHA")) {
+                alert("Security Check Failed: If you are using Edge, Safari, or Brave, please disable 'Strict Track Prevention' for this site so we can verify you are human.");
+            } else {
+                alert("SMS Error: " + e.message);
+            }
+
+            // Reset the UI and clear the broken reCAPTCHA
             document.getElementById('custMobile').disabled = false;
+            if (window.recaptchaVerifier) {
+                window.recaptchaVerifier.clear();
+                window.recaptchaVerifier = null;
+                document.getElementById('recaptcha-container').innerHTML = ''; // Clear the DOM node
+            }
         });
     }
 
@@ -1074,9 +1083,9 @@
 
     function verifyOTP() {
         window.confirmationResult.confirm(document.getElementById('otpInput').value).then(() => {
+            isPhoneVerified = true;
             document.getElementById('otpSection').classList.add('hidden');
             document.getElementById('verifiedBadge').classList.remove('hidden');
-            document.getElementById('generateBtn').disabled = false;
         }).catch(() => alert("Invalid OTP"));
     }
 
