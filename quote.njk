@@ -1,25 +1,12 @@
-<!DOCTYPE html>
-<html lang="en"> 
-<head> 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Get Quote | Sagar Borewells</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-    <script src="assets/js/config.js"></script>
-    <script src="assets/js/layout.js"></script>
-    <script src="assets/js/quote_constants.js"></script> 
-    <script src="assets/js/pdf_template.js"></script>
-    <script src="assets/js/notifications.js"></script>
-    <script src="assets/js/whatsapp_templates.js"></script>
+---
+layout: base.njk
+title: Get Quote | Sagar Borewells
+---
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="assets/js/quote_constants.js"></script> 
+<script src="assets/js/pdf_template.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/whatsapp_templates.js"></script>
 
     <style>
         /* BASE STYLES */
@@ -78,11 +65,6 @@
             text-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
     </style>
-</head>
-<body class="flex flex-col min-h-screen">
-
-    <div id="navbar-mount"></div>
-
     <main class="flex-grow">
         
         <div id="step-1" class="container mx-auto px-4 py-8 fade-in-up">
@@ -238,9 +220,6 @@
         </div>
 
     </main>
-
-    <div id="footer-mount"></div>
-
     <div id="miniMapModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
         <div class="bg-white p-4 rounded-xl w-full max-w-lg shadow-2xl relative">
             <h3 class="font-bold text-slate-800 mb-2 text-center">Pinpoint Location</h3>
@@ -672,10 +651,8 @@
         function detectGPS() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{calculateDist(p.coords.latitude,p.coords.longitude); new google.maps.Geocoder().geocode({location:{lat:p.coords.latitude,lng:p.coords.longitude}},(r,s)=>{if(s==='OK')document.getElementById('locInput').value=r[0].formatted_address;});}); }
 
         const s = document.createElement('script'); 
-        s.src=`https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places&callback=initMapTools`; 
+        s.src=`https://maps.googleapis.com/maps/api/js?key=${CONTACT_INFO.google_maps_key}&libraries=places,geometry&callback=initMapTools`; 
         s.async=true; 
         s.defer=true; 
         document.body.appendChild(s);
     </script>
-</body>
-</html>
