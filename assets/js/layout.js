@@ -132,67 +132,60 @@ document.addEventListener("DOMContentLoaded", function() {
         const waLink = whatsapp_api ? `https://wa.me/${whatsapp_api}` : "#";
 
         footerMount.innerHTML = `
-        <footer class="bg-[#0f172a] pt-12 pb-6 border-t border-slate-800 text-slate-400 font-sans mt-auto">
-            <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <footer class="bg-[#0f172a] pt-12 pb-8 border-t border-slate-800 text-slate-400 font-sans mt-auto">
+            <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-12 gap-8 mb-10">
                 
-                <div class="col-span-1">
+                <div class="col-span-1 md:col-span-4">
                     <a href="index" class="text-xl font-extrabold text-white flex items-center gap-2 mb-3">
                         SAGAR <span class="text-blue-500">BOREWELLS</span>
                     </a>
-                    <p class="text-[11px] leading-relaxed mb-4 opacity-80">
-                        Advanced geological sensor drilling. Delivering precision water solutions since 2010.
+                    <p class="text-xs leading-relaxed mb-6 max-w-sm">
+                        Advanced geological sensor drilling and precision water solutions. Andhra Pradesh's trusted name since 2010.
                     </p>
-                    <div class="flex gap-3">
-                        <a href="${waLink}" target="_blank" class="w-7 h-7 rounded bg-slate-800 flex items-center justify-center hover:bg-green-600 hover:text-white transition text-sm"><i class="ri-whatsapp-line"></i></a>
-                        <a href="${igLink}" target="_blank" class="w-7 h-7 rounded bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition text-sm"><i class="ri-instagram-line"></i></a>
-                        <a href="${ytLink}" target="_blank" class="w-7 h-7 rounded bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition text-sm"><i class="ri-youtube-fill"></i></a>
+                    <div class="flex gap-4">
+                        <a href="${waLink}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i class="ri-whatsapp-line"></i></a>
+                        <a href="${igLink}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-pink-600 hover:text-white transition"><i class="ri-instagram-line"></i></a>
+                        <a href="${ytLink}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i class="ri-youtube-fill"></i></a>
                     </div>
                 </div>
 
-                <div class="col-span-1 md:col-span-1">
-                    <h4 class="text-white font-bold uppercase text-[10px] tracking-widest mb-4">Quick Access</h4>
-                    <ul class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-                        <li><a href="index" class="hover:text-blue-400 transition">Home</a></li>
-                        <li><a href="quote" class="hover:text-blue-400 transition">Estimate</a></li>
-                        <li><a href="dashboard" class="hover:text-blue-400 transition">Account</a></li>
-                        <li><a href="f/blog" class="hover:text-blue-400 transition">Blog</a></li>
-                        <li><a href="f/science" class="hover:text-blue-400 transition">Science</a></li>
-                        <li><a href="f/motors" class="hover:text-blue-400 transition">Motors</a></li>
-                        <li><a href="about" class="hover:text-blue-400 transition">About</a></li>
-                        <li><a href="contact" class="hover:text-blue-400 transition">Contact</a></li>
-                    </ul>
+                <div class="col-span-1 md:col-span-4">
+                    <h4 class="text-white font-bold uppercase text-[10px] tracking-widest mb-5">Quick Access</h4>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <a href="index" class="hover:text-blue-400 transition">Home</a>
+                        <a href="quote" class="hover:text-blue-400 transition">Get Estimate</a>
+                        <a href="dashboard" class="hover:text-blue-400 transition">Account Login</a>
+                        <a href="f/blog" class="hover:text-blue-400 transition">Blog</a>
+                        <a href="f/science" class="hover:text-blue-400 transition">Science Lab</a>
+                        <a href="f/motors" class="hover:text-blue-400 transition">Motor AI</a>
+                        <a href="f/finance" class="hover:text-blue-400 transition">Finance</a>
+                        <a href="about" class="hover:text-blue-400 transition">About Us</a>
+                        <a href="contact" class="hover:text-blue-400 transition">Contact</a>
+                        <a href="policy/privacy" class="hover:text-blue-400 transition text-xs opacity-70">Privacy</a>
+                    </div>
                 </div>
 
-                <div>
-                    <h4 class="text-white font-bold uppercase text-[10px] tracking-widest mb-4">Legal</h4>
-                    <ul class="space-y-1.5 text-xs">
-                        <li><a href="policy/terms" class="hover:text-blue-400 transition">Terms of Service</a></li>
-                        <li><a href="policy/privacy" class="hover:text-blue-400 transition">Privacy Policy</a></li>
-                        <li><a href="policy/refund" class="hover:text-blue-400 transition">Refund Policy</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="text-white font-bold uppercase text-[10px] tracking-widest mb-4">Contact Us</h4>
-                    <ul class="space-y-2 text-xs">
-                        <li class="flex items-start gap-2.5">
-                            <i class="ri-map-pin-line text-blue-500 mt-0.5"></i>
-                            <span class="leading-tight">${address_line1}, ${address_line2}</span>
+                <div class="col-span-1 md:col-span-4">
+                    <h4 class="text-white font-bold uppercase text-[10px] tracking-widest mb-5">Contact Support</h4>
+                    <ul class="space-y-3 text-sm">
+                        <li class="flex items-start gap-3">
+                            <i class="ri-map-pin-line text-blue-500 mt-1"></i>
+                            <span class="leading-tight text-xs">${address_line1}, ${address_line2}</span>
                         </li>
-                        <li class="flex items-center gap-2.5">
+                        <li class="flex items-center gap-3">
                             <i class="ri-phone-line text-blue-500"></i> 
                             <a href="tel:${phone_display}" class="hover:text-white">${phone_display}</a>
                         </li>
-                        <li class="flex items-center gap-2.5">
+                        <li class="flex items-center gap-3">
                             <i class="ri-mail-line text-blue-500"></i> 
-                            <a href="mailto:${email}" class="hover:text-white">${email}</a>
+                            <a href="mailto:${email}" class="hover:text-white text-xs">${email}</a>
                         </li>
                     </ul>
                 </div>
 
             </div>
-            <div class="border-t border-slate-800 pt-6 text-center text-[10px] opacity-60">
-                <p>© ${new Date().getFullYear()} Sagar Borewells. All rights reserved.</p>
+            <div class="border-t border-slate-800 pt-8 text-center text-[10px] opacity-50">
+                <p>© ${new Date().getFullYear()} Sagar Borewells. Developed with Precision by Abhishek333k.</p>
             </div>
         </footer>`;
     }
