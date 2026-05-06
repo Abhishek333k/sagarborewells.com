@@ -155,22 +155,14 @@
                 status.classList.remove('hidden');
                 status.innerText = "Scanning database...";
                 
-                // 🔎 TRIPLE CHECK: Leads vs Projects vs Admins
+                // 🔎 DOUBLE CHECK: Leads vs Projects
                 const checkLeads = db.collection('leads').where('mobile', '==', phone).get();
                 const checkProjects = db.collection('projects').where('mobile', '==', phone).get();
-                const checkAdmin = db.collection('admins').doc(phone).get(); // Direct Doc Check
 
-                Promise.all([checkLeads, checkProjects, checkAdmin])
-                .then(([leadsSnap, projectsSnap, adminSnap]) => {
+                Promise.all([checkLeads, checkProjects])
+                .then(([leadsSnap, projectsSnap]) => {
                     
-                    if (adminSnap.exists) {
-                        // 🛡️ CASE 0: ADMIN DETECTED
-                        status.innerText = "Command Access Granted.";
-                        status.className = "text-xs text-center mt-4 text-red-600 font-bold";
-                        alertAdminLogin(user.phoneNumber);
-                        setTimeout(() => window.location.href = "admin.html", 1000);
-                        
-                    } else if (!leadsSnap.empty || !projectsSnap.empty) {
+                    if (!leadsSnap.empty || !projectsSnap.empty) {
                         // ✅ CASE A: EXISTING CUSTOMER (Found in either)
                         status.innerText = "Records found! Redirecting...";
                         status.className = "text-xs text-center mt-4 text-emerald-600 font-bold";
