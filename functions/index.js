@@ -46,14 +46,14 @@ exports.notifyNewLead = functions.firestore
     .onCreate(async (snap, context) => {
         const data = snap.data();
         
-        const message = `🚨 *NEW CONFIRMED BOOKING* 🚨\n\n` +
-            `*Ref ID:* ${data.id || context.params.leadId}\n` +
-            `*Customer:* ${data.name || 'N/A'}\n` +
-            `*Mobile:* ${data.mobile || 'N/A'}\n` +
-            `*Location:* ${data.loc || 'N/A'}\n` +
-            `*Depth Req:* ${data.depth || 'N/A'} ft\n` +
-            `*Total Value:* ₹${(data.total || 0).toLocaleString()}\n\n` +
-            `[Log in to Dashboard](https://sagarborewells.com/dashboard.html)`;
+        const message = `✅ *NEW BOOKING CONFIRMED!*\n` +
+            `🆔 *Ref ID:* \`${data.id || context.params.leadId}\`\n` +
+            `👤 *Name:* ${data.name || 'N/A'}\n` +
+            `📱 *Mobile:* \`${data.mobile || 'N/A'}\`\n` +
+            `📍 *Location:* ${data.loc || 'N/A'}\n` +
+            `📏 *Depth:* ${data.depth || 'N/A'} ft\n` +
+            `💰 *Grand Total:* ₹${(data.total || 0).toLocaleString('en-IN')}\n\n` +
+            `📝 *COST BREAKDOWN:*\n${data.summary || 'N/A'}`;
 
         await sendTelegramAlert(message, context.params.leadId);
         return null;
@@ -65,21 +65,21 @@ exports.notifyNewLead = functions.firestore
 exports.notifyPriceCheck = functions.firestore
     .document("silent_leads/{leadId}")
     .onWrite(async (change, context) => {
-        // We use onWrite so it triggers on creation AND if they recalculate the quote
         if (!change.after.exists) return null; // Do nothing if document was deleted
         
         const data = change.after.data();
         const isUpdate = change.before.exists;
         
-        const header = isUpdate ? `🔄 *PRICE CHECK UPDATED*` : `👀 *NEW PRICE CHECK*`;
+        const header = isUpdate ? `🔄 *PRICE CHECK UPDATED*` : `👀 *PRICE CHECKED*`;
         
-        const message = `${header}\n\n` +
-            `*Ref ID:* ${data.id || context.params.leadId}\n` +
-            `*Customer:* ${data.name || 'N/A'}\n` +
-            `*Mobile:* ${data.mobile || 'N/A'}\n` +
-            `*Location:* ${data.loc || 'N/A'}\n` +
-            `*Depth Req:* ${data.depth || 'N/A'} ft\n` +
-            `*Total Value:* ₹${(data.total || 0).toLocaleString()}`;
+        const message = `${header}\n` +
+            `🆔 *Ref:* \`${data.id || context.params.leadId}\`\n` +
+            `👤 *Name:* ${data.name || 'N/A'}\n` +
+            `📱 *Mobile:* \`${data.mobile || 'N/A'}\`\n` +
+            `📍 *Location:* ${data.loc || 'N/A'}\n` +
+            `📏 *Depth:* ${data.depth || 'N/A'} ft\n` +
+            `💰 *Shown:* ₹${(data.total || 0).toLocaleString('en-IN')}\n` +
+            `⚠️ *Status:* ${isUpdate ? 'Recalculated Estimate' : 'Viewing Estimate (Not Booked)'}`;
 
         await sendTelegramAlert(message, context.params.leadId);
         return null;
