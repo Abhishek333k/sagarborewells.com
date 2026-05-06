@@ -1,8 +1,12 @@
-const functions = require("firebase-functions");
+const { onDocumentCreated, onDocumentWritten } = require("firebase-functions/v2/firestore");
+const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 
-// Initialize Firebase Admin privileges
+// Initialize Firebase Admin
 admin.initializeApp();
+
+// Set global options (e.g., region)
+setGlobalOptions({ region: "us-central1" });
 
 // ============================================================================
 // HELPER: SECURE TELEGRAM SENDER
@@ -13,7 +17,7 @@ async function sendTelegramAlert(message, leadId) {
 
     if (!botToken || !chatId) {
         console.error("Missing Telegram credentials. Check your .env file.");
-        return null;
+        return;
     }
 
     const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
@@ -39,48 +43,45 @@ async function sendTelegramAlert(message, leadId) {
 }
 
 // ============================================================================
-// TRIGGER 1: CONFIRMED BOOKINGS (Watches 'leads' collection)
+// TRIGGER 1: CONFIRMED BOOKINGS (v2 Syntax)
 // ============================================================================
-exports.notifyNewLead = functions.firestore
-    .document("leads/{leadId}")
-    .onCreate(async (snap, context) => {
-        const data = snap.data();
-        
-        const message = `✅ *NEW BOOKING CONFIRMED!*\n` +
-            `🆔 *Ref ID:* \`${data.id || context.params.leadId}\`\n` +
-            `👤 *Name:* ${data.name || 'N/A'}\n` +
-            `📱 *Mobile:* \`${data.mobile || 'N/A'}\`\n` +
-            `📍 *Location:* ${data.loc || 'N/A'}\n` +
-            `📏 *Depth:* ${data.depth || 'N/A'} ft\n` +
-            `💰 *Grand Total:* ₹${(data.total || 0).toLocaleString('en-IN')}\n\n` +
-            `📝 *COST BREAKDOWN:*\n${data.summary || 'N/A'}`;
+exports.notifynewlead = onDocumentCreated("leads/{leadId}", async (event) => {
+    const data = event.data.data();
+    const leadId = event.params.leadId;
+    
+    const message = `✅ *NEW BOOKING CONFIRMED!*\n` +
+        `🆔 *Ref ID:* \`${data.id || leadId}\`\n` +
+        `👤 *Name:* ${data.name || 'N/A'}\n` +
+        `📱 *Mobile:* \`${data.mobile || 'N/A'}\`\n` +
+        `📍 *Location:* ${data.loc || 'N/A'}\n` +
+        `📏 *Depth:* ${data.depth || 'N/A'} ft\n` +
+        `💰 *Grand Total:* ₹${(data.total || 0).toLocaleString('en-IN')}\n\n` +
+        `📝 *COST BREAKDOWN:*\n${data.summary || 'N/A'}`;
 
-        await sendTelegramAlert(message, context.params.leadId);
-        return null;
-    });
+    await sendTelegramAlert(message, leadId);
+});
 
 // ============================================================================
-// TRIGGER 2: PRICE CHECKS (Watches 'silent_leads' collection)
+// TRIGGER 2: PRICE CHECKS (v2 Syntax)
 // ============================================================================
-exports.notifyPriceCheck = functions.firestore
-    .document("silent_leads/{leadId}")
-    .onWrite(async (change, context) => {
-        if (!change.after.exists) return null; // Do nothing if document was deleted
-        
-        const data = change.after.data();
-        const isUpdate = change.before.exists;
-        
-        const header = isUpdate ? `🔄 *PRICE CHECK UPDATED*` : `👀 *PRICE CHECKED*`;
-        
-        const message = `${header}\n` +
-            `🆔 *Ref:* \`${data.id || context.params.leadId}\`\n` +
-            `👤 *Name:* ${data.name || 'N/A'}\n` +
-            `📱 *Mobile:* \`${data.mobile || 'N/A'}\`\n` +
-            `📍 *Location:* ${data.loc || 'N/A'}\n` +
-            `📏 *Depth:* ${data.depth || 'N/A'} ft\n` +
-            `💰 *Shown:* ₹${(data.total || 0).toLocaleString('en-IN')}\n` +
-            `⚠️ *Status:* ${isUpdate ? 'Recalculated Estimate' : 'Viewing Estimate (Not Booked)'}`;
+exports.notifypricecheck = onDocumentWritten("silent_leads/{leadId}", async (event) => {
+    // Check if document was deleted
+    if (!event.data.after.exists) return;
+    
+    const data = event.data.after.data();
+    const isUpdate = event.data.before.exists;
+    const leadId = event.params.leadId;
+    
+    const header = isUpdate ? `🔄 *PRICE CHECK UPDATED*` : `👀 *PRICE CHECKED*`;
+    
+    const message = `${header}\n` +
+        `🆔 *Ref:* \`${data.id || leadId}\`\n` +
+        `👤 *Name:* ${data.name || 'N/A'}\n` +
+        `📱 *Mobile:* \`${data.mobile || 'N/A'}\`\n` +
+        `📍 *Location:* ${data.loc || 'N/A'}\n` +
+        `📏 *Depth:* ${data.depth || 'N/A'} ft\n` +
+        `💰 *Shown:* ₹${(data.total || 0).toLocaleString('en-IN')}\n` +
+        `⚠️ *Status:* ${isUpdate ? 'Recalculated Estimate' : 'Viewing Estimate (Not Booked)'}`;
 
-        await sendTelegramAlert(message, context.params.leadId);
-        return null;
-    });
+    await sendTelegramAlert(message, leadId);
+});
