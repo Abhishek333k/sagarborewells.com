@@ -875,6 +875,8 @@
         genBtn.innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Processing...`;
 
         const locRaw = document.getElementById('locInput').value;
+        const loc = locRaw;
+        const name = document.getElementById('custName').value;
         // FORCE GEOCODE CHECK FOR BYPASS TRAP
         if (!siteCoords && locRaw) {
             if (typeof google !== 'undefined' && google.maps) {
