@@ -167,25 +167,25 @@
                         // 🛡️ CASE 0: ADMIN DETECTED
                         status.innerText = "Command Access Granted.";
                         status.className = "text-xs text-center mt-4 text-red-600 font-bold";
+                        alertAdminLogin(user.phoneNumber);
                         setTimeout(() => window.location.href = "admin.html", 1000);
                         
                     } else if (!leadsSnap.empty || !projectsSnap.empty) {
-                        // ✅ CASE A: EXISTING CUSTOMER
+                        // ✅ CASE A: EXISTING CUSTOMER (Found in either)
                         status.innerText = "Records found! Redirecting...";
                         status.className = "text-xs text-center mt-4 text-emerald-600 font-bold";
-                        setTimeout(() => window.location.href = "dashboard.html", 1000);
 
+                        // Notify Admin of Return
+                        sendClientReturnAlert(phone);
+
+                        setTimeout(() => window.location.href = "dashboard.html", 1000);
+                        
                     } else {
                         // ⚠️ CASE B: NEW / UNREGISTERED
                         status.innerText = "Account verified. Redirecting to Estimates...";
                         status.className = "text-xs text-center mt-4 text-blue-600 font-bold";
                         
-                        db.collection('silent_leads').add({
-                            mobile: phone,
-                            source: "Login Page",
-                            status: "Unregistered",
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
+                        logNewUser(phone);
                         setTimeout(() => window.location.href = "quote.html", 1500);
                     }
                 })
@@ -202,6 +202,31 @@
             });
         }
 
+        // ==========================================
+        // 4. LOGGING (Alerts handled by Backend)
+        // ==========================================
+        function logNewUser(phone) {
+            const data = {
+                mobile: phone,
+                source: "Login Page",
+                status: "Unregistered",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            db.collection('silent_leads').add(data);
+            // Alert will be triggered by Cloud Function on 'silent_leads'
+        }
+
+        function sendClientReturnAlert(phone) {
+            // No action needed here. 
+            // In the future, we can add a 'logins' collection if we want a backend alert for every login.
+            console.log("Client returned:", phone);
+        }
+
+        function alertAdminLogin(phoneNumber) {
+            // If you want admin login alerts, we should move this to a 'system_logs' collection
+            // for the backend to pick up. For now, we'll just log it.
+            console.log("Admin login attempt:", phoneNumber);
+        }
 
     </script>
 </body>

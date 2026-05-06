@@ -93,35 +93,32 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>
         </nav>`;
 
-        // Initialize menu logic immediately after injection
-        initNavbarMenu();
-    }
-
-    function initNavbarMenu() {
-        const btn = document.getElementById('mobile-menu-btn');
-        const menu = document.getElementById('mobile-menu');
-        if (btn && menu) {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                menu.classList.toggle('hidden');
-                // Toggle Icon
-                const icon = btn.querySelector('i');
-                if (menu.classList.contains('hidden')) {
-                    icon.className = 'ri-menu-line';
-                } else {
-                    icon.className = 'ri-close-line';
-                }
-            });
-
-            // Close menu when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!menu.contains(e.target) && !btn.contains(e.target)) {
-                    menu.classList.add('hidden');
-                    btn.querySelector('i').className = 'ri-menu-line';
-                }
-            });
-        }
-    }
+        // Re-attach listener because we just overwrote the HTML
+        setTimeout(() => {
+            const btn = document.getElementById('mobile-menu-btn');
+            const menu = document.getElementById('mobile-menu');
+            if(btn && menu) {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    menu.classList.toggle('hidden');
+                    // Toggle Icon
+                    const icon = btn.querySelector('i');
+                    if(menu.classList.contains('hidden')) {
+                        icon.className = 'ri-menu-line';
+                    } else {
+                        icon.className = 'ri-close-line';
+                    }
+                });
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+                        menu.classList.add('hidden');
+                        btn.querySelector('i').className = 'ri-menu-line';
+                    }
+                });
+            }
+        }, 100);
     }
 
     // --- 3. DYNAMIC FOOTER ---

@@ -15,10 +15,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script src="assets/js/config.js"></script>
-    <script src="assets/js/quote_constants.js"></script>
-    <script src="assets/js/pricing_engine.js"></script>
     <script src="assets/js/layout.js"></script>
     <script src="assets/js/pdf_template.js"></script> 
+    <script src="assets/js/quote_constants.js"></script>
     <script src="assets/js/certificate_template.js"></script>
 
     <style>
@@ -346,10 +345,30 @@
                 // 🟢 SAFE: Check if rows already exist (Saved Snapshot)
                 // This ensures the PDF matches exactly what the customer saw originally.
                 if (!data.rows) {
-                    const priceResult = calculateBorewellPrice(parseInt(data.depth));
-                    if (priceResult) {
-                        data.rows = priceResult.drillHtml;
+                    // Fallback using Central QUOTE_CONFIG
+                    let rows = "";
+                    let remaining = parseInt(data.depth); 
+                    let floor = 0; 
+                    let currentRate = QUOTE_CONFIG.PRICING_MODEL.base_rate;
+                    
+                    while(remaining > 0) {
+                        let chunk = (remaining >= 50) ? 50 : remaining;
+                        let cost = chunk * currentRate;
+                        rows += `<tr><td>${floor}-${floor+chunk}ft</td><td style="text-align:right">₹${cost.toLocaleString()}</td></tr>`;
+                        
+                        remaining -= chunk; 
+                        floor += chunk; 
+                        
+                        // Increment logic based on boundaries
+                        if (floor >= QUOTE_CONFIG.PRICING_MODEL.boundaries.phase_3_start) {
+                            currentRate += QUOTE_CONFIG.PRICING_MODEL.increments.phase_3;
+                        } else if (floor >= QUOTE_CONFIG.PRICING_MODEL.boundaries.phase_2_start) {
+                            currentRate += QUOTE_CONFIG.PRICING_MODEL.increments.phase_2;
+                        } else {
+                            currentRate += QUOTE_CONFIG.PRICING_MODEL.increments.phase_1;
+                        }
                     }
+                    data.rows = rows;
                 }
                 
                 if(typeof getInvoiceHTML === 'function') {
