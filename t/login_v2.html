@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Center | Sagar Borewells</title>
+    
+    <!-- Design Stack -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- App Config -->
+    <script src="../assets/js/config.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'], 
+                        mono: ['"JetBrains Mono"', 'monospace'] 
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #0f172a, #020617);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .geo-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+        }
+
+        .input-glow:focus {
+            box-shadow: 0 0 15px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Smooth reveal for OTP */
+        #otp-container.hidden { display: none; }
+        #otp-container { animation: slideUp 0.4s ease-out; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+        .shimmer::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 3s infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+    </style>
+</head>
+<body class="font-sans text-slate-300 geo-grid relative">
+
+    <!-- Decorative Elements -->
+    <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-6 relative z-10">
+        
+        <!-- Branding -->
+        <div class="mb-10 text-center">
+            <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold tracking-widest uppercase mb-4">
+                <i class="ri-shield-check-line"></i> Secure Data Link
+            </div>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Sagar <span class="text-blue-500">Borewells</span></h1>
+            <p class="text-slate-500 mt-2 font-medium">Borewell Command & Intelligence Portal</p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="max-w-md w-full glass-panel rounded-3xl p-8 md:p-10 relative overflow-hidden">
+            
+            <div class="relative z-10">
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold text-white">Identity Verification</h2>
+                    <p class="text-sm text-slate-400 mt-1">Enter your registered mobile to access your projects.</p>
+                </div>
+
+                <!-- Phone Input -->
+                <div class="mb-6">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Satellite Link Number</label>
+                    <div class="group flex bg-slate-900/50 border border-slate-700 rounded-2xl overflow-hidden focus-within:border-blue-500 transition-all duration-300" id="mobile-box">
+                        <span class="px-5 py-4 text-slate-400 font-bold border-r border-slate-700 bg-slate-900/80">+91</span>
+                        <input type="tel" id="loginMobile" class="w-full bg-transparent px-5 py-4 font-bold text-white outline-none placeholder:text-slate-700" placeholder="00000 00000" maxlength="10" inputmode="numeric">
+                        <button id="editMobileBtn" onclick="unlockMobile()" class="hidden px-4 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">Change?</button>
+                    </div>
+                </div>
+
+                <!-- OTP Input (Hidden by Default) -->
+                <div id="otp-container" class="hidden mb-8">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Authentication Code</label>
+                    <div class="relative">
+                        <input type="tel" id="loginOtp" class="w-full bg-blue-500/5 border border-slate-700 rounded-2xl px-5 py-4 font-mono text-2xl font-bold text-center tracking-[0.4em] text-blue-400 outline-none focus:border-blue-500 transition-all" maxlength="6" inputmode="numeric" placeholder="••••••">
+                    </div>
+                    <p class="text-[10px] text-center text-slate-500 mt-3 font-medium uppercase tracking-tighter">Code expires in 5:00 minutes</p>
+                </div>
+
+                <div id="recaptcha-container"></div>
+
+                <!-- Buttons -->
+                <button id="loginBtn" onclick="sendLoginOTP()" class="shimmer w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-extrabold rounded-2xl transition shadow-lg shadow-blue-900/20 flex items-center justify-center gap-3">
+                    Establish Link <i class="ri-wifi-line"></i>
+                </button>
+                
+                <button id="verifyBtn" onclick="verifyLoginOTP()" class="hidden w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-2xl transition shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-3">
+                    Authorize Access <i class="ri-fingerprint-line"></i>
+                </button>
+
+                <!-- Status Feedback -->
+                <div id="statusMsg" class="hidden mt-6 flex items-center justify-center gap-3 py-3 rounded-xl bg-slate-900/50 border border-slate-800">
+                    <div class="w-4 h-4 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+                    <span id="statusTxt" class="text-xs font-bold text-slate-400 uppercase tracking-wider">Synchronizing...</span>
+                </div>
+            </div>
+
+            <!-- Decorative corner accent -->
+            <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-12 -mt-12"></div>
+        </div>
+
+        <!-- Footer Info -->
+        <p class="mt-8 text-xs text-slate-600 font-medium">
+            &copy; 2026 Sagar Borewells. Built with Geological Precision.
+        </p>
+
+    </div>
+
+    <script>
+        // 🟢 1. INIT
+        let db, auth;
+        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
+            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+            db = firebase.firestore();
+            auth = firebase.auth();
+        }
+
+        // 🟢 2. SEND OTP
+        function sendLoginOTP() {
+            const phone = document.getElementById('loginMobile').value;
+            if(phone.length !== 10) return alert("Please enter a valid 10-digit mobile number.");
+            
+            const btn = document.getElementById('loginBtn');
+            btn.innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Initializing...`;
+            btn.disabled = true;
+            
+            if(!window.recaptchaVerifier) {
+                window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
+            }
+            
+            auth.signInWithPhoneNumber('+91' + phone, window.recaptchaVerifier)
+                .then(cr => {
+                    window.confirmationResult = cr;
+                    document.getElementById('otp-container').classList.remove('hidden');
+                    document.getElementById('loginBtn').classList.add('hidden');
+                    document.getElementById('verifyBtn').classList.remove('hidden');
+                    
+                    // Lockdown Animation
+                    document.getElementById('loginMobile').disabled = true;
+                    document.getElementById('mobile-box').classList.add('opacity-40');
+                    document.getElementById('editMobileBtn').classList.remove('hidden');
+
+                    setTimeout(() => document.getElementById('loginOtp').focus(), 300);
+                })
+                .catch(e => { 
+                    console.error(e); 
+                    alert("Link failed. Please check connection."); 
+                    btn.innerText = "Establish Link";
+                    btn.disabled = false;
+                });
+        }
+
+        // 🟢 3. VERIFY & REDIRECT
+        function verifyLoginOTP() {
+            const code = document.getElementById('loginOtp').value;
+            if(code.length !== 6) return alert("Enter the 6-digit authentication code.");
+
+            const btn = document.getElementById('verifyBtn');
+            const status = document.getElementById('statusMsg');
+            const statusTxt = document.getElementById('statusTxt');
+            
+            btn.innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Authorizing...`;
+            btn.disabled = true;
+
+            window.confirmationResult.confirm(code).then((result) => {
+                const user = result.user;
+                const fullPhone = user.phoneNumber; 
+                const cleanPhone = fullPhone.replace('+91', '');
+
+                status.classList.remove('hidden');
+                statusTxt.innerText = "Scanning Sub-Surface Data...";
+                
+                const leadsTask = db.collection('leads').where('mobile', 'in', [fullPhone, cleanPhone]).get();
+                const projectsTask = db.collection('projects').where('mobile', 'in', [fullPhone, cleanPhone]).get();
+
+                Promise.all([leadsTask, projectsTask])
+                .then(([leadsSnap, projectsSnap]) => {
+                    if (!leadsSnap.empty || !projectsSnap.empty) {
+                        statusTxt.innerText = "Identity Confirmed. Redirecting...";
+                        status.classList.replace('bg-slate-900/50', 'bg-emerald-500/10');
+                        status.classList.replace('border-slate-800', 'border-emerald-500/20');
+                        statusTxt.classList.replace('text-slate-400', 'text-emerald-400');
+                        
+                        setTimeout(() => window.location.href = "../dashboard.html", 800);
+                    } else {
+                        statusTxt.innerText = "New User Detected. Opening Estimator...";
+                        status.classList.replace('bg-slate-900/50', 'bg-blue-500/10');
+                        statusTxt.classList.replace('text-slate-400', 'text-blue-400');
+                        
+                        // Log for backend alert
+                        db.collection('silent_leads').add({
+                            mobile: fullPhone,
+                            source: "Premium Login Prototype",
+                            status: "Unregistered",
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        setTimeout(() => window.location.href = "../quote.html", 1000);
+                    }
+                })
+                .catch(e => {
+                    console.error(e);
+                    window.location.href = "../dashboard.html"; 
+                });
+
+            }).catch((error) => {
+                console.error(error);
+                alert("Invalid Code. Access Denied.");
+                btn.innerText = "Authorize Access";
+                btn.disabled = false;
+            });
+        }
+
+        // 🟢 4. HELPERS
+        function unlockMobile() {
+            document.getElementById('loginMobile').disabled = false;
+            document.getElementById('mobile-box').classList.remove('opacity-40');
+            document.getElementById('editMobileBtn').classList.add('hidden');
+            document.getElementById('otp-container').classList.add('hidden');
+            document.getElementById('verifyBtn').classList.add('hidden');
+            document.getElementById('loginBtn').classList.remove('hidden');
+            document.getElementById('loginBtn').innerHTML = `Establish Link <i class="ri-wifi-line"></i>`;
+            document.getElementById('loginBtn').disabled = false;
+            document.getElementById('loginMobile').focus();
+        }
+
+        // Keyboard Support
+        document.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                if(!document.getElementById('otp-container').classList.contains('hidden')) {
+                    verifyLoginOTP();
+                } else {
+                    sendLoginOTP();
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>

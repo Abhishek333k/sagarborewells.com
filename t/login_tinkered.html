@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Portal | Sagar Borewells</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/layout.js"></script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
+        .login-card { 
+            background: white; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .feature-card {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <div id="navbar-mount" style="min-height: 80px;"></div>
+
+    <main class="flex-grow flex items-center justify-center p-4 md:p-8">
+        <div class="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            
+            <!-- Left Info Panel -->
+            <div class="flex flex-col justify-center">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider mb-6 w-fit">
+                    <i class="ri-shield-user-line"></i> Secure Portal
+                </div>
+                <h1 class="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Client <span class="text-blue-600">Portal</span></h1>
+                <p class="text-slate-500 mb-10 text-lg">Manage your groundwater projects and retrieve documents with ease.</p>
+                
+                <div class="grid gap-4">
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="ri-file-list-3-line"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Track Bookings</h3>
+                            <p class="text-sm text-slate-500">See real-time status of rig deployment and drilling progress.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="ri-award-line"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Digital BWBC Certificates</h3>
+                            <p class="text-sm text-slate-500">Download official government-compliant yield reports for your property.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="ri-customer-service-2-line"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Priority Support</h3>
+                            <p class="text-sm text-slate-500">Direct line to site managers for active projects.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Login Form -->
+            <div class="login-card p-8 md:p-10">
+                <div class="mb-10">
+                    <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Login / Sign Up</h2>
+                    <p class="text-sm text-slate-500">Authentication is secured via encrypted mobile OTP.</p>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Mobile Number</label>
+                    <div class="flex bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/5 transition-all" id="mobile-box">
+                        <span class="px-5 py-4 text-slate-500 font-bold border-r border-slate-200 bg-slate-100/50">+91</span>
+                        <input type="tel" id="loginMobile" class="w-full bg-transparent px-5 py-4 font-bold text-slate-800 outline-none placeholder:text-slate-300" placeholder="98765 43210" maxlength="10" inputmode="numeric">
+                        <button id="editMobileBtn" onclick="unlockMobile()" class="hidden px-5 text-blue-600 font-bold text-xs hover:bg-blue-50">Change?</button>
+                    </div>
+                </div>
+
+                <div id="otp-container" class="hidden mb-8">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">One-Time Password</label>
+                    <input type="tel" id="loginOtp" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 font-bold text-center tracking-[0.6em] text-slate-900 text-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all" maxlength="6" inputmode="numeric" placeholder="••••••">
+                    <p class="text-[10px] text-center text-slate-400 mt-3 font-medium uppercase tracking-wider">Please enter the 6-digit code sent to your phone</p>
+                </div>
+
+                <div id="recaptcha-container" class="mb-4"></div>
+
+                <button id="loginBtn" onclick="sendLoginOTP()" class="w-full py-4.5 bg-slate-900 text-white font-bold rounded-2xl hover:bg-black transition shadow-xl shadow-slate-200 flex items-center justify-center gap-3">
+                    Get Access Code <i class="ri-arrow-right-line"></i>
+                </button>
+                
+                <button id="verifyBtn" onclick="verifyLoginOTP()" class="hidden w-full py-4.5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition shadow-xl shadow-blue-100 flex items-center justify-center gap-3">
+                    Verify & Enter <i class="ri-login-box-line"></i>
+                </button>
+                
+                <div id="statusMsg" class="hidden mt-8 p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center gap-3">
+                    <i class="ri-loader-4-line animate-spin text-blue-600"></i>
+                    <span id="statusTxt" class="text-xs font-bold text-slate-600 uppercase tracking-wider">Authenticating...</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="footer-mount"></div>
+
+    <script>
+        // INIT
+        let db, auth;
+        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
+            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+            db = firebase.firestore();
+            auth = firebase.auth();
+        }
+
+        // SEND OTP
+        function sendLoginOTP() {
+            const phone = document.getElementById('loginMobile').value;
+            if(phone.length !== 10) return alert("Enter valid 10-digit number");
+            
+            const btn = document.getElementById('loginBtn');
+            btn.innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Processing...`;
+            btn.disabled = true;
+            
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
+            
+            auth.signInWithPhoneNumber('+91' + phone, window.recaptchaVerifier)
+                .then(cr => {
+                    window.confirmationResult = cr;
+                    document.getElementById('otp-container').classList.remove('hidden');
+                    document.getElementById('loginBtn').classList.add('hidden');
+                    document.getElementById('verifyBtn').classList.remove('hidden');
+                    
+                    document.getElementById('loginMobile').disabled = true;
+                    document.getElementById('mobile-box').classList.add('opacity-50');
+                    document.getElementById('editMobileBtn').classList.remove('hidden');
+
+                    setTimeout(() => document.getElementById('loginOtp').focus(), 100);
+                })
+                .catch(e => { 
+                    console.error(e); 
+                    alert("SMS limit reached or network error."); 
+                    btn.innerText = "Get Access Code";
+                    btn.disabled = false;
+                });
+        }
+
+        // VERIFY
+        function verifyLoginOTP() {
+            const code = document.getElementById('loginOtp').value;
+            if(code.length !== 6) return alert("Enter 6-digit code");
+
+            const btn = document.getElementById('verifyBtn');
+            const status = document.getElementById('statusMsg');
+            const statusTxt = document.getElementById('statusTxt');
+            
+            btn.innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Verifying...`;
+            btn.disabled = true;
+
+            window.confirmationResult.confirm(code).then((result) => {
+                const user = result.user;
+                const fullPhone = user.phoneNumber; 
+                const cleanPhone = fullPhone.replace('+91', '');
+
+                status.classList.remove('hidden');
+                statusTxt.innerText = "Searching Database...";
+                
+                const leadsTask = db.collection('leads').where('mobile', 'in', [fullPhone, cleanPhone]).get();
+                const projectsTask = db.collection('projects').where('mobile', 'in', [fullPhone, cleanPhone]).get();
+
+                Promise.all([leadsTask, projectsTask])
+                .then(([leadsSnap, projectsSnap]) => {
+                    if (!leadsSnap.empty || !projectsSnap.empty) {
+                        statusTxt.innerText = "Access Granted! Loading...";
+                        status.classList.add('bg-emerald-50', 'border-emerald-100');
+                        statusTxt.classList.replace('text-slate-600', 'text-emerald-700');
+                        setTimeout(() => window.location.href = "../dashboard.html", 800);
+                    } else {
+                        statusTxt.innerText = "New Account Linked. Opening Engine...";
+                        setTimeout(() => window.location.href = "../quote.html", 1000);
+                    }
+                })
+                .catch(e => { window.location.href = "../dashboard.html"; });
+
+            }).catch((error) => {
+                alert("Incorrect Code.");
+                btn.innerText = "Verify & Enter";
+                btn.disabled = false;
+            });
+        }
+
+        function unlockMobile() {
+            document.getElementById('loginMobile').disabled = false;
+            document.getElementById('mobile-box').classList.remove('opacity-50');
+            document.getElementById('editMobileBtn').classList.add('hidden');
+            document.getElementById('otp-container').classList.add('hidden');
+            document.getElementById('verifyBtn').classList.add('hidden');
+            document.getElementById('loginBtn').classList.remove('hidden');
+            document.getElementById('loginBtn').innerText = "Get Access Code";
+            document.getElementById('loginBtn').disabled = false;
+            document.getElementById('loginMobile').focus();
+        }
+
+        document.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                if(!document.getElementById('otp-container').classList.contains('hidden')) verifyLoginOTP();
+                else sendLoginOTP();
+            }
+        });
+
+    </script>
+</body>
+</html>

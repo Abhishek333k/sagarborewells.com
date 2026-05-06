@@ -132,11 +132,11 @@ document.addEventListener("DOMContentLoaded", function() {
         const waLink = whatsapp_api ? `https://wa.me/${whatsapp_api}` : "#";
 
         footerMount.innerHTML = `
-        <footer class="bg-[#0f172a] pt-16 pb-8 border-t border-slate-800 text-slate-400 font-sans mt-auto">
-            <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+        <footer class="bg-[#0f172a] pt-10 pb-6 border-t border-slate-800 text-slate-400 font-sans mt-auto">
+            <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
                 
                 <div class="col-span-1 md:col-span-1">
-                    <a href="index" class="text-xl font-extrabold text-white flex items-center gap-2 mb-4">
+                    <a href="index" class="text-xl font-extrabold text-white flex items-center gap-2 mb-3">
                         SAGAR <span class="text-blue-500">BOREWELLS</span>
                     </a>
                     <p class="text-xs leading-relaxed mb-6">
@@ -150,7 +150,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 </div>
 
                 <div>
-                    <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-6">Quick Access</h4>
+                    <h4 class="text-white font-bold uppercase text-xs tracking-wider mb-4">Quick Access</h4>
                     <ul class="space-y-2 text-sm">
                         <li><a href="index" class="hover:text-blue-400 transition">Home</a></li>
                         <li><a href="quote" class="hover:text-blue-400 transition">Get Estimate</a></li>
