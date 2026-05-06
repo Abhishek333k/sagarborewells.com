@@ -117,11 +117,13 @@
         // 2. SEND OTP LOGIC
         // ==========================================
         function sendLoginOTP() {
-            const phone = document.getElementById('loginMobile').value;
+            const phoneInput = document.getElementById('loginMobile');
+            const phone = phoneInput.value;
             if(phone.length !== 10) return alert("Enter valid 10-digit number");
             
             const btn = document.getElementById('loginBtn');
             btn.innerText = "Sending...";
+            btn.disabled = true;
             
             if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
             
@@ -131,12 +133,20 @@
                     document.getElementById('otp-container').classList.remove('hidden');
                     document.getElementById('loginBtn').classList.add('hidden');
                     document.getElementById('verifyBtn').classList.remove('hidden');
+                    
+                    // Optimization: Auto-focus OTP field
+                    setTimeout(() => document.getElementById('loginOtp').focus(), 100);
                 })
-                .catch(e => { console.error(e); alert("SMS Error. Try again."); btn.innerText = "Send OTP"; });
+                .catch(e => { 
+                    console.error(e); 
+                    alert("SMS Error. Try again."); 
+                    btn.innerText = "Send OTP"; 
+                    btn.disabled = false;
+                });
         }
 
         // ==========================================
-        // 3. INTELLIGENT VERIFY (THE OMNI-CHECK)
+        // 3. INTELLIGENT REDIRECTION
         // ==========================================
         function verifyLoginOTP() {
             const code = document.getElementById('loginOtp').value;
@@ -150,75 +160,70 @@
 
             window.confirmationResult.confirm(code).then((result) => {
                 const user = result.user;
-                const phone = user.phoneNumber; 
+                const fullPhone = user.phoneNumber; // +919876543210
+                const cleanPhone = fullPhone.replace('+91', ''); // 9876543210
 
                 status.classList.remove('hidden');
-                status.innerText = "Scanning database...";
+                status.innerText = "Searching for your records...";
                 
-                // 🔎 DOUBLE CHECK: Leads vs Projects
-                const checkLeads = db.collection('leads').where('mobile', '==', phone).get();
-                const checkProjects = db.collection('projects').where('mobile', '==', phone).get();
+                // 🔎 DOUBLE CHECK: Match both '+91' and clean formats in database
+                const leadsTask = db.collection('leads').where('mobile', 'in', [fullPhone, cleanPhone]).get();
+                const projectsTask = db.collection('projects').where('mobile', 'in', [fullPhone, cleanPhone]).get();
 
-                Promise.all([checkLeads, checkProjects])
+                Promise.all([leadsTask, projectsTask])
                 .then(([leadsSnap, projectsSnap]) => {
                     
                     if (!leadsSnap.empty || !projectsSnap.empty) {
                         // ✅ CASE A: EXISTING CUSTOMER (Found in either)
-                        status.innerText = "Records found! Redirecting...";
+                        status.innerText = "Account Found! Opening Dashboard...";
                         status.className = "text-xs text-center mt-4 text-emerald-600 font-bold";
 
-                        // Notify Admin of Return
-                        sendClientReturnAlert(phone);
-
-                        setTimeout(() => window.location.href = "dashboard.html", 1000);
+                        setTimeout(() => window.location.href = "dashboard.html", 800);
                         
                     } else {
                         // ⚠️ CASE B: NEW / UNREGISTERED
-                        status.innerText = "Account verified. Redirecting to Estimates...";
+                        status.innerText = "Verified! Opening Estimation Engine...";
                         status.className = "text-xs text-center mt-4 text-blue-600 font-bold";
                         
-                        logNewUser(phone);
-                        setTimeout(() => window.location.href = "quote.html", 1500);
+                        logNewUser(fullPhone);
+                        setTimeout(() => window.location.href = "quote.html", 1000);
                     }
                 })
                 .catch(e => {
-                    console.error("DB Error", e);
+                    console.error("Database query failed", e);
                     window.location.href = "dashboard.html"; // Safe fallback
                 });
 
             }).catch((error) => {
                 console.error(error);
-                alert("Invalid OTP");
+                alert("Incorrect OTP. Please check and try again.");
                 btn.innerText = "Verify & Login";
                 btn.disabled = false;
             });
         }
 
         // ==========================================
-        // 4. LOGGING (Alerts handled by Backend)
+        // 4. LOGGING (Backend handles alerts)
         // ==========================================
         function logNewUser(phone) {
-            const data = {
+            db.collection('silent_leads').add({
                 mobile: phone,
                 source: "Login Page",
                 status: "Unregistered",
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            db.collection('silent_leads').add(data);
-            // Alert will be triggered by Cloud Function on 'silent_leads'
+            });
         }
 
-        function sendClientReturnAlert(phone) {
-            // No action needed here. 
-            // In the future, we can add a 'logins' collection if we want a backend alert for every login.
-            console.log("Client returned:", phone);
-        }
+        // ==========================================
+        // 5. UX ENHANCEMENTS (Enter-to-Submit)
+        // ==========================================
+        document.getElementById('loginMobile').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') sendLoginOTP();
+        });
+        document.getElementById('loginOtp').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') verifyLoginOTP();
+        });
 
-        function alertAdminLogin(phoneNumber) {
-            // If you want admin login alerts, we should move this to a 'system_logs' collection
-            // for the backend to pick up. For now, we'll just log it.
-            console.log("Admin login attempt:", phoneNumber);
-        }
 
     </script>
 </body>
