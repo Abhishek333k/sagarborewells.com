@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Login | Sagar Borewells</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/layout.js"></script>
+    <script src="assets/js/notifications.js"></script> 
+    <script src="assets/js/whatsapp_templates.js"></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .login-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <div id="navbar-mount" style="min-height: 80px;"></div>
+
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <div class="flex flex-col justify-center">
+                <h1 class="text-3xl font-extrabold text-slate-900 mb-4">Client Portal</h1>
+                <p class="text-slate-500 mb-8">Access your project history and documents securely.</p>
+                
+                <div class="space-y-6">
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="ri-file-list-3-line"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Track Bookings</h3>
+                            <p class="text-sm text-slate-500">See real-time status of rig deployment and drilling progress.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="ri-award-line"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Digital BWBC Certificates</h3>
+                            <p class="text-sm text-slate-500">Download official government-compliant yield reports for your property.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="ri-customer-service-2-line"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Priority Support</h3>
+                            <p class="text-sm text-slate-500">Direct line to site managers for active projects.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="login-card p-8 border border-slate-100">
+                <h2 class="text-xl font-bold text-slate-800 mb-6">Login / Sign Up</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Mobile Number</label>
+                    <div class="flex bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+                        <span class="px-4 py-3 text-slate-500 font-bold border-r border-slate-200">+91</span>
+                        <input type="tel" id="loginMobile" class="w-full bg-transparent px-4 py-3 font-bold text-slate-800 outline-none" placeholder="98765 43210" maxlength="10">
+                    </div>
+                </div>
+
+                <div id="otp-container" class="hidden mb-6">
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Enter OTP</label>
+                    <input type="text" id="loginOtp" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-center tracking-[0.5em] text-slate-800 outline-none" maxlength="6">
+                </div>
+
+                <div id="recaptcha-container"></div>
+
+                <button id="loginBtn" onclick="sendLoginOTP()" class="w-full py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition shadow-lg mt-2">
+                    Send OTP <i class="ri-arrow-right-line ml-2"></i>
+                </button>
+                <button id="verifyBtn" onclick="verifyLoginOTP()" class="hidden w-full py-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-lg mt-2">
+                    Verify & Login
+                </button>
+                
+                <p id="statusMsg" class="text-xs text-center mt-4 text-slate-400 font-bold hidden">Checking records...</p>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="footer-mount"></div>
+
+    <script>
+        // ==========================================
+        // 1. SYSTEM INITIALIZATION
+        // ==========================================
+        let db, auth;
+        
+        if(typeof firebase !== 'undefined' && CONTACT_INFO.firebase_config) {
+            if(!firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+            db = firebase.firestore();
+            auth = firebase.auth();
+        } else {
+            console.error("Firebase Config Missing!");
+        }
+
+        // ==========================================
+        // 2. SEND OTP LOGIC
+        // ==========================================
+        function sendLoginOTP() {
+            const phone = document.getElementById('loginMobile').value;
+            if(phone.length !== 10) return alert("Enter valid 10-digit number");
+            
+            const btn = document.getElementById('loginBtn');
+            btn.innerText = "Sending...";
+            
+            if(!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {'size': 'invisible'});
+            
+            auth.signInWithPhoneNumber('+91'+phone, window.recaptchaVerifier)
+                .then(cr => {
+                    window.confirmationResult = cr;
+                    document.getElementById('otp-container').classList.remove('hidden');
+                    document.getElementById('loginBtn').classList.add('hidden');
+                    document.getElementById('verifyBtn').classList.remove('hidden');
+                })
+                .catch(e => { console.error(e); alert("SMS Error. Try again."); btn.innerText = "Send OTP"; });
+        }
+
+        // ==========================================
+        // 3. INTELLIGENT VERIFY (THE OMNI-CHECK)
+        // ==========================================
+        function verifyLoginOTP() {
+            const code = document.getElementById('loginOtp').value;
+            if(code.length !== 6) return alert("Enter 6-digit code");
+
+            const btn = document.getElementById('verifyBtn');
+            const status = document.getElementById('statusMsg');
+            
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+
+            window.confirmationResult.confirm(code).then((result) => {
+                const user = result.user;
+                const phone = user.phoneNumber; 
+
+                status.classList.remove('hidden');
+                status.innerText = "Scanning database...";
+                
+                // 🔎 TRIPLE CHECK: Leads vs Projects vs Admins
+                const checkLeads = db.collection('leads').where('mobile', '==', phone).get();
+                const checkProjects = db.collection('projects').where('mobile', '==', phone).get();
+                const checkAdmin = db.collection('admins').doc(phone).get(); // Direct Doc Check
+
+                Promise.all([checkLeads, checkProjects, checkAdmin])
+                .then(([leadsSnap, projectsSnap, adminSnap]) => {
+                    
+                    if (adminSnap.exists) {
+                        // 🛡️ CASE 0: ADMIN DETECTED
+                        status.innerText = "Command Access Granted.";
+                        status.className = "text-xs text-center mt-4 text-red-600 font-bold";
+                        alertAdminLogin(user.phoneNumber);
+                        setTimeout(() => window.location.href = "admin.html", 1000);
+                        
+                    } else if (!leadsSnap.empty || !projectsSnap.empty) {
+                        // ✅ CASE A: EXISTING CUSTOMER (Found in either)
+                        status.innerText = "Records found! Redirecting...";
+                        status.className = "text-xs text-center mt-4 text-emerald-600 font-bold";
+
+                        // Notify Admin of Return
+                        sendClientReturnAlert(phone);
+
+                        setTimeout(() => window.location.href = "dashboard.html", 1000);
+                        
+                    } else {
+                        // ⚠️ CASE B: NEW / UNREGISTERED
+                        status.innerText = "Account verified. Redirecting to Estimates...";
+                        status.className = "text-xs text-center mt-4 text-blue-600 font-bold";
+                        
+                        logNewUser(phone);
+                        setTimeout(() => window.location.href = "quote.html", 1500);
+                    }
+                })
+                .catch(e => {
+                    console.error("DB Error", e);
+                    window.location.href = "dashboard.html"; // Safe fallback
+                });
+
+            }).catch((error) => {
+                console.error(error);
+                alert("Invalid OTP");
+                btn.innerText = "Verify & Login";
+                btn.disabled = false;
+            });
+        }
+
+        // ==========================================
+        // 4. LOGGING & NOTIFICATIONS
+        // ==========================================
+        function logNewUser(phone) {
+            const data = {
+                mobile: phone,
+                source: "Login Page",
+                status: "Unregistered",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            db.collection('silent_leads').add(data);
+
+            // Send Alert via Firestore-stored credentials
+            sendTelegramAlert(NOTIFY_TEMPLATES.silent_lead(data));
+        }
+
+        function sendTelegramAlert(msg) {
+            db.collection('system_config').doc('telegram').get().then(doc => {
+                if(doc.exists) {
+                    const creds = doc.data();
+                    const url = `https://api.telegram.org/bot${creds.botToken}/sendMessage?chat_id=${creds.chatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
+                    fetch(url).catch(e => console.error("Telegram error:", e));
+                }
+            });
+        }
+
+        function sendClientReturnAlert(phone) {
+            db.collection('system_config').doc('telegram').get().then(doc => {
+                if(doc.exists) {
+                    const creds = doc.data();
+                    const msg = NOTIFY_TEMPLATES.client_return({ mobile: phone });
+                    const url = `https://api.telegram.org/bot${creds.botToken}/sendMessage?chat_id=${creds.chatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
+                    fetch(url).catch(e => console.error("Telegram error:", e));
+                }
+            });
+        }
+
+        function alertAdminLogin(phoneNumber) {
+            db.collection('system_config').doc('telegram').get().then(doc => {
+                if(doc.exists) {
+                    const creds = doc.data();
+                    const message = `🚨 *Admin Login Alert*\nUser ${phoneNumber} accessed the SBW Console.`;
+                    const url = `https://api.telegram.org/bot${creds.botToken}/sendMessage?chat_id=${creds.chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
+                    fetch(url).catch(e => console.error("Telegram error:", e));
+                }
+            });
+        }
+    </script>
+</body>
+</html>
