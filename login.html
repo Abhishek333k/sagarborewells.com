@@ -167,25 +167,25 @@
                         // 🛡️ CASE 0: ADMIN DETECTED
                         status.innerText = "Command Access Granted.";
                         status.className = "text-xs text-center mt-4 text-red-600 font-bold";
-                        alertAdminLogin(user.phoneNumber);
                         setTimeout(() => window.location.href = "admin.html", 1000);
                         
                     } else if (!leadsSnap.empty || !projectsSnap.empty) {
-                        // ✅ CASE A: EXISTING CUSTOMER (Found in either)
+                        // ✅ CASE A: EXISTING CUSTOMER
                         status.innerText = "Records found! Redirecting...";
                         status.className = "text-xs text-center mt-4 text-emerald-600 font-bold";
-
-                        // Notify Admin of Return
-                        sendClientReturnAlert(phone);
-
                         setTimeout(() => window.location.href = "dashboard.html", 1000);
-                        
+
                     } else {
                         // ⚠️ CASE B: NEW / UNREGISTERED
                         status.innerText = "Account verified. Redirecting to Estimates...";
                         status.className = "text-xs text-center mt-4 text-blue-600 font-bold";
                         
-                        logNewUser(phone);
+                        db.collection('silent_leads').add({
+                            mobile: phone,
+                            source: "Login Page",
+                            status: "Unregistered",
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
                         setTimeout(() => window.location.href = "quote.html", 1500);
                     }
                 })
@@ -202,53 +202,7 @@
             });
         }
 
-        // ==========================================
-        // 4. LOGGING & NOTIFICATIONS
-        // ==========================================
-        function logNewUser(phone) {
-            const data = {
-                mobile: phone,
-                source: "Login Page",
-                status: "Unregistered",
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            db.collection('silent_leads').add(data);
 
-            // Send Alert via Firestore-stored credentials
-            sendTelegramAlert(NOTIFY_TEMPLATES.silent_lead(data));
-        }
-
-        function sendTelegramAlert(msg) {
-            db.collection('system_config').doc('telegram').get().then(doc => {
-                if(doc.exists) {
-                    const creds = doc.data();
-                    const url = `https://api.telegram.org/bot${creds.botToken}/sendMessage?chat_id=${creds.chatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
-                    fetch(url).catch(e => console.error("Telegram error:", e));
-                }
-            });
-        }
-
-        function sendClientReturnAlert(phone) {
-            db.collection('system_config').doc('telegram').get().then(doc => {
-                if(doc.exists) {
-                    const creds = doc.data();
-                    const msg = NOTIFY_TEMPLATES.client_return({ mobile: phone });
-                    const url = `https://api.telegram.org/bot${creds.botToken}/sendMessage?chat_id=${creds.chatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
-                    fetch(url).catch(e => console.error("Telegram error:", e));
-                }
-            });
-        }
-
-        function alertAdminLogin(phoneNumber) {
-            db.collection('system_config').doc('telegram').get().then(doc => {
-                if(doc.exists) {
-                    const creds = doc.data();
-                    const message = `🚨 *Admin Login Alert*\nUser ${phoneNumber} accessed the SBW Console.`;
-                    const url = `https://api.telegram.org/bot${creds.botToken}/sendMessage?chat_id=${creds.chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
-                    fetch(url).catch(e => console.error("Telegram error:", e));
-                }
-            });
-        }
     </script>
 </body>
 </html>

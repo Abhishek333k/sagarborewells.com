@@ -15,6 +15,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script src="assets/js/config.js"></script>
+    <script src="assets/js/quote_constants.js"></script>
+    <script src="assets/js/pricing_engine.js"></script>
     <script src="assets/js/layout.js"></script>
     <script src="assets/js/pdf_template.js"></script> 
     <script src="assets/js/certificate_template.js"></script>
@@ -344,18 +346,10 @@
                 // 🟢 SAFE: Check if rows already exist (Saved Snapshot)
                 // This ensures the PDF matches exactly what the customer saw originally.
                 if (!data.rows) {
-                    // Fallback ONLY for old legacy data that didn't save rows
-                    let rows = "";
-                    let remaining = parseInt(data.depth); 
-                    let floor = 0; 
-                    let currentRate = 70;
-                    while(remaining > 0) {
-                        let chunk = (remaining >= 50) ? 50 : remaining;
-                        let cost = chunk * currentRate;
-                        rows += `<tr><td>${floor}-${floor+chunk}ft</td><td style="text-align:right">₹${cost.toLocaleString()}</td></tr>`;
-                        remaining -= chunk; floor += chunk; currentRate += 10;
+                    const priceResult = calculateBorewellPrice(parseInt(data.depth));
+                    if (priceResult) {
+                        data.rows = priceResult.drillHtml;
                     }
-                    data.rows = rows;
                 }
                 
                 if(typeof getInvoiceHTML === 'function') {

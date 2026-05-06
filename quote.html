@@ -23,6 +23,7 @@
     <script src="assets/js/config.js"></script>
     <script src="assets/js/layout.js"></script>
     <script src="assets/js/quote_constants.js"></script>
+    <script src="assets/js/pricing_engine.js"></script>
     <script src="assets/js/pdf_template.js"></script>
     <script src="assets/js/notifications.js"></script>
     <script src="assets/js/whatsapp_templates.js"></script>
@@ -909,31 +910,10 @@
             if (!currentQuoteID) currentQuoteID = await getUniqueQuoteID();
             const totalDepth = parseInt(slider.value);
 
-            let drillHtml = "", drillCost = 0, currentDepth = 0, currentRate = PRICING_MODEL.base_rate;
-            const jumps = PRICING_MODEL.increments, bounds = PRICING_MODEL.boundaries;
-            let breakdownText = "";
+            const priceResult = calculateBorewellPrice(totalDepth);
+            if (!priceResult) return alert("Pricing engine failed.");
 
-            const firstChunk = Math.min(totalDepth, 100);
-            if (firstChunk > 0) {
-                const cost = firstChunk * currentRate;
-                drillCost += cost;
-                drillHtml += `<tr><td>0 - ${firstChunk} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                breakdownText += `&#x2022; 0-${firstChunk}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
-                currentDepth += firstChunk;
-            }
-            while (currentDepth < totalDepth) {
-                let increment = jumps.phase_1;
-                if (currentDepth >= bounds.phase_3_start) increment = jumps.phase_3;
-                else if (currentDepth >= bounds.phase_2_start) increment = jumps.phase_2;
-                currentRate += increment;
-                let nextChunk = Math.min(50, totalDepth - currentDepth);
-                let cost = nextChunk * currentRate;
-                drillCost += cost;
-                const endDepth = currentDepth + nextChunk;
-                drillHtml += `<tr><td>${currentDepth + 1} - ${endDepth} ft</td><td class="text-center">₹${currentRate}</td><td class="text-right">₹${cost.toLocaleString()}</td></tr>`;
-                breakdownText += `&#x2022; ${currentDepth + 1}-${endDepth}ft: ₹${cost.toLocaleString()} (@${currentRate}/ft)\n`;
-                currentDepth += nextChunk;
-            }
+            let { drillHtml, drillCost, breakdownText } = priceResult;
 
             let opsHtml = "", opsCost = 0;
             if (transportDist > TRANSPORT_THRESHOLD_KM) {
