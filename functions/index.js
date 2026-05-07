@@ -66,6 +66,17 @@ exports.notifynewlead = onDocumentCreated("leads/{leadId}", async (event) => {
 // TRIGGER 2: PRICE CHECKS (v2 Syntax)
 // ============================================================================
 exports.notifypricecheck = onDocumentWritten("silent_leads/{leadId}", async (event) => {
+    // 🔴 ADMIN FILTER: If only status/notes changed, skip alert
+    const beforeData = event.data.before.exists ? event.data.before.data() : null;
+    const afterData = event.data.after.exists ? event.data.after.data() : null;
+
+    if (beforeData && afterData) {
+        if (beforeData.adminStatus !== afterData.adminStatus || beforeData.adminNotes !== afterData.adminNotes) {
+            console.log("Admin update detected. Skipping Telegram alert.");
+            return null;
+        }
+    }
+
     // Check if document was deleted
     if (!event.data.after.exists) return;
 
