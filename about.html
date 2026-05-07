@@ -13,34 +13,34 @@
         .scroller-track {
             display: flex;
             width: max-content;
-            /* Adjusted gap since wrappers have built-in padding now */
-            gap: 2rem; 
+            gap: 0; /* Margin-based spacing for perfect -50% math */
             animation: scroll-left 45s linear infinite;
-            padding: 2rem 0; /* Vertical breathing room for the scale effect */
+            padding: 2rem 0;
         }
         .scroller-track:hover {
             animation-play-state: paused;
         }
         @keyframes scroll-left {
-            to { transform: translateX(calc(-50% - 1rem)); }
+            to { transform: translateX(-50%); }
         }
         
-    /* The Netflix Container Pattern */
-    .logo-card {
-        position: relative; /* CRITICAL FIX: Allows z-index to work */
-        z-index: 1; /* Base stacking order */
-        flex-shrink: 0;
-        width: 140px; 
-        height: 80px; 
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-        border-radius: 12px;
-        transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        filter: grayscale(100%) opacity(30%);
-        transform-origin: center center;
-    }
+        /* The Netflix Container Pattern */
+        .logo-card {
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+            width: 140px; 
+            height: 80px; 
+            margin-right: 2rem; /* Consistent spacing */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            border-radius: 12px;
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            filter: grayscale(100%) opacity(30%);
+            transform-origin: center center;
+        }
     
     /* The Auto-Magnify State */
     .logo-card.is-center {
