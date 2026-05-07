@@ -122,6 +122,14 @@
                 .catch(e => console.log("Stats Offline")); // Silent fail for cleaner UX
         });
     </script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        // Initialize Firebase using the keys already stored in config.js
+        if (typeof firebase !== 'undefined' && !firebase.apps.length && typeof CONTACT_INFO !== 'undefined') {
+            firebase.initializeApp(CONTACT_INFO.firebase_config);
+        }
+    </script>
     <script src="/assets/js/campaigns.js"></script>
 </body>
 </html>
