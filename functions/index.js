@@ -161,3 +161,41 @@ exports.getPumpAdvice = onCall({
         throw new HttpsError("internal", error.message || "An unexpected error occurred.");
     }
 }); 
+
+// 🤖 Nvidia NIM SEO CORS Proxy
+exports.generateNvidiaSEO = onCall({ cors: true }, async (request) => {
+    // 1. Security check: Ensure the user is authenticated
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'You must be logged in to use the AI engine.');
+    }
+
+    try {
+        // 2. Fetch the Nvidia Key securely from Firestore
+        const db = admin.firestore();
+        const aiDoc = await db.collection('system_config').doc('ai').get();
+        if (!aiDoc.exists || !aiDoc.data().nvidia_nim_key) {
+            throw new Error("Nvidia API key missing in database.");
+        }
+        const apiKey = aiDoc.data().nvidia_nim_key;
+
+        // 3. Make the Server-to-Server request to Nvidia (Bypasses CORS)
+        const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request.data.payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Nvidia API Error: ${response.statusText}`);
+        }
+        
+        return await response.json();
+
+    } catch (error) {
+        console.error("Cloud Function AI Error:", error);
+        throw new HttpsError('internal', error.message);
+    }
+});
