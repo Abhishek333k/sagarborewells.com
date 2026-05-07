@@ -1,57 +1,79 @@
+console.log("🟢 [CAMPAIGN ENGINE] Script loaded into browser.");
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Only run if Firebase is initialized
-    if (typeof firebase === 'undefined' || !firebase.apps.length) return;
-    initCampaignQueue();
+    console.log("🟢 [CAMPAIGN ENGINE] DOM Content Loaded. Checking for Firebase...");
+    
+    // Check if Firebase exists at all
+    if (typeof firebase === 'undefined') {
+        console.error("🔴 [CAMPAIGN ENGINE FATAL] Firebase SDK is NOT loaded in index.html! Ensure firebase-app and firebase-firestore are linked.");
+        return;
+    }
+
+    // Check if it's initialized
+    if (!firebase.apps.length) {
+        console.warn("🟡 [CAMPAIGN ENGINE] Firebase is loaded but not initialized yet. Waiting 1 second for config.js to catch up...");
+        setTimeout(initCampaignQueue, 1000);
+    } else {
+        console.log("🟢 [CAMPAIGN ENGINE] Firebase is ready. Booting Queue...");
+        initCampaignQueue();
+    }
 });
 
 async function initCampaignQueue() {
     try {
         const db = firebase.firestore();
         const now = new Date();
+        console.log(`🟢 [CAMPAIGN ENGINE] Fetching active campaigns. Current Client Time: ${now.toISOString()}`);
 
-        // 1. Fetch only 'active' campaigns
-        const snapshot = await db.collection('campaigns')
-            .where('status', '==', 'active')
-            .get();
+        const snapshot = await db.collection('campaigns').where('status', '==', 'active').get();
 
-        if (snapshot.empty) return;
+        if (snapshot.empty) {
+            console.warn("🟡 [CAMPAIGN ENGINE] Database reached, but ZERO active campaigns found.");
+            return;
+        }
 
+        console.log(`🟢 [CAMPAIGN ENGINE] Found ${snapshot.size} active campaigns in database. Validating timestamps...`);
         let validCampaigns = [];
 
-        // 2. Client-Side Timestamp Validation
         snapshot.forEach(doc => {
             const data = doc.data();
             const start = data.startTime.toDate();
             const end = data.endTime.toDate();
+            
+            console.log(`   👉 Checking "${data.title}": Start[${start.toLocaleString()}] End[${end.toLocaleString()}]`);
 
-            // Only queue it if we are currently inside the time window
             if (now >= start && now <= end) {
-                // Session Memory: Check if the user already closed this specific popup today
                 const sessionKey = `closed_campaign_${doc.id}`;
                 if (!sessionStorage.getItem(sessionKey)) {
+                    console.log(`   ✅ "${data.title}" is VALID and ready for display.`);
                     validCampaigns.push({ id: doc.id, ...data });
+                } else {
+                    console.warn(`   ⏭️ "${data.title}" skipped. User already closed it this session.`);
                 }
+            } else {
+                console.error(`   ❌ "${data.title}" failed time validation. It is either expired or scheduled for the future.`);
             }
         });
 
-        // 3. Start the Sequential Queue
         if (validCampaigns.length > 0) {
-            // Sort by creation date so the newest ones show first
             validCampaigns.sort((a, b) => b.createdAt - a.createdAt);
+            console.log(`🟢 [CAMPAIGN ENGINE] Queue built. ${validCampaigns.length} popups ready to play.`);
             playCampaignQueue(validCampaigns);
+        } else {
+            console.warn("🟡 [CAMPAIGN ENGINE] All campaigns were filtered out (either expired or already viewed).");
         }
 
     } catch (error) {
-        console.error("Campaign Engine Error:", error);
+        console.error("🔴 [CAMPAIGN ENGINE CRASH]:", error);
     }
 }
 
 function playCampaignQueue(campaigns) {
     if (campaigns.length === 0) return;
-
-    const currentCampaign = campaigns.shift(); // Take the first one off the list
+    const currentCampaign = campaigns.shift(); 
     
-    // Inject the HTML Modal
+    console.log(`🟢 [CAMPAIGN ENGINE] Playing popup: "${currentCampaign.title}"...`);
+    
     const modalHTML = `
         <div id="promo-modal" class="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm opacity-0 transition-opacity duration-500">
             <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden max-w-2xl w-full transform scale-95 transition-transform duration-500 delay-100">
@@ -67,7 +89,6 @@ function playCampaignQueue(campaigns) {
     const modal = document.getElementById('promo-modal');
     const closeBtn = document.getElementById('close-promo');
 
-    // Trigger Entrance Animation after a slight delay (so it doesn't jump scare the user on load)
     setTimeout(() => {
         if (!modal) return;
         modal.classList.remove('opacity-0');
@@ -75,20 +96,13 @@ function playCampaignQueue(campaigns) {
         if (content) content.classList.remove('scale-95');
     }, 1500);
 
-    // Close Button Logic
     closeBtn.addEventListener('click', () => {
-        // 1. Remember they closed it
         sessionStorage.setItem(`closed_campaign_${currentCampaign.id}`, "true");
-        
-        // 2. Trigger Exit Animation
         modal.classList.add('opacity-0');
         const content = modal.querySelector('div');
         if (content) content.classList.add('scale-95');
-        
-        // 3. Wait for animation to finish, delete DOM, and play the next one
         setTimeout(() => {
             modal.remove();
-            // Recursive call to play the next campaign in the queue
             playCampaignQueue(campaigns); 
         }, 500);
     });
