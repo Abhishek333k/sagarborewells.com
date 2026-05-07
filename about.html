@@ -5,6 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <link rel="stylesheet" href="/assets/css/style.css">
+    <style>
+        .scroller-mask {
+            mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+        }
+        .scroller-track {
+            display: flex;
+            width: max-content;
+            animation: scroll-left 40s linear infinite;
+        }
+        .scroller-track:hover {
+            animation-play-state: paused;
+        }
+        @keyframes scroll-left {
+            to { transform: translateX(calc(-50% - 1.5rem)); }
+        }
+        .client-logo {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: grayscale(100%) opacity(40%);
+        }
+        .client-logo:hover, .client-logo.is-center {
+            filter: grayscale(0%) opacity(100%);
+            transform: scale(1.6); /* Massive 60% scale up for high impact */
+            z-index: 10;
+        }
+    </style>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
     
@@ -61,30 +87,85 @@
         </div>
     </div>
 
-    <div class="bg-white py-16 border-y border-slate-200">
-        <div class="container mx-auto px-4">
-            <h2 class="text-center text-2xl font-bold text-slate-900 mb-12">Trusted By Top Enterprises & Institutions</h2>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-6 opacity-70 grayscale hover:grayscale-0 transition-all duration-500 max-w-5xl mx-auto">
+    <div class="bg-white py-20 border-y border-slate-200 overflow-hidden">
+        <div class="container mx-auto px-4 mb-12">
+            <h2 class="text-center text-2xl font-bold text-slate-900">Trusted By Top Enterprises & Institutions</h2>
+        </div>
+        
+        <div class="scroller-mask w-full max-w-6xl mx-auto overflow-hidden">
+            <div class="scroller-track gap-20 md:gap-32 items-center px-6">
                 
-                <div class="flex items-center justify-center p-6 border border-slate-100 rounded-xl bg-slate-50 font-bold text-slate-500 text-center hover:shadow-md transition-shadow">Airport Authority of India</div>
-                <div class="flex items-center justify-center p-6 border border-slate-100 rounded-xl bg-slate-50 font-bold text-slate-500 text-center hover:shadow-md transition-shadow">Rail Vikas Nigam Limited</div>
-                <div class="flex items-center justify-center p-6 border border-slate-100 rounded-xl bg-slate-50 font-bold text-slate-500 text-center hover:shadow-md transition-shadow">Municipal Corporations</div>
-                
-                <div class="flex items-center justify-center p-6 border border-slate-100 rounded-xl bg-slate-50 font-bold text-slate-500 text-center hover:shadow-md transition-shadow">ITC Limited</div>
-                <div class="flex items-center justify-center p-6 border border-slate-100 rounded-xl bg-slate-50 font-bold text-slate-500 text-center hover:shadow-md transition-shadow">GR Infra Limited</div>
-                <div class="flex flex-col items-center justify-center p-6 border border-slate-100 rounded-xl bg-slate-50 font-bold text-slate-500 text-center hover:shadow-md transition-shadow">
-                    <span>Bangur RMC</span>
-                    <span class="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-medium">(Shree Cement)</span>
-                </div>
-                
-                <div class="flex items-center justify-center p-6 border border-slate-100 rounded-xl bg-slate-50 font-bold text-slate-500 text-center hover:shadow-md transition-shadow">SRM University</div>
-                <div class="flex items-center justify-center p-6 border border-slate-100 rounded-xl bg-slate-50 font-bold text-slate-500 text-center hover:shadow-md transition-shadow">KL University</div>
-                <div class="flex items-center justify-center p-6 border border-slate-100 rounded-xl bg-slate-50 font-bold text-slate-500 text-center hover:shadow-md transition-shadow">Acharya Nagarjuna University</div>
+                <img src="/assets/img/client/1.webp" alt="Client 1" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/2.webp" alt="Client 2" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/3.webp" alt="Client 3" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/4.webp" alt="Client 4" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/5.webp" alt="Client 5" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/6.webp" alt="Client 6" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/7.webp" alt="Client 7" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/8.webp" alt="Client 8" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/9.webp" alt="Client 9" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/10.webp" alt="Client 10" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/11.webp" alt="Client 11" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/12.webp" alt="Client 12" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/13.webp" alt="Client 13" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/14.webp" alt="Client 14" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/15.webp" alt="Client 15" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/16.webp" alt="Client 16" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/17.webp" alt="Client 17" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/18.webp" alt="Client 18" class="client-logo h-16 md:h-20 object-contain">
+
+                <img src="/assets/img/client/1.webp" alt="Client 1" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/2.webp" alt="Client 2" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/3.webp" alt="Client 3" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/4.webp" alt="Client 4" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/5.webp" alt="Client 5" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/6.webp" alt="Client 6" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/7.webp" alt="Client 7" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/8.webp" alt="Client 8" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/9.webp" alt="Client 9" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/10.webp" alt="Client 10" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/11.webp" alt="Client 11" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/12.webp" alt="Client 12" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/13.webp" alt="Client 13" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/14.webp" alt="Client 14" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/15.webp" alt="Client 15" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/16.webp" alt="Client 16" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/17.webp" alt="Client 17" class="client-logo h-16 md:h-20 object-contain">
+                <img src="/assets/img/client/18.webp" alt="Client 18" class="client-logo h-16 md:h-20 object-contain">
                 
             </div>
         </div>
     </div>
 
     <div id="footer-mount"></div>
+
+    <script>
+        function runAutoMagnifier() {
+            const logos = document.querySelectorAll('.client-logo');
+            const screenCenter = window.innerWidth / 2;
+            // The "hot zone" - how close to the center a logo needs to be to magnify
+            const activationZone = window.innerWidth < 768 ? 100 : 180; 
+
+            logos.forEach(logo => {
+                const rect = logo.getBoundingClientRect();
+                // Calculate the exact mathematical center point of the image
+                const logoCenter = rect.left + (rect.width / 2);
+                // Calculate how far that point is from the center of the screen
+                const distance = Math.abs(screenCenter - logoCenter);
+
+                if (distance < activationZone) {
+                    logo.classList.add('is-center');
+                } else {
+                    logo.classList.remove('is-center');
+                }
+            });
+
+            // Run this check smoothly on every animation frame
+            requestAnimationFrame(runAutoMagnifier);
+        }
+        
+        // Start the engine once the DOM is loaded
+        document.addEventListener('DOMContentLoaded', runAutoMagnifier);
+    </script>
 </body>
 </html>
