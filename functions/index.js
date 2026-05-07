@@ -1,4 +1,5 @@
 const { onDocumentCreated, onDocumentWritten } = require("firebase-functions/v2/firestore");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 
@@ -48,7 +49,7 @@ async function sendTelegramAlert(message, leadId) {
 exports.notifynewlead = onDocumentCreated("leads/{leadId}", async (event) => {
     const data = event.data.data();
     const leadId = event.params.leadId;
-    
+
     const message = `✅ *NEW BOOKING CONFIRMED!*\n` +
         `🆔 *Ref ID:* \`${data.id || leadId}\`\n` +
         `👤 *Name:* ${data.name || 'N/A'}\n` +
@@ -67,13 +68,13 @@ exports.notifynewlead = onDocumentCreated("leads/{leadId}", async (event) => {
 exports.notifypricecheck = onDocumentWritten("silent_leads/{leadId}", async (event) => {
     // Check if document was deleted
     if (!event.data.after.exists) return;
-    
+
     const data = event.data.after.data();
     const isUpdate = event.data.before.exists;
     const leadId = event.params.leadId;
-    
+
     const header = isUpdate ? `🔄 *PRICE CHECK UPDATED*` : `👀 *PRICE CHECKED*`;
-    
+
     const message = `${header}\n` +
         `🆔 *Ref:* \`${data.id || leadId}\`\n` +
         `👤 *Name:* ${data.name || 'N/A'}\n` +
@@ -85,3 +86,67 @@ exports.notifypricecheck = onDocumentWritten("silent_leads/{leadId}", async (eve
 
     await sendTelegramAlert(message, leadId);
 });
+
+
+// 🤖 Nvidia NIM CORS Proxy
+exports.getPumpAdvice = onCall({
+    timeoutSeconds: 180,
+    memory: "512MiB",
+    cors: true
+}, async (request) => {
+    const prompt = request.data.prompt;
+    const nvidiaKey = process.env.NVIDIA_API_KEY;
+
+    if (!nvidiaKey) {
+        console.error("NVIDIA_API_KEY is missing in environment variables.");
+        throw new HttpsError("internal", "Nvidia API Key is missing.");
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 160000); // 160s internal timeout
+
+    try {
+        console.log("Calling Nvidia NIM API...");
+        const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${nvidiaKey}`,
+                'Content-Type': 'application/json',
+            },
+            signal: controller.signal,
+            body: JSON.stringify({
+                model: "meta/llama-3.1-70b-instruct",
+                messages: [{ "role": "user", "content": prompt }],
+                temperature: 0.7,
+                max_tokens: 1024
+            })
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Nvidia API Rejected Request. Status: ${response.status}`, errorText);
+            throw new HttpsError("unavailable", `Nvidia API Error: ${response.status}`);
+        }
+
+        const json = await response.json();
+        if (!json.choices || !json.choices[0]) {
+            console.error("Invalid Nvidia API response format:", json);
+            throw new HttpsError("internal", "Invalid response from AI engine.");
+        }
+
+        console.log("AI Response received successfully.");
+        return { result: json.choices[0].message.content };
+
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            console.error("Nvidia API call timed out after 90s.");
+            throw new HttpsError("deadline-exceeded", "The AI engine took too long to respond.");
+        }
+        console.error("Cloud Function Error:", error);
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError("internal", error.message || "An unexpected error occurred.");
+    }
+}); 

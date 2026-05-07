@@ -13,3 +13,6 @@ node_modules/
 /out/
 /.qwen/
 /.continue/
+.env
+functions/.env
+firebase-debug.log

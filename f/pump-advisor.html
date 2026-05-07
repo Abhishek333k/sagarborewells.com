@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Pump Advisor — GPS Elevation TDH Calculator | Sagar Borewells</title>
-    <meta name="description" content="Calculate Total Dynamic Head using GPS elevation, topo data, and friction loss. AI-ranked pump recommendations from SagarTraders inventory.">
+    <meta name="description"
+        content="Calculate Total Dynamic Head using GPS elevation, topo data, and friction loss. AI-ranked pump recommendations from SagarTraders inventory.">
 
     <!-- OpenGraph -->
     <meta property="og:title" content="Smart Pump Advisor — GPS Elevation TDH Calculator | Sagar Borewells">
-    <meta property="og:description" content="Calculate Total Dynamic Head using GPS elevation, topo data, and friction loss. AI-ranked pump recommendations from SagarTraders inventory.">
+    <meta property="og:description"
+        content="Calculate Total Dynamic Head using GPS elevation, topo data, and friction loss. AI-ranked pump recommendations from SagarTraders inventory.">
     <meta property="og:image" content="https://sagarborewells.com/assets/img/og-share-image.png">
     <meta property="og:url" content="https://sagarborewells.com/f/pump-advisor.html">
     <meta property="og:type" content="website">
@@ -18,28 +21,22 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Smart Pump Advisor — GPS Elevation TDH Calculator | Sagar Borewells">
-    <meta name="twitter:description" content="Calculate Total Dynamic Head using GPS elevation, topo data, and friction loss.">
+    <meta name="twitter:description"
+        content="Calculate Total Dynamic Head using GPS elevation, topo data, and friction loss.">
     <meta name="twitter:image" content="https://sagarborewells.com/assets/img/og-share-image.png">
 
     <link rel="canonical" href="https://sagarborewells.com/f/pump-advisor.html">
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] }
-                }
-            }
-        }
-    </script>
+    <!-- Tailwind CSS (Compiled) -->
+    <link rel="stylesheet" href="/assets/css/style.css">
 
     <!-- RemixIcon -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
 
     <!-- Leaflet CSS / JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -48,6 +45,7 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
 
     <!-- Config & Layout (path goes UP one level because file is in /f/) -->
     <script src="../assets/js/config.js"></script>
@@ -88,97 +86,300 @@
     </script>
 
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8f9fa; color: #1f2937; }
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #f8f9fa;
+            color: #1f2937;
+        }
 
         /* Leaflet map container */
         .map-container {
-            height: 100%; min-height: 380px; border-radius: 16px; overflow: hidden;
-            border: 1px solid #e5e7eb; position: relative; background: #f3f4f6;
+            height: 100%;
+            min-height: 380px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            position: relative;
+            background: #f3f4f6;
         }
-        .map-container .leaflet-container { height: 100% !important; width: 100% !important; z-index: 1 !important; }
-        .map-container .leaflet-control-zoom, .map-container .leaflet-control-layers,
-        .map-container .leaflet-control-attribution { z-index: 10 !important; }
+
+        .map-container .leaflet-container {
+            height: 100% !important;
+            width: 100% !important;
+            z-index: 1 !important;
+        }
+
+        .map-container .leaflet-control-zoom,
+        .map-container .leaflet-control-layers {
+            z-index: 10 !important;
+        }
+
+        .leaflet-control-attribution {
+            display: none !important;
+        }
 
         /* Topo badges — light theme */
-        .topo-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
-        .topo-badge.active { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-        .topo-badge.inactive { background: #f3f4f6; color: #9ca3af; border: 1px solid #e5e7eb; }
-        .topo-badge.loading { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-        .topo-badge.point-a { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
-        .topo-badge.point-b { background: #f3e8ff; color: #7c3aed; border: 1px solid #c4b5fd; }
+        .topo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .topo-badge.active {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .topo-badge.inactive {
+            background: #f3f4f6;
+            color: #9ca3af;
+            border: 1px solid #e5e7eb;
+        }
+
+        .topo-badge.loading {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .topo-badge.point-a {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #93c5fd;
+        }
+
+        .topo-badge.point-b {
+            background: #f3e8ff;
+            color: #7c3aed;
+            border: 1px solid #c4b5fd;
+        }
 
         /* Pulse marker */
         @keyframes pulse-ring {
-            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+            0% {
+                transform: scale(0.8);
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+            }
+
+            100% {
+                transform: scale(0.8);
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
         }
 
         /* AI Loading Modal — Gemini-style clean white */
         .terminal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(243, 244, 246, 0.92); backdrop-filter: blur(8px);
-            z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(243, 244, 246, 0.92);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
+
         .terminal-box {
-            width: 90%; max-width: 560px; background: #ffffff; border-radius: 24px;
-            padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+            width: 90%;
+            max-width: 560px;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
         }
-        .log-line { margin-bottom: 6px; font-size: 13px; opacity: 0; animation: typeIn 0.2s forwards; color: #374151; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .log-line.highlight { color: #2563eb; font-weight: 600; }
-        .log-line.error { color: #dc2626; }
-        .log-line.info { color: #3b82f6; }
-        @keyframes typeIn { to { opacity: 1; } }
+
+        .log-line {
+            margin-bottom: 6px;
+            font-size: 13px;
+            opacity: 0;
+            animation: typeIn 0.2s forwards;
+            color: #374151;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .log-line.highlight {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .log-line.error {
+            color: #dc2626;
+        }
+
+        .log-line.info {
+            color: #3b82f6;
+        }
+
+        @keyframes typeIn {
+            to {
+                opacity: 1;
+            }
+        }
 
         /* Input styling — light theme */
         .dark-input {
-            background: #f3f4f6; border: 1px solid transparent; border-radius: 12px; color: #111827;
-            padding: 12px 16px; font-weight: 500; width: 100%; transition: all 0.2s; font-size: 0.875rem;
+            background: #f3f4f6;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            color: #111827;
+            padding: 12px 16px;
+            font-weight: 500;
+            width: 100%;
+            transition: all 0.2s;
+            font-size: 0.875rem;
         }
-        .dark-input:focus { outline: none; background: #ffffff; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-        .dark-input::placeholder { color: #9ca3af; }
+
+        .dark-input:focus {
+            outline: none;
+            background: #ffffff;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .dark-input::placeholder {
+            color: #9ca3af;
+        }
+
         .dark-select {
-            background: #f3f4f6; border: 1px solid transparent; border-radius: 12px; color: #111827;
-            padding: 12px 16px; font-weight: 500; width: 100%; cursor: pointer; appearance: none; font-size: 0.875rem;
+            background: #f3f4f6;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            color: #111827;
+            padding: 12px 16px;
+            font-weight: 500;
+            width: 100%;
+            cursor: pointer;
+            appearance: none;
+            font-size: 0.875rem;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%236b7280' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 12px center; background-size: 24px;
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 24px;
             transition: all 0.2s;
         }
-        .dark-select:focus { outline: none; background-color: #ffffff; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-        .dark-select option { background: #ffffff; color: #111827; }
+
+        .dark-select:focus {
+            outline: none;
+            background-color: #ffffff;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .dark-select option {
+            background: #ffffff;
+            color: #111827;
+        }
 
         /* HUD value display — light theme */
-        .hud-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.8rem; font-weight: 800; color: #111827; }
-        .hud-label { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+        .hud-value {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .hud-label {
+            font-size: 0.7rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+        }
 
         /* Point info cards — light theme */
-        .point-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; }
-        .point-card.a { border-left: 3px solid #3b82f6; }
-        .point-card.b { border-left: 3px solid #8b5cf6; }
+        .point-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .point-card.a {
+            border-left: 3px solid #3b82f6;
+        }
+
+        .point-card.b {
+            border-left: 3px solid #8b5cf6;
+        }
 
         /* Result card — light theme */
-        .result-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+        .result-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
 
         /* Toast — light theme */
         .pa-toast {
-            position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 12px;
-            font-size: 13px; font-weight: 600; z-index: 10001;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 360px;
-            font-family: 'Plus Jakarta Sans', sans-serif; color: white;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 10001;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-width: 360px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: white;
         }
 
         /* Product cards — light theme */
-        .product-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-        .product-card:hover { border-color: #bfdbfe; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+        .product-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 16px;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        .product-card:hover {
+            border-color: #bfdbfe;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
 
         /* Scrollbar — light theme */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f3f4f6; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
     </style>
 </head>
+
 <body class="flex flex-col min-h-screen">
 
     <!-- Navbar mount point (layout.js renders here) -->
@@ -188,16 +389,19 @@
     <div id="aiTerminal" class="terminal-overlay">
         <div class="terminal-box">
             <div class="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 flex items-center justify-center">
+                <div
+                    class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 flex items-center justify-center">
                     <i class="ri-sparkling-2-fill text-white text-sm"></i>
                 </div>
                 <span class="text-sm font-semibold text-gray-800">Analyzing your site parameters…</span>
             </div>
             <div id="terminalLogs" class="h-56 overflow-y-auto mb-4"></div>
             <div class="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div id="terminalProgress" class="h-full bg-blue-500 transition-all duration-300" style="width: 0%"></div>
+                <div id="terminalProgress" class="h-full bg-blue-500 transition-all duration-300" style="width: 0%">
+                </div>
             </div>
-            <p class="text-center text-gray-400 text-[10px] mt-4 tracking-widest uppercase">Computing Total Dynamic Head…</p>
+            <p class="text-center text-gray-400 text-[10px] mt-4 tracking-widest uppercase">Computing Total Dynamic
+                Head…</p>
         </div>
     </div>
 
@@ -206,9 +410,12 @@
 
         <!-- Header -->
         <div class="text-center mb-8">
-            <span class="bg-blue-50 text-blue-600 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider border border-blue-100">GPS Elevation-Aware TDH Engine</span>
+            <span
+                class="bg-blue-50 text-blue-600 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider border border-blue-100">GPS
+                Elevation-Aware TDH Engine</span>
             <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mt-3">Smart Pump Advisor</h1>
-            <p class="text-gray-500 mt-2 max-w-2xl mx-auto">Topo elevation + 3D slant distance + dynamic friction physics + AI-ranked live inventory from Sagar Traders.</p>
+            <p class="text-gray-500 mt-2 max-w-2xl mx-auto">Topo elevation + 3D slant distance + dynamic friction
+                physics + AI-ranked live inventory from Sagar Traders.</p>
         </div>
 
         <!-- ======== TOP ROW: PANELS A + B ======== -->
@@ -224,15 +431,19 @@
 
                     <!-- Water Source -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Water Source</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Water
+                            Source</label>
                         <div class="grid grid-cols-3 gap-2">
-                            <button onclick="setSource('borewell')" id="src-borewell" class="src-btn bg-white border border-gray-200 rounded-xl py-3 text-center text-xs font-bold text-gray-500 hover:border-blue-300 hover:text-blue-600 transition shadow-sm">
+                            <button onclick="setSource('borewell')" id="src-borewell"
+                                class="src-btn bg-white border border-gray-200 rounded-xl py-3 text-center text-xs font-bold text-gray-500 hover:border-blue-300 hover:text-blue-600 transition shadow-sm">
                                 <i class="ri-arrow-down-circle-line text-xl block mb-1"></i> Borewell
                             </button>
-                            <button onclick="setSource('openwell')" id="src-openwell" class="src-btn bg-white border border-gray-200 rounded-xl py-3 text-center text-xs font-bold text-gray-500 hover:border-emerald-300 hover:text-emerald-600 transition shadow-sm">
+                            <button onclick="setSource('openwell')" id="src-openwell"
+                                class="src-btn bg-white border border-gray-200 rounded-xl py-3 text-center text-xs font-bold text-gray-500 hover:border-emerald-300 hover:text-emerald-600 transition shadow-sm">
                                 <i class="ri-drop-line text-xl block mb-1"></i> Open Well
                             </button>
-                            <button onclick="setSource('sewage')" id="src-sewage" class="src-btn bg-white border border-gray-200 rounded-xl py-3 text-center text-xs font-bold text-gray-500 hover:border-orange-300 hover:text-orange-600 transition shadow-sm">
+                            <button onclick="setSource('sewage')" id="src-sewage"
+                                class="src-btn bg-white border border-gray-200 rounded-xl py-3 text-center text-xs font-bold text-gray-500 hover:border-orange-300 hover:text-orange-600 transition shadow-sm">
                                 <i class="ri-delete-bin-line text-xl block mb-1"></i> Sewage
                             </button>
                         </div>
@@ -240,14 +451,18 @@
 
                     <!-- Borewell Depth -->
                     <div id="grp-depth" class="hidden">
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Borewell Depth (ft)</label>
-                        <input type="number" id="inp-depth" class="dark-input" placeholder="e.g. 450" oninput="S.depth=parseInt(this.value)||0; hud();">
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Borewell
+                            Depth (ft)</label>
+                        <input type="number" id="inp-depth" class="dark-input" placeholder="e.g. 450"
+                            oninput="S.depth=parseInt(this.value)||0; hud();">
                     </div>
 
                     <!-- Borewell Delivery Height -->
                     <div id="grp-deliveryH" class="hidden">
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Delivery Pipe Height Above Ground (ft)</label>
-                        <input type="number" id="inp-deliveryH" class="dark-input" placeholder="e.g. 30" value="0" oninput="S.deliveryH=parseInt(this.value)||0; hud();">
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Delivery Pipe
+                            Height Above Ground (ft)</label>
+                        <input type="number" id="inp-deliveryH" class="dark-input" placeholder="e.g. 30" value="0"
+                            oninput="S.deliveryH=parseInt(this.value)||0; hud();">
                     </div>
 
                     <!-- Open Well Inputs -->
@@ -263,20 +478,23 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Flat Distance (ft)</label>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Flat Distance
+                                (ft)</label>
                             <input type="number" id="inp-flat" class="dark-input" oninput="hud();">
                         </div>
                     </div>
 
                     <!-- Sewage Lift -->
                     <div id="grp-sewage" class="hidden">
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Lift Height (ft)</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Lift Height
+                            (ft)</label>
                         <input type="number" id="inp-lift" class="dark-input" oninput="hud();">
                     </div>
 
                     <!-- Pipe Diameter (borewell) -->
                     <div id="grp-pipe" class="hidden">
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Delivery Pipe Diameter</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Delivery Pipe
+                            Diameter</label>
                         <select id="inp-pipe" class="dark-select" onchange="S.pipeDia=parseFloat(this.value); hud();">
                             <option value="1.5">1.5" PVC — High Friction (28 m / 100 m)</option>
                             <option value="2.0" selected>2.0" PVC — Standard (8 m / 100 m)</option>
@@ -286,12 +504,15 @@
 
                     <!-- Casing Diameter (borewell) -->
                     <div id="grp-casing" class="hidden">
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Casing Diameter</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Casing
+                            Diameter</label>
                         <div class="flex gap-3">
-                            <label class="flex-1 flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 cursor-pointer hover:border-blue-300 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <label
+                                class="flex-1 flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 cursor-pointer hover:border-blue-300 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
                                 <input type="radio" name="casing" value="4" class="accent-blue-600"> 4"
                             </label>
-                            <label class="flex-1 flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 cursor-pointer hover:border-blue-300 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <label
+                                class="flex-1 flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 cursor-pointer hover:border-blue-300 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
                                 <input type="radio" name="casing" value="6" checked class="accent-blue-600"> 6"
                             </label>
                         </div>
@@ -301,17 +522,21 @@
                     <div id="grp-hp" class="hidden grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[10px] font-bold text-gray-500 uppercase">Discharge (LPS)</label>
-                            <input type="number" id="inp-lps" class="dark-input" value="10" min="1" max="50" step="1" oninput="S.lps=parseFloat(this.value)||10; hud();">
+                            <input type="number" id="inp-lps" class="dark-input" value="10" min="1" max="50" step="1"
+                                oninput="S.lps=parseFloat(this.value)||10; hud();">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Pump Efficiency (%)</label>
-                            <input type="number" id="inp-eff" class="dark-input" value="55" min="30" max="80" step="5" oninput="S.eff=(parseFloat(this.value)||55)/100; hud();">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Pump Efficiency
+                                (%)</label>
+                            <input type="number" id="inp-eff" class="dark-input" value="55" min="30" max="80" step="5"
+                                oninput="S.eff=(parseFloat(this.value)||55)/100; hud();">
                         </div>
                     </div>
 
                     <!-- Phase -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Power Supply</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Power
+                            Supply</label>
                         <select id="inp-phase" class="dark-select" onchange="S.phase=parseInt(this.value);">
                             <option value="1">Single Phase (Home)</option>
                             <option value="3">Three Phase (Agriculture)</option>
@@ -320,9 +545,13 @@
 
                     <!-- Site Pincode (for TDS/Salinity lookup) -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Site Pincode <span class="text-gray-400 font-normal">(Optional)</span></label>
-                        <input type="text" id="inp-pincode" class="dark-input" placeholder="e.g. 522503" maxlength="6" oninput="S.pincode=this.value.replace(/\D/g,'');">
-                        <p class="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><i class="ri-information-line"></i> Used to fetch regional groundwater TDS/Salinity data</p>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Site Pincode
+                            <span class="text-gray-400 font-normal">(Optional)</span></label>
+                        <input type="text" id="inp-pincode" class="dark-input" placeholder="e.g. 522503" maxlength="6"
+                            oninput="S.pincode=this.value.replace(/\D/g,'');">
+                        <p class="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><i
+                                class="ri-information-line"></i> Used to fetch regional groundwater TDS/Salinity data
+                        </p>
                     </div>
 
                 </div>
@@ -340,7 +569,8 @@
                 </div>
 
                 <!-- Instruction Banner -->
-                <div id="topoInstruction" class="bg-blue-50 text-blue-700 text-center py-2.5 rounded-lg mb-3 font-mono text-xs font-bold tracking-wide">
+                <div id="topoInstruction"
+                    class="bg-blue-50 text-blue-700 text-center py-2.5 rounded-lg mb-3 font-mono text-xs font-bold tracking-wide">
                     Tap map to place Point A (Start) and Point B (End)
                 </div>
 
@@ -349,13 +579,16 @@
 
                 <!-- Map Controls -->
                 <div class="grid grid-cols-3 gap-2 mb-3">
-                    <button onclick="Topo.locate()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs transition flex items-center justify-center gap-1 shadow-sm">
+                    <button onclick="Topo.locate()"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs transition flex items-center justify-center gap-1 shadow-sm">
                         <i class="ri-radar-line"></i> Locate
                     </button>
-                    <button onclick="Topo.reset()" class="bg-white hover:bg-red-50 text-red-500 font-bold py-2.5 rounded-lg text-xs transition border border-gray-200 flex items-center justify-center gap-1">
+                    <button onclick="Topo.reset()"
+                        class="bg-white hover:bg-red-50 text-red-500 font-bold py-2.5 rounded-lg text-xs transition border border-gray-200 flex items-center justify-center gap-1">
                         <i class="ri-refresh-line"></i> Reset
                     </button>
-                    <button onclick="skipMap()" class="bg-white hover:bg-emerald-50 text-emerald-600 font-bold py-2.5 rounded-lg text-xs transition border border-gray-200 flex items-center justify-center gap-1">
+                    <button onclick="skipMap()"
+                        class="bg-white hover:bg-emerald-50 text-emerald-600 font-bold py-2.5 rounded-lg text-xs transition border border-gray-200 flex items-center justify-center gap-1">
                         <i class="ri-skip-forward-line"></i> Skip Map
                     </button>
                 </div>
@@ -384,7 +617,8 @@
 
                 <!-- Topo Results -->
                 <div id="topoResults" class="hidden mt-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
-                    <h5 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <h5
+                        class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                         <i class="ri-calculator-line"></i> Topo Calculation
                     </h5>
                     <div class="grid grid-cols-2 gap-y-1 text-xs">
@@ -400,7 +634,8 @@
                 </div>
 
                 <p class="text-[10px] text-gray-400 mt-auto pt-2 flex items-center gap-1">
-                    <i class="ri-information-line"></i> Elevation via Open-Meteo (free). Map: OpenStreetMap + ESRI Satellite.
+                    <i class="ri-information-line"></i> Elevation via Open-Meteo (free). Map: OpenStreetMap + ESRI
+                    Satellite.
                 </p>
             </div>
         </div>
@@ -441,10 +676,13 @@
             </p>
 
             <!-- AI Button -->
-            <button onclick="run()" id="btn-ai" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-lg py-5 rounded-full transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-blue-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-md shadow-blue-100" disabled>
+            <button onclick="run()" id="btn-ai"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-lg py-5 rounded-full transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-blue-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-md shadow-blue-100"
+                disabled>
                 <i class="ri-sparkling-2-fill mr-2"></i> GENERATE AI PUMP RECOMMENDATION
             </button>
-            <p class="text-[10px] text-gray-400 text-center mt-2">Powered by Gemini AI + live SagarTraders.in inventory</p>
+            <p class="text-[10px] text-gray-400 text-center mt-2">Powered by Llama 3.1 AI + live SagarTraders.in inventory
+            </p>
         </div>
 
         <!-- ======== PANEL D — AI RESULTS (hidden until return) ======== -->
@@ -480,6 +718,22 @@
                 <p class="text-[10px] text-gray-400 text-center mt-2" id="r-note"></p>
             </div>
 
+            <!-- Chief Engineer's Verdict Card -->
+            <div id="aiVerdictCard"
+                class="hidden bg-gradient-to-br from-gray-900 to-blue-900 rounded-2xl p-6 mb-6 text-white shadow-lg">
+                <div class="flex items-center gap-3 mb-4 border-b border-gray-700 pb-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center shadow-inner">
+                        <i class="ri-user-star-fill text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-blue-300">Chief Engineer's Verdict
+                        </h3>
+                        <p class="text-[10px] text-gray-400">Powered by Llama 3.1 70B</p>
+                    </div>
+                </div>
+                <div id="aiVerdictText" class="text-sm leading-relaxed text-gray-200 space-y-3 font-medium"></div>
+            </div>
+
             <!-- Product Grid -->
             <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             <div id="noMatch" class="hidden text-center py-12 text-gray-400">
@@ -489,7 +743,8 @@
 
             <div class="text-center mt-8 pt-6 border-t border-gray-100">
                 <p class="text-xs text-gray-400">
-                    Recommendations from <strong class="text-gray-500">SagarTraders.in</strong> live inventory + Gemini AI analysis.
+                    Recommendations from <strong class="text-gray-500">SagarTraders.in</strong> live inventory + Llama 3.1
+                    AI analysis.
                 </p>
             </div>
         </div>
@@ -501,453 +756,485 @@
 
     <!-- ==================== ENGINE ==================== -->
     <script>
-    // ================================================================
-    //  SAGAR BOREWELL — PUMP ADVISOR v6
-    //  Dark-theme unified dashboard. All assets use ../ path prefix.
-    // ================================================================
+        // ================================================================
+        //  SAGAR BOREWELL — PUMP ADVISOR v6
+        //  Dark-theme unified dashboard. All assets use ../ path prefix.
+        // ================================================================
 
-    // --- 1. FIREBASE ---
-    if (typeof firebase !== 'undefined' && typeof CONTACT_INFO !== 'undefined' && CONTACT_INFO.firebase_config) {
-        if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
-    }
-    const DB = typeof firebase !== 'undefined' ? firebase.firestore() : null;
+        // --- 1. FIREBASE ---
+        if (typeof firebase !== 'undefined' && typeof CONTACT_INFO !== 'undefined' && CONTACT_INFO.firebase_config) {
+            if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(CONTACT_INFO.firebase_config);
+        }
+        const DB = typeof firebase !== 'undefined' ? firebase.firestore() : null;
 
-    // --- 2. CONSTANTS ---
-    const SHOPIFY = "sagartraders.in";
-    const API_MS  = 15000;
-    const ELEV_MS = 10000;
-    const FRICTION = { 1.5: 28.0, 2.0: 8.0, 3.0: 1.3 }; // m loss per 100 m at ~10 LPS
-    const FALLBACK_IMG = '../assets/img/blueprint-placeholder.png';
+        // --- 2. CONSTANTS ---
+        const SHOPIFY = "sagartraders.in";
+        const API_MS = 15000;
+        const ELEV_MS = 10000;
+        const FRICTION = { 1.5: 28.0, 2.0: 8.0, 3.0: 1.3 }; // m loss per 100 m at ~10 LPS
+        const FALLBACK_IMG = '../assets/img/blueprint-placeholder.png';
 
-    // --- 3. STATE ---
-    const S = window.S = {
-        source: '', depth: 0, deliveryH: 0, pipeDia: 2.0, casing: 6,
-        phase: 1, lps: 10, eff: 0.55, pincode: '',
-        topoReady: false, pointA: null, pointB: null,
-        dist2D: 0, dist3D: 0, deltaH: 0, angleDeg: 0, frictionM: 0,
-        topoHeadM: 0, topoHeadFt: 0, totalHeadM: 0, totalHeadFt: 0, hp: 0
-    };
+        // --- 3. STATE ---
+        const S = window.S = {
+            source: '', depth: 0, deliveryH: 0, pipeDia: 2.0, casing: 6,
+            phase: 1, lps: 10, eff: 0.55, pincode: '',
+            topoReady: false, pointA: null, pointB: null,
+            dist2D: 0, dist3D: 0, deltaH: 0, angleDeg: 0, frictionM: 0,
+            topoHeadM: 0, topoHeadFt: 0, totalHeadM: 0, totalHeadFt: 0, hp: 0
+        };
 
-    // --- 4. HTML ESCAPE ---
-    const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
+        // --- 4. HTML ESCAPE ---
+        const esc = s => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
 
-    // --- 5. TOAST ---
-    function toast(msg, type='info') {
-        const old = document.getElementById('paToast'); if (old) old.remove();
-        const t = document.createElement('div');
-        t.id = 'paToast';
-        t.className = 'pa-toast';
-        t.style.background = type==='error' ? '#dc2626' : type==='success' ? '#059669' : '#2563eb';
-        t.textContent = msg;
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 4000);
-    }
-
-    // --- 6. SOURCE SELECTOR ---
-    function setSource(src) {
-        Topo.reset();
-        S.source = src;
-
-        // Highlight
-        document.querySelectorAll('.src-btn').forEach(b => { b.classList.remove('border-blue-500','text-blue-600','border-emerald-500','text-emerald-600','border-orange-500','text-orange-600','bg-blue-50','bg-emerald-50','bg-orange-50'); });
-        const btn = document.getElementById('src-' + src);
-        if (src==='borewell') { btn.classList.add('border-blue-500','text-blue-600','bg-blue-50'); }
-        if (src==='openwell') { btn.classList.add('border-emerald-500','text-emerald-600','bg-emerald-50'); }
-        if (src==='sewage')  { btn.classList.add('border-orange-500','text-orange-600','bg-orange-50'); }
-
-        // Show/hide groups
-        const show = (id, vis) => { const el = document.getElementById(id); if(el) el.classList.toggle('hidden', !vis); };
-        show('grp-depth',    src === 'borewell');
-        show('grp-deliveryH', src === 'borewell');
-        show('grp-pipe',     src === 'borewell');
-        show('grp-casing',   src === 'borewell');
-        show('grp-hp',       src === 'borewell');
-        show('grp-openwell', src === 'openwell');
-        show('grp-sewage',   src === 'sewage');
-
-        // Enable AI button if we have minimum data
-        hud();
-    }
-
-    // --- 7. HUD — live TDH update ---
-    function hud() {
-        const depth   = S.depth || 0;
-        const delH    = S.deliveryH || 0;
-        const elevFt  = S.topoReady ? S.deltaH * 3.28084 : 0;
-        const pipeDia = S.pipeDia || 2.0;
-        const lossPer = FRICTION[pipeDia] || 8.0;
-
-        let fricFt = 0;
-        if (S.topoReady) {
-            fricFt = S.frictionM * 3.28084;
-        } else if (depth > 0) {
-            // Fallback: estimate vertical pipe length in meters
-            const pipeM = (depth + delH) / 3.28084;
-            fricFt = (pipeM / 100) * lossPer * 3.28084;
+        // --- 5. TOAST ---
+        function toast(msg, type = 'info') {
+            const old = document.getElementById('paToast'); if (old) old.remove();
+            const t = document.createElement('div');
+            t.id = 'paToast';
+            t.className = 'pa-toast';
+            t.style.background = type === 'error' ? '#dc2626' : type === 'success' ? '#059669' : '#2563eb';
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
         }
 
-        const tdhFt = depth + elevFt + delH + fricFt;
-        const tdhM  = tdhFt / 3.28084;
-        const hp    = depth > 0 ? Math.ceil((S.lps * tdhM) / (75 * S.eff)) : 0;
+        // --- 6. SOURCE SELECTOR ---
+        function setSource(src) {
+            Topo.reset();
+            S.source = src;
 
-        S.totalHeadFt = tdhFt; S.totalHeadM = tdhM; S.hp = hp;
+            // Highlight
+            document.querySelectorAll('.src-btn').forEach(b => { b.classList.remove('border-blue-500', 'text-blue-600', 'border-emerald-500', 'text-emerald-600', 'border-orange-500', 'text-orange-600', 'bg-blue-50', 'bg-emerald-50', 'bg-orange-50'); });
+            const btn = document.getElementById('src-' + src);
+            if (src === 'borewell') { btn.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50'); }
+            if (src === 'openwell') { btn.classList.add('border-emerald-500', 'text-emerald-600', 'bg-emerald-50'); }
+            if (src === 'sewage') { btn.classList.add('border-orange-500', 'text-orange-600', 'bg-orange-50'); }
 
-        // HUD always runs — shows topo data even without a source selected
-        document.getElementById('hud-depth').textContent   = depth;
-        document.getElementById('hud-elev').textContent    = elevFt.toFixed(1);
-        document.getElementById('hud-friction').textContent = fricFt.toFixed(1);
-        document.getElementById('hud-tdh').textContent     = Math.round(tdhFt);
-        document.getElementById('hud-hp').textContent      = hp || '--';
+            // Show/hide groups
+            const show = (id, vis) => { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', !vis); };
+            show('grp-depth', src === 'borewell');
+            show('grp-deliveryH', src === 'borewell');
+            show('grp-pipe', src === 'borewell');
+            show('grp-casing', src === 'borewell');
+            show('grp-hp', src === 'borewell');
+            show('grp-openwell', src === 'openwell');
+            show('grp-sewage', src === 'sewage');
 
-        // Friction note
-        document.getElementById('hudFrictionNote').textContent =
-            `Friction based on ${pipeDia}" PVC (${lossPer} m / 100 m)` +
-            (S.topoReady ? ` | 3D slant: ${S.dist3D.toFixed(1)}m` : '');
-
-        // AI button: requires a source AND minimum params — topo map is decoupled
-        const ready = S.source && (
-            (S.source === 'borewell' && depth > 0) ||
-            (S.source === 'openwell' && (document.getElementById('inp-suction')?.value || document.getElementById('inp-delivery')?.value)) ||
-            (S.source === 'sewage' && document.getElementById('inp-lift')?.value)
-        );
-        document.getElementById('btn-ai').disabled = !ready;
-    }
-
-    // --- 8. TOPO ENGINE ---
-    const Topo = {
-        map: null, init: false, markers: [], line: null,
-
-        boot() {
-            if (this.init) return;
-            const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, zIndex: 1 });
-            const labels    = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 19, zIndex: 2 });
-            const hybrid    = L.layerGroup([satellite, labels]);
-
-            this.map = L.map('topoMap', { zoomControl: false, attributionControl: false, layers: [hybrid] })
-                .setView([16.44, 80.55], 13);
-            L.control.zoom({ position: 'bottomright' }).addTo(this.map);
-            L.control.layers({ "Satellite": hybrid, "Street": L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 19 }) }, {}, { position: 'topright' }).addTo(this.map);
-            this.map.on('click', e => this.click(e));
-            this.init = true;
-        },
-
-        locate() {
-            if (!navigator.geolocation) return toast('Geolocation not supported', 'error');
-            const badge = document.getElementById('topoBadge');
-            badge.className = 'topo-badge loading';
-            badge.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Acquiring...';
-            navigator.geolocation.getCurrentPosition(
-                p => { this.map.setView([p.coords.latitude, p.coords.longitude], 15); badge.className='topo-badge active'; badge.innerHTML='<i class="ri-check-line"></i> Located'; toast('Tap map to place Point A', 'info'); },
-                () => { badge.className='topo-badge inactive'; badge.innerHTML='<i class="ri-error-warning-line"></i> Denied'; toast('Location denied. Tap map manually.', 'info'); },
-                { enableHighAccuracy: true, timeout: 15000 }
-            );
-        },
-
-        reset() {
-            this.markers.forEach(m => { if (m.marker) this.map.removeLayer(m.marker); });
-            if (this.line) this.map.removeLayer(this.line);
-            this.markers = []; this.line = null;
-
-            document.getElementById('topoInstruction').textContent = 'Tap map to place Point A (Start) and Point B (End)';
-            document.getElementById('cardA').classList.add('hidden');
-            document.getElementById('cardB').classList.add('hidden');
-            document.getElementById('topoResults').classList.add('hidden');
-
-            const badge = document.getElementById('topoBadge');
-            badge.className = 'topo-badge inactive'; badge.innerHTML = '<i class="ri-map-pin-line"></i> Map Ready';
-
-            S.topoReady = false; S.pointA = null; S.pointB = null;
-            S.dist2D = 0; S.dist3D = 0; S.deltaH = 0; S.angleDeg = 0; S.frictionM = 0;
-            S.topoHeadM = 0; S.topoHeadFt = 0;
+            // Enable AI button if we have minimum data
             hud();
-        },
-
-        async click(e) {
-            if (this.markers.length >= 2) {
-                if (!confirm('Reset terrain points and start over?')) return;
-                this.reset();
-            }
-
-            const { lat, lng } = e.latlng;
-            const isA = this.markers.length === 0;
-            const color = isA ? '#3b82f6' : '#8b5cf6';
-            const icon = L.divIcon({
-                html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 15px ${color};animation:pulse-ring 2s infinite;margin:-7px 0 0 -7px;"></div>`,
-                iconSize: [0, 0], className: ''
-            });
-            const marker = L.marker([lat, lng], { icon }).addTo(this.map);
-
-            if (isA) {
-                this.markers.push({ lat, lng, marker, elev: null });
-                document.getElementById('coordA').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                document.getElementById('cardA').classList.remove('hidden');
-                document.getElementById('topoInstruction').textContent = 'Fetching elevation for Point A...';
-                const badge = document.getElementById('topoBadge');
-                badge.className = 'topo-badge loading'; badge.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Fetching...';
-
-                try {
-                    const elev = await this.elev(lat, lng);
-                    if (elev !== null) {
-                        this.markers[0].elev = elev;
-                        document.getElementById('elevA').textContent = elev.toFixed(1);
-                        document.getElementById('elevAFt').textContent = (elev * 3.28084).toFixed(1) + ' ft';
-                        document.getElementById('topoInstruction').textContent = 'Point A set. Tap to place Point B (Delivery/Tank).';
-                        badge.className = 'topo-badge point-a'; badge.innerHTML = '<i class="ri-map-pin-line"></i> Point A Placed';
-                    } else throw new Error('No elevation');
-                } catch {
-                    document.getElementById('elevA').textContent = 'N/A';
-                    document.getElementById('topoInstruction').textContent = 'Elevation unavailable. Place Point B or skip.';
-                    badge.className = 'topo-badge inactive'; badge.innerHTML = '<i class="ri-error-warning-line"></i> No Data';
-                }
-            } else {
-                this.markers.push({ lat, lng, marker, elev: null });
-                document.getElementById('coordB').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                document.getElementById('cardB').classList.remove('hidden');
-                document.getElementById('topoInstruction').textContent = 'Calculating topo data...';
-
-                this.line = L.polyline(this.markers.map(m => [m.lat, m.lng]), { color: '#3b82f6', dashArray: '6 10', weight: 2 }).addTo(this.map);
-                this.map.fitBounds(this.line.getBounds(), { padding: [40, 40] });
-
-                try {
-                    const elev = await this.elev(lat, lng);
-                    if (elev !== null) {
-                        this.markers[1].elev = elev;
-                        document.getElementById('elevB').textContent = elev.toFixed(1);
-                        document.getElementById('elevBFt').textContent = (elev * 3.28084).toFixed(1) + ' ft';
-                    }
-                    this.telemetry();
-                } catch {
-                    document.getElementById('elevB').textContent = 'N/A';
-                    toast('Elevation satellite timeout. Try again.', 'error');
-                }
-            }
-        },
-
-        async elev(lat, lng) {
-            const fetchP = fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lng}`)
-                .then(r => r.json()).then(d => d.elevation ? d.elevation[0] : null);
-            const timeoutP = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ELEV_MS));
-            return Promise.race([fetchP, timeoutP]);
-        },
-
-        // Haversine 2D
-        haversine(lat1, lon1, lat2, lon2) {
-            const R = 6378137;
-            const dLat = (lat2-lat1)*Math.PI/180;
-            const dLon = (lon2-lon1)*Math.PI/180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        },
-
-        telemetry() {
-            const a = this.markers[0], b = this.markers[1];
-            if (!a || !b || a.elev === null || b.elev === null) { toast('Missing elevation data', 'error'); return; }
-
-            const dist2D = this.haversine(a.lat, a.lng, b.lat, b.lng);
-            if (dist2D < 0.5) { toast('Points too close', 'error'); return; }
-
-            const deltaH = Math.abs(b.elev - a.elev);
-            // 3D slant via simple Pythagorean (accurate at borewell scale)
-            const dist3D = Math.hypot(dist2D, deltaH);
-            const angle  = Math.atan(deltaH / dist2D) * 180 / Math.PI;
-
-            S.pointA = { lat: a.lat, lng: a.lng, elevM: a.elev };
-            S.pointB = { lat: b.lat, lng: b.lng, elevM: b.elev };
-            S.dist2D = dist2D; S.dist3D = dist3D; S.deltaH = deltaH; S.angleDeg = angle; S.topoReady = true;
-
-            // Friction from pipe diameter
-            const lossPer = FRICTION[S.pipeDia] || 8.0;
-            S.frictionM = (dist3D / 100) * lossPer;
-
-            // topoHeadM is topo-ONLY (Δh + friction + 5m safety)
-            S.topoHeadM = deltaH + S.frictionM + 5;
-            S.topoHeadFt = S.topoHeadM * 3.28084;
-
-            // Update UI
-            document.getElementById('topoDeltaH').textContent = `${deltaH.toFixed(1)} m (${(deltaH*3.28084).toFixed(1)} ft)`;
-            document.getElementById('topoDist2D').textContent = `${dist2D.toFixed(1)} m (${(dist2D*3.28084).toFixed(1)} ft)`;
-            document.getElementById('topoDist3D').textContent = `${dist3D.toFixed(1)} m (${(dist3D*3.28084).toFixed(1)} ft)`;
-            document.getElementById('topoAngle').textContent  = `${angle.toFixed(2)}°`;
-            document.getElementById('topoResults').classList.remove('hidden');
-
-            const badge = document.getElementById('topoBadge');
-            badge.className = 'topo-badge active'; badge.innerHTML = '<i class="ri-check-line"></i> Topo Complete';
-            document.getElementById('topoInstruction').textContent = 'Topo ready — hit Generate AI Recommendation below.';
-
-            hud();
-            toast(`Topo: Δh=${deltaH.toFixed(1)}m, 3D=${dist3D.toFixed(1)}m, Friction=${S.frictionM.toFixed(1)}m`, 'info');
         }
-    };
 
-    // --- 9. SKIP MAP ---
-    function skipMap() {
-        if (!S.source) return toast('Select a water source first', 'error');
-        if (S.source === 'borewell' && S.depth <= 0) return toast('Enter borewell depth first', 'error');
-        toast('Computing with standard values (no topo)', 'info');
-        run();
-    }
+        // --- 7. HUD — live TDH update ---
+        function hud() {
+            const depth = S.depth || 0;
+            const delH = S.deliveryH || 0;
+            const elevFt = S.topoReady ? S.deltaH * 3.28084 : 0;
+            const pipeDia = S.pipeDia || 2.0;
+            const lossPer = FRICTION[pipeDia] || 8.0;
 
-    // --- 10. TERMINAL ---
-    const Term = {
-        log(msg, cls='') {
-            const el = document.getElementById('terminalLogs'); if (!el) return;
-            const line = document.createElement('div');
-            line.className = 'log-line ' + cls;
-            line.innerHTML = `<span class="opacity-50">&gt;&gt;</span> ${esc(msg)}`;
-            el.appendChild(line); el.scrollTop = el.scrollHeight;
-        },
-        progress(pct) { const el = document.getElementById('terminalProgress'); if(el) el.style.width = pct+'%'; },
-        show() { document.getElementById('aiTerminal').style.display = 'flex'; },
-        hide() { document.getElementById('aiTerminal').style.display = 'none'; }
-    };
-
-    // --- 11. MAIN ENGINE ---
-    async function run() {
-        // Calculate head
-        let head = 0;
-        if (S.source === 'borewell') {
-            const d = S.depth, dh = S.deliveryH;
-            if (d <= 0) return alert('Enter borewell depth.');
-            S.casing = parseInt(document.querySelector('input[name="casing"]:checked')?.value || 6);
-
-            let elevFt = 0, fricFt = 0;
+            let fricFt = 0;
             if (S.topoReady) {
-                elevFt = S.deltaH * 3.28084;
                 fricFt = S.frictionM * 3.28084;
-            } else {
-                const lossPer = FRICTION[S.pipeDia] || 8.0;
-                const pipeM = (d + dh) / 3.28084;
+            } else if (depth > 0) {
+                // Fallback: estimate vertical pipe length in meters
+                const pipeM = (depth + delH) / 3.28084;
                 fricFt = (pipeM / 100) * lossPer * 3.28084;
             }
-            const totalFt = d + elevFt + dh + fricFt;
-            const totalM  = totalFt / 3.28084;
-            head = totalFt;
-            S.totalHeadFt = totalFt; S.totalHeadM = totalM;
-            S.hp = Math.ceil((S.lps * totalM) / (75 * S.eff));
 
-        } else if (S.source === 'openwell') {
-            const su = parseInt(document.getElementById('inp-suction')?.value || 0);
-            const de = parseInt(document.getElementById('inp-delivery')?.value || 0);
-            const fl = parseInt(document.getElementById('inp-flat')?.value || 0);
-            head = su + de + (fl / 10);
-            // Full elevation difference — NO magic *0.3
-            if (S.topoReady && S.deltaH > 0) head += S.deltaH * 3.28084;
+            const tdhFt = depth + elevFt + delH + fricFt;
+            const tdhM = tdhFt / 3.28084;
+            const hp = depth > 0 ? Math.ceil((S.lps * tdhM) / (75 * S.eff)) : 0;
 
-        } else if (S.source === 'sewage') {
-            head = parseInt(document.getElementById('inp-lift')?.value || 0);
+            S.totalHeadFt = tdhFt; S.totalHeadM = tdhM; S.hp = hp;
+
+            // HUD always runs — shows topo data even without a source selected
+            document.getElementById('hud-depth').textContent = depth;
+            document.getElementById('hud-elev').textContent = elevFt.toFixed(1);
+            document.getElementById('hud-friction').textContent = fricFt.toFixed(1);
+            document.getElementById('hud-tdh').textContent = Math.round(tdhFt);
+            document.getElementById('hud-hp').textContent = hp || '--';
+
+            // Friction note
+            document.getElementById('hudFrictionNote').textContent =
+                `Friction based on ${pipeDia}" PVC (${lossPer} m / 100 m)` +
+                (S.topoReady ? ` | 3D slant: ${S.dist3D.toFixed(1)}m` : '');
+
+            // AI button: requires a source AND minimum params — topo map is decoupled
+            const ready = S.source && (
+                (S.source === 'borewell' && depth > 0) ||
+                (S.source === 'openwell' && (document.getElementById('inp-suction')?.value || document.getElementById('inp-delivery')?.value)) ||
+                (S.source === 'sewage' && document.getElementById('inp-lift')?.value)
+            );
+            document.getElementById('btn-ai').disabled = !ready;
         }
 
-        if (head <= 0) return alert('Enter valid depth/height parameters.');
-        S.totalHeadFt = Math.round(head);
-        S.totalHeadM  = S.totalHeadFt / 3.28084;
+        // --- 8. TOPO ENGINE ---
+        const Topo = {
+            map: null, init: false, markers: [], line: null,
 
-        // Terminal
-        Term.show(); Term.log('Initializing Pump Advisor v6...', 'highlight'); Term.progress(10);
+            boot() {
+                if (this.init) return;
 
-        try {
-            // Credentials
-            Term.log('Fetching security vault...');
-            const [geminiKey, invCfg] = await Promise.all([ getGeminiKey(), getInvCfg() ]);
-            if (!geminiKey || !invCfg) throw new Error('Security Vault Access Denied — Gemini key or inventory config missing.');
+                // Google Map Layers
+                const roadmap = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                    maxZoom: 22,
+                    maxNativeZoom: 20
+                });
 
-            Term.log('Database Connected.'); Term.progress(30);
+                const hybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                    maxZoom: 22,
+                    maxNativeZoom: 20
+                });
 
-            // Inventory
-            Term.log('Aggregating Global Inventory...');
-            const fetchP = Promise.all([ shopify(), sheet(invCfg.ksb_db_url, 'KSB'), sheet(invCfg.kirloskar_db_url, 'KOEL') ]);
-            const timeoutP = new Promise((_, rej) => setTimeout(() => rej(new Error('DB Timeout')), API_MS));
-            const [sp, ksb, koel] = await Promise.race([fetchP, timeoutP]);
+                this.map = L.map('topoMap', {
+                    zoomControl: false,
+                    attributionControl: false,
+                    layers: [roadmap]
+                }).setView([16.44, 80.55], 13);
 
-            const total = sp.length + ksb.length + koel.length;
-            Term.log(`Analyzed ${total} SKUs across 3 databases.`); Term.progress(50);
+                L.control.zoom({ position: 'bottomright' }).addTo(this.map);
 
-            // TDH log
-            const topoNote = S.topoReady ? `Topo Δh=${S.deltaH.toFixed(1)}m, 3D slant=${S.dist3D.toFixed(1)}m` : 'Standard calc';
-            Term.log(`TDH: ${Math.round(head)} ft | ${topoNote} | ${S.pipeDia}" pipe`, 'highlight');
-            if (S.source === 'borewell') Term.log(`HP Estimate: ${S.hp} HP (Q=${S.lps} LPS, η=${(S.eff*100).toFixed(0)}%)`);
+                // Layer Control (Bottom Left)
+                L.control.layers({
+                    "Map View": roadmap,
+                    "Satellite View": hybrid
+                }, {}, { position: 'bottomleft' }).addTo(this.map);
 
-            // Filter
-            Term.log(`Physics constraints: Head > ${Math.round(head)} ft...`);
-            const all = [...sp, ...ksb, ...koel];
-            const BLK = ['panel','starter','cable','wire','rope','pipe','fan','service','repair','kit','spares','accessories','control','box'];
-            let cands = all.filter(i => {
-                const txt = (i.title + ' ' + i.desc).toLowerCase();
-                if (BLK.some(w => txt.includes(w))) return false;
-                if (S.source==='borewell' && !txt.includes('sub') && !txt.includes('bore') && !txt.includes('v4') && !txt.includes('v6')) return false;
-                if (S.source==='openwell' && !txt.includes('open') && !txt.includes('mono')) return false;
-                const is3 = txt.includes('3 phase') || txt.includes('3phase') || txt.includes('3 ph');
-                if (S.phase===3 && !is3) return false;
-                if (S.phase===1 && is3) return false;
-                if (S.source==='borewell' && S.casing===4 && (txt.includes('v6')||txt.includes('6 inch'))) return false;
-                return true;
-            });
-            cands.sort((a,b) => (b.source==='shopify'?50:0) - (a.source==='shopify'?50:0));
-            cands = cands.slice(0, 60);
-            Term.log(`${cands.length} optimal candidates.`, 'highlight');
+                this.map.on('click', e => this.click(e));
+                this.init = true;
+            },
 
-            // AI
-            let results = [];
-            if (cands.length > 0) {
-                Term.log('Requesting Gemini Flash analysis...'); Term.progress(75);
-                results = await ai(geminiKey, cands);
+            locate() {
+                if (!navigator.geolocation) return toast('Geolocation not supported', 'error');
+                const badge = document.getElementById('topoBadge');
+                badge.className = 'topo-badge loading';
+                badge.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Acquiring...';
+                navigator.geolocation.getCurrentPosition(
+                    p => { this.map.setView([p.coords.latitude, p.coords.longitude], 15); badge.className = 'topo-badge active'; badge.innerHTML = '<i class="ri-check-line"></i> Located'; toast('Tap map to place Point A', 'info'); },
+                    () => { badge.className = 'topo-badge inactive'; badge.innerHTML = '<i class="ri-error-warning-line"></i> Denied'; toast('Location denied. Tap map manually.', 'info'); },
+                    { enableHighAccuracy: true, timeout: 15000 }
+                );
+            },
+
+            reset() {
+                this.markers.forEach(m => { if (m.marker) this.map.removeLayer(m.marker); });
+                if (this.line) this.map.removeLayer(this.line);
+                this.markers = []; this.line = null;
+
+                document.getElementById('topoInstruction').textContent = 'Tap map to place Point A (Start) and Point B (End)';
+                document.getElementById('cardA').classList.add('hidden');
+                document.getElementById('cardB').classList.add('hidden');
+                document.getElementById('topoResults').classList.add('hidden');
+
+                const badge = document.getElementById('topoBadge');
+                badge.className = 'topo-badge inactive'; badge.innerHTML = '<i class="ri-map-pin-line"></i> Map Ready';
+
+                S.topoReady = false; S.pointA = null; S.pointB = null;
+                S.dist2D = 0; S.dist3D = 0; S.deltaH = 0; S.angleDeg = 0; S.frictionM = 0;
+                S.topoHeadM = 0; S.topoHeadFt = 0;
+                hud();
+            },
+
+            async click(e) {
+                if (this.markers.length >= 2) {
+                    if (!confirm('Reset terrain points and start over?')) return;
+                    this.reset();
+                }
+
+                const { lat, lng } = e.latlng;
+                const isA = this.markers.length === 0;
+                const color = isA ? '#3b82f6' : '#8b5cf6';
+                const icon = L.divIcon({
+                    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 15px ${color};animation:pulse-ring 2s infinite;margin:-7px 0 0 -7px;"></div>`,
+                    iconSize: [0, 0], className: ''
+                });
+                const marker = L.marker([lat, lng], { icon }).addTo(this.map);
+
+                if (isA) {
+                    this.markers.push({ lat, lng, marker, elev: null });
+                    document.getElementById('coordA').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                    document.getElementById('cardA').classList.remove('hidden');
+                    document.getElementById('topoInstruction').textContent = 'Fetching elevation for Point A...';
+                    const badge = document.getElementById('topoBadge');
+                    badge.className = 'topo-badge loading'; badge.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Fetching...';
+
+                    try {
+                        const elev = await this.elev(lat, lng);
+                        if (elev !== null) {
+                            this.markers[0].elev = elev;
+                            document.getElementById('elevA').textContent = elev.toFixed(1);
+                            document.getElementById('elevAFt').textContent = (elev * 3.28084).toFixed(1) + ' ft';
+                            document.getElementById('topoInstruction').textContent = 'Point A set. Tap to place Point B (Delivery/Tank).';
+                            badge.className = 'topo-badge point-a'; badge.innerHTML = '<i class="ri-map-pin-line"></i> Point A Placed';
+                        } else throw new Error('No elevation');
+                    } catch {
+                        document.getElementById('elevA').textContent = 'N/A';
+                        document.getElementById('topoInstruction').textContent = 'Elevation unavailable. Place Point B or skip.';
+                        badge.className = 'topo-badge inactive'; badge.innerHTML = '<i class="ri-error-warning-line"></i> No Data';
+                    }
+                } else {
+                    this.markers.push({ lat, lng, marker, elev: null });
+                    document.getElementById('coordB').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                    document.getElementById('cardB').classList.remove('hidden');
+                    document.getElementById('topoInstruction').textContent = 'Calculating topo data...';
+
+                    this.line = L.polyline(this.markers.map(m => [m.lat, m.lng]), { color: '#3b82f6', dashArray: '6 10', weight: 2 }).addTo(this.map);
+                    this.map.fitBounds(this.line.getBounds(), { padding: [40, 40] });
+
+                    try {
+                        const elev = await this.elev(lat, lng);
+                        if (elev !== null) {
+                            this.markers[1].elev = elev;
+                            document.getElementById('elevB').textContent = elev.toFixed(1);
+                            document.getElementById('elevBFt').textContent = (elev * 3.28084).toFixed(1) + ' ft';
+                        }
+                        this.telemetry();
+                    } catch {
+                        document.getElementById('elevB').textContent = 'N/A';
+                        toast('Elevation satellite timeout. Try again.', 'error');
+                    }
+                }
+            },
+
+            async elev(lat, lng) {
+                const fetchP = fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lng}`)
+                    .then(r => r.json()).then(d => d.elevation ? d.elevation[0] : null);
+                const timeoutP = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ELEV_MS));
+                return Promise.race([fetchP, timeoutP]);
+            },
+
+            // Haversine 2D
+            haversine(lat1, lon1, lat2, lon2) {
+                const R = 6378137;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            },
+
+            telemetry() {
+                const a = this.markers[0], b = this.markers[1];
+                if (!a || !b || a.elev === null || b.elev === null) { toast('Missing elevation data', 'error'); return; }
+
+                const dist2D = this.haversine(a.lat, a.lng, b.lat, b.lng);
+                if (dist2D < 0.5) { toast('Points too close', 'error'); return; }
+
+                const deltaH = Math.abs(b.elev - a.elev);
+                // 3D slant via simple Pythagorean (accurate at borewell scale)
+                const dist3D = Math.hypot(dist2D, deltaH);
+                const angle = Math.atan(deltaH / dist2D) * 180 / Math.PI;
+
+                S.pointA = { lat: a.lat, lng: a.lng, elevM: a.elev };
+                S.pointB = { lat: b.lat, lng: b.lng, elevM: b.elev };
+                S.dist2D = dist2D; S.dist3D = dist3D; S.deltaH = deltaH; S.angleDeg = angle; S.topoReady = true;
+
+                // Friction from pipe diameter
+                const lossPer = FRICTION[S.pipeDia] || 8.0;
+                S.frictionM = (dist3D / 100) * lossPer;
+
+                // topoHeadM is topo-ONLY (Δh + friction + 5m safety)
+                S.topoHeadM = deltaH + S.frictionM + 5;
+                S.topoHeadFt = S.topoHeadM * 3.28084;
+
+                // Update UI
+                document.getElementById('topoDeltaH').textContent = `${deltaH.toFixed(1)} m (${(deltaH * 3.28084).toFixed(1)} ft)`;
+                document.getElementById('topoDist2D').textContent = `${dist2D.toFixed(1)} m (${(dist2D * 3.28084).toFixed(1)} ft)`;
+                document.getElementById('topoDist3D').textContent = `${dist3D.toFixed(1)} m (${(dist3D * 3.28084).toFixed(1)} ft)`;
+                document.getElementById('topoAngle').textContent = `${angle.toFixed(2)}°`;
+                document.getElementById('topoResults').classList.remove('hidden');
+
+                const badge = document.getElementById('topoBadge');
+                badge.className = 'topo-badge active'; badge.innerHTML = '<i class="ri-check-line"></i> Topo Complete';
+                document.getElementById('topoInstruction').textContent = 'Topo ready — hit Generate AI Recommendation below.';
+
+                hud();
+                toast(`Topo: Δh=${deltaH.toFixed(1)}m, 3D=${dist3D.toFixed(1)}m, Friction=${S.frictionM.toFixed(1)}m`, 'info');
+            }
+        };
+
+        // --- 9. SKIP MAP ---
+        function skipMap() {
+            if (!S.source) return toast('Select a water source first', 'error');
+            if (S.source === 'borewell' && S.depth <= 0) return toast('Enter borewell depth first', 'error');
+            toast('Computing with standard values (no topo)', 'info');
+            run();
+        }
+
+        // --- 10. TERMINAL ---
+        const Term = {
+            log(msg, cls = '') {
+                const el = document.getElementById('terminalLogs'); if (!el) return;
+                const line = document.createElement('div');
+                line.className = 'log-line ' + cls;
+                line.innerHTML = `<span class="opacity-50">&gt;&gt;</span> ${esc(msg)}`;
+                el.appendChild(line); el.scrollTop = el.scrollHeight;
+            },
+            progress(pct) { const el = document.getElementById('terminalProgress'); if (el) el.style.width = pct + '%'; },
+            show() { document.getElementById('aiTerminal').style.display = 'flex'; },
+            hide() { document.getElementById('aiTerminal').style.display = 'none'; }
+        };
+
+        // --- 11. MAIN ENGINE ---
+        async function run() {
+            // Calculate head
+            let head = 0;
+            if (S.source === 'borewell') {
+                const d = S.depth, dh = S.deliveryH;
+                if (d <= 0) return alert('Enter borewell depth.');
+                S.casing = parseInt(document.querySelector('input[name="casing"]:checked')?.value || 6);
+
+                let elevFt = 0, fricFt = 0;
+                if (S.topoReady) {
+                    elevFt = S.deltaH * 3.28084;
+                    fricFt = S.frictionM * 3.28084;
+                } else {
+                    const lossPer = FRICTION[S.pipeDia] || 8.0;
+                    const pipeM = (d + dh) / 3.28084;
+                    fricFt = (pipeM / 100) * lossPer * 3.28084;
+                }
+                const totalFt = d + elevFt + dh + fricFt;
+                const totalM = totalFt / 3.28084;
+                head = totalFt;
+                S.totalHeadFt = totalFt; S.totalHeadM = totalM;
+                S.hp = Math.ceil((S.lps * totalM) / (75 * S.eff));
+
+            } else if (S.source === 'openwell') {
+                const su = parseInt(document.getElementById('inp-suction')?.value || 0);
+                const de = parseInt(document.getElementById('inp-delivery')?.value || 0);
+                const fl = parseInt(document.getElementById('inp-flat')?.value || 0);
+                head = su + de + (fl / 10);
+                // Full elevation difference — NO magic *0.3
+                if (S.topoReady && S.deltaH > 0) head += S.deltaH * 3.28084;
+
+            } else if (S.source === 'sewage') {
+                head = parseInt(document.getElementById('inp-lift')?.value || 0);
             }
 
-            Term.log('Rendering results...'); Term.progress(100);
-            await new Promise(r => setTimeout(r, 600));
+            if (head <= 0) return alert('Enter valid depth/height parameters.');
+            S.totalHeadFt = Math.round(head);
+            S.totalHeadM = S.totalHeadFt / 3.28084;
 
-            // Show results
-            Term.hide();
-            renderResults(results);
+            // Terminal
+            Term.show(); Term.log('Initializing Pump Advisor v6...', 'highlight'); Term.progress(10);
 
-        } catch (e) {
-            console.error(e);
-            Term.log(`CRITICAL: ${e.message}`, 'error');
-            setTimeout(() => { Term.hide(); alert('System Error: ' + e.message); }, 3000);
+            try {
+                // Credentials
+                Term.log('Fetching security vault...');
+                const invCfg = await getInvCfg();
+                if (!invCfg) throw new Error('Inventory config missing.');
+
+                Term.log('Database Connected.'); Term.progress(30);
+
+                // Inventory
+                Term.log('Aggregating Global Inventory...');
+                const fetchP = Promise.all([shopify(), sheet(invCfg.ksb_db_url, 'KSB'), sheet(invCfg.kirloskar_db_url, 'KOEL')]);
+                const timeoutP = new Promise((_, rej) => setTimeout(() => rej(new Error('DB Timeout')), API_MS));
+                const [sp, ksb, koel] = await Promise.race([fetchP, timeoutP]);
+
+                const total = sp.length + ksb.length + koel.length;
+                Term.log(`Analyzed ${total} SKUs across 3 databases.`); Term.progress(50);
+
+                // TDH log
+                const topoNote = S.topoReady ? `Topo Δh=${S.deltaH.toFixed(1)}m, 3D slant=${S.dist3D.toFixed(1)}m` : 'Standard calc';
+                Term.log(`TDH: ${Math.round(head)} ft | ${topoNote} | ${S.pipeDia}" pipe`, 'highlight');
+                if (S.source === 'borewell') Term.log(`HP Estimate: ${S.hp} HP (Q=${S.lps} LPS, η=${(S.eff * 100).toFixed(0)}%)`);
+
+                // Full Inventory Aggregation
+                const fullInventory = [...sp, ...ksb, ...koel];
+                Term.log(`Processing ${fullInventory.length} SKUs...`, 'highlight');
+
+                // Hybrid Pre-Filter (RAG)
+                Term.log(`Physics constraints: Head > ${Math.round(head)} ft...`);
+                const BLK = ['panel', 'starter', 'cable', 'wire', 'rope', 'pipe', 'fan', 'service', 'repair', 'kit', 'spares', 'accessories', 'control', 'box'];
+                let cands = fullInventory.filter(i => {
+                    const txt = (i.title + ' ' + i.desc).toLowerCase();
+                    if (BLK.some(w => txt.includes(w))) return false;
+                    if (S.source === 'borewell' && !txt.includes('sub') && !txt.includes('bore') && !txt.includes('v4') && !txt.includes('v6')) return false;
+                    if (S.source === 'openwell' && !txt.includes('open') && !txt.includes('mono')) return false;
+                    const is3 = txt.includes('3 phase') || txt.includes('3phase') || txt.includes('3 ph');
+                    if (S.phase === 3 && !is3) return false;
+                    if (S.phase === 1 && is3) return false;
+                    if (S.source === 'borewell' && S.casing === 4 && (txt.includes('v6') || txt.includes('6 inch'))) return false;
+                    return true;
+                });
+                cands.sort((a, b) => (b.source === 'shopify' ? 50 : 0) - (a.source === 'shopify' ? 50 : 0));
+                cands = cands.slice(0, 50); // Send top 50 matches to AI
+                Term.log(`${cands.length} technical matches found.`, 'highlight');
+
+                // AI
+                if (cands.length > 0) {
+                    Term.log('AI scanning technical shortlist...', 'highlight'); Term.progress(75);
+                    const aiResponse = await ai(cands);
+                    Term.log('Analysis complete.', 'highlight'); Term.progress(100);
+                    await new Promise(r => setTimeout(r, 600));
+                    Term.hide();
+                    renderResults(aiResponse.list, aiResponse.verdict);
+                } else {
+                    Term.log('No matching pumps found.', 'error'); Term.progress(100);
+                    await new Promise(r => setTimeout(r, 600));
+                    Term.hide();
+                    renderResults([], null);
+                }
+
+            } catch (e) {
+                console.error(e);
+                Term.log(`CRITICAL: ${e.message}`, 'error');
+                setTimeout(() => { Term.hide(); alert('System Error: ' + e.message); }, 3000);
+            }
         }
-    }
 
-    // --- 12. RENDER RESULTS ---
-    function renderResults(list) {
-        const panel = document.getElementById('panelResults');
-        panel.classList.remove('hidden');
+        // --- 12. RENDER RESULTS ---
+        function renderResults(list, verdictText) {
+            const panel = document.getElementById('panelResults');
+            panel.classList.remove('hidden');
 
-        // TDH summary
-        document.getElementById('r-depth').textContent = S.source==='borewell' ? S.depth+' ft' : '--';
-        document.getElementById('r-elev').textContent  = S.topoReady ? (S.deltaH*3.28084).toFixed(1)+' ft' : 'N/A';
-        const delFt = S.source==='borewell' ? S.deliveryH : 0;
-        document.getElementById('r-extra').textContent = (delFt + (S.topoReady ? S.frictionM*3.28084 : 0)).toFixed(1) + ' ft';
-        document.getElementById('r-tdh').textContent   = Math.round(S.totalHeadFt) + ' ft';
-        document.getElementById('r-hp').textContent    = S.hp > 0 ? S.hp + ' HP' : '--';
+            // Inject Verdict
+            const verdictCard = document.getElementById('aiVerdictCard');
+            const verdictHtml = document.getElementById('aiVerdictText');
+            if (verdictText) {
+                verdictHtml.innerHTML = verdictText;
+                verdictCard.classList.remove('hidden');
+            } else {
+                verdictCard.classList.add('hidden');
+            }
 
-        const note = document.getElementById('r-note');
-        if (S.topoReady) {
-            note.innerHTML = `<i class="ri-earth-line"></i> Topo verified: 3D slant ${S.dist3D.toFixed(1)}m, incline ${S.angleDeg.toFixed(1)}°`;
-            note.className = 'text-[10px] text-blue-600 mt-2 flex items-center justify-center gap-1';
-        } else {
-            note.innerHTML = `<i class="ri-information-line"></i> Standard head calculation (no topo)`;
-            note.className = 'text-[10px] text-amber-600 mt-2 flex items-center justify-center gap-1';
-        }
+            // TDH summary
+            document.getElementById('r-depth').textContent = S.source === 'borewell' ? S.depth + ' ft' : '--';
+            document.getElementById('r-elev').textContent = S.topoReady ? (S.deltaH * 3.28084).toFixed(1) + ' ft' : 'N/A';
+            const delFt = S.source === 'borewell' ? S.deliveryH : 0;
+            document.getElementById('r-extra').textContent = (delFt + (S.topoReady ? S.frictionM * 3.28084 : 0)).toFixed(1) + ' ft';
+            document.getElementById('r-tdh').textContent = Math.round(S.totalHeadFt) + ' ft';
+            document.getElementById('r-hp').textContent = S.hp > 0 ? S.hp + ' HP' : '--';
 
-        // Products
-        const grid = document.getElementById('resultsGrid');
-        const noMatch = document.getElementById('noMatch');
-        grid.innerHTML = '';
-        if (list.length === 0) { noMatch.classList.remove('hidden'); return; }
-        noMatch.classList.add('hidden');
+            const note = document.getElementById('r-note');
+            if (S.topoReady) {
+                note.innerHTML = `<i class="ri-earth-line"></i> Topo verified: 3D slant ${S.dist3D.toFixed(1)}m, incline ${S.angleDeg.toFixed(1)}°`;
+                note.className = 'text-[10px] text-blue-600 mt-2 flex items-center justify-center gap-1';
+            } else {
+                note.innerHTML = `<i class="ri-information-line"></i> Standard head calculation (no topo)`;
+                note.className = 'text-[10px] text-amber-600 mt-2 flex items-center justify-center gap-1';
+            }
 
-        list.forEach(p => {
-            const stock = p.source === 'shopify';
-            let badge = 'DIRECT', badgeCls = 'bg-blue-50 text-blue-600';
-            const brand = (p.brand||'').toUpperCase();
-            if (stock)  { badge='IN STOCK'; badgeCls='bg-emerald-50 text-emerald-600'; }
-            else if (brand.includes('KIRLOSKAR')||brand.includes('KOEL')) { badge='KOEL DIRECT'; badgeCls='bg-green-50 text-green-700'; }
-            else if (brand.includes('KSB')) { badge='KSB DIRECT'; badgeCls='bg-orange-50 text-orange-600'; }
+            // Products
+            const grid = document.getElementById('resultsGrid');
+            const noMatch = document.getElementById('noMatch');
+            grid.innerHTML = '';
+            if (list.length === 0) { noMatch.classList.remove('hidden'); return; }
+            noMatch.classList.add('hidden');
 
-            const btnTxt = stock ? 'BUY NOW' : 'CHECK AVAILABILITY';
-            const btnBg  = stock ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-800 hover:bg-gray-700';
-            const img = p.image || FALLBACK_IMG;
+            list.forEach(p => {
+                const stock = p.source === 'shopify';
+                let badge = 'DIRECT', badgeCls = 'bg-blue-50 text-blue-600';
+                const brand = (p.brand || '').toUpperCase();
+                if (stock) { badge = 'IN STOCK'; badgeCls = 'bg-emerald-50 text-emerald-600'; }
+                else if (brand.includes('KIRLOSKAR') || brand.includes('KOEL')) { badge = 'KOEL DIRECT'; badgeCls = 'bg-green-50 text-green-700'; }
+                else if (brand.includes('KSB')) { badge = 'KSB DIRECT'; badgeCls = 'bg-orange-50 text-orange-600'; }
 
-            grid.innerHTML += `
+                const btnTxt = stock ? 'BUY NOW' : 'CHECK AVAILABILITY';
+                const btnBg = stock ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-800 hover:bg-gray-700';
+                const img = p.image || FALLBACK_IMG;
+
+                grid.innerHTML += `
             <div class="product-card flex gap-4 items-center">
                 <div class="w-16 h-16 bg-gray-50 rounded-lg flex-shrink-0 border border-gray-100 p-1 flex items-center justify-center overflow-hidden">
                     <img src="${esc(img)}" class="max-w-full max-h-full object-contain" alt="${esc(p.title)}" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';">
@@ -955,104 +1242,112 @@
                 <div class="flex-grow min-w-0">
                     <div class="flex justify-between items-start gap-2">
                         <div class="min-w-0">
-                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">${esc(p.brand||'Premium')}</div>
+                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">${esc(p.brand || 'Premium')}</div>
                             <h4 class="font-bold text-gray-900 text-sm leading-tight truncate">${esc(p.title)}</h4>
                             <div class="flex gap-2 mt-1">
                                 <span class="${badgeCls} text-[10px] font-bold px-2 py-0.5 rounded">${badge}</span>
                             </div>
                         </div>
-                        <div class="font-bold text-blue-600 text-right whitespace-nowrap">₹${parseInt(p.price||0).toLocaleString()}</div>
+                        <div class="font-bold text-blue-600 text-right whitespace-nowrap">
+                            <span class="text-[10px] text-green-600 flex items-center justify-end gap-1">
+                                <i class="ri-price-tag-3-line"></i> Best Price on Request
+                            </span>
+                        </div>
                     </div>
                     ${p.reason ? `<div class="text-[10px] text-gray-400 italic mt-1 border-t border-gray-100 pt-1">✨ ${esc(p.reason)}</div>` : ''}
-                    <a href="${esc(p.link)}" target="_blank" class="block w-full ${btnBg} text-white text-center text-[10px] font-bold py-2 rounded-lg mt-2 transition">${btnTxt}</a>
+                    <a href="${esc(p.link)}" target="_blank" class="block w-full ${btnBg} text-white text-center text-[10px] font-bold py-2 rounded-lg mt-2 transition">CHECK PRICE</a>
                 </div>
             </div>`;
-        });
-
-        // Scroll into view
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    // --- 13. SECURE FETCHERS ---
-    async function getGeminiKey() {
-        try { if (!DB) return null; const d = await DB.collection('system_config').doc('ai').get(); return d.exists ? d.data().geminiKey||null : null; }
-        catch { return null; }
-    }
-    async function getInvCfg() {
-        try { if (!DB) return null; const d = await DB.collection('system_config').doc('inventory').get(); return d.exists ? d.data() : null; }
-        catch { return null; }
-    }
-
-    // --- 14. AI BRAIN ---
-    async function ai(key, cands) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
-        const mini = cands.map(c => ({ id: c.id, name: c.title, price: c.price, source: c.source }));
-
-        const topoNote = S.topoReady
-            ? ` Terrain: Point A→B has elevation Δh=${S.deltaH.toFixed(1)}m (${(S.deltaH*3.28084).toFixed(1)} ft), incline ${S.angleDeg.toFixed(1)}°, 3D slant ${S.dist3D.toFixed(1)}m.`
-            : ' No terrain data.';
-        const hpNote = S.hp > 0 ? ` Minimum motor: ${S.hp} HP.` : '';
-
-        const prompt = `Role: Expert Hydraulic Engineer for borewell pumps in Andhra Pradesh, India.
-User: ${S.source} WATER PUMP, ${S.phase}-Phase, ${S.pipeDia}" delivery pipe.
-TDH: ${Math.round(S.totalHeadFt)} ft (${S.totalHeadM.toFixed(1)}m).${topoNote}${hpNote}
-Task: Select the best 10-15 matches.
-
-RULES:
-1. ONLY recommend WATER PUMPS.
-2. NO Control Panels, Starters, Fans, Cables, Accessories.
-3. If Head rating is mentioned, MUST be >= ${Math.round(S.totalHeadFt)} ft.
-4. Prioritize: Technical Fit > In Stock (shopify) > Price.
-
-List: ${JSON.stringify(mini)}
-
-Output JSON ONLY: [{"id":"...","reason":"Why (max 12 words)"}]`;
-
-        try {
-            const res = await fetch(url, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
-            const data = await res.json();
-            if (!data.candidates || !data.candidates[0].content) throw new Error('AI Busy');
-            const raw = data.candidates[0].content.parts[0].text;
-            const json = raw.replace(/```json|```/g, '').trim();
-            const decisions = JSON.parse(json);
-            return decisions.map(d => { const o = cands.find(c=>c.id===d.id); if(o){o.reason=d.reason; return o;} return null; }).filter(Boolean);
-        } catch { return cands.slice(0, 15); }
-    }
 
-    // --- 15. DATA FETCHERS ---
-    async function shopify() {
-        try {
-            const r = await fetch(`https://${SHOPIFY}/products.json?limit=250`);
-            const j = await r.json();
-            return j.products.map(p => ({
-                id: String(p.id), source: 'shopify', brand: p.vendor||'Store',
-                title: p.title, desc: (p.tags||[]).join(' '), price: p.variants[0]?.price||0,
-                link: `https://${SHOPIFY}/products/${p.handle}`, image: p.images[0]?.src
-            }));
-        } catch { return []; }
-    }
-    async function sheet(url, brand) {
-        if (!url) return [];
-        try {
-            const r = await fetch(url); const j = await r.json();
-            return Object.entries(j).map(([sku, i]) => ({
-                id: sku, source: 'catalog', brand: i.brand||brand||'Premium',
-                title: i.desc||'Water Pump', desc: `${i.pumpType||''} ${i.hp||''}HP ${i.category||''}`,
-                price: i.rate||0, link: `https://wa.me/916304094177?text=Interested in ${i.brand||brand}: ${i.desc} (${sku})`,
-                image: null
-            }));
-        } catch { return []; }
-    }
+            // Scroll into view
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
 
-    // --- 16. INIT ---
-    // Leaflet map boots on DOMContentLoaded — container is visible in the dashboard layout.
-    document.addEventListener('DOMContentLoaded', () => {
-        Topo.boot();
-    });
+        async function getInvCfg() {
+            try { if (!DB) return null; const d = await DB.collection('system_config').doc('inventory').get(); return d.exists ? d.data() : null; }
+            catch { return null; }
+        }
+
+        // --- 14. AI BRAIN ---
+        async function ai(cands) {
+            const mini = cands.map(c => ({ id: c.id, brand: c.brand, title: c.title, desc: c.desc }));
+            const prompt = `You are the cunning, highly technical Lead Sales Engineer at Sagar Borewells. 
+The customer needs a ${S.source} pump. Power: ${S.phase}-Phase. Delivery Pipe: ${S.pipeDia} inch.
+Physics calculation: Total Dynamic Head (TDH) is ${Math.round(S.totalHeadFt)} ft. Minimum required motor is ${S.hp} HP.
+
+Here is our mathematically filtered shortlist of viable pumps: 
+${JSON.stringify(mini)}
+
+YOUR HEAVY LIFTING TASK:
+1. Scan this technical shortlist.
+2. From these valid options, select the top 2 to 4 absolute best pumps.
+3. Write a persuasive, authoritative "Chief Engineer's Verdict" (2-3 short paragraphs). Draw comparative analysis (e.g., "While the KSB offers X, the KOEL dominates in Y..."). Convince them why your top pick is the ultimate choice for their specific depth. Be sly, sound like a seasoned engineer closing a premium sale.
+
+You must respond STRICTLY in this JSON format:
+{
+  "verdict": "Your persuasive text here. Use basic HTML tags like <b> or <br> for formatting.",
+  "recommendations": [
+    {"id": "product_id_here", "reason": "Short 10-word punchy reason"}
+  ]
+}
+Do not include markdown code blocks, just raw JSON.`;
+
+            try {
+                const getPumpAdvice = firebase.app().functions('us-central1').httpsCallable('getPumpAdvice');
+                getPumpAdvice.timeout = 180000; // 180 seconds
+                const res = await getPumpAdvice({ prompt: prompt });
+                
+                // Extract JSON from Cloud Function result
+                let raw = res.data.result;
+                raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+                const parsed = JSON.parse(raw);
+
+                return {
+                    verdict: parsed.verdict,
+                    list: parsed.recommendations.map(d => { const o = cands.find(c => c.id === d.id); if (o) { o.reason = d.reason; return o; } return null; }).filter(Boolean)
+                };
+            } catch (e) {
+                console.error("Cloud Function AI Error:", e);
+                // Fallback: If AI fails, show the mathematically accurate shortlist
+                return { 
+                    verdict: "<i>Our AI Engineer is currently busy analyzing other sites. However, based on our mathematical calculations, these are the top pumps that meet your specific TDH and HP requirements.</i>", 
+                    list: cands.slice(0, 4) 
+                };
+            }
+        }
+
+        // --- 15. DATA FETCHERS ---
+        async function shopify() {
+            try {
+                const r = await fetch(`https://${SHOPIFY}/products.json?limit=250`);
+                const j = await r.json();
+                return j.products.map(p => ({
+                    id: String(p.id), source: 'shopify', brand: p.vendor || 'Store',
+                    title: p.title, desc: (p.tags || []).join(' '), price: p.variants[0]?.price || 0,
+                    link: `https://${SHOPIFY}/products/${p.handle}`, image: p.images[0]?.src
+                }));
+            } catch { return []; }
+        }
+        async function sheet(url, brand) {
+            if (!url) return [];
+            try {
+                const r = await fetch(url); const j = await r.json();
+                return Object.entries(j).map(([sku, i]) => ({
+                    id: sku, source: 'catalog', brand: i.brand || brand || 'Premium',
+                    title: i.desc || 'Water Pump', desc: `${i.pumpType || ''} ${i.hp || ''}HP ${i.category || ''}`,
+                    price: i.rate || 0, link: `https://wa.me/916304094177?text=Interested in ${i.brand || brand}: ${i.desc} (${sku})`,
+                    image: null
+                }));
+            } catch { return []; }
+        }
+
+        // --- 16. INIT ---
+        // Leaflet map boots on DOMContentLoaded — container is visible in the dashboard layout.
+        document.addEventListener('DOMContentLoaded', () => {
+            Topo.boot();
+        });
     </script>
 </body>
-</html>
 
+</html>

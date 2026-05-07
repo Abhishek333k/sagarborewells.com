@@ -65,14 +65,17 @@ document.addEventListener("DOMContentLoaded", function() {
                     </div>
 
                     <div class="hidden md:flex items-center gap-8">
-                        <a href="index" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
-                        <a href="f/blog" class="font-bold text-slate-600 hover:text-blue-600 transition">Blog</a>
-                        <a href="contact" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
-                        <a href="about" class="font-bold text-slate-600 hover:text-blue-600 transition">About</a>
-                        <a href="dashboard" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
+                        <a href="/index.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Home</a>
+                        <a href="/f/blog.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Blog</a>
+                        <a href="/contact.html" class="font-bold text-slate-600 hover:text-blue-600 transition">Contact</a>
+                        <a href="/about.html" class="font-bold text-slate-600 hover:text-blue-600 transition">About</a>
+                        <a href="/f/pump-advisor.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-1">
+                            Pump Advisor <span class="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold">AI</span>
+                        </a>
+                        <a href="/dashboard.html" class="font-bold text-slate-600 hover:text-blue-600 transition flex items-center gap-2">
                             <i class="ri-user-line"></i> Account
                         </a>
-                        <a href="quote" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-lg shadow-blue-200 flex items-center gap-2">
+                        <a href="/quote.html" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-lg shadow-blue-200 flex items-center gap-2">
                             <i class="ri-calculator-line"></i> Get Quote
                         </a>
                     </div>
@@ -86,10 +89,13 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>
             
             <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 p-4 absolute w-full shadow-lg left-0 top-20 z-40">
-                <a href="index" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">Home</a>
-                <a href="dashboard" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">My Account</a>
-                <a href="contact" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">Contact</a>
-                <a href="quote" class="block py-3 mt-4 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700">Get Quote</a>
+                <a href="/index.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">Home</a>
+                <a href="/dashboard.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">My Account</a>
+                <a href="/contact.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600">Contact</a>
+                <a href="/f/pump-advisor.html" class="block py-3 font-bold text-slate-600 border-b border-slate-50 hover:text-blue-600 flex items-center justify-between">
+                    Pump Advisor <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-bold">AI</span>
+                </a>
+                <a href="/quote.html" class="block py-3 mt-4 text-center bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700">Get Quote</a>
             </div>
         </nav>`;
 
