@@ -139,7 +139,7 @@
         }
 
         function applyForLoan() {
-            const amount = document.getElementById('loanAmount').value; // Assuming you have this input
+            const amount = document.getElementById('loanRange').value;
             const msg = WA_MSG.finance_inquiry(amount || "Undecided");
             window.open(WA_MSG.link(CONTACT_INFO.whatsapp_api, msg), '_blank');
         }

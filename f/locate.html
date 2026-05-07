@@ -24,7 +24,7 @@
 </head>
 <body>
 
-    <a href="index.html" class="absolute top-6 left-6 z-50 bg-slate-900 text-white p-3 rounded-full hover:bg-slate-700 transition border border-slate-700 shadow-xl">
+    <a href="/index.html" class="absolute top-6 left-6 z-50 bg-slate-900 text-white p-3 rounded-full hover:bg-slate-700 transition border border-slate-700 shadow-xl">
         <i class="fa-solid fa-arrow-left"></i>
     </a>
 
@@ -125,8 +125,8 @@
             const lng = document.getElementById("lng").innerText;
             const address = encodeURIComponent(document.getElementById("address").innerText);
             
-            // Redirect to Quote Page with Data
-            window.location.href = `quote.html?lat=${lat}&lng=${lng}&loc=${address}`;
+            // Redirect to Quote Page with Data (Absolute Path Fix)
+            window.location.href = `/quote.html?lat=${lat}&lng=${lng}&loc=${address}`;
         }
     </script>
 
