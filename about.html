@@ -13,16 +13,9 @@
     .scroller-track {
         display: flex;
         width: max-content;
-        /* CRITICAL: Vertical padding only. Left/Right padding breaks the -50% loop math */
+        /* Vertical padding only to protect loop math */
         padding: 4rem 0; 
-        animation: scroll-left 45s linear infinite;
-    }
-    .scroller-track:hover {
-        animation-play-state: paused;
-    }
-    @keyframes scroll-left {
-        /* Flawless math: exactly half the total track width */
-        to { transform: translateX(-50%); } 
+        will-change: transform;
     }
     
     /* The Netflix Container Pattern */
@@ -38,15 +31,14 @@
         padding: 1rem;
         border-radius: 12px;
         transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        filter: grayscale(100%) opacity(30%);
+        /* REMOVED GRAYSCALE - Full Color Default */
+        filter: grayscale(0%) opacity(100%); 
         transform-origin: center center;
-        /* The Math Buffer: Prevents collision when scaled */
         margin-right: 3rem; 
     }
     
     /* The Auto-Magnify State */
     .logo-card.is-center {
-        filter: grayscale(0%) opacity(100%);
         transform: scale(1.65);
         z-index: 50; 
         background-color: white; 
@@ -59,15 +51,48 @@
         object-fit: contain;
     }
     
+    /* Manual Navigation Buttons */
+    .nav-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 100;
+        width: 3.5rem;
+        height: 3.5rem;
+        background: white;
+        color: #1e293b;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        cursor: pointer;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 1.5rem;
+    }
+    .nav-btn:hover {
+        background: #3b82f6;
+        color: white;
+        transform: translateY(-50%) scale(1.1);
+        box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.4);
+    }
+    .nav-btn.prev { left: 2rem; }
+    .nav-btn.next { right: 2rem; }
+
+    @media (max-width: 768px) {
+        .nav-btn { display: none; } /* Hide on mobile for cleaner look */
+    }
+
     /* Responsive sizing and larger buffer for desktop */
     @media (min-width: 768px) {
         .logo-card { 
             width: 180px; 
             height: 100px; 
-            /* Massive buffer ensures 1.65x scale never touches neighbors */
             margin-right: 5rem; 
         }
     }
+    </style>
     </style>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -125,52 +150,58 @@
         </div>
     </div>
 
-    <div class="bg-white py-20 border-y border-slate-200 overflow-hidden">
+    <div class="bg-white py-20 border-y border-slate-200 overflow-hidden relative">
         <div class="container mx-auto px-4 mb-12">
             <h2 class="text-center text-2xl font-bold text-slate-900">Trusted By Top Enterprises & Institutions</h2>
         </div>
         
-        <div class="scroller-mask w-full max-w-6xl mx-auto overflow-hidden">
-            <div class="scroller-track items-center px-6">
-                
-                <div class="logo-card"><img src="/assets/img/client/1.webp" alt="Client 1"></div>
-                <div class="logo-card"><img src="/assets/img/client/2.webp" alt="Client 2"></div>
-                <div class="logo-card"><img src="/assets/img/client/3.webp" alt="Client 3"></div>
-                <div class="logo-card"><img src="/assets/img/client/4.webp" alt="Client 4"></div>
-                <div class="logo-card"><img src="/assets/img/client/5.webp" alt="Client 5"></div>
-                <div class="logo-card"><img src="/assets/img/client/6.webp" alt="Client 6"></div>
-                <div class="logo-card"><img src="/assets/img/client/7.webp" alt="Client 7"></div>
-                <div class="logo-card"><img src="/assets/img/client/8.webp" alt="Client 8"></div>
-                <div class="logo-card"><img src="/assets/img/client/9.webp" alt="Client 9"></div>
-                <div class="logo-card"><img src="/assets/img/client/10.webp" alt="Client 10"></div>
-                <div class="logo-card"><img src="/assets/img/client/11.webp" alt="Client 11"></div>
-                <div class="logo-card"><img src="/assets/img/client/12.webp" alt="Client 12"></div>
-                <div class="logo-card"><img src="/assets/img/client/13.webp" alt="Client 13"></div>
-                <div class="logo-card"><img src="/assets/img/client/14.webp" alt="Client 14"></div>
-                <div class="logo-card"><img src="/assets/img/client/15.webp" alt="Client 15"></div>
-                <div class="logo-card"><img src="/assets/img/client/16.webp" alt="Client 16"></div>
-                <div class="logo-card"><img src="/assets/img/client/17.webp" alt="Client 17"></div>
-                <div class="logo-card"><img src="/assets/img/client/18.webp" alt="Client 18"></div>
+        <div class="relative group">
+            <!-- Navigation Arrows -->
+            <button class="nav-btn prev" id="scrollPrev"><i class="ri-arrow-left-s-line"></i></button>
+            <button class="nav-btn next" id="scrollNext"><i class="ri-arrow-right-s-line"></i></button>
 
-                <div class="logo-card"><img src="/assets/img/client/1.webp" alt="Client 1"></div>
-                <div class="logo-card"><img src="/assets/img/client/2.webp" alt="Client 2"></div>
-                <div class="logo-card"><img src="/assets/img/client/3.webp" alt="Client 3"></div>
-                <div class="logo-card"><img src="/assets/img/client/4.webp" alt="Client 4"></div>
-                <div class="logo-card"><img src="/assets/img/client/5.webp" alt="Client 5"></div>
-                <div class="logo-card"><img src="/assets/img/client/6.webp" alt="Client 6"></div>
-                <div class="logo-card"><img src="/assets/img/client/7.webp" alt="Client 7"></div>
-                <div class="logo-card"><img src="/assets/img/client/8.webp" alt="Client 8"></div>
-                <div class="logo-card"><img src="/assets/img/client/9.webp" alt="Client 9"></div>
-                <div class="logo-card"><img src="/assets/img/client/10.webp" alt="Client 10"></div>
-                <div class="logo-card"><img src="/assets/img/client/11.webp" alt="Client 11"></div>
-                <div class="logo-card"><img src="/assets/img/client/12.webp" alt="Client 12"></div>
-                <div class="logo-card"><img src="/assets/img/client/13.webp" alt="Client 13"></div>
-                <div class="logo-card"><img src="/assets/img/client/14.webp" alt="Client 14"></div>
-                <div class="logo-card"><img src="/assets/img/client/15.webp" alt="Client 15"></div>
-                <div class="logo-card"><img src="/assets/img/client/16.webp" alt="Client 16"></div>
-                <div class="logo-card"><img src="/assets/img/client/17.webp" alt="Client 17"></div>
-                <div class="logo-card"><img src="/assets/img/client/18.webp" alt="Client 18"></div>
-                
+            <div class="scroller-mask w-full max-w-7xl mx-auto overflow-hidden">
+                <div class="scroller-track px-6" id="scrollerTrack">
+                    
+                    <div class="logo-card"><img src="/assets/img/client/1.webp" alt="Client 1"></div>
+                    <div class="logo-card"><img src="/assets/img/client/2.webp" alt="Client 2"></div>
+                    <div class="logo-card"><img src="/assets/img/client/3.webp" alt="Client 3"></div>
+                    <div class="logo-card"><img src="/assets/img/client/4.webp" alt="Client 4"></div>
+                    <div class="logo-card"><img src="/assets/img/client/5.webp" alt="Client 5"></div>
+                    <div class="logo-card"><img src="/assets/img/client/6.webp" alt="Client 6"></div>
+                    <div class="logo-card"><img src="/assets/img/client/7.webp" alt="Client 7"></div>
+                    <div class="logo-card"><img src="/assets/img/client/8.webp" alt="Client 8"></div>
+                    <div class="logo-card"><img src="/assets/img/client/9.webp" alt="Client 9"></div>
+                    <div class="logo-card"><img src="/assets/img/client/10.webp" alt="Client 10"></div>
+                    <div class="logo-card"><img src="/assets/img/client/11.webp" alt="Client 11"></div>
+                    <div class="logo-card"><img src="/assets/img/client/12.webp" alt="Client 12"></div>
+                    <div class="logo-card"><img src="/assets/img/client/13.webp" alt="Client 13"></div>
+                    <div class="logo-card"><img src="/assets/img/client/14.webp" alt="Client 14"></div>
+                    <div class="logo-card"><img src="/assets/img/client/15.webp" alt="Client 15"></div>
+                    <div class="logo-card"><img src="/assets/img/client/16.webp" alt="Client 16"></div>
+                    <div class="logo-card"><img src="/assets/img/client/17.webp" alt="Client 17"></div>
+                    <div class="logo-card"><img src="/assets/img/client/18.webp" alt="Client 18"></div>
+
+                    <div class="logo-card"><img src="/assets/img/client/1.webp" alt="Client 1"></div>
+                    <div class="logo-card"><img src="/assets/img/client/2.webp" alt="Client 2"></div>
+                    <div class="logo-card"><img src="/assets/img/client/3.webp" alt="Client 3"></div>
+                    <div class="logo-card"><img src="/assets/img/client/4.webp" alt="Client 4"></div>
+                    <div class="logo-card"><img src="/assets/img/client/5.webp" alt="Client 5"></div>
+                    <div class="logo-card"><img src="/assets/img/client/6.webp" alt="Client 6"></div>
+                    <div class="logo-card"><img src="/assets/img/client/7.webp" alt="Client 7"></div>
+                    <div class="logo-card"><img src="/assets/img/client/8.webp" alt="Client 8"></div>
+                    <div class="logo-card"><img src="/assets/img/client/9.webp" alt="Client 9"></div>
+                    <div class="logo-card"><img src="/assets/img/client/10.webp" alt="Client 10"></div>
+                    <div class="logo-card"><img src="/assets/img/client/11.webp" alt="Client 11"></div>
+                    <div class="logo-card"><img src="/assets/img/client/12.webp" alt="Client 12"></div>
+                    <div class="logo-card"><img src="/assets/img/client/13.webp" alt="Client 13"></div>
+                    <div class="logo-card"><img src="/assets/img/client/14.webp" alt="Client 14"></div>
+                    <div class="logo-card"><img src="/assets/img/client/15.webp" alt="Client 15"></div>
+                    <div class="logo-card"><img src="/assets/img/client/16.webp" alt="Client 16"></div>
+                    <div class="logo-card"><img src="/assets/img/client/17.webp" alt="Client 17"></div>
+                    <div class="logo-card"><img src="/assets/img/client/18.webp" alt="Client 18"></div>
+                    
+                </div>
             </div>
         </div>
     </div>
@@ -178,17 +209,37 @@
     <div id="footer-mount"></div>
 
     <script>
-        function runAutoMagnifier() {
+        const track = document.getElementById('scrollerTrack');
+        const prevBtn = document.getElementById('scrollPrev');
+        const nextBtn = document.getElementById('scrollNext');
+        
+        let currentX = 0;
+        let isPaused = false;
+        let autoResumeTimeout = null;
+        const scrollSpeed = 0.8; // Pixels per frame
+
+        function runScrollerEngine() {
+            if (!isPaused) {
+                currentX -= scrollSpeed;
+                
+                // Perfect Loop Logic
+                // Total width of track / 2 is the exact loop point
+                const halfWidth = track.scrollWidth / 2;
+                if (Math.abs(currentX) >= halfWidth) {
+                    currentX = 0;
+                }
+                
+                track.style.transform = `translateX(${currentX}px)`;
+            }
+            
+            // Magnifier Engine Integration
             const logos = document.querySelectorAll('.logo-card');
             const screenCenter = window.innerWidth / 2;
-            // The "hot zone" - how close to the center a logo needs to be to magnify
-            const activationZone = window.innerWidth < 768 ? 100 : 180; 
+            const activationZone = window.innerWidth < 768 ? 100 : 200; 
 
             logos.forEach(logo => {
                 const rect = logo.getBoundingClientRect();
-                // Calculate the exact mathematical center point of the image
                 const logoCenter = rect.left + (rect.width / 2);
-                // Calculate how far that point is from the center of the screen
                 const distance = Math.abs(screenCenter - logoCenter);
 
                 if (distance < activationZone) {
@@ -198,12 +249,41 @@
                 }
             });
 
-            // Run this check smoothly on every animation frame
-            requestAnimationFrame(runAutoMagnifier);
+            requestAnimationFrame(runScrollerEngine);
         }
+
+        // Manual Navigation Logic
+        function handleManualScroll(direction) {
+            isPaused = true;
+            clearTimeout(autoResumeTimeout);
+            
+            const step = window.innerWidth < 768 ? 200 : 400;
+            currentX += (direction === 'prev' ? step : -step);
+            
+            // Boundary checks for manual scroll
+            const halfWidth = track.scrollWidth / 2;
+            if (currentX > 0) currentX = -halfWidth;
+            if (Math.abs(currentX) >= halfWidth) currentX = 0;
+            
+            track.style.transform = `translateX(${currentX}px)`;
+
+            // Resume auto-scroll after 3 seconds of inactivity
+            autoResumeTimeout = setTimeout(() => {
+                isPaused = false;
+            }, 3000);
+        }
+
+        prevBtn.addEventListener('click', () => handleManualScroll('prev'));
+        nextBtn.addEventListener('click', () => handleManualScroll('next'));
         
-        // Start the engine once the DOM is loaded
-        document.addEventListener('DOMContentLoaded', runAutoMagnifier);
+        // Pause on hover
+        track.addEventListener('mouseenter', () => isPaused = true);
+        track.addEventListener('mouseleave', () => {
+            if (!autoResumeTimeout || !isPaused) isPaused = false;
+        });
+
+        // Start the engine
+        document.addEventListener('DOMContentLoaded', runScrollerEngine);
     </script>
 </body>
 </html>
