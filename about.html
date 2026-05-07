@@ -10,57 +10,64 @@
             mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
             -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
         }
-        .scroller-track {
-            display: flex;
-            width: max-content;
-            gap: 0; /* Margin-based spacing for perfect -50% math */
-            animation: scroll-left 45s linear infinite;
-            padding: 2rem 0;
-        }
-        .scroller-track:hover {
-            animation-play-state: paused;
-        }
-        @keyframes scroll-left {
-            to { transform: translateX(-50%); }
-        }
-        
-        /* The Netflix Container Pattern */
-        .logo-card {
-            position: relative;
-            z-index: 1;
-            flex-shrink: 0;
-            width: 140px; 
-            height: 80px; 
-            margin-right: 2rem; /* Consistent spacing */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-            border-radius: 12px;
-            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            filter: grayscale(100%) opacity(30%);
-            transform-origin: center center;
-        }
+    .scroller-track {
+        display: flex;
+        width: max-content;
+        /* CRITICAL: Vertical padding only. Left/Right padding breaks the -50% loop math */
+        padding: 4rem 0; 
+        animation: scroll-left 45s linear infinite;
+    }
+    .scroller-track:hover {
+        animation-play-state: paused;
+    }
+    @keyframes scroll-left {
+        /* Flawless math: exactly half the total track width */
+        to { transform: translateX(-50%); } 
+    }
+    
+    /* The Netflix Container Pattern */
+    .logo-card {
+        position: relative;
+        z-index: 1;
+        flex-shrink: 0;
+        width: 140px; 
+        height: 80px; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        border-radius: 12px;
+        transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        filter: grayscale(100%) opacity(30%);
+        transform-origin: center center;
+        /* The Math Buffer: Prevents collision when scaled */
+        margin-right: 3rem; 
+    }
     
     /* The Auto-Magnify State */
     .logo-card.is-center {
         filter: grayscale(0%) opacity(100%);
         transform: scale(1.65);
-        z-index: 50; /* Forces the scaled card completely to the top */
+        z-index: 50; 
         background-color: white; 
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
 
-        .logo-card img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+    .logo-card img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+    
+    /* Responsive sizing and larger buffer for desktop */
+    @media (min-width: 768px) {
+        .logo-card { 
+            width: 180px; 
+            height: 100px; 
+            /* Massive buffer ensures 1.65x scale never touches neighbors */
+            margin-right: 5rem; 
         }
-        
-        /* Responsive sizing for larger screens */
-        @media (min-width: 768px) {
-            .logo-card { width: 180px; height: 100px; }
-        }
+    }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
