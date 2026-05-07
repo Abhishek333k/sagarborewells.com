@@ -75,12 +75,17 @@ function playCampaignQueue(campaigns) {
     console.log(`🟢 [CAMPAIGN ENGINE] Playing popup: "${currentCampaign.title}"...`);
     
     const modalHTML = `
-        <div id="promo-modal" class="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm opacity-0 transition-opacity duration-500">
-            <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden max-w-2xl w-full transform scale-95 transition-transform duration-500 delay-100">
-                <button id="close-promo" class="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 hover:bg-black/80 backdrop-blur-md rounded-full text-white flex items-center justify-center transition-colors">
-                    <i class="ri-close-line text-2xl"></i>
+        <div id="promo-modal" class="fixed inset-0 z-[500] flex items-center justify-center p-4 sm:p-6 bg-slate-900/90 backdrop-blur-md opacity-0 transition-opacity duration-500">
+            <div class="relative max-w-3xl w-full transform scale-95 transition-transform duration-500 delay-100 mt-8">
+                
+                <button id="close-promo" class="absolute -top-12 right-0 sm:-right-4 z-20 w-10 h-10 bg-white rounded-full text-slate-900 shadow-xl flex items-center justify-center hover:bg-slate-200 hover:scale-110 transition-all group">
+                    <i class="ri-close-line text-2xl font-bold group-hover:rotate-90 transition-transform duration-300"></i>
                 </button>
-                <img src="${currentCampaign.imageUrl}" alt="${currentCampaign.title}" class="w-full h-auto object-cover max-h-[80vh]">
+                
+                <div class="bg-white rounded-2xl shadow-2xl overflow-hidden border border-white/10">
+                    <img src="${currentCampaign.imageUrl}" alt="${currentCampaign.title}" class="w-full h-auto object-contain max-h-[75vh]">
+                </div>
+                
             </div>
         </div>
     `;
