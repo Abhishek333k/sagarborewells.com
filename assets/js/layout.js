@@ -163,7 +163,9 @@ document.addEventListener("DOMContentLoaded", function() {
                         <li><a href="/dashboard.html" class="hover:text-blue-400 transition">Account Login</a></li>
                         <li><a href="/f/blog.html" class="hover:text-blue-400 transition">Blog</a></li>
                         <li><a href="/f/science.html" class="hover:text-blue-400 transition">Science Portal</a></li>
-                        <li><a href="/f/motors.html" class="hover:text-blue-400 transition">Motor Recommendations</a></li>
+                        <li><a href="/f/pump-advisor.html" class="hover:text-blue-400 transition flex items-center gap-2">
+                            Pump Advisor <span class="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-0.5 rounded font-bold uppercase">AI</span>
+                        </a></li>
                         <li><a href="/f/finance.html" class="hover:text-blue-400 transition">Financial Assist</a></li>
                         <li><a href="/about.html" class="hover:text-blue-400 transition">About Us</a></li>
                         <li><a href="/contact.html" class="hover:text-blue-400 transition">Contact Us</a></li>
