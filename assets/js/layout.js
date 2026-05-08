@@ -146,7 +146,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         SAGAR <span class="text-blue-500">BOREWELLS</span>
                     </a>
                     <p class="text-xs leading-relaxed mb-6">
-                        Advanced geological sensor drilling. Delivering precision water solutions since 2010.
+                        Advanced geological sensor drilling. Delivering precision water solutions since 1985.
                     </p>
                     <div class="flex gap-4">
                         <a href="${waLink}" target="_blank" class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i class="ri-whatsapp-line"></i></a>
@@ -213,8 +213,8 @@ document.addEventListener("DOMContentLoaded", function() {
         // --- Page-specific titles & descriptions ---
         const path = window.location.pathname;
         const pageMap = {
-            '/':              { t: 'Sagar Borewells — Precision Drilling & Zone-Based Pricing | Mangalagiri', d: 'Andhra Pradesh\'s most trusted borewell drilling company. GPS-powered estimates, geological zone analysis, and instant PDF quotes. 7500+ projects completed since 2010.', k: 'borewell drilling, water drilling AP, Mangalagiri borewells, groundwater analysis, borewell cost calculator' },
-            '/index.html':    { t: 'Sagar Borewells — Precision Drilling & Zone-Based Pricing | Mangalagiri', d: 'Andhra Pradesh\'s most trusted borewell drilling company. GPS-powered estimates, geological zone analysis, and instant PDF quotes. 7500+ projects completed since 2010.', k: 'borewell drilling, water drilling AP, Mangalagiri borewells, groundwater analysis, borewell cost calculator' },
+            '/':              { t: 'Sagar Borewells — Precision Drilling & Zone-Based Pricing | Mangalagiri', d: 'Andhra Pradesh\'s most trusted borewell drilling company. GPS-powered estimates, geological zone analysis, and instant PDF quotes. 7500+ projects completed since 1985.', k: 'borewell drilling, water drilling AP, Mangalagiri borewells, groundwater analysis, borewell cost calculator' },
+            '/index.html':    { t: 'Sagar Borewells — Precision Drilling & Zone-Based Pricing | Mangalagiri', d: 'Andhra Pradesh\'s most trusted borewell drilling company. GPS-powered estimates, geological zone analysis, and instant PDF quotes. 7500+ projects completed since 1985.', k: 'borewell drilling, water drilling AP, Mangalagiri borewells, groundwater analysis, borewell cost calculator' },
             '/quote.html':    { t: 'Instant Borewell Quotation — Sagar Borewells', d: 'Get an instant drilling cost estimate for your borewell. GPS location, depth slider, tiered pricing, and downloadable PDF quote.', k: 'borewell price, drilling cost calculator, water well estimate, Sagar Borewells quote' },
             '/quote':         { t: 'Instant Borewell Quotation — Sagar Borewells', d: 'Get an instant drilling cost estimate for your borewell. GPS location, depth slider, tiered pricing, and downloadable PDF quote.', k: 'borewell price, drilling cost calculator, water well estimate, Sagar Borewells quote' },
             '/login.html':    { t: 'Client Login — Sagar Borewells', d: 'Access your borewell project dashboard, track rig status, download BWBC certificates and estimates.', k: 'client login, borewell dashboard, project tracking' },
@@ -233,7 +233,7 @@ document.addEventListener("DOMContentLoaded", function() {
             '/f/pump-advisor':{ t: 'Smart Pump Advisor — AI Recommendation | Sagar Borewells', d: 'Calculate Total Dynamic Head (TDH) and get AI-powered pump recommendations using GPS data and live inventory.', k: 'pump calculator, TDH calculation, AI pump recommendation, water pump selection' },
         };
 
-        const currentPage = pageMap[path] || { t: 'Sagar Borewells — Precision Drilling Company | Mangalagiri, AP', d: 'Expert borewell drilling services in Andhra Pradesh. GPS estimates, groundwater science, AI pump recommendations, and digital certificates. Since 2010.', k: 'borewell drilling, water well, mangalagiri, andhra pradesh, drilling services' };
+        const currentPage = pageMap[path] || { t: 'Sagar Borewells — Precision Drilling Company | Mangalagiri, AP', d: 'Expert borewell drilling services in Andhra Pradesh. GPS estimates, groundwater science, AI pump recommendations, and digital certificates. Since 1985.', k: 'borewell drilling, water well, mangalagiri, andhra pradesh, drilling services' };
 
         // --- 1. Basic Meta Tags ---
         if (currentPage.t) document.title = currentPage.t;
