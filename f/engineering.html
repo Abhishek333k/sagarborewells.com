@@ -24,126 +24,165 @@
     <script src="/assets/js/config.js"></script>
 
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: white; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #0f172a; }
+        
+        /* MD3 Card Styling */
         .sci-card { 
-            background: rgba(30, 41, 59, 0.7); 
-            border: 1px solid rgba(255,255,255,0.05); 
-            backdrop-filter: blur(12px); 
-            border-radius: 16px; 
-            padding: 24px; 
-            transition: 0.3s; 
-            display: flex; flex-direction: column; justify-content: space-between;
+            background: #ffffff; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 24px; 
+            padding: 32px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
         }
-        .sci-card:hover { border-color: rgba(56, 189, 248, 0.3); transform: translateY(-2px); box-shadow: 0 10px 30px -10px rgba(56,189,248,0.1); }
+        .sci-card:hover { 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02); 
+            transform: translateY(-4px); 
+            border-color: #bae6fd;
+        }
+        
+        /* Premium Inputs */
         .sci-input { 
-            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 8px; padding: 12px 16px; color: white; width: 100%; outline: none; transition: 0.2s; 
+            background: #f8fafc; 
+            border: 2px solid #e2e8f0; 
+            border-radius: 12px; 
+            padding: 12px 16px; 
+            color: #0f172a; 
+            font-weight: 600;
+            width: 100%; 
+            outline: none; 
+            transition: all 0.2s; 
         }
-        .sci-input:focus { border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56,189,248,0.2); }
+        .sci-input:focus { 
+            background: #ffffff;
+            border-color: #0ea5e9; 
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1); 
+        }
+
+        /* Result Display Box */
+        .result-box {
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 24px;
+        }
     </style>
 </head>
 <body class="min-h-screen pb-20">
 
-    <header class="pt-12 pb-8 px-6 text-center">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-sky-500/10 text-sky-400 mb-4">
-            <i class="ri-flask-line text-3xl"></i>
+    <header class="pt-16 pb-12 px-6 text-center">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-[24px] bg-sky-50 text-sky-600 mb-6 shadow-sm border border-sky-100">
+            <i class="ri-flask-line text-4xl"></i>
         </div>
-        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Engineering Hub</h1>
-        <p class="text-slate-400 max-w-lg mx-auto">Professional calculators and estimators for borewell drilling, pump sizing, and hydraulic engineering.</p>
+        <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 mb-4">Engineering Hub</h1>
+        <p class="text-slate-500 max-w-xl mx-auto text-lg">Professional calculators and estimators for borewell drilling, pump sizing, and hydraulic engineering.</p>
     </header>
 
-    <main class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <main class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8">
         
         <div class="sci-card">
             <div>
-                <div class="flex items-center gap-3 mb-6">
-                    <i class="ri-exchange-line text-2xl text-sky-400"></i>
-                    <h2 class="text-xl font-bold">Quick Converter</h2>
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600 border border-slate-200">
+                        <i class="ri-exchange-line text-2xl"></i>
+                    </div>
+                    <h2 class="text-xl font-extrabold text-slate-900">Quick Converter</h2>
                 </div>
-                <div class="flex flex-wrap gap-2 mb-4">
-                    <button onclick="setConvMode('ft_m')" class="conv-btn bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-sm text-slate-300 active-conv">Ft to M</button>
-                    <button onclick="setConvMode('m_ft')" class="conv-btn bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-sm text-slate-300">M to Ft</button>
-                    <button onclick="setConvMode('hp_kw')" class="conv-btn bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-sm text-slate-300">HP to kW</button>
-                    <button onclick="setConvMode('kw_hp')" class="conv-btn bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-sm text-slate-300">kW to HP</button>
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <button onclick="setConvMode('ft_m')" id="btn_ft_m" class="conv-btn bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-bold transition-all">Ft to M</button>
+                    <button onclick="setConvMode('m_ft')" id="btn_m_ft" class="conv-btn bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-bold transition-all">M to Ft</button>
+                    <button onclick="setConvMode('hp_kw')" id="btn_hp_kw" class="conv-btn bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-bold transition-all">HP to kW</button>
+                    <button onclick="setConvMode('kw_hp')" id="btn_kw_hp" class="conv-btn bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-bold transition-all">kW to HP</button>
                 </div>
-                <input type="number" id="convInput" class="sci-input text-xl font-mono mb-4" placeholder="Enter value" onkeyup="calcConv()">
+                <input type="number" id="convInput" class="sci-input text-lg font-mono mb-2" placeholder="Enter value..." onkeyup="calcConv()">
             </div>
-            <div class="bg-slate-900/50 p-4 rounded-xl text-center border border-slate-800">
-                <div id="convResult" class="text-3xl font-black text-sky-400 font-mono">0.00</div>
-                <div id="convUnit" class="text-xs text-slate-500 uppercase tracking-widest mt-1">Meters</div>
+            <div class="result-box">
+                <div id="convResult" class="text-4xl font-black text-sky-600 font-mono tracking-tight">0.00</div>
+                <div id="convUnit" class="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Meters</div>
             </div>
         </div>
 
         <div class="sci-card">
             <div>
-                <div class="flex items-center gap-3 mb-6">
-                    <i class="ri-shape-2-line text-2xl text-amber-400"></i>
-                    <h2 class="text-xl font-bold">Annular Gravel Volume</h2>
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
+                        <i class="ri-shape-2-line text-2xl"></i>
+                    </div>
+                    <h2 class="text-xl font-extrabold text-slate-900">Annular Gravel Volume</h2>
                 </div>
-                <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="grid grid-cols-2 gap-4 mb-5">
                     <div>
-                        <label class="text-xs text-slate-400 block mb-1">Bore Dia (in)</label>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Bore Dia (in)</label>
                         <input type="number" id="gravelBore" class="sci-input" placeholder="e.g. 6.5" onkeyup="calcGravel()">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-400 block mb-1">Pipe Dia (in)</label>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Pipe Dia (in)</label>
                         <input type="number" id="gravelCasing" class="sci-input" placeholder="e.g. 5" onkeyup="calcGravel()">
                     </div>
                 </div>
-                <div class="mb-6">
-                    <label class="text-xs text-slate-400 block mb-1">Depth of Gravel Pack (ft)</label>
+                <div class="mb-2">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Depth of Gravel Pack (ft)</label>
                     <input type="number" id="gravelDepth" class="sci-input" placeholder="e.g. 200" onkeyup="calcGravel()">
                 </div>
             </div>
-            <div class="bg-slate-900/50 p-4 rounded-xl text-center border border-slate-800">
-                <div id="gravelResult" class="text-2xl font-black text-amber-400 font-mono">--</div>
-                <div class="text-xs text-slate-500 uppercase tracking-widest mt-1">Cubic Feet (CFT)</div>
+            <div class="result-box">
+                <div id="gravelResult" class="text-4xl font-black text-amber-500 font-mono tracking-tight">--</div>
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Cubic Feet (CFT)</div>
             </div>
         </div>
 
         <div class="sci-card">
             <div>
-                <div class="flex items-center gap-3 mb-6">
-                    <i class="ri-flashlight-line text-2xl text-emerald-400"></i>
-                    <h2 class="text-xl font-bold">Cable Sizing (3-Phase)</h2>
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
+                        <i class="ri-flashlight-line text-2xl"></i>
+                    </div>
+                    <h2 class="text-xl font-extrabold text-slate-900">Cable Sizing (3-Phase)</h2>
                 </div>
-                <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="grid grid-cols-2 gap-4 mb-2">
                     <div>
-                        <label class="text-xs text-slate-400 block mb-1">Motor (HP)</label>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Motor (HP)</label>
                         <input type="number" id="cableHP" class="sci-input" placeholder="e.g. 5" onkeyup="calcCable()">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-400 block mb-1">Length (m)</label>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Length (m)</label>
                         <input type="number" id="cableLen" class="sci-input" placeholder="e.g. 100" onkeyup="calcCable()">
                     </div>
                 </div>
             </div>
-            <div class="bg-slate-900/50 p-4 rounded-xl text-center border border-slate-800">
-                <div class="text-xs text-slate-500 uppercase tracking-widest mb-1">Recommended Copper Core</div>
-                <div id="resCable" class="text-2xl font-black text-emerald-400 font-mono">-- mm²</div>
+            <div class="result-box">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Recommended Copper Core</div>
+                <div id="resCable" class="text-4xl font-black text-emerald-500 font-mono tracking-tight">--</div>
             </div>
         </div>
 
         <div class="sci-card">
             <div>
-                <div class="flex items-center gap-3 mb-6">
-                    <i class="ri-timer-line text-2xl text-purple-400"></i>
-                    <h2 class="text-xl font-bold">Tank Fill Estimator</h2>
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100">
+                        <i class="ri-timer-line text-2xl"></i>
+                    </div>
+                    <h2 class="text-xl font-extrabold text-slate-900">Tank Fill Estimator</h2>
                 </div>
-                <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="grid grid-cols-2 gap-4 mb-2">
                     <div>
-                        <label class="text-xs text-slate-400 block mb-1">Pump Yield (LPH)</label>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Pump Yield (LPH)</label>
                         <input type="number" id="tankFlow" class="sci-input" placeholder="e.g. 5000" onkeyup="calcTank()">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-400 block mb-1">Tank Size (Liters)</label>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Tank Size (Liters)</label>
                         <input type="number" id="tankSize" class="sci-input" placeholder="e.g. 2000" onkeyup="calcTank()">
                     </div>
                 </div>
             </div>
-            <div class="bg-slate-900/50 p-4 rounded-xl text-center border border-slate-800">
-                <div id="resTank" class="text-2xl font-black text-purple-400 font-mono">--</div>
-                <div class="text-xs text-slate-500 uppercase tracking-widest mt-1">Estimated Time</div>
+            <div class="result-box">
+                <div id="resTank" class="text-4xl font-black text-purple-500 font-mono tracking-tight">--</div>
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Estimated Time</div>
             </div>
         </div>
 
@@ -154,11 +193,14 @@
         let convMode = 'ft_m';
         function setConvMode(mode) {
             convMode = mode;
+            // Reset all buttons to default light-mode styling
             document.querySelectorAll('.conv-btn').forEach(b => {
-                b.style.color = '#cbd5e1'; 
-                b.style.borderColor = 'transparent';
+                b.className = 'conv-btn bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-bold transition-all';
             });
-            event.target.style.color = '#38bdf8';
+            // Highlight the active button
+            const activeBtn = document.getElementById('btn_' + mode);
+            activeBtn.className = 'conv-btn bg-sky-50 border border-sky-200 text-sky-700 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm';
+            
             calcConv();
         }
         function calcConv() {
@@ -188,7 +230,7 @@
         function calcCable() {
             const hp = parseFloat(document.getElementById('cableHP').value);
             const len = parseFloat(document.getElementById('cableLen').value);
-            if(!hp || !len) { document.getElementById('resCable').innerText = '-- mm²'; return; }
+            if(!hp || !len) { document.getElementById('resCable').innerText = '--'; return; }
             let size = 1.5;
             if (hp <= 2) { size = len < 250 ? 1.5 : (len < 400 ? 2.5 : 4); } 
             else if (hp <= 5) { size = len < 200 ? 2.5 : (len < 350 ? 4 : 6); } 
