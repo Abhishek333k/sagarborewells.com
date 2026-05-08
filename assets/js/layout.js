@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         <li><a href="/quote.html" class="hover:text-blue-400 transition">Get Estimate</a></li>
                         <li><a href="/dashboard.html" class="hover:text-blue-400 transition">Account Login</a></li>
                         <li><a href="/f/blog.html" class="hover:text-blue-400 transition">Blog</a></li>
-                        <li><a href="/f/s.html" class="hover:text-blue-400 transition">Engineering Hub</a></li>
+                        <li><a href="/f/engineering.html" class="hover:text-blue-400 transition">Engineering Hub</a></li>
                         <li><a href="/f/pump-advisor.html" class="hover:text-blue-400 transition flex items-center gap-2">
                             Pump Advisor <span class="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-0.5 rounded font-bold uppercase">AI</span>
                         </a></li>
@@ -229,8 +229,8 @@ document.addEventListener("DOMContentLoaded", function() {
             '/contact':       { t: 'Contact Sagar Borewells — Phone, WhatsApp, Office', d: 'Reach Sagar Borewells in Mangalagiri, AP. Call +91 63040-94177, WhatsApp us, or visit our office on Gowtham Buddha Road.', k: 'contact borewell company, mangalagiri borewells phone, sagar borewells whatsapp' },
             '/f/blog.html':   { t: 'News Room — Borewell Tips & Updates | Sagar Borewells', d: 'Latest news, borewell drilling tips, groundwater updates, and success stories from Sagar Borewells.', k: 'borewell tips, groundwater news, water well maintenance, drilling updates' },
             '/f/blog':        { t: 'News Room — Borewell Tips & Updates | Sagar Borewells', d: 'Latest news, borewell drilling tips, groundwater updates, and success stories from Sagar Borewells.', k: 'borewell tips, groundwater news, water well maintenance, drilling updates' },
-            '/f/s.html':      { t: 'Engineering Hub — Pro Hydraulic Calculators | Sagar Borewells', d: 'Professional borewell engineering calculators: Yield, Gravel Volume, Cable Sizing, and Tank Fill Estimator.', k: 'borewell engineering, cable sizer, gravel calculator, hydraulic tools' },
-            '/f/s':           { t: 'Engineering Hub — Pro Hydraulic Calculators | Sagar Borewells', d: 'Professional borewell engineering calculators: Yield, Gravel Volume, Cable Sizing, and Tank Fill Estimator.', k: 'borewell engineering, cable sizer, gravel calculator, hydraulic tools' },
+            '/f/engineering.html': { t: 'Engineering Hub — Pro Hydraulic Calculators | Sagar Borewells', d: 'Professional borewell engineering calculators: Yield, Gravel Volume, Cable Sizing, and Tank Fill Estimator.', k: 'borewell engineering, cable sizer, gravel calculator, hydraulic tools' },
+            '/f/engineering':      { t: 'Engineering Hub — Pro Hydraulic Calculators | Sagar Borewells', d: 'Professional borewell engineering calculators: Yield, Gravel Volume, Cable Sizing, and Tank Fill Estimator.', k: 'borewell engineering, cable sizer, gravel calculator, hydraulic tools' },
             '/f/pump-advisor.html': { t: 'Smart Pump Advisor — AI Recommendation | Sagar Borewells', d: 'Calculate Total Dynamic Head (TDH) and get AI-powered pump recommendations using GPS data and live inventory.', k: 'pump calculator, TDH calculation, AI pump recommendation, water pump selection' },
             '/f/pump-advisor':{ t: 'Smart Pump Advisor — AI Recommendation | Sagar Borewells', d: 'Calculate Total Dynamic Head (TDH) and get AI-powered pump recommendations using GPS data and live inventory.', k: 'pump calculator, TDH calculation, AI pump recommendation, water pump selection' },
         };
