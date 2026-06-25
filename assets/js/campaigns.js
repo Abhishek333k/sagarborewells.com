@@ -84,7 +84,6 @@ async function playCampaignQueue(campaigns) {
 
     // 2. NATIVE HTML5 DIALOG: Handles focus trapping, Escape key, and top-layer natively
     const dialogHTML = `
-        <style>.promo-title-scroll::-webkit-scrollbar { display: none; }</style>
         <dialog id="promo-dialog" class="bg-transparent p-0 m-auto fixed inset-0 z-[9999] overflow-visible outline-none w-full h-full backdrop:bg-transparent">
             <div id="promo-scrim" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm opacity-0 transition-opacity duration-[400ms] ease-[cubic-bezier(0.2,0,0,1)] cursor-pointer"></div>
             
@@ -96,7 +95,9 @@ async function playCampaignQueue(campaigns) {
                     </div>
 
                     <div class="flex justify-between items-center p-4 sm:px-6 sm:py-4 bg-white border-t border-slate-100">
-                        <h2 class="text-sm sm:text-base font-bold text-slate-800 pr-4 promo-title-scroll" style="scrollbar-width: none; -ms-overflow-style: none; overflow-x: auto; white-space: nowrap; min-width: 0;">${currentCampaign.title}</h2>
+                        <div class="flex-1 min-w-0 pr-4 overflow-hidden relative">
+                            <h2 id="promo-title-text" class="text-sm sm:text-base font-bold text-slate-800" style="white-space: nowrap; display: inline-block; margin: 0;">${currentCampaign.title}</h2>
+                        </div>
                         <button id="close-promo" aria-label="Dismiss promotion" class="shrink-0 h-10 px-5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm tracking-wide transition-colors focus:ring-2 focus:ring-teal-500 outline-none flex items-center gap-2">
                             <span>Dismiss</span>
                         </button>
@@ -120,6 +121,25 @@ async function playCampaignQueue(campaigns) {
     requestAnimationFrame(() => {
         scrim.classList.remove('opacity-0');
         card.classList.remove('opacity-0', 'translate-y-12', 'scale-95');
+
+        // Auto-scrolling Ping-Pong logic for long titles
+        const titleText = document.getElementById('promo-title-text');
+        const titleContainer = titleText.parentElement;
+        
+        if (titleText.scrollWidth > titleContainer.clientWidth) {
+            const overflowAmount = titleText.scrollWidth - titleContainer.clientWidth;
+            titleText.animate([
+                { transform: 'translateX(0)' },
+                { transform: 'translateX(0)', offset: 0.15 },
+                { transform: `translateX(-${overflowAmount}px)`, offset: 0.85 },
+                { transform: `translateX(-${overflowAmount}px)` }
+            ], {
+                duration: Math.max(overflowAmount * 25, 4000), // Speed based on length
+                iterations: Infinity,
+                direction: 'alternate',
+                easing: 'ease-in-out'
+            });
+        }
     });
 
     const closeRoutine = () => {
