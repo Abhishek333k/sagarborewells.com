@@ -122,26 +122,41 @@ async function playCampaignQueue(campaigns) {
         scrim.classList.remove('opacity-0');
         card.classList.remove('opacity-0', 'translate-y-12', 'scale-95');
 
-        // Auto-scrolling Ping-Pong logic for long titles
+        // Robust Auto-scrolling logic for long titles
         const titleText = document.getElementById('promo-title-text');
         const titleContainer = titleText.parentElement;
-        
-        if (titleText.scrollWidth > titleContainer.clientWidth) {
+        let marqueeAnim = null;
+
+        const startMarquee = () => {
+            if (!titleText || !titleContainer) return;
+            if (marqueeAnim) marqueeAnim.cancel(); // Reset previous animation
+            
             const overflowAmount = titleText.scrollWidth - titleContainer.clientWidth;
-            titleText.animate([
-                { transform: 'translateX(0)', offset: 0 },
-                { transform: 'translateX(0)', offset: 0.15 }, // Pause briefly so they can read the start
-                { transform: `translateX(-${overflowAmount + 16}px)`, offset: 0.95 }, // Scroll all the way to the end
-                { transform: `translateX(-${overflowAmount + 16}px)`, offset: 1 } // Brief pause before reset
-            ], {
-                duration: Math.max(overflowAmount * 30, 4000), // Speed based on length
-                iterations: Infinity,
-                easing: 'linear' // Steady reading speed
-            });
-        }
+            if (overflowAmount > 0) {
+                marqueeAnim = titleText.animate([
+                    { transform: 'translateX(0)', offset: 0 },
+                    { transform: 'translateX(0)', offset: 0.15 }, 
+                    { transform: `translateX(-${overflowAmount + 24}px)`, offset: 0.90 }, 
+                    { transform: `translateX(-${overflowAmount + 24}px)`, offset: 1 } 
+                ], {
+                    duration: Math.max(overflowAmount * 30, 4000),
+                    iterations: Infinity,
+                    easing: 'linear'
+                });
+            }
+        };
+
+        // ResizeObserver ensures animation calculates exactly when fonts load or window resizes
+        const resizeObserver = new ResizeObserver(() => startMarquee());
+        resizeObserver.observe(titleContainer);
+        resizeObserver.observe(titleText);
+        
+        // Attach observer to dialog so we can clean it up later
+        dialog.marqueeObserver = resizeObserver;
     });
 
     const closeRoutine = () => {
+        if (dialog.marqueeObserver) dialog.marqueeObserver.disconnect();
         sessionStorage.setItem(`closed_campaign_${currentCampaign.id}`, "true");
         
         // Trigger Material Exit Motion
