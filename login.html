@@ -187,6 +187,10 @@
                         document.getElementById('statusTxt').innerText = "Account Found! Opening Dashboard...";
                         status.className = "text-xs text-center mt-4 text-emerald-600 font-bold flex items-center justify-center gap-2";
 
+                        if (typeof NOTIFY_TEMPLATES !== 'undefined' && typeof sendEdgeNotification === 'function') {
+                            sendEdgeNotification(NOTIFY_TEMPLATES.client_return({mobile: fullPhone}));
+                        }
+
                         setTimeout(() => window.location.href = "dashboard.html", 800);
                         
                     } else {
@@ -214,7 +218,7 @@
         }
 
         // ==========================================
-        // 4. LOGGING (Backend handles alerts)
+        // 4. LOGGING (Migrated to Edge Functions)
         // ==========================================
         function logNewUser(phone) {
             db.collection('silent_leads').add({
@@ -223,6 +227,10 @@
                 status: "Unregistered",
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
+
+            if (typeof NOTIFY_TEMPLATES !== 'undefined' && typeof sendEdgeNotification === 'function') {
+                sendEdgeNotification(NOTIFY_TEMPLATES.silent_lead({mobile: phone, source: "Login Page"}));
+            }
         }
 
         // ==========================================

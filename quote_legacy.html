@@ -537,16 +537,10 @@
         }
 
         async function sendTelegram(msg) {
-            if(typeof getTelegramCredentials === 'function') {
-                const creds = await getTelegramCredentials();
-                if(creds && creds.bot_token && creds.chat_id) {
-                    const url = `https://api.telegram.org/bot${creds.bot_token}/sendMessage?chat_id=${creds.chat_id}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
-                    try {
-                        await fetch(url);
-                    } catch(e) { console.log("Notify Error", e); }
-                }
+            if(typeof sendEdgeNotification === 'function') {
+                await sendEdgeNotification(msg);
             } else {
-                console.warn("Secure Credential Fetcher not found.");
+                console.warn("Secure Edge Notification Fetcher not found.");
             }
         }
 
