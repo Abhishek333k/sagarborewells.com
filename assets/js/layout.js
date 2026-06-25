@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     
                     <div class="flex items-center">
                         <a href="/index.html" class="flex items-center gap-2 group">
-                            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xl font-bold group-hover:scale-105 transition">S</div>
+                            <img src="/assets/img/favicon.png" alt="Sagar Borewells Logo" class="w-10 h-10 object-contain group-hover:scale-105 transition">
                             <div>
                                 <span class="block text-xl font-extrabold text-slate-900 leading-none">SAGAR</span>
                                 <span class="block text-xs font-bold text-blue-600 tracking-widest">BOREWELLS</span>
