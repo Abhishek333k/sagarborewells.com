@@ -989,7 +989,9 @@
 
             hasLoggedPrice = true;
 
-            // Removed client-side telegram alert
+            if (typeof NOTIFY_TEMPLATES !== 'undefined' && typeof sendEdgeNotification === 'function') {
+                sendEdgeNotification(NOTIFY_TEMPLATES.price_check(leadData));
+            }
 
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
@@ -1018,7 +1020,9 @@
         try {
             await db.collection('leads').doc(leadData.id).set(finalData);
 
-            // Backend will handle telegram notifications securely
+            if (typeof NOTIFY_TEMPLATES !== 'undefined' && typeof sendEdgeNotification === 'function') {
+                sendEdgeNotification(NOTIFY_TEMPLATES.booking(finalData));
+            }
 
             document.getElementById('step-2').classList.add('hidden');
             document.getElementById('step-3').classList.remove('hidden');

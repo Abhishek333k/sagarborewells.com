@@ -55,3 +55,26 @@ ${data.summary}
     }
 
 };
+
+/**
+ * 🚀 EDGE FUNCTION DISPATCHER
+ * Securely triggers the Supabase Edge Function to send Telegram alerts.
+ * @param {string} message - The formatted markdown/HTML message to send.
+ */
+async function sendEdgeNotification(message) {
+    try {
+        const response = await fetch('https://ixfjpphlxpkkikvkfcki.supabase.co/functions/v1/telegram-notify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: message })
+        });
+        
+        if (!response.ok) {
+            console.error('Edge Function Error:', await response.text());
+        }
+    } catch (error) {
+        console.error('Failed to trigger Edge Notification:', error);
+    }
+}

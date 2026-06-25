@@ -59,7 +59,8 @@ exports.notifynewlead = onDocumentCreated("leads/{leadId}", async (event) => {
         `💰 *Grand Total:* ₹${(data.total || 0).toLocaleString('en-IN')}\n\n` +
         `📝 *COST BREAKDOWN:*\n${data.summary || 'N/A'}`;
 
-    await sendTelegramAlert(message, leadId);
+    // 🚀 MIGRATED: Telegram notifications are now securely handled by Supabase Edge Functions
+    // await sendTelegramAlert(message, leadId);
 });
 
 // ============================================================================
@@ -95,7 +96,8 @@ exports.notifypricecheck = onDocumentWritten("silent_leads/{leadId}", async (eve
         `💰 *Shown:* ₹${(data.total || 0).toLocaleString('en-IN')}\n` +
         `⚠️ *Status:* ${isUpdate ? 'Recalculated Estimate' : 'Viewing Estimate (Not Booked)'}`;
 
-    await sendTelegramAlert(message, leadId);
+    // 🚀 MIGRATED: Telegram notifications are now securely handled by Supabase Edge Functions
+    // await sendTelegramAlert(message, leadId);
 });
 
 
