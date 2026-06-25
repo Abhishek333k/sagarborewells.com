@@ -96,7 +96,7 @@ async function playCampaignQueue(campaigns) {
                     </div>
 
                     <div class="flex justify-between items-center p-4 sm:px-6 sm:py-4 bg-white border-t border-slate-100">
-                        <h2 class="text-sm sm:text-base font-bold text-slate-800 overflow-x-auto whitespace-nowrap pr-4 promo-title-scroll min-w-0" style="scrollbar-width: none; -ms-overflow-style: none;">${currentCampaign.title}</h2>
+                        <h2 class="text-sm sm:text-base font-bold text-slate-800 pr-4 promo-title-scroll" style="scrollbar-width: none; -ms-overflow-style: none; overflow-x: auto; white-space: nowrap; min-width: 0;">${currentCampaign.title}</h2>
                         <button id="close-promo" aria-label="Dismiss promotion" class="shrink-0 h-10 px-5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm tracking-wide transition-colors focus:ring-2 focus:ring-teal-500 outline-none flex items-center gap-2">
                             <span>Dismiss</span>
                         </button>
