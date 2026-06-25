@@ -129,15 +129,14 @@ async function playCampaignQueue(campaigns) {
         if (titleText.scrollWidth > titleContainer.clientWidth) {
             const overflowAmount = titleText.scrollWidth - titleContainer.clientWidth;
             titleText.animate([
-                { transform: 'translateX(0)' },
-                { transform: 'translateX(0)', offset: 0.15 },
-                { transform: `translateX(-${overflowAmount}px)`, offset: 0.85 },
-                { transform: `translateX(-${overflowAmount}px)` }
+                { transform: 'translateX(0)', offset: 0 },
+                { transform: 'translateX(0)', offset: 0.15 }, // Pause briefly so they can read the start
+                { transform: `translateX(-${overflowAmount + 16}px)`, offset: 0.95 }, // Scroll all the way to the end
+                { transform: `translateX(-${overflowAmount + 16}px)`, offset: 1 } // Brief pause before reset
             ], {
-                duration: Math.max(overflowAmount * 25, 4000), // Speed based on length
+                duration: Math.max(overflowAmount * 30, 4000), // Speed based on length
                 iterations: Infinity,
-                direction: 'alternate',
-                easing: 'ease-in-out'
+                easing: 'linear' // Steady reading speed
             });
         }
     });
