@@ -91,7 +91,7 @@ async function playCampaignQueue(campaigns) {
                 <div id="promo-card" class="relative bg-white rounded-[28px] shadow-2xl overflow-hidden max-w-3xl w-full opacity-0 translate-y-12 scale-95 transition-all duration-[500ms] ease-[cubic-bezier(0.2,0,0,1)] pointer-events-auto flex flex-col">
                     
                     <div class="relative w-full bg-slate-50 flex items-center justify-center">
-                        <img src="${currentCampaign.imageUrl}" alt="${currentCampaign.title}" class="w-full h-auto object-contain max-h-[65vh]">
+                        <img src="${currentCampaign.imageUrl}" alt="${currentCampaign.title}" class="w-full h-auto object-contain" style="max-height: 65vh;">
                     </div>
 
                     <div class="flex justify-between items-center p-4 sm:px-6 sm:py-4 bg-white border-t border-slate-100">
